@@ -1,0 +1,261 @@
+#!/usr/bin/env python3
+
+import os
+import argparse
+import sys
+import shutil
+import subprocess
+import time
+from typing import List
+
+def clean_directory(directory: str):
+    """Delete all contents of a directory if it exists."""
+    if os.path.exists(directory):
+        try:
+            # Remove all contents of the directory
+            for item in os.listdir(directory):
+                item_path = os.path.join(directory, item)
+                if os.path.isfile(item_path):
+                    os.remove(item_path)
+                elif os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+            print(f"Cleaned directory: {directory}")
+        except Exception as e:
+            print(f"Error cleaning directory {directory}: {e}", file=sys.stderr)
+            sys.exit(1)
+
+def create_bench_directories(tag: str):
+    """Create 'bench' directory and a subdirectory with the tag name if they don't exist.
+    Within the tag directory, create 'bin' and 'text' subdirectories and a description.txt file."""
+    bench_dir = "bench"
+    tag_dir = os.path.join(bench_dir, tag)
+    bin_dir = os.path.join(tag_dir, "bin")
+    text_dir = os.path.join(tag_dir, "text")
+    description_file = os.path.join(tag_dir, "description.txt")
+    
+    try:
+        # Create bench directory if it doesn't exist
+        if not os.path.exists(bench_dir):
+            os.makedirs(bench_dir)
+            print(f"Created directory: {bench_dir}")
+        else:
+            print(f"Directory '{bench_dir}' already exists")
+            
+        # Clean and create tag subdirectory and its subdirectories
+        if os.path.exists(tag_dir):
+            print(f"Directory '{tag_dir}' already exists, cleaning it...")
+            clean_directory(tag_dir)
+        
+        # Create the directory structure
+        os.makedirs(bin_dir)
+        os.makedirs(text_dir)
+        
+        # Create empty description.txt file
+        with open(description_file, 'w') as f:
+            pass  # Create empty file
+            
+        print(f"Created directory structure: {tag_dir}")
+        print(f"  - {bin_dir}")
+        print(f"  - {text_dir}")
+        print(f"  - {description_file}")
+            
+    except Exception as e:
+        print(f"Error creating directories: {e}", file=sys.stderr)
+        sys.exit(1)
+
+def parse_list_argument(arg: str) -> List[str]:
+    """Parse a comma-separated string into a list, removing brackets if present."""
+    # Remove brackets if present
+    arg = arg.strip('[]')
+    # Split by comma and strip whitespace
+    return [item.strip() for item in arg.split(',')]
+
+def wait_for_profile_file(profile_file: str, timeout: int = 5) -> bool:
+    """Wait for a profile file to be written and become non-empty.
+    Returns True if the file exists and is non-empty, False if timeout is reached."""
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if os.path.exists(profile_file) and os.path.getsize(profile_file) > 0:
+            return True
+        time.sleep(0.1)
+    return False
+
+def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str):
+    """Run a single benchmark with specified profiles and save output."""
+    # Construct the benchmark command
+    cmd = ["go", "test", "-v", "-run=^$", f"-bench=^{benchmark}$", "-benchmem", f"-count={count}"]
+    
+    # Add profile flags based on requested profiles
+    profile_flags = {
+        "cpu": "-cpuprofile=cpu.out",
+        "memory": "-memprofile=memory.out",
+        "mutex": "-mutexprofile=mutex.out",
+        "trace": "-trace=trace.out"
+    }
+    
+    for profile in profiles:
+        if profile in profile_flags:
+            cmd.append(profile_flags[profile])
+    
+    # Set up output directories
+    tag_dir = os.path.join("bench", tag)
+    text_dir = os.path.join(tag_dir, "text")
+    bin_dir = os.path.join(tag_dir, "bin")
+    
+    # Set up output file (goes in text directory)
+    output_file = os.path.join(text_dir, f"{benchmark}.txt")
+    
+    try:
+        # Run the benchmark and capture output
+        with open(output_file, 'w') as f:
+            process = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, text=True)
+            
+        if process.returncode != 0:
+            print(f"Error running benchmark {benchmark}:", file=sys.stderr)
+            with open(output_file, 'r') as f:
+                print(f.read(), file=sys.stderr)
+            sys.exit(1)
+            
+        # Move profile files to the bin directory if they exist
+        for profile in profiles:
+            if profile in profile_flags:
+                profile_file = profile_flags[profile].split('=')[1]
+                if os.path.exists(profile_file):
+                    # Wait for the profile file to be fully written
+                    if not wait_for_profile_file(profile_file):
+                        print(f"Warning: Profile file {profile_file} was not fully written within timeout", file=sys.stderr)
+                        continue
+                        
+                    # Add benchmark name to profile file to avoid overwriting
+                    new_profile_file = f"{benchmark}_{profile}.out"
+                    shutil.move(profile_file, os.path.join(bin_dir, new_profile_file))
+        
+        # Look for any .test files in the current directory
+        for item in os.listdir('.'):
+            if item.endswith('.test'):
+                # Wait for the test file to be fully written
+                if not wait_for_profile_file(item):
+                    print(f"Warning: Test file {item} was not fully written within timeout", file=sys.stderr)
+                    continue
+                    
+                # Add benchmark name to test file to avoid overwriting
+                new_test_file = f"{benchmark}_{item}"
+                shutil.move(item, os.path.join(bin_dir, new_test_file))
+                print(f"Moved test file: {item} -> {new_test_file}")
+        
+        print(f"Completed benchmark: {benchmark}")
+        
+    except Exception as e:
+        print(f"Error running benchmark {benchmark}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+def process_profiles(benchmark: str, profiles: List[str], tag: str):
+    """Process profile files using go tool pprof."""
+    tag_dir = os.path.join("bench", tag)
+    bin_dir = os.path.join(tag_dir, "bin")
+    text_dir = os.path.join(tag_dir, "text")
+    
+    # Skip trace profile as it's not processed with pprof
+    pprof_profiles = [p for p in profiles if p != "trace"]
+    
+    for profile in pprof_profiles:
+        profile_file = os.path.join(bin_dir, f"{benchmark}_{profile}.out")
+        if not os.path.exists(profile_file):
+            print(f"Warning: Profile file not found: {profile_file}", file=sys.stderr)
+            continue
+            
+        output_file = os.path.join(text_dir, f"{benchmark}_{profile}.txt")
+        
+        try:
+            cmd = [
+                "go", "tool", "pprof",
+                "-nodecount=1000000",
+                "-cum",
+                "-edgefraction=0",
+                "-nodefraction=0",
+                "-top",
+                profile_file
+            ]
+            
+            # Run pprof and write output directly to file
+            with open(output_file, 'w') as f:
+                process = subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, text=True)
+                
+            if process.returncode != 0:
+                print(f"Error processing {profile} profile for {benchmark}: {process.stderr}", file=sys.stderr)
+                continue
+                
+            print(f"Processed {profile} profile for {benchmark}")
+            
+        except Exception as e:
+            print(f"Error processing {profile} profile for {benchmark}: {e}", file=sys.stderr)
+
+def main():
+    parser = argparse.ArgumentParser(description="CLI tool for benchmarking")
+    
+    parser.add_argument(
+        '-benchmarks',
+        type=str,
+        required=True,
+        metavar='BENCHMARKS',
+        help='Comma-separated list of benchmark types (e.g., -benchmarks "[BenchmarkGenPool,BenchmarkSyncPool]")'
+    )
+    
+    parser.add_argument(
+        '-profiles',
+        type=str,
+        required=True,
+        metavar='PROFILES',
+        help='Comma-separated list of profile types (e.g., -profiles "[cpu,memory,mutex]")'
+    )
+    
+    parser.add_argument(
+        '-tag',
+        type=str,
+        required=True,
+        metavar='TAG',
+        help='Tag for the benchmark run (e.g., -tag "test1")'
+    )
+    
+    parser.add_argument(
+        '-count',
+        type=int,
+        required=True,
+        metavar='COUNT',
+        help='Number of benchmark iterations (e.g., -count 5)'
+    )
+
+    args = parser.parse_args()
+    
+    # Parse the list arguments
+    benchmarks = parse_list_argument(args.benchmarks)
+    profiles = parse_list_argument(args.profiles)
+    
+    # Validate count
+    if args.count <= 0:
+        print("Error: count must be greater than 0", file=sys.stderr)
+        sys.exit(1)
+    
+    # Create bench and tag directories
+    create_bench_directories(args.tag)
+    
+    # Print the parsed arguments for verification
+    print("\nParsed arguments:")
+    print(f"Benchmarks: {benchmarks}")
+    print(f"Profiles: {profiles}")
+    print(f"Tag: {args.tag}")
+    print(f"Count: {args.count}")
+    
+    # Run each benchmark
+    print("\nRunning benchmarks...")
+    for benchmark in benchmarks:
+        run_benchmark(benchmark, profiles, args.count, args.tag)
+    
+    print("\nProcessing profiles...")
+    for benchmark in benchmarks:
+        process_profiles(benchmark, profiles, args.tag)
+    
+    print("\nAll benchmarks and profile processing completed successfully!")
+
+if __name__ == "__main__":
+    main()
