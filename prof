@@ -61,7 +61,7 @@ def create_bench_directories(tag: str):
             
     except Exception as e:
         print(f"Error creating directories: {e}", file=sys.stderr)
-        sys.exit(1)
+        raise  # Re-raise the exception to be caught by main()
 
 def parse_list_argument(arg: str) -> List[str]:
     """Parse a comma-separated string into a list, removing brackets if present."""
@@ -105,49 +105,43 @@ def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str):
     # Set up output file (goes in text directory)
     output_file = os.path.join(text_dir, f"{benchmark}.txt")
     
-    try:
-        # Run the benchmark and capture output
-        with open(output_file, 'w') as f:
-            process = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, text=True)
-            
-        if process.returncode != 0:
-            print(f"Error running benchmark {benchmark}:", file=sys.stderr)
-            with open(output_file, 'r') as f:
-                print(f.read(), file=sys.stderr)
-            sys.exit(1)
-            
-        # Move profile files to the bin directory if they exist
-        for profile in profiles:
-            if profile in profile_flags:
-                profile_file = profile_flags[profile].split('=')[1]
-                if os.path.exists(profile_file):
-                    # Wait for the profile file to be fully written
-                    if not wait_for_profile_file(profile_file):
-                        print(f"Warning: Profile file {profile_file} was not fully written within timeout", file=sys.stderr)
-                        continue
-                        
-                    # Add benchmark name to profile file to avoid overwriting
-                    new_profile_file = f"{benchmark}_{profile}.out"
-                    shutil.move(profile_file, os.path.join(bin_dir, new_profile_file))
+    # Run the benchmark and capture output
+    with open(output_file, 'w') as f:
+        process = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, text=True)
         
-        # Look for any .test files in the current directory
-        for item in os.listdir('.'):
-            if item.endswith('.test'):
-                # Wait for the test file to be fully written
-                if not wait_for_profile_file(item):
-                    print(f"Warning: Test file {item} was not fully written within timeout", file=sys.stderr)
+    if process.returncode != 0:
+        with open(output_file, 'r') as f:
+            error_output = f.read()
+        raise RuntimeError(f"Benchmark {benchmark} failed:\n{error_output}")
+        
+    # Move profile files to the bin directory if they exist
+    for profile in profiles:
+        if profile in profile_flags:
+            profile_file = profile_flags[profile].split('=')[1]
+            if os.path.exists(profile_file):
+                # Wait for the profile file to be fully written
+                if not wait_for_profile_file(profile_file):
+                    print(f"Warning: Profile file {profile_file} was not fully written within timeout", file=sys.stderr)
                     continue
                     
-                # Add benchmark name to test file to avoid overwriting
-                new_test_file = f"{benchmark}_{item}"
-                shutil.move(item, os.path.join(bin_dir, new_test_file))
-                print(f"Moved test file: {item} -> {new_test_file}")
-        
-        print(f"Completed benchmark: {benchmark}")
-        
-    except Exception as e:
-        print(f"Error running benchmark {benchmark}: {e}", file=sys.stderr)
-        sys.exit(1)
+                # Add benchmark name to profile file to avoid overwriting
+                new_profile_file = f"{benchmark}_{profile}.out"
+                shutil.move(profile_file, os.path.join(bin_dir, new_profile_file))
+    
+    # Look for any .test files in the current directory
+    for item in os.listdir('.'):
+        if item.endswith('.test'):
+            # Wait for the test file to be fully written
+            if not wait_for_profile_file(item):
+                print(f"Warning: Test file {item} was not fully written within timeout", file=sys.stderr)
+                continue
+                
+            # Add benchmark name to test file to avoid overwriting
+            new_test_file = f"{benchmark}_{item}"
+            shutil.move(item, os.path.join(bin_dir, new_test_file))
+            print(f"Moved test file: {item} -> {new_test_file}")
+    
+    print(f"Completed benchmark: {benchmark}")
 
 def process_profiles(benchmark: str, profiles: List[str], tag: str):
     """Process profile files using go tool pprof."""
@@ -182,13 +176,23 @@ def process_profiles(benchmark: str, profiles: List[str], tag: str):
                 process = subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, text=True)
                 
             if process.returncode != 0:
-                print(f"Error processing {profile} profile for {benchmark}: {process.stderr}", file=sys.stderr)
-                continue
+                raise RuntimeError(f"Error processing {profile} profile for {benchmark}: {process.stderr}")
                 
             print(f"Processed {profile} profile for {benchmark}")
             
         except Exception as e:
             print(f"Error processing {profile} profile for {benchmark}: {e}", file=sys.stderr)
+            raise  # Re-raise the exception to be caught by main()
+
+def cleanup_tag_directory(tag: str):
+    """Clean up the tag directory if it exists."""
+    tag_dir = os.path.join("bench", tag)
+    if os.path.exists(tag_dir):
+        try:
+            shutil.rmtree(tag_dir)
+            print(f"Cleaned up tag directory: {tag_dir}")
+        except Exception as e:
+            print(f"Error cleaning up tag directory {tag_dir}: {e}", file=sys.stderr)
 
 def main():
     parser = argparse.ArgumentParser(description="CLI tool for benchmarking")
@@ -234,28 +238,36 @@ def main():
     # Validate count
     if args.count <= 0:
         print("Error: count must be greater than 0", file=sys.stderr)
+        cleanup_tag_directory(args.tag)
         sys.exit(1)
     
-    # Create bench and tag directories
-    create_bench_directories(args.tag)
-    
-    # Print the parsed arguments for verification
-    print("\nParsed arguments:")
-    print(f"Benchmarks: {benchmarks}")
-    print(f"Profiles: {profiles}")
-    print(f"Tag: {args.tag}")
-    print(f"Count: {args.count}")
-    
-    # Run each benchmark
-    print("\nRunning benchmarks...")
-    for benchmark in benchmarks:
-        run_benchmark(benchmark, profiles, args.count, args.tag)
-    
-    print("\nProcessing profiles...")
-    for benchmark in benchmarks:
-        process_profiles(benchmark, profiles, args.tag)
-    
-    print("\nAll benchmarks and profile processing completed successfully!")
+    try:
+        # Create bench and tag directories
+        create_bench_directories(args.tag)
+        
+        # Print the parsed arguments for verification
+        print("\nParsed arguments:")
+        print(f"Benchmarks: {benchmarks}")
+        print(f"Profiles: {profiles}")
+        print(f"Tag: {args.tag}")
+        print(f"Count: {args.count}")
+        
+        # Run each benchmark
+        print("\nRunning benchmarks...")
+        for benchmark in benchmarks:
+            run_benchmark(benchmark, profiles, args.count, args.tag)
+        
+        print("\nProcessing profiles...")
+        for benchmark in benchmarks:
+            process_profiles(benchmark, profiles, args.tag)
+        
+        print("\nAll benchmarks and profile processing completed successfully!")
+        
+    except Exception as e:
+        print(f"\nError: {e}", file=sys.stderr)
+        print("Cleaning up tag directory...")
+        cleanup_tag_directory(args.tag)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
