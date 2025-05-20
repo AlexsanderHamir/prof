@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "prof-benchmark"
+version = "0.1.0"
+description = "A CLI tool for benchmarking Go code with profile analysis"
+requires-python = ">=3.8"
+dependencies = [
+    "pyinstaller>=6.3.0",
+]
+
+[project.scripts]
+prof = "prof:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "prof",
+    "AI_client.py",
+] 

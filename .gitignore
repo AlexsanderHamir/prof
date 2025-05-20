@@ -1,2 +1,6 @@
 tasks.md
 version.md
+.env
+venv/
+dist/
+build/
