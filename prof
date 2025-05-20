@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from dotenv import load_dotenv
+load_dotenv()
 
 import os
 import argparse
@@ -8,7 +10,8 @@ import subprocess
 import time
 import re
 import json
-from typing import List, Set, Dict
+from typing import List, Dict
+
 
 def clean_directory(directory: str):
     """Delete all contents of a directory if it exists."""
@@ -152,7 +155,7 @@ def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str):
     print(f"Completed benchmark: {benchmark}")
 
 def process_profiles(benchmark: str, profiles: List[str], tag: str):
-    """Process profile files using go tool pprof."""
+    """Process profile files using go tool pprof and generate PNG visualizations."""
     tag_dir = os.path.join("bench", tag)
     bin_dir = os.path.join(tag_dir, "bin", benchmark)
     text_dir = os.path.join(tag_dir, "text", benchmark)
@@ -169,6 +172,7 @@ def process_profiles(benchmark: str, profiles: List[str], tag: str):
         output_file = os.path.join(text_dir, f"{benchmark}_{profile}.txt")
         
         try:
+            # Generate text profile analysis
             cmd = [
                 "go", "tool", "pprof",
                 "-nodecount=1000000",
@@ -187,6 +191,19 @@ def process_profiles(benchmark: str, profiles: List[str], tag: str):
                 raise RuntimeError(f"Error processing {profile} profile for {benchmark}: {process.stderr}")
                 
             print(f"Processed {profile} profile for {benchmark}")
+            
+            # Generate PNG visualization in the appropriate profile_functions directory
+            profile_functions_dir = os.path.join(tag_dir, f"{profile}_functions", benchmark)
+            png_file = os.path.join(profile_functions_dir, f"{benchmark}_{profile}.png")
+            png_cmd = ["go", "tool", "pprof", "-png", profile_file]
+            
+            with open(png_file, 'wb') as f:
+                process = subprocess.run(png_cmd, stdout=f, stderr=subprocess.PIPE)
+                
+            if process.returncode != 0:
+                print(f"Warning: Failed to generate PNG for {profile} profile of {benchmark}: {process.stderr.decode()}", file=sys.stderr)
+            else:
+                print(f"Generated PNG visualization for {profile} profile of {benchmark} in {profile_functions_dir}")
             
         except Exception as e:
             print(f"Error processing {profile} profile for {benchmark}: {e}", file=sys.stderr)
@@ -368,7 +385,22 @@ def main():
         help='JSON-like string containing benchmark-specific configurations. Example: \'{"BenchmarkGenPool":{"prefix":"github.com/AlexsanderHamir/GenPool","ignore":"func1,performWorkload"},"BenchmarkSyncPool":{"prefix":"sync"}}\''
     )
 
+    parser.add_argument(
+        '-analyze',
+        action='store_true',
+        help='Run AI analysis on the benchmark results after completion'
+    )
+
     args = parser.parse_args()
+    
+    # Only import AI_client if analyze flag is set
+    if args.analyze:
+        try:
+            from AI_client import analyze_prof_output
+        except ImportError as e:
+            print(f"Error: Could not import AI analysis module: {e}", file=sys.stderr)
+            print("Please ensure all required dependencies are installed", file=sys.stderr)
+            sys.exit(1)
     
     # Parse the list arguments
     benchmarks = parse_list_argument(args.benchmarks)
@@ -429,6 +461,19 @@ def main():
         analyze_profile_functions(args.tag, profiles, benchmarks, benchmark_config)
         
         print("\nAll benchmarks and profile processing completed successfully!")
+        
+        # Run AI analysis if requested
+        if args.analyze:
+            print("\nStarting AI analysis of benchmark results...")
+            try:
+                analyze_prof_output(args.tag)
+                print("\nAI analysis completed successfully!")
+            except ValueError as e:
+                print(f"\nError: {e}", file=sys.stderr)
+                print("Please set the DEEPSEEK_API_KEY environment variable to use AI analysis", file=sys.stderr)
+            except Exception as e:
+                print(f"\nError during AI analysis: {e}", file=sys.stderr)
+                # Don't exit with error, as the benchmarks were successful
         
     except Exception as e:
         print(f"\nError: {e}", file=sys.stderr)
