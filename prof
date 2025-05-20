@@ -6,7 +6,9 @@ import sys
 import shutil
 import subprocess
 import time
-from typing import List
+import re
+import json
+from typing import List, Set, Dict
 
 def clean_directory(directory: str):
     """Delete all contents of a directory if it exists."""
@@ -24,9 +26,10 @@ def clean_directory(directory: str):
             print(f"Error cleaning directory {directory}: {e}", file=sys.stderr)
             sys.exit(1)
 
-def create_bench_directories(tag: str):
+def create_bench_directories(tag: str, benchmarks: List[str]):
     """Create 'bench' directory and a subdirectory with the tag name if they don't exist.
-    Within the tag directory, create 'bin' and 'text' subdirectories and a description.txt file."""
+    Within the tag directory, create 'bin' and 'text' subdirectories with benchmark-specific subdirectories,
+    and a description.txt file."""
     bench_dir = "bench"
     tag_dir = os.path.join(bench_dir, tag)
     bin_dir = os.path.join(tag_dir, "bin")
@@ -46,17 +49,22 @@ def create_bench_directories(tag: str):
             print(f"Directory '{tag_dir}' already exists, cleaning it...")
             clean_directory(tag_dir)
         
-        # Create the directory structure
+        # Create the base directory structure
         os.makedirs(bin_dir)
         os.makedirs(text_dir)
+        
+        # Create benchmark-specific subdirectories
+        for benchmark in benchmarks:
+            os.makedirs(os.path.join(bin_dir, benchmark))
+            os.makedirs(os.path.join(text_dir, benchmark))
         
         # Create empty description.txt file
         with open(description_file, 'w') as f:
             pass  # Create empty file
             
         print(f"Created directory structure: {tag_dir}")
-        print(f"  - {bin_dir}")
-        print(f"  - {text_dir}")
+        print(f"  - {bin_dir} (with benchmark subdirectories)")
+        print(f"  - {text_dir} (with benchmark subdirectories)")
         print(f"  - {description_file}")
             
     except Exception as e:
@@ -83,7 +91,7 @@ def wait_for_profile_file(profile_file: str, timeout: int = 5) -> bool:
 def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str):
     """Run a single benchmark with specified profiles and save output."""
     # Construct the benchmark command
-    cmd = ["go", "test", "-v", "-run=^$", f"-bench=^{benchmark}$", "-benchmem", f"-count={count}"]
+    cmd = ["go", "test", "-run=^$", f"-bench=^{benchmark}$", "-benchmem", f"-count={count}"]
     
     # Add profile flags based on requested profiles
     profile_flags = {
@@ -99,10 +107,10 @@ def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str):
     
     # Set up output directories
     tag_dir = os.path.join("bench", tag)
-    text_dir = os.path.join(tag_dir, "text")
-    bin_dir = os.path.join(tag_dir, "bin")
+    text_dir = os.path.join(tag_dir, "text", benchmark)
+    bin_dir = os.path.join(tag_dir, "bin", benchmark)
     
-    # Set up output file (goes in text directory)
+    # Set up output file (goes in benchmark-specific text directory)
     output_file = os.path.join(text_dir, f"{benchmark}.txt")
     
     # Run the benchmark and capture output
@@ -114,7 +122,7 @@ def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str):
             error_output = f.read()
         raise RuntimeError(f"Benchmark {benchmark} failed:\n{error_output}")
         
-    # Move profile files to the bin directory if they exist
+    # Move profile files to the benchmark-specific bin directory if they exist
     for profile in profiles:
         if profile in profile_flags:
             profile_file = profile_flags[profile].split('=')[1]
@@ -146,8 +154,8 @@ def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str):
 def process_profiles(benchmark: str, profiles: List[str], tag: str):
     """Process profile files using go tool pprof."""
     tag_dir = os.path.join("bench", tag)
-    bin_dir = os.path.join(tag_dir, "bin")
-    text_dir = os.path.join(tag_dir, "text")
+    bin_dir = os.path.join(tag_dir, "bin", benchmark)
+    text_dir = os.path.join(tag_dir, "text", benchmark)
     
     # Skip trace profile as it's not processed with pprof
     pprof_profiles = [p for p in profiles if p != "trace"]
@@ -194,6 +202,135 @@ def cleanup_tag_directory(tag: str):
         except Exception as e:
             print(f"Error cleaning up tag directory {tag_dir}: {e}", file=sys.stderr)
 
+def create_profile_function_directories(tag: str, profiles: List[str], benchmarks: List[str]):
+    """Create directories for profile function analysis."""
+    tag_dir = os.path.join("bench", tag)
+    
+    # Skip trace profile
+    pprof_profiles = [p for p in profiles if p != "trace"]
+    
+    for profile in pprof_profiles:
+        profile_dir = os.path.join(tag_dir, f"{profile}_functions")
+        os.makedirs(profile_dir, exist_ok=True)
+        
+        # Create benchmark subdirectories
+        for benchmark in benchmarks:
+            benchmark_dir = os.path.join(profile_dir, benchmark)
+            os.makedirs(benchmark_dir, exist_ok=True)
+            
+    print("Created profile function directories")
+
+def parse_benchmark_config(config_str: str) -> Dict[str, Dict[str, str]]:
+    """Parse a JSON-like string containing benchmark-specific configurations.
+    Example format: '{"BenchmarkGenPool":{"prefix":"github.com/AlexsanderHamir/GenPool","ignore":"func1,performWorkload"}}'"""
+    try:
+        # Replace single quotes with double quotes for valid JSON
+        config_str = config_str.replace("'", '"')
+        config = json.loads(config_str)
+        
+        # Validate the structure
+        for benchmark, settings in config.items():
+            if not isinstance(settings, dict):
+                raise ValueError(f"Invalid settings format for benchmark {benchmark}")
+            if "prefix" not in settings:
+                raise ValueError(f"Missing 'prefix' for benchmark {benchmark}")
+            if "ignore" in settings and not isinstance(settings["ignore"], str):
+                raise ValueError(f"'ignore' must be a string for benchmark {benchmark}")
+                
+        return config
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON format: {e}")
+    except Exception as e:
+        raise ValueError(f"Error parsing benchmark config: {e}")
+
+def analyze_profile_functions(tag: str, profiles: List[str], benchmarks: List[str], 
+                            benchmark_config: Dict[str, Dict[str, str]] = None):
+    """Analyze profile files and extract function information from existing profile text files.
+    If benchmark_config is None, analyze all functions for all benchmarks."""
+    tag_dir = os.path.join("bench", tag)
+    bin_dir = os.path.join(tag_dir, "bin")
+    text_dir = os.path.join(tag_dir, "text")
+    
+    # Skip trace profile
+    pprof_profiles = [p for p in profiles if p != "trace"]
+    
+    for profile in pprof_profiles:
+        for benchmark in benchmarks:
+            # Get configuration for this benchmark if available
+            config = benchmark_config.get(benchmark, {}) if benchmark_config else {}
+            function_prefix = config.get("prefix")
+            ignore_functions = set(parse_list_argument(config.get("ignore", ""))) if config.get("ignore") else set()
+            
+            # Read the profile text file that contains the function list
+            # Use benchmark-specific subdirectory
+            profile_text_file = os.path.join(text_dir, benchmark, f"{benchmark}_{profile}.txt")
+            if not os.path.exists(profile_text_file):
+                print(f"Warning: Profile text file not found: {profile_text_file}", file=sys.stderr)
+                continue
+                
+            try:
+                # Read and process the profile text file
+                functions = set()
+                found_header = False
+                
+                with open(profile_text_file, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        
+                        # Skip empty lines
+                        if not line:
+                            continue
+                            
+                        # Look for the header line
+                        if "flat  flat%   sum%        cum   cum%" in line:
+                            found_header = True
+                            continue
+                            
+                        # Only process lines after the header
+                        if not found_header:
+                            continue
+                            
+                        # Split the line by whitespace and get the last column (function name)
+                        parts = line.split()
+                        if len(parts) < 6:  # Need at least 6 columns (flat, flat%, sum%, cum, cum%, function)
+                            continue
+                            
+                        # Get the function name (everything after the last column)
+                        func_name = " ".join(parts[5:])
+                        
+                        # If prefix is specified, only process matching functions
+                        if function_prefix and function_prefix not in func_name:
+                            continue
+                            
+                        # Extract just the function name after the last dot
+                        match = re.search(r'\.([^.(]+)(?:\([^)]*\))?$', func_name)
+                        if match:
+                            func_name = match.group(1).strip().replace(" ", "")
+                            if func_name and func_name not in ignore_functions:
+                                functions.add(func_name)
+                
+                # For each function found, run detailed analysis
+                for func in functions:
+                    output_file = os.path.join(tag_dir, f"{profile}_functions", benchmark, f"{func}.txt")
+                    # Use benchmark-specific subdirectory for profile file
+                    profile_file = os.path.join(bin_dir, benchmark, f"{benchmark}_{profile}.out")
+                    
+                    # Run pprof with -list for the specific function
+                    cmd = ["go", "tool", "pprof", f"-list={func}", profile_file]
+                    
+                    with open(output_file, 'w') as f:
+                        process = subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, text=True)
+                        
+                    if process.returncode != 0:
+                        print(f"Error analyzing function {func} in {profile_file}: {process.stderr}", file=sys.stderr)
+                        continue
+                        
+                    print(f"Analyzed function {func} for {benchmark} ({profile})")
+                    
+            except Exception as e:
+                print(f"Error processing {profile_text_file}: {e}", file=sys.stderr)
+                continue
+
 def main():
     parser = argparse.ArgumentParser(description="CLI tool for benchmarking")
     
@@ -201,7 +338,6 @@ def main():
         '-benchmarks',
         type=str,
         required=True,
-        metavar='BENCHMARKS',
         help='Comma-separated list of benchmark types (e.g., -benchmarks "[BenchmarkGenPool,BenchmarkSyncPool]")'
     )
     
@@ -209,7 +345,6 @@ def main():
         '-profiles',
         type=str,
         required=True,
-        metavar='PROFILES',
         help='Comma-separated list of profile types (e.g., -profiles "[cpu,memory,mutex]")'
     )
     
@@ -217,7 +352,6 @@ def main():
         '-tag',
         type=str,
         required=True,
-        metavar='TAG',
         help='Tag for the benchmark run (e.g., -tag "test1")'
     )
     
@@ -225,8 +359,13 @@ def main():
         '-count',
         type=int,
         required=True,
-        metavar='COUNT',
         help='Number of benchmark iterations (e.g., -count 5)'
+    )
+
+    parser.add_argument(
+        '-benchmark-config',
+        type=str,
+        help='JSON-like string containing benchmark-specific configurations. Example: \'{"BenchmarkGenPool":{"prefix":"github.com/AlexsanderHamir/GenPool","ignore":"func1,performWorkload"},"BenchmarkSyncPool":{"prefix":"sync"}}\''
     )
 
     args = parser.parse_args()
@@ -235,6 +374,19 @@ def main():
     benchmarks = parse_list_argument(args.benchmarks)
     profiles = parse_list_argument(args.profiles)
     
+    # Parse benchmark configuration if provided
+    benchmark_config = None
+    if args.benchmark_config:
+        try:
+            benchmark_config = parse_benchmark_config(args.benchmark_config)
+            # Validate that all configured benchmarks exist in the benchmarks list
+            invalid_configs = set(benchmark_config.keys()) - set(benchmarks)
+            if invalid_configs:
+                print(f"Warning: Configurations provided for non-existent benchmarks: {', '.join(invalid_configs)}", file=sys.stderr)
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+    
     # Validate count
     if args.count <= 0:
         print("Error: count must be greater than 0", file=sys.stderr)
@@ -242,8 +394,11 @@ def main():
         sys.exit(1)
     
     try:
-        # Create bench and tag directories
-        create_bench_directories(args.tag)
+        # Create bench and tag directories with benchmark-specific subdirectories
+        create_bench_directories(args.tag, benchmarks)
+        
+        # Create profile function directories
+        create_profile_function_directories(args.tag, profiles, benchmarks)
         
         # Print the parsed arguments for verification
         print("\nParsed arguments:")
@@ -251,6 +406,15 @@ def main():
         print(f"Profiles: {profiles}")
         print(f"Tag: {args.tag}")
         print(f"Count: {args.count}")
+        if benchmark_config:
+            print("\nBenchmark configurations:")
+            for benchmark, config in benchmark_config.items():
+                print(f"  {benchmark}:")
+                print(f"    Prefix: {config['prefix']}")
+                if config.get("ignore"):
+                    print(f"    Ignore: {config['ignore']}")
+        else:
+            print("\nNo benchmark configuration provided - analyzing all functions")
         
         # Run each benchmark
         print("\nRunning benchmarks...")
@@ -260,6 +424,9 @@ def main():
         print("\nProcessing profiles...")
         for benchmark in benchmarks:
             process_profiles(benchmark, profiles, args.tag)
+            
+        print("\nAnalyzing profile functions...")
+        analyze_profile_functions(args.tag, profiles, benchmarks, benchmark_config)
         
         print("\nAll benchmarks and profile processing completed successfully!")
         
