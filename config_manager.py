@@ -24,7 +24,6 @@ class ConfigManager:
     CONFIG_DIR = Path.home() / ".prof_benchmark"
     CONFIG_FILE = CONFIG_DIR / "config.json"
     DEFAULT_SYSTEM_PROMPT_TEMPLATE = "Optional: Your system prompt here"
-    _cached_config = None
     
     # Handle both development and PyInstaller environments
     if getattr(sys, 'frozen', False):
@@ -120,16 +119,15 @@ class ConfigManager:
     
     @classmethod
     def load(cls) -> Config:
-        """Load the configuration from file or return cached configuration if available."""
-        if cls._cached_config is not None:
-            return cls._cached_config
-            
+        """Load the configuration from file."""
         if not cls.CONFIG_FILE.exists():
             raise ValueError(
                 "Configuration not found. Please run setup first using:\n"
                 "prof setup --config path/to/your/config.json\n"
                 "or create a template using:\n"
-                "prof setup --create-template and then run the command: prof setup --config path/to/your/config.json"
+                "prof setup --create-template \n"
+                "and then run the command: \n"
+                "prof setup --config path/to/your/config.json"
             )
         
         try:
@@ -137,12 +135,11 @@ class ConfigManager:
                 config_data = json.load(f)
             
             model_config = ModelConfig(**config_data["model_config"])
-            cls._cached_config = Config(
+            return Config(
                 api_key=config_data["api_key"],
                 base_url=config_data["base_url"],
                 model_config=model_config
             )
-            return cls._cached_config
         except Exception as e:
             raise ValueError(f"Error loading configuration: {str(e)}")
     
@@ -165,6 +162,24 @@ class ConfigManager:
             return False
     
     @classmethod
+    def clean_config(cls) -> None:
+        """Remove the configuration file if it exists.
+        
+        This method will delete the configuration file from the system.
+        Use with caution as this will require reconfiguration to use the application again.
+        """
+        if not cls.CONFIG_FILE.exists():
+            print("No configuration file found to clean.")
+            return
+            
+        try:
+            cls.CONFIG_FILE.unlink()
+            print(f"✓ Configuration file successfully removed from: {cls.CONFIG_FILE}")
+            print("To reconfigure, run: prof setup --config path/to/your/config.json")
+        except Exception as e:
+            raise ValueError(f"Error removing configuration file: {str(e)}")
+    
+    @classmethod
     def clear_cache(cls) -> None:
-        """Clear the cached configuration. Useful for testing or when config changes."""
-        cls._cached_config = None 
+        """This method is deprecated as caching has been removed."""
+        pass 
