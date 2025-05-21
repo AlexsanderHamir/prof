@@ -38,6 +38,7 @@ def build_binary():
         "--name", "prof",  # Name of the output binary
         "--clean",  # Clean PyInstaller cache
         "--noconfirm",  # Replace existing spec file
+        "--add-data", "templates:templates",  # Include templates directory
         "prof"  # The main script
     ]
     
