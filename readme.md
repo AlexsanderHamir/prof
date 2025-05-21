@@ -1,7 +1,3 @@
-# Prof Benchmark Tool
-
-A CLI tool for benchmarking Go code with profile analysis and AI-powered insights.
-
 ## What We're Building
 
 Go's built-in profiling tools (`pprof`) are powerful but can be complex to use effectively. The Prof Benchmark Tool aims to simplify this process by providing an intuitive interface for running benchmarks and analyzing profiles, with AI assistance to help interpret the results.
