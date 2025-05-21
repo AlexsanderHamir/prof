@@ -8,11 +8,17 @@ version = "0.1.0"
 description = "A CLI tool for benchmarking Go code with profile analysis"
 requires-python = ">=3.8"
 dependencies = [
-    "pyinstaller>=6.3.0",
+    "openai>=1.79.0",
+    "python-dotenv>=1.1.0",
 ]
 
 [project.scripts]
 prof = "prof:main"
+
+[project.optional-dependencies]
+dev = [
+    "pyinstaller>= 6.13.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]
@@ -21,4 +27,6 @@ packages = ["."]
 include = [
     "prof",
     "AI_client.py",
+    "benchmark_helpers.py",
+    "cli_helpers.py"
 ] 
