@@ -1,17 +1,7 @@
-import os
 import base64
 from pathlib import Path
 from typing import Dict, List, Optional
-from openai import OpenAI
-
-api_key = os.getenv("DEEPSEEK_API_KEY")
-if not api_key:
-    raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
-
-client = OpenAI(
-    api_key=api_key,
-    base_url="https://api.deepseek.com"
-)
+from config_manager import ConfigManager
 
 def read_profile_text_file(file_path: str) -> str:
     """Read and return the contents of a profile text file."""
@@ -95,60 +85,15 @@ def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
     """
     files = get_benchmark_files(tag, benchmark_name, profile_type)
     
-    # Prepare the message for the model with the comprehensive analysis guide
-    system_prompt = """You are an expert code performance analyzer. Write a comprehensive essay-style analysis of the benchmark profile data following this structure:
-
-Introduction:
-- Brief overview of the benchmark and profile type
-- Key metrics and observations at a high level
-
-Resource Consumption Analysis:
-- Detailed breakdown of resource usage between library, benchmark function, and profiling framework
-- Percentages and absolute values with context
-- Identification of unexpected resource allocations
-
-Garbage Collection Impact:
-- Analysis of GC activity patterns in time and memory
-- Identification of GC pressure points
-- Impact of GC on overall performance
-
-Key Function Performance:
-- Analysis of top resource-consuming functions
-- Comparison of flat time vs cumulative time
-- Identification of performance bottlenecks
-
-Runtime Behavior:
-- Analysis of system behavior during execution
-- Identification of runtime patterns
-- System-level implications
-
-System vs User Code Analysis:
-- Distribution of time between system calls and user code
-- Patterns across different benchmark phases
-- System call efficiency analysis
-
-Function Call Patterns:
-- Analysis of high-frequency function calls
-- Identification of inefficient patterns
-- Optimization opportunities
-
-Synchronization Analysis:
-- Analysis of lock and channel contention
-- Identification of synchronization bottlenecks
-- Concurrency improvement suggestions
-
-Call Stack Analysis:
-- Patterns in the call stack
-- Potential optimization paths
-- Structural improvement opportunities
-
-Conclusions and Recommendations:
-- Summary of key findings
-- Prioritized list of improvement areas
-- Specific, actionable recommendations
-- Long-term optimization strategies
-
-Format the analysis as a well-structured essay with clear sections, proper transitions, and both quantitative data and qualitative insights."""
+    # Get configuration
+    config = ConfigManager.load()
+    
+    # Use configured system prompt or default, ignoring the template value
+    if (config.model_config.system_prompt 
+        and config.model_config.system_prompt != ConfigManager.DEFAULT_SYSTEM_PROMPT_TEMPLATE):
+        system_prompt = config.model_config.system_prompt
+    else:
+        system_prompt = ConfigManager.get_default_system_prompt()
 
     user_prompt = f"""Benchmark: {benchmark_name}
 Profile Type: {profile_type}
@@ -167,12 +112,13 @@ Please provide a comprehensive essay-style analysis following the structure abov
     ]
     
     try:
+        client = ConfigManager.get_client()
         response = client.chat.completions.create(
-            model="deepseek-reasoner",
+            model=config.model_config.model,
             messages=messages,
-            max_tokens=4000,  # Increased for essay format
-            temperature=0.2,  # Lower temperature for more precise analysis
-            top_p=0.95       # High top_p for more focused responses
+            max_tokens=config.model_config.max_tokens,
+            temperature=config.model_config.temperature,
+            top_p=config.model_config.top_p
         )
         
         analysis = response.choices[0].message.content

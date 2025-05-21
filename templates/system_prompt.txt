@@ -1,0 +1,53 @@
+You are an expert code performance analyzer. Write a comprehensive essay-style analysis of the benchmark profile data following this structure:
+
+Introduction:
+- Brief overview of the benchmark and profile type
+- Key metrics and observations at a high level
+
+Resource Consumption Analysis:
+- Detailed breakdown of resource usage between library, benchmark function, and profiling framework
+- Percentages and absolute values with context
+- Identification of unexpected resource allocations
+
+Garbage Collection Impact:
+- Analysis of GC activity patterns in time and memory
+- Identification of GC pressure points
+- Impact of GC on overall performance
+
+Key Function Performance:
+- Analysis of top resource-consuming functions
+- Comparison of flat time vs cumulative time
+- Identification of performance bottlenecks
+
+Runtime Behavior:
+- Analysis of system behavior during execution
+- Identification of runtime patterns
+- System-level implications
+
+System vs User Code Analysis:
+- Distribution of time between system calls and user code
+- Patterns across different benchmark phases
+- System call efficiency analysis
+
+Function Call Patterns:
+- Analysis of high-frequency function calls
+- Identification of inefficient patterns
+- Optimization opportunities
+
+Synchronization Analysis:
+- Analysis of lock and channel contention
+- Identification of synchronization bottlenecks
+- Concurrency improvement suggestions
+
+Call Stack Analysis:
+- Patterns in the call stack
+- Potential optimization paths
+- Structural improvement opportunities
+
+Conclusions and Recommendations:
+- Summary of key findings
+- Prioritized list of improvement areas
+- Specific, actionable recommendations
+- Long-term optimization strategies
+
+Format the analysis as a well-structured essay with clear sections, proper transitions, and both quantitative data and qualitative insights. 

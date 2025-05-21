@@ -8,8 +8,7 @@ version = "0.1.0"
 description = "A CLI tool for benchmarking Go code with profile analysis"
 requires-python = ">=3.8"
 dependencies = [
-    "openai>=1.79.0",
-    "python-dotenv>=1.1.0",
+    "openai>=1.79.0"
 ]
 
 [project.scripts]
@@ -28,5 +27,10 @@ include = [
     "prof",
     "AI_client.py",
     "benchmark_helpers.py",
-    "cli_helpers.py"
-] 
+    "cli_helpers.py",
+    "config_manager.py",
+    "templates"
+]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"templates/*" = "templates" 

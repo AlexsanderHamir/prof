@@ -1,0 +1,170 @@
+import os
+import json
+from pathlib import Path
+from typing import Optional
+from dataclasses import dataclass
+from openai import OpenAI
+import sys
+
+@dataclass
+class ModelConfig:
+    model: str
+    max_tokens: int
+    temperature: float
+    top_p: float
+    system_prompt: Optional[str] = None
+
+@dataclass
+class Config:
+    api_key: str
+    base_url: str
+    model_config: ModelConfig
+
+class ConfigManager:
+    CONFIG_DIR = Path.home() / ".prof_benchmark"
+    CONFIG_FILE = CONFIG_DIR / "config.json"
+    DEFAULT_SYSTEM_PROMPT_TEMPLATE = "Optional: Your system prompt here"
+    _cached_config = None
+    
+    # Handle both development and PyInstaller environments
+    if getattr(sys, 'frozen', False):
+        # Running in a PyInstaller bundle
+        TEMPLATES_DIR = Path(sys._MEIPASS) / "templates"
+    else:
+        # Running in normal Python environment
+        TEMPLATES_DIR = Path(__file__).parent / "templates"
+    
+    SYSTEM_PROMPT_FILE = TEMPLATES_DIR / "system_prompt.txt"
+    
+    @classmethod
+    def _load_default_system_prompt(cls) -> str:
+        try:
+            with open(cls.SYSTEM_PROMPT_FILE, 'r') as f:
+                return f.read().strip()
+        except Exception as e:
+            raise ValueError(f"Error loading default system prompt template: {str(e)}")
+    
+    @classmethod
+    def get_default_system_prompt(cls) -> str:
+        if not hasattr(cls, '_default_system_prompt'):
+            cls._default_system_prompt = cls._load_default_system_prompt()
+        return cls._default_system_prompt
+    
+    @classmethod
+    def create_template(cls, output_path: Optional[str] = None) -> None:
+        template = {
+            "api_key": "your-api-key-here",
+            "base_url": "https://api.openai.com/v1",
+            "model_config": {
+                "model": "gpt-4-turbo-preview",
+                "max_tokens": 4096,
+                "temperature": 0.7,
+                "top_p": 1.0,
+                "system_prompt": cls.DEFAULT_SYSTEM_PROMPT_TEMPLATE
+            }
+        }
+        
+        if output_path:
+            template_path = Path(output_path)
+        else:
+            template_path = Path.cwd() / "config_template.json"
+        
+        with open(template_path, 'w') as f:
+            json.dump(template, f, indent=4)
+        
+        print(f"\nTemplate configuration file created at: {template_path}")
+        print("Please edit this file with your configuration and run 'prof setup --config path/to/your/config.json'")
+    
+    @classmethod
+    def setup_from_file(cls, config_path: str) -> None:
+        try:
+            with open(config_path, 'r') as f:
+                config_data = json.load(f)
+        except Exception as e:
+            raise ValueError(f"Error reading configuration file: {str(e)}")
+        
+        required_fields = ["api_key", "base_url", "model_config"]
+        for field in required_fields:
+            if field not in config_data:
+                raise ValueError(f"Missing required field: {field}")
+        
+        model_config_fields = ["model", "max_tokens", "temperature", "top_p"]
+        for field in model_config_fields:
+            if field not in config_data["model_config"]:
+                raise ValueError(f"Missing required field in model_config: {field}")
+        
+        cls.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+            
+        try:
+            client = OpenAI(
+                api_key=config_data["api_key"],
+                base_url=config_data["base_url"]
+            )
+
+            # Test the connection with a minimal request
+            client.chat.completions.create(
+                model=config_data["model_config"]["model"],
+                messages=[{"role": "user", "content": "test"}],
+                max_tokens=5
+            )
+        except Exception as e:
+            raise ValueError(f"Configuration validation failed: {str(e)}")
+        
+        # Save configuration making it restrictive
+        with open(cls.CONFIG_FILE, 'w') as f:
+            json.dump(config_data, f, indent=2)
+        
+        # Set restrictive permissions on the config file
+        os.chmod(cls.CONFIG_FILE, 0o600)
+        print(f"\nConfiguration saved to: {cls.CONFIG_FILE}")
+    
+    @classmethod
+    def load(cls) -> Config:
+        """Load the configuration from file or return cached configuration if available."""
+        if cls._cached_config is not None:
+            return cls._cached_config
+            
+        if not cls.CONFIG_FILE.exists():
+            raise ValueError(
+                "Configuration not found. Please run setup first using:\n"
+                "prof setup --config path/to/your/config.json\n"
+                "or create a template using:\n"
+                "prof setup --create-template and then run the command: prof setup --config path/to/your/config.json"
+            )
+        
+        try:
+            with open(cls.CONFIG_FILE, 'r') as f:
+                config_data = json.load(f)
+            
+            model_config = ModelConfig(**config_data["model_config"])
+            cls._cached_config = Config(
+                api_key=config_data["api_key"],
+                base_url=config_data["base_url"],
+                model_config=model_config
+            )
+            return cls._cached_config
+        except Exception as e:
+            raise ValueError(f"Error loading configuration: {str(e)}")
+    
+    @classmethod
+    def get_client(cls) -> OpenAI:
+        """Get an OpenAI client configured with the current settings."""
+        config = cls.load()
+        return OpenAI(
+            api_key=config.api_key,
+            base_url=config.base_url
+        )
+    
+    @classmethod
+    def is_configured(cls) -> bool:
+        """Check if the configuration exists and is valid."""
+        try:
+            cls.load()
+            return True
+        except ValueError:
+            return False
+    
+    @classmethod
+    def clear_cache(cls) -> None:
+        """Clear the cached configuration. Useful for testing or when config changes."""
+        cls._cached_config = None 
