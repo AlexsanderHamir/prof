@@ -4,3 +4,4 @@ version.md
 venv/
 dist/
 build/
+__pycache__

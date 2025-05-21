@@ -15,9 +15,7 @@ dependencies = [
 prof = "prof:main"
 
 [project.optional-dependencies]
-dev = [
-    "pyinstaller>= 6.13.0",
-]
+# dev dependencies removed
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]
