@@ -77,46 +77,46 @@ class ConfigManager:
     
     @classmethod
     def setup_from_file(cls, config_path: str) -> None:
+        print("\nStarting configuration setup process...")
+        print(f"Reading configuration from: {config_path}")
         try:
             with open(config_path, 'r') as f:
                 config_data = json.load(f)
+            print("✓ Successfully read configuration file")
         except Exception as e:
             raise ValueError(f"Error reading configuration file: {str(e)}")
         
+        print("\nValidating configuration structure...")
         required_fields = ["api_key", "base_url", "model_config"]
         for field in required_fields:
             if field not in config_data:
                 raise ValueError(f"Missing required field: {field}")
+        print("✓ All required top-level fields are present")
         
+        print("\nValidating model configuration...")
         model_config_fields = ["model", "max_tokens", "temperature", "top_p"]
         for field in model_config_fields:
             if field not in config_data["model_config"]:
                 raise ValueError(f"Missing required field in model_config: {field}")
+        print("✓ All required model configuration fields are present")
         
+        print("\nCreating configuration directory...")
         cls.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        print(f"✓ Configuration directory ready at: {cls.CONFIG_DIR}")
             
         try:
-            client = OpenAI(
-                api_key=config_data["api_key"],
-                base_url=config_data["base_url"]
-            )
-
-            # Test the connection with a minimal request
-            client.chat.completions.create(
-                model=config_data["model_config"]["model"],
-                messages=[{"role": "user", "content": "test"}],
-                max_tokens=5
-            )
+            print("\nSaving configuration with secure permissions...")
+            # Save configuration making it restrictive
+            with open(cls.CONFIG_FILE, 'w') as f:
+                json.dump(config_data, f, indent=2)
+            
+            # Set restrictive permissions on the config file
+            os.chmod(cls.CONFIG_FILE, 0o600)
+            print(f"✓ Configuration successfully saved to: {cls.CONFIG_FILE}")
+            print("✓ File permissions set to secure mode (600)")
+            print("\nConfiguration setup completed successfully! 🎉")
         except Exception as e:
-            raise ValueError(f"Configuration validation failed: {str(e)}")
-        
-        # Save configuration making it restrictive
-        with open(cls.CONFIG_FILE, 'w') as f:
-            json.dump(config_data, f, indent=2)
-        
-        # Set restrictive permissions on the config file
-        os.chmod(cls.CONFIG_FILE, 0o600)
-        print(f"\nConfiguration saved to: {cls.CONFIG_FILE}")
+            raise ValueError(f"Error saving configuration: {str(e)}")
     
     @classmethod
     def load(cls) -> Config:

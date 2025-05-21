@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import argparse
 from typing import Tuple, List, Dict, Optional
 from benchmark_helpers import (
     parse_list_argument,
@@ -13,6 +14,49 @@ from benchmark_helpers import (
 )
 from AI_client import analyze_prof_output
 from config_manager import ConfigManager
+
+# Create parser at module level
+parser = argparse.ArgumentParser(description="CLI tool for benchmarking Go code with profile analysis")
+subparsers = parser.add_subparsers(dest="command", help="Command to run")
+
+# Setup command
+setup_parser = subparsers.add_parser("setup", help="Set up the configuration")
+setup_group = setup_parser.add_mutually_exclusive_group(required=True)
+setup_group.add_argument("--config", help="Path to the configuration JSON file")
+setup_group.add_argument("--create-template", action="store_true", help="Create a template configuration file")
+setup_parser.add_argument("--output-path", help="Path where to create the template file (only used with --create-template)")
+
+# Make benchmarks the default command by adding it to the main parser
+parser.add_argument(
+    '-benchmarks',
+    type=str,
+    help='Comma-separated list of benchmark names (e.g., "[BenchmarkGenPool,BenchmarkSyncPool]")'
+)
+parser.add_argument(
+    '-profiles',
+    type=str,
+    help='Comma-separated list of profile types (e.g., "[cpu,memory,mutex]")'
+)
+parser.add_argument(
+    '-tag',
+    type=str,
+    help='Tag for the benchmark run (e.g., "test1")'
+)
+parser.add_argument(
+    '-count',
+    type=int,
+    help='Number of benchmark iterations (e.g., 5)'
+)
+parser.add_argument(
+    '-benchmark-config',
+    type=str,
+    help='JSON-like string containing benchmark-specific configurations'
+)
+parser.add_argument(
+    '-analyze',
+    action='store_true',
+    help='Run AI analysis on the benchmark results after completion'
+)
 
 def setup_command(args):
     """Handle the setup command for configuration management."""
@@ -33,49 +77,6 @@ def setup_command(args):
 
 def parse_arguments():
     """Parse command line arguments and return the parsed arguments."""
-    import argparse
-    parser = argparse.ArgumentParser(description="CLI tool for benchmarking Go code with profile analysis")
-    subparsers = parser.add_subparsers(dest="command", help="Command to run")
-    
-    # Setup command
-    setup_parser = subparsers.add_parser("setup", help="Set up the configuration")
-    setup_group = setup_parser.add_mutually_exclusive_group(required=True)
-    setup_group.add_argument("--config", help="Path to the configuration JSON file")
-    setup_group.add_argument("--create-template", action="store_true", help="Create a template configuration file")
-    setup_parser.add_argument("--output-path", help="Path where to create the template file (only used with --create-template)")
-    
-    # Make benchmarks the default command by adding it to the main parser
-    parser.add_argument(
-        '-benchmarks',
-        type=str,
-        help='Comma-separated list of benchmark names (e.g., "[BenchmarkGenPool,BenchmarkSyncPool]")'
-    )
-    parser.add_argument(
-        '-profiles',
-        type=str,
-        help='Comma-separated list of profile types (e.g., "[cpu,memory,mutex]")'
-    )
-    parser.add_argument(
-        '-tag',
-        type=str,
-        help='Tag for the benchmark run (e.g., "test1")'
-    )
-    parser.add_argument(
-        '-count',
-        type=int,
-        help='Number of benchmark iterations (e.g., 5)'
-    )
-    parser.add_argument(
-        '-benchmark-config',
-        type=str,
-        help='JSON-like string containing benchmark-specific configurations'
-    )
-    parser.add_argument(
-        '-analyze',
-        action='store_true',
-        help='Run AI analysis on the benchmark results after completion'
-    )
-    
     return parser.parse_args()
 
 def validate_arguments(args) -> Tuple[List[str], List[str], Optional[Dict]]:
@@ -127,10 +128,7 @@ def print_configuration(benchmarks: List[str], profiles: List[str], tag: str,
     else:
         print("\nNo benchmark configuration provided - analyzing all functions")
 
-def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[str], 
-                                      count: int, tag: str, 
-                                      benchmark_config: Optional[Dict]) -> None:
-    """Execute benchmarks and process their profiles."""
+def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[str], count: int, tag: str, benchmark_config: Optional[Dict]) -> None:
     print("\nRunning benchmarks...")
     for benchmark in benchmarks:
         run_benchmark(benchmark, profiles, count, tag)
@@ -184,6 +182,8 @@ def handle_benchmarks(args):
     benchmarks, profiles, benchmark_config = validate_arguments(args)
     setup_directories(args.tag, benchmarks, profiles)
     print_configuration(benchmarks, profiles, args.tag, args.count, benchmark_config)
+
+
     run_benchmarks_and_process_profiles(benchmarks, profiles, args.count, args.tag, benchmark_config)
     
     if args.analyze:

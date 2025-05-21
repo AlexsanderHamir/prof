@@ -22,7 +22,7 @@ def main():
             cleanup_tag_directory(args.tag)
             sys.exit(1)
     else:
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(description='CLI tool for benchmarking Go code with profile analysis')
         parser.print_help()
         sys.exit(1)
 
