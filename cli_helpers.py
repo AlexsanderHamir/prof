@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import argparse
+import os
 from typing import Tuple, List, Dict, Optional
 from benchmark_helpers import (
     parse_list_argument,
@@ -25,6 +26,9 @@ setup_group = setup_parser.add_mutually_exclusive_group(required=True)
 setup_group.add_argument("--config", help="Path to the configuration JSON file")
 setup_group.add_argument("--create-template", action="store_true", help="Create a template configuration file")
 setup_parser.add_argument("--output-path", help="Path where to create the template file (only used with --create-template)")
+
+# Clean command
+clean_parser = subparsers.add_parser("clean", help="Clean the configuration cache")
 
 # Make benchmarks the default command by adding it to the main parser
 parser.add_argument(
@@ -75,9 +79,30 @@ def setup_command(args):
         print(f"\nError: {e}", file=sys.stderr)
         sys.exit(1)
 
+def clean_command(args):
+    """Handle the clean command to remove configuration cache."""
+    try:
+        ConfigManager.clean_config()
+        print("\nConfiguration cache cleaned successfully!")
+    except Exception as e:
+        print(f"\nError cleaning configuration cache: {e}", file=sys.stderr)
+        sys.exit(1)
+
 def parse_arguments():
     """Parse command line arguments and return the parsed arguments."""
-    return parser.parse_args()
+    args = parser.parse_args()
+    
+    # Map commands to their handler functions
+    command_handlers = {
+        "setup": setup_command,
+        "clean": clean_command
+    }
+    
+    # Execute the appropriate handler if a command was specified
+    if args.command in command_handlers:
+        command_handlers[args.command](args)
+    
+    return args
 
 def validate_arguments(args) -> Tuple[List[str], List[str], Optional[Dict]]:
     """Validate parsed arguments and return processed values."""
@@ -169,11 +194,29 @@ def handle_benchmarks(args):
     """
     # Check if configuration exists before running benchmarks
     if args.analyze and not ConfigManager.is_configured():
-        print("\nError: Configuration not found. Please run setup first:", file=sys.stderr)
-        print("prof setup --api-key YOUR_API_KEY --model MODEL_NAME "
-              "--max-tokens MAX_TOKENS --temperature TEMP --top-p TOP_P "
-              "--base-url BASE_URL [--system-prompt PROMPT]", file=sys.stderr)
-        sys.exit(1)
+        # Try to find config_template.json in current directory
+        template_path = os.path.join(os.getcwd(), "config_template.json")
+        if os.path.exists(template_path):
+            print("\nFound config_template.json in current directory. Attempting automatic setup...")
+            try:
+                ConfigManager.setup_from_file(template_path)
+                print("Automatic configuration completed successfully!")
+            except ValueError as e:
+                print(f"\nError during automatic configuration: {e}", file=sys.stderr)
+                print("\nPlease set up configuration manually:", file=sys.stderr)
+                print("1. Create a template config file:", file=sys.stderr)
+                print("   prof setup --create-template [--output-path path/to/config.json]", file=sys.stderr)
+                print("2. Use an existing config file (after creating template as well):", file=sys.stderr)
+                print("   prof setup --config path/to/your/config.json", file=sys.stderr)
+                sys.exit(1)
+        else:
+            print("\nError: Configuration not found. Please run setup first:", file=sys.stderr)
+            print("To set up configuration, either:", file=sys.stderr)
+            print("1. Create a template config file:", file=sys.stderr)
+            print("   prof setup --create-template [--output-path path/to/config.json]", file=sys.stderr)
+            print("2. Use an existing config file (after creating template as well):", file=sys.stderr)
+            print("   prof setup --config path/to/your/config.json", file=sys.stderr)
+            sys.exit(1)
     
     if not all([args.benchmarks, args.profiles, args.tag, args.count]):
         print("\nError: All of -benchmarks, -profiles, -tag, and -count are required for benchmarking", file=sys.stderr)
