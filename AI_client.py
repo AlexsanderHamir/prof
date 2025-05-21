@@ -5,19 +5,13 @@ from typing import Dict, List, Optional
 from openai import OpenAI
 
 api_key = os.getenv("DEEPSEEK_API_KEY")
-client = None  # Will be initialized only when needed
+if not api_key:
+    raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
 
-def get_client():
-    """Lazy initialization of the OpenAI client."""
-    global client
-    if client is None:
-        if not api_key:
-            raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
-        client = OpenAI(
-            api_key=api_key,
-            base_url="https://api.deepseek.com"
-        )
-    return client
+client = OpenAI(
+    api_key=api_key,
+    base_url="https://api.deepseek.com"
+)
 
 def read_profile_text_file(file_path: str) -> str:
     """Read and return the contents of a profile text file."""
@@ -101,14 +95,6 @@ def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
     """
     files = get_benchmark_files(tag, benchmark_name, profile_type)
     
-    # Get the client only when needed
-    try:
-        client = get_client()
-    except ValueError as e:
-        print(f"Error: {e}")
-        print("Please set the DEEPSEEK_API_KEY environment variable to use AI analysis")
-        return
-
     # Prepare the message for the model with the comprehensive analysis guide
     system_prompt = """You are an expert code performance analyzer. Write a comprehensive essay-style analysis of the benchmark profile data following this structure:
 
