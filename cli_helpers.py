@@ -12,52 +12,70 @@ from benchmark_helpers import (
     cleanup_tag_directory
 )
 from AI_client import analyze_prof_output
+from config_manager import ConfigManager
+
+def setup_command(args):
+    """Handle the setup command for configuration management."""
+    try:
+        if args.create_template:
+            ConfigManager.create_template(args.output_path)
+            return
+            
+        if not args.config:
+            print("\nError: Please provide a configuration file using --config or create one using --create-template", file=sys.stderr)
+            sys.exit(1)
+            
+        ConfigManager.setup_from_file(args.config)
+        print("\nConfiguration completed successfully!")
+    except ValueError as e:
+        print(f"\nError: {e}", file=sys.stderr)
+        sys.exit(1)
 
 def parse_arguments():
-    """Parse and validate command line arguments."""
+    """Parse command line arguments and return the parsed arguments."""
     import argparse
-    parser = argparse.ArgumentParser(description="CLI tool for benchmarking")
+    parser = argparse.ArgumentParser(description="CLI tool for benchmarking Go code with profile analysis")
+    subparsers = parser.add_subparsers(dest="command", help="Command to run")
     
+    # Setup command
+    setup_parser = subparsers.add_parser("setup", help="Set up the configuration")
+    setup_group = setup_parser.add_mutually_exclusive_group(required=True)
+    setup_group.add_argument("--config", help="Path to the configuration JSON file")
+    setup_group.add_argument("--create-template", action="store_true", help="Create a template configuration file")
+    setup_parser.add_argument("--output-path", help="Path where to create the template file (only used with --create-template)")
+    
+    # Make benchmarks the default command by adding it to the main parser
     parser.add_argument(
         '-benchmarks',
         type=str,
-        required=True,
-        help='Comma-separated list of benchmark types (e.g., -benchmarks "[BenchmarkGenPool,BenchmarkSyncPool]")'
+        help='Comma-separated list of benchmark names (e.g., "[BenchmarkGenPool,BenchmarkSyncPool]")'
     )
-    
     parser.add_argument(
         '-profiles',
         type=str,
-        required=True,
-        help='Comma-separated list of profile types (e.g., -profiles "[cpu,memory,mutex]")'
+        help='Comma-separated list of profile types (e.g., "[cpu,memory,mutex]")'
     )
-    
     parser.add_argument(
         '-tag',
         type=str,
-        required=True,
-        help='Tag for the benchmark run (e.g., -tag "test1")'
+        help='Tag for the benchmark run (e.g., "test1")'
     )
-    
     parser.add_argument(
         '-count',
         type=int,
-        required=True,
-        help='Number of benchmark iterations (e.g., -count 5)'
+        help='Number of benchmark iterations (e.g., 5)'
     )
-
     parser.add_argument(
         '-benchmark-config',
         type=str,
-        help='JSON-like string containing benchmark-specific configurations. Example: \'{"BenchmarkGenPool":{"prefix":"github.com/AlexsanderHamir/GenPool","ignore":"func1,performWorkload"},"BenchmarkSyncPool":{"prefix":"sync"}}\''
+        help='JSON-like string containing benchmark-specific configurations'
     )
-
     parser.add_argument(
         '-analyze',
         action='store_true',
         help='Run AI analysis on the benchmark results after completion'
     )
-
+    
     return parser.parse_args()
 
 def validate_arguments(args) -> Tuple[List[str], List[str], Optional[Dict]]:
@@ -138,3 +156,35 @@ def run_ai_analysis(tag: str) -> None:
     except Exception as e:
         print(f"\nError during AI analysis: {e}", file=sys.stderr)
         # Don't exit with error, as the benchmarks were successful 
+
+def handle_benchmarks(args):
+    """Handle the benchmark command and its associated operations.
+    
+    Args:
+        args: Parsed command line arguments
+        
+    Returns:
+        None
+        
+    Raises:
+        Exception: If any error occurs during benchmark execution
+    """
+    # Check if configuration exists before running benchmarks
+    if args.analyze and not ConfigManager.is_configured():
+        print("\nError: Configuration not found. Please run setup first:", file=sys.stderr)
+        print("prof setup --api-key YOUR_API_KEY --model MODEL_NAME "
+              "--max-tokens MAX_TOKENS --temperature TEMP --top-p TOP_P "
+              "--base-url BASE_URL [--system-prompt PROMPT]", file=sys.stderr)
+        sys.exit(1)
+    
+    if not all([args.benchmarks, args.profiles, args.tag, args.count]):
+        print("\nError: All of -benchmarks, -profiles, -tag, and -count are required for benchmarking", file=sys.stderr)
+        sys.exit(1)
+    
+    benchmarks, profiles, benchmark_config = validate_arguments(args)
+    setup_directories(args.tag, benchmarks, profiles)
+    print_configuration(benchmarks, profiles, args.tag, args.count, benchmark_config)
+    run_benchmarks_and_process_profiles(benchmarks, profiles, args.count, args.tag, benchmark_config)
+    
+    if args.analyze:
+        run_ai_analysis(args.tag) 
