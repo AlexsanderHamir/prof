@@ -13,7 +13,7 @@ from benchmark_helpers import (
     analyze_profile_functions,
     cleanup_tag_directory
 )
-from AI_client import analyze_prof_output
+from AI_client import analyze_prof_output, analyze_prof_output_deep
 from config_manager import ConfigManager
 
 # Create parser at module level
@@ -57,9 +57,14 @@ parser.add_argument(
     help='JSON-like string containing benchmark-specific configurations'
 )
 parser.add_argument(
-    '-analyze',
+    '-general_analyze',
     action='store_true',
-    help='Run AI analysis on the benchmark results after completion'
+    help='Run general AI analysis on the benchmark results after completion'
+)
+parser.add_argument(
+    '-deep_analyze',
+    action='store_true',
+    help='Run deep AI analysis on the benchmark results after completion'
 )
 
 def setup_command(args):
@@ -167,19 +172,6 @@ def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[st
     
     print("\nAll benchmarks and profile processing completed successfully!")
 
-def run_ai_analysis(tag: str) -> None:
-    """Run AI analysis on the benchmark results if requested."""
-    print("\nStarting AI analysis of benchmark results...")
-    try:
-        analyze_prof_output(tag)
-        print("\nAI analysis completed successfully!")
-    except ValueError as e:
-        print(f"\nError: {e}", file=sys.stderr)
-        print("Please set the DEEPSEEK_API_KEY environment variable to use AI analysis", file=sys.stderr)
-    except Exception as e:
-        print(f"\nError during AI analysis: {e}", file=sys.stderr)
-        # Don't exit with error, as the benchmarks were successful 
-
 def handle_benchmarks(args):
     """Handle the benchmark command and its associated operations.
     
@@ -193,7 +185,7 @@ def handle_benchmarks(args):
         Exception: If any error occurs during benchmark execution
     """
     # Check if configuration exists before running benchmarks
-    if args.analyze and not ConfigManager.is_configured():
+    if (args.general_analyze or args.deep_analyze) and not ConfigManager.is_configured():
         # Try to find config_template.json in current directory
         template_path = os.path.join(os.getcwd(), "config_template.json")
         if os.path.exists(template_path):
@@ -226,8 +218,9 @@ def handle_benchmarks(args):
     setup_directories(args.tag, benchmarks, profiles)
     print_configuration(benchmarks, profiles, args.tag, args.count, benchmark_config)
 
-
     run_benchmarks_and_process_profiles(benchmarks, profiles, args.count, args.tag, benchmark_config)
     
-    if args.analyze:
-        run_ai_analysis(args.tag) 
+    if args.general_analyze:
+        analyze_prof_output(args.tag)
+    elif args.deep_analyze:
+        analyze_prof_output_deep(args.tag) 
