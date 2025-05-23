@@ -9,7 +9,6 @@ We're developing a tool that will:
 1. Simplify the process of running Go benchmarks with profiling enabled
 2. Make it easier to understand and analyze profile data
 3. Use AI to provide meaningful insights about performance bottlenecks
-4. Help developers make data-driven decisions about code optimization
 
 ## Development Status
 

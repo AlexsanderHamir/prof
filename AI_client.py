@@ -1,4 +1,3 @@
-import base64
 from pathlib import Path
 from typing import Dict, List, Optional
 from config_manager import ConfigManager
@@ -12,17 +11,8 @@ def read_profile_text_file(file_path: str) -> str:
         print(f"Error reading profile text file {file_path}: {e}")
         return ""
 
-def encode_png_to_base64(file_path: str) -> Optional[str]:
-    """Read a PNG file and encode it to base64."""
-    try:
-        with open(file_path, 'rb') as f:
-            return base64.b64encode(f.read()).decode('utf-8')
-    except Exception as e:
-        print(f"Error reading PNG file {file_path}: {e}")
-        return None
-
 def get_benchmark_files(tag: str, benchmark_name: str, profile_type: str) -> Dict[str, str]:
-    """Get the text and PNG files for a specific benchmark and profile type.
+    """Get the text file for a specific benchmark and profile type.
     
     Args:
         tag: The benchmark tag (e.g., "test1")
@@ -32,7 +22,6 @@ def get_benchmark_files(tag: str, benchmark_name: str, profile_type: str) -> Dic
     Returns:
         A dictionary containing:
         - text_content: The content of the profile text file
-        - png_base64: The base64 encoded PNG file (if available)
     """
     base_dir = Path("bench") / tag
     
@@ -40,13 +29,8 @@ def get_benchmark_files(tag: str, benchmark_name: str, profile_type: str) -> Dic
     text_file = base_dir / "text" / benchmark_name / f"{benchmark_name}_{profile_type}.txt"
     text_content = read_profile_text_file(str(text_file))
     
-    # Get PNG file
-    png_file = base_dir / f"{profile_type}_functions" / benchmark_name / f"{benchmark_name}_{profile_type}.png"
-    png_base64 = encode_png_to_base64(str(png_file)) if png_file.exists() else None
-    
     return {
-        "text_content": text_content,
-        "png_base64": png_base64
+        "text_content": text_content
     }
 
 def save_analysis(tag: str, benchmark_name: str, profile_type: str, analysis: str) -> None:
@@ -88,23 +72,13 @@ def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
     # Get configuration
     config = ConfigManager.load()
     
-    # Use configured system prompt or default, ignoring the template value
-    if (config.model_config.system_prompt 
-        and config.model_config.system_prompt != ConfigManager.DEFAULT_SYSTEM_PROMPT_TEMPLATE):
-        system_prompt = config.model_config.system_prompt
-    else:
-        system_prompt = ConfigManager.get_default_system_prompt()
+    # Get system prompt from configured location or use default
+    system_prompt = ConfigManager.get_system_prompt(config)
 
     user_prompt = f"""Benchmark: {benchmark_name}
 Profile Type: {profile_type}
 
-Please provide a comprehensive essay-style analysis following the structure above:
-
 {files['text_content']}"""
-
-    # Add PNG if available
-    if files['png_base64']:
-        user_prompt += f"\n\n[Image data available: {files['png_base64'][:100]}...]"
 
     messages = [
         {"role": "system", "content": system_prompt},
