@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 import sys
-import argparse
 from cli_helpers import (
     cleanup_tag_directory,
-    setup_command,
     parse_arguments,
-    handle_benchmarks
+    handle_benchmarks,
+    check_required_args
 )
 
 def main():
     args = parse_arguments()
-    
-    if args.command == "setup":
-        setup_command(args)
-    elif args.command is None and (args.benchmarks or args.profiles or args.tag or args.count):
+    if args.command is None and (args.benchmarks and args.profiles and args.tag and args.count):
         try:
             handle_benchmarks(args)
         except Exception as e:
@@ -22,9 +18,7 @@ def main():
             cleanup_tag_directory(args.tag)
             sys.exit(1)
     else:
-        parser = argparse.ArgumentParser(description='CLI tool for benchmarking Go code with profile analysis')
-        parser.print_help()
-        sys.exit(1)
+        check_required_args(args)
 
 if __name__ == "__main__":
     main()

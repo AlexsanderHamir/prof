@@ -20,11 +20,9 @@ parser = argparse.ArgumentParser(description="CLI tool for benchmarking Go code 
 subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
 # Setup command
-setup_parser = subparsers.add_parser("setup", help="Set up the configuration")
-setup_group = setup_parser.add_mutually_exclusive_group(required=True)
-setup_group.add_argument("--config", help="Path to the configuration JSON file")
-setup_group.add_argument("--create-template", action="store_true", help="Create a template configuration file")
-setup_parser.add_argument("--output-path", help="Path where to create the template file (only used with --create-template)")
+setup_parser = subparsers.add_parser("setup", help="Create a template configuration file")
+setup_parser.add_argument("--create-template", action="store_true", help="Create a template configuration file")
+setup_parser.add_argument("--output-path", help="Path where to create the template file")
 
 # Make benchmarks the default command by adding it to the main parser
 parser.add_argument(
@@ -59,34 +57,18 @@ parser.add_argument(
 )
 
 def setup_command(args):
-    """Handle the setup command for configuration management."""
-    try:
-        if args.create_template:
-            ConfigManager.create_template(args.output_path)
-            return
-            
-        if not args.config:
-            print("\nError: Please provide a configuration file using --config or create one using --create-template", file=sys.stderr)
-            sys.exit(1)
-            
-        ConfigManager.setup_from_file(args.config)
-        print("\nConfiguration completed successfully!")
-    except ValueError as e:
-        print(f"\nError: {e}", file=sys.stderr)
+    if args.create_template:
+        ConfigManager.create_template(args.output_path)
+        print("\nTemplate configuration file created successfully!")
+    else:
+        print("\nError: Please use --create-template to create a configuration template", file=sys.stderr)
         sys.exit(1)
 
 def parse_arguments():
-    """Parse command line arguments and return the parsed arguments."""
     args = parser.parse_args()
     
-    # Map commands to their handler functions
-    command_handlers = {
-        "setup": setup_command
-    }
-    
-    # Execute the appropriate handler if a command was specified
-    if args.command in command_handlers:
-        command_handlers[args.command](args)
+    if args.command == "setup":
+        setup_command(args)
     
     return args
 
@@ -142,7 +124,7 @@ def print_configuration(benchmarks: List[str], profiles: List[str], tag: str,
         print("\nNo benchmark configuration found in config file - analyzing all functions")
 
 def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[str], count: int, tag: str, benchmark_config: Optional[Dict]) -> None:
-    print("\nRunning benchmarks...")
+    print("\nRunning benchmarks sequentially...")
     for benchmark in benchmarks:
         run_benchmark(benchmark, profiles, count, tag)
     
@@ -155,18 +137,22 @@ def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[st
     
     print("\nAll benchmarks and profile processing completed successfully!")
 
-def handle_benchmarks(args):
-    """Handle the benchmark command and its associated operations.
+def print_configuration_error(error_msg: Optional[str] = None) -> None:
+    """Print configuration error messages and setup instructions.
     
     Args:
-        args: Parsed command line arguments
-        
-    Returns:
-        None
-        
-    Raises:
-        Exception: If any error occurs during benchmark execution
+        error_msg: Optional error message to display before the setup instructions
     """
+    if error_msg:
+        print(f"\n{error_msg}", file=sys.stderr)
+    
+    print("\nPlease set up configuration manually:", file=sys.stderr)
+    print("1. Create a template config file:", file=sys.stderr)
+    print("   prof setup --create-template [--output-path path/to/config.json]", file=sys.stderr)
+    print("2. Use an existing config file (after creating template as well):", file=sys.stderr)
+    print("   prof setup --config path/to/your/config.json", file=sys.stderr)
+
+def handle_benchmarks(args):
     # Always check for configuration
     template_path = os.path.join(os.getcwd(), "config_template.json")
     if os.path.exists(template_path):
@@ -175,20 +161,10 @@ def handle_benchmarks(args):
             ConfigManager.setup_from_file(template_path)
             print("Automatic configuration completed successfully!")
         except ValueError as e:
-            print(f"\nError during automatic configuration: {e}", file=sys.stderr)
-            print("\nPlease set up configuration manually:", file=sys.stderr)
-            print("1. Create a template config file:", file=sys.stderr)
-            print("   prof setup --create-template [--output-path path/to/config.json]", file=sys.stderr)
-            print("2. Use an existing config file (after creating template as well):", file=sys.stderr)
-            print("   prof setup --config path/to/your/config.json", file=sys.stderr)
+            print_configuration_error(f"Error during automatic configuration: {e}")
             sys.exit(1)
     else:
-        print("\nError: Configuration not found. Please run setup first:", file=sys.stderr)
-        print("To set up configuration, either:", file=sys.stderr)
-        print("1. Create a template config file:", file=sys.stderr)
-        print("   prof setup --create-template [--output-path path/to/config.json]", file=sys.stderr)
-        print("2. Use an existing config file (after creating template as well):", file=sys.stderr)
-        print("   prof setup --config path/to/your/config.json", file=sys.stderr)
+        print_configuration_error("Error: Configuration not found. Please run setup first:")
         sys.exit(1)
     
     if not all([args.benchmarks, args.profiles, args.tag, args.count]):
@@ -204,4 +180,31 @@ def handle_benchmarks(args):
     if args.general_analyze:
         analyze_prof_output(args.tag)
     elif args.deep_analyze:
-        analyze_prof_output_deep(args.tag) 
+        analyze_prof_output_deep(args.tag)
+
+def check_required_args(args) -> bool:
+    """Check if all required arguments are provided and print any missing ones.
+    
+    Args:
+        args: Parsed command line arguments
+        
+    Returns:
+        bool: True if all required arguments are present, False otherwise
+    """
+    missing_args = []
+    if not args.benchmarks:
+        missing_args.append("benchmarks")
+    if not args.profiles:
+        missing_args.append("profiles")
+    if not args.tag:
+        missing_args.append("tag")
+    if not args.count:
+        missing_args.append("count")
+
+    if missing_args:
+        print("\nError: Missing required arguments:", file=sys.stderr)
+        for arg in missing_args:
+            print(f"  - {arg}", file=sys.stderr)
+        print("\nPlease provide all required arguments.\n", file=sys.stderr)
+        return False
+    return True 
