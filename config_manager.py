@@ -12,7 +12,7 @@ class ModelConfig:
     max_tokens: int
     temperature: float
     top_p: float
-    system_prompt: Optional[str] = None
+    system_prompt_location: Optional[str] = None
 
 @dataclass
 class Config:
@@ -59,7 +59,7 @@ class ConfigManager:
                 "max_tokens": 4096,
                 "temperature": 0.7,
                 "top_p": 1.0,
-                "system_prompt": cls.DEFAULT_SYSTEM_PROMPT_TEMPLATE
+                "system_prompt_location": "path/to/your/system_prompt.txt"
             }
         }
         
@@ -183,3 +183,27 @@ class ConfigManager:
     def clear_cache(cls) -> None:
         """This method is deprecated as caching has been removed."""
         pass 
+
+    @classmethod
+    def _load_system_prompt_from_location(cls, location: str) -> str:
+        """Load system prompt from the specified file location."""
+        try:
+            with open(location, 'r') as f:
+                return f.read().strip()
+        except Exception as e:
+            raise ValueError(f"Error loading system prompt from {location}: {str(e)}")
+    
+    @classmethod
+    def get_system_prompt(cls, config: Config) -> str:
+        """Get the system prompt from the configured location or use default."""
+        if config.model_config.system_prompt_location:
+            try:
+                prompt = cls._load_system_prompt_from_location(config.model_config.system_prompt_location)
+                print(f"\nUsing custom system prompt from: {config.model_config.system_prompt_location}")
+                return prompt
+            except ValueError as e:
+                print(f"\nWarning: {e}")
+                print("Falling back to default system prompt from templates directory")
+                return cls.get_default_system_prompt()
+        print("\nNo custom system prompt location specified. Using default system prompt from templates directory")
+        return cls.get_default_system_prompt() 
