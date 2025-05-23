@@ -134,11 +134,16 @@ class ConfigManager:
             raise ValueError(f"Error reading configuration file: {str(e)}")
         
         print("\nValidating configuration structure...")
-        required_fields = ["api_key", "base_url", "model_config", "benchmark_configs"]
+        required_fields = ["api_key", "base_url", "model_config"]
         for field in required_fields:
             if field not in config_data:
                 raise ValueError(f"Missing required field: {field}")
         print("✓ All required top-level fields are present")
+        
+        # Make benchmark_configs optional with a default empty dict
+        if "benchmark_configs" not in config_data:
+            config_data["benchmark_configs"] = {}
+            print("✓ No benchmark configurations provided - will analyze all functions")
         
         print("\nValidating model configuration...")
         model_config_fields = ["model", "max_tokens", "temperature", "top_p"]
@@ -183,13 +188,14 @@ class ConfigManager:
             
             model_config = ModelConfig(**config_data["model_config"])
             
-            # Convert benchmark configs to BenchmarkConfig objects
+            # Convert benchmark configs to BenchmarkConfig objects, defaulting to empty dict if not present
             benchmark_configs = {}
-            for benchmark, config in config_data["benchmark_configs"].items():
-                benchmark_configs[benchmark] = BenchmarkConfig(
-                    prefixes=config["prefixes"],
-                    ignore=config.get("ignore")
-                )
+            if "benchmark_configs" in config_data:
+                for benchmark, config in config_data["benchmark_configs"].items():
+                    benchmark_configs[benchmark] = BenchmarkConfig(
+                        prefixes=config["prefixes"],
+                        ignore=config.get("ignore")
+                    )
             
             return Config(
                 api_key=config_data["api_key"],
