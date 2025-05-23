@@ -5,7 +5,6 @@ import os
 from typing import Tuple, List, Dict, Optional
 from benchmark_helpers import (
     parse_list_argument,
-    parse_benchmark_config,
     create_bench_directories,
     create_profile_function_directories,
     run_benchmark,
@@ -27,9 +26,6 @@ setup_group.add_argument("--config", help="Path to the configuration JSON file")
 setup_group.add_argument("--create-template", action="store_true", help="Create a template configuration file")
 setup_parser.add_argument("--output-path", help="Path where to create the template file (only used with --create-template)")
 
-# Clean command
-clean_parser = subparsers.add_parser("clean", help="Clean the configuration cache")
-
 # Make benchmarks the default command by adding it to the main parser
 parser.add_argument(
     '-benchmarks',
@@ -50,11 +46,6 @@ parser.add_argument(
     '-count',
     type=int,
     help='Number of benchmark iterations (e.g., 5)'
-)
-parser.add_argument(
-    '-benchmark-config',
-    type=str,
-    help='JSON-like string containing benchmark-specific configurations'
 )
 parser.add_argument(
     '-general_analyze',
@@ -84,23 +75,13 @@ def setup_command(args):
         print(f"\nError: {e}", file=sys.stderr)
         sys.exit(1)
 
-def clean_command(args):
-    """Handle the clean command to remove configuration cache."""
-    try:
-        ConfigManager.clean_config()
-        print("\nConfiguration cache cleaned successfully!")
-    except Exception as e:
-        print(f"\nError cleaning configuration cache: {e}", file=sys.stderr)
-        sys.exit(1)
-
 def parse_arguments():
     """Parse command line arguments and return the parsed arguments."""
     args = parser.parse_args()
     
     # Map commands to their handler functions
     command_handlers = {
-        "setup": setup_command,
-        "clean": clean_command
+        "setup": setup_command
     }
     
     # Execute the appropriate handler if a command was specified
@@ -114,18 +95,20 @@ def validate_arguments(args) -> Tuple[List[str], List[str], Optional[Dict]]:
     benchmarks = parse_list_argument(args.benchmarks)
     profiles = parse_list_argument(args.profiles)
     
-    # Parse benchmark configuration if provided
-    benchmark_config = None
-    if args.benchmark_config:
-        try:
-            benchmark_config = parse_benchmark_config(args.benchmark_config)
-            # Validate that all configured benchmarks exist in the benchmarks list
-            invalid_configs = set(benchmark_config.keys()) - set(benchmarks)
-            if invalid_configs:
-                print(f"Warning: Configurations provided for non-existent benchmarks: {', '.join(invalid_configs)}", file=sys.stderr)
-        except ValueError as e:
-            print(f"Error: {e}", file=sys.stderr)
-            sys.exit(1)
+    # Get benchmark configuration from config file
+    try:
+        config = ConfigManager.load()
+        benchmark_config = {}
+        for benchmark in benchmarks:
+            if benchmark in config.benchmark_configs:
+                bench_config = config.benchmark_configs[benchmark]
+                benchmark_config[benchmark] = {
+                    "prefixes": bench_config.prefixes,
+                    "ignore": bench_config.ignore
+                }
+    except ValueError as e:
+        print(f"Error loading benchmark configuration: {e}", file=sys.stderr)
+        sys.exit(1)
     
     # Validate count
     if args.count <= 0:
@@ -152,11 +135,11 @@ def print_configuration(benchmarks: List[str], profiles: List[str], tag: str,
         print("\nBenchmark configurations:")
         for benchmark, config in benchmark_config.items():
             print(f"  {benchmark}:")
-            print(f"    Prefix: {config['prefix']}")
+            print(f"    Prefixes: {', '.join(config['prefixes'])}")
             if config.get("ignore"):
                 print(f"    Ignore: {config['ignore']}")
     else:
-        print("\nNo benchmark configuration provided - analyzing all functions")
+        print("\nNo benchmark configuration found in config file - analyzing all functions")
 
 def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[str], count: int, tag: str, benchmark_config: Optional[Dict]) -> None:
     print("\nRunning benchmarks...")
@@ -184,31 +167,29 @@ def handle_benchmarks(args):
     Raises:
         Exception: If any error occurs during benchmark execution
     """
-    # Check if configuration exists before running benchmarks
-    if (args.general_analyze or args.deep_analyze) and not ConfigManager.is_configured():
-        # Try to find config_template.json in current directory
-        template_path = os.path.join(os.getcwd(), "config_template.json")
-        if os.path.exists(template_path):
-            print("\nFound config_template.json in current directory. Attempting automatic setup...")
-            try:
-                ConfigManager.setup_from_file(template_path)
-                print("Automatic configuration completed successfully!")
-            except ValueError as e:
-                print(f"\nError during automatic configuration: {e}", file=sys.stderr)
-                print("\nPlease set up configuration manually:", file=sys.stderr)
-                print("1. Create a template config file:", file=sys.stderr)
-                print("   prof setup --create-template [--output-path path/to/config.json]", file=sys.stderr)
-                print("2. Use an existing config file (after creating template as well):", file=sys.stderr)
-                print("   prof setup --config path/to/your/config.json", file=sys.stderr)
-                sys.exit(1)
-        else:
-            print("\nError: Configuration not found. Please run setup first:", file=sys.stderr)
-            print("To set up configuration, either:", file=sys.stderr)
+    # Always check for configuration
+    template_path = os.path.join(os.getcwd(), "config_template.json")
+    if os.path.exists(template_path):
+        print("\nFound config_template.json in current directory. Attempting automatic setup...")
+        try:
+            ConfigManager.setup_from_file(template_path)
+            print("Automatic configuration completed successfully!")
+        except ValueError as e:
+            print(f"\nError during automatic configuration: {e}", file=sys.stderr)
+            print("\nPlease set up configuration manually:", file=sys.stderr)
             print("1. Create a template config file:", file=sys.stderr)
             print("   prof setup --create-template [--output-path path/to/config.json]", file=sys.stderr)
             print("2. Use an existing config file (after creating template as well):", file=sys.stderr)
             print("   prof setup --config path/to/your/config.json", file=sys.stderr)
             sys.exit(1)
+    else:
+        print("\nError: Configuration not found. Please run setup first:", file=sys.stderr)
+        print("To set up configuration, either:", file=sys.stderr)
+        print("1. Create a template config file:", file=sys.stderr)
+        print("   prof setup --create-template [--output-path path/to/config.json]", file=sys.stderr)
+        print("2. Use an existing config file (after creating template as well):", file=sys.stderr)
+        print("   prof setup --config path/to/your/config.json", file=sys.stderr)
+        sys.exit(1)
     
     if not all([args.benchmarks, args.profiles, args.tag, args.count]):
         print("\nError: All of -benchmarks, -profiles, -tag, and -count are required for benchmarking", file=sys.stderr)

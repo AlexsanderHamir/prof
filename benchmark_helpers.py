@@ -270,7 +270,7 @@ def analyze_profile_functions(tag: str, profiles: List[str], benchmarks: List[st
         for benchmark in benchmarks:
             # Get configuration for this benchmark if available
             config = benchmark_config.get(benchmark, {}) if benchmark_config else {}
-            function_prefix = config.get("prefix")
+            function_prefixes = config.get("prefixes", [])
             ignore_functions = set(parse_list_argument(config.get("ignore", ""))) if config.get("ignore") else set()
             
             # Read the profile text file that contains the function list
@@ -310,9 +310,10 @@ def analyze_profile_functions(tag: str, profiles: List[str], benchmarks: List[st
                         # Get the function name (everything after the last column)
                         func_name = " ".join(parts[5:])
                         
-                        # If prefix is specified, only process matching functions
-                        if function_prefix and function_prefix not in func_name:
-                            continue
+                        # If prefixes are specified, only process matching functions
+                        if function_prefixes:
+                            if not any(prefix in func_name for prefix in function_prefixes):
+                                continue
                             
                         # Extract just the function name after the last dot
                         match = re.search(r'\.([^.(]+)(?:\([^)]*\))?$', func_name)
