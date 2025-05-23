@@ -1,21 +1,10 @@
 from pathlib import Path
 from typing import Dict, List, Optional
 from config_manager import ConfigManager, Config
-import logging
 import os
 
 # Get the directory where the script is located
 script_dir = Path(os.path.dirname(os.path.abspath(__file__)))
-
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('deep_analysis.log'),
-        logging.StreamHandler()
-    ]
-)
 
 def read_profile_text_file(file_path: str) -> str:
     """Read and return the contents of a profile text file."""
@@ -88,37 +77,33 @@ def get_default_prompt(template_name: str) -> str:
         if template_path.exists():
             with open(template_path, 'r') as f:
                 return f.read().strip()
-        logging.error(f"Template file not found: {template_path}")
+        print(f"Template file not found: {template_path}")
         return ""
     except Exception as e:
-        logging.error(f"Error reading template file {template_path}: {e}")
+        print(f"Error reading template file {template_path}: {e}")
         return ""
 
 def get_general_analyze_prompt(config: Config) -> str:
-    """Get the general analysis prompt from configured location or use default from template.
+    """Get the general analysis prompt from configured location.
     
     Args:
-        config: The configuration dictionary
+        config: The Config instance containing model configuration
         
     Returns:
         The general analysis prompt to use
-    """
-    try:
-        prompt_path = config.model_config.general_analyze_prompt_location
-        if prompt_path and Path(prompt_path).exists():
-            with open(prompt_path, 'r') as f:
-                return f.read().strip()
         
-        default_prompt = get_default_prompt('general_analyze_prompt.txt')
-        if default_prompt:
-            logging.info("Using default general analysis prompt from template")
-            return default_prompt
-            
-        logging.warning("No general analysis prompt found, using minimal default")
-        return "You are an expert performance analyst. Analyze the provided benchmark profile data and provide insights."
-    except Exception as e:
-        logging.warning(f"Error reading custom general analysis prompt: {e}, using minimal default")
-        return "You are an expert performance analyst. Analyze the provided benchmark profile data and provide insights."
+    Raises:
+        ValueError: If prompt location is not provided or file cannot be read
+    """
+    if not config.model_config.general_analyze_prompt_location:
+        raise ValueError("general_analyze_prompt_location must be provided in config")
+    
+    prompt_path = Path(config.model_config.general_analyze_prompt_location)
+    if not prompt_path.exists():
+        raise ValueError(f"General analyze prompt file not found at: {prompt_path}")
+        
+    with open(prompt_path, 'r') as f:
+        return f.read().strip()
 
 def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
     """Send benchmark profile data to the AI model and save the analysis.
@@ -135,7 +120,7 @@ def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
     
     # Get general analysis prompt
     general_prompt = get_general_analyze_prompt(config)
-    logging.info("Using general analysis prompt from configuration or default")
+    print("Using general analysis prompt from configuration or default")
 
     user_prompt = f"""Benchmark: {benchmark_name}
 Profile Type: {profile_type}
@@ -194,7 +179,6 @@ def analyze_prof_output(tag: str) -> None:
         tag: The benchmark tag to analyze
     """
     base_dir = Path("bench") / tag
-    
     if not base_dir.exists():
         print(f"Error: No benchmark data found for tag '{tag}'")
         return
@@ -297,7 +281,7 @@ def save_deep_analysis(tag: str, benchmark_name: str, analysis: str) -> None:
         print(f"Error saving deep analysis to {analysis_file}: {e}")
 
 def get_deep_analysis_prompt(config: Config) -> str:
-    """Get the deep analysis prompt from configured location or use default from template.
+    """Get the deep analysis prompt from configured location.
     
     Args:
         config: The Config instance containing model configuration
@@ -306,19 +290,17 @@ def get_deep_analysis_prompt(config: Config) -> str:
         The deep analysis prompt to use
         
     Raises:
-        ValueError: If no prompt is found in either the configured location or default template
+        ValueError: If prompt location is not provided or file cannot be read
     """
-    prompt_path = config.model_config.deep_analyze_prompt_location
-    if prompt_path and Path(prompt_path).exists():
-        with open(prompt_path, 'r') as f:
-            return f.read().strip()
+    if not config.model_config.deep_analyze_prompt_location:
+        raise ValueError("deep_analyze_prompt_location must be provided in config")
     
-    default_prompt = get_default_prompt('deep_analyze_prompt.txt')
-    if default_prompt:
-        logging.info("Using default deep analysis prompt from template")
-        return default_prompt
+    prompt_path = Path(config.model_config.deep_analyze_prompt_location)
+    if not prompt_path.exists():
+        raise ValueError(f"Deep analysis prompt file not found at: {prompt_path}")
         
-    raise ValueError("No deep analysis prompt found in configured location or default template")
+    with open(prompt_path, 'r') as f:
+        return f.read().strip()
 
 def send_to_model_deep(tag: str, benchmark_name: str) -> None:
     """Send all benchmark profile data to the AI model for deep analysis.
@@ -330,32 +312,32 @@ def send_to_model_deep(tag: str, benchmark_name: str) -> None:
     files = get_deep_analysis_files(tag, benchmark_name)
     
     # Log the files being analyzed
-    logging.info(f"\n{'='*50}\nStarting deep analysis for {benchmark_name} (tag: {tag})")
+    print(f"\n{'='*50}\nStarting deep analysis for {benchmark_name} (tag: {tag})")
     
     # Log function profiles
     if files['functions_content']:
-        logging.info("\nFunction Profiles being analyzed:")
+        print("\nFunction Profiles being analyzed:")
         for line in files['functions_content'].split('\n'):
             if line.startswith('=== ') or line.startswith('--- '):
-                logging.info(line)
+                print(line)
     else:
-        logging.info("No function profiles found")
+        print("No function profiles found")
     
     # Log text profiles
     if files['text_content']:
-        logging.info("\nText Profiles being analyzed:")
+        print("\nText Profiles being analyzed:")
         for line in files['text_content'].split('\n'):
             if line.startswith('=== '):
-                logging.info(line)
+                print(line)
     else:
-        logging.info("No text profiles found")
+        print("No text profiles found")
     
     # Get configuration
     config = ConfigManager.load()
     
     # Get deep analysis prompt
     deep_analysis_prompt = get_deep_analysis_prompt(config)
-    logging.info("Using deep analysis prompt from configuration or default")
+    print("Using deep analysis prompt from configuration or default")
 
     user_prompt = f"""Benchmark: {benchmark_name}
 Deep Analysis Request
@@ -373,7 +355,7 @@ Detailed Text Profiles:
     
     try:
         client = ConfigManager.get_client()
-        logging.info(f"\nSending request to model: {config.model_config.model}")
+        print(f"\nSending request to model: {config.model_config.model}")
         response = client.chat.completions.create(
             model=config.model_config.model,
             messages=messages,
@@ -383,13 +365,13 @@ Detailed Text Profiles:
         )
         
         analysis = response.choices[0].message.content
-        logging.info("Successfully received model response")
+        print("Successfully received model response")
         
         # Save the analysis to file
         save_deep_analysis(tag, benchmark_name, analysis)
         
     except Exception as e:
-        logging.error(f"Error sending data to model for deep analysis of {benchmark_name}: {e}")
+        print(f"Error sending data to model for deep analysis of {benchmark_name}: {e}")
         raise
 
 def analyze_all_deep(tag: str, benchmark_names: List[str]) -> None:
