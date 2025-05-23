@@ -12,7 +12,8 @@ class ModelConfig:
     max_tokens: int
     temperature: float
     top_p: float
-    system_prompt_location: Optional[str] = None
+    general_analyze_prompt_location: Optional[str] = None
+    deep_analyze_prompt_location: Optional[str] = None
 
 @dataclass
 class Config:
@@ -59,7 +60,8 @@ class ConfigManager:
                 "max_tokens": 4096,
                 "temperature": 0.7,
                 "top_p": 1.0,
-                "system_prompt_location": "path/to/your/system_prompt.txt"
+                "general_analyze_prompt_location": "path/to/your/system_prompt.txt",
+                "deep_analyze_prompt_location": "path/to/your/deep_analyze_prompt.txt"
             }
         }
         
@@ -194,16 +196,39 @@ class ConfigManager:
             raise ValueError(f"Error loading system prompt from {location}: {str(e)}")
     
     @classmethod
-    def get_system_prompt(cls, config: Config) -> str:
-        """Get the system prompt from the configured location or use default."""
-        if config.model_config.system_prompt_location:
+    def get_deep_analyze_prompt(cls, config: Config) -> str:
+        """Get the deep analyze prompt from the configured location or use default."""
+        if config.model_config.deep_analyze_prompt_location:
             try:
-                prompt = cls._load_system_prompt_from_location(config.model_config.system_prompt_location)
-                print(f"\nUsing custom system prompt from: {config.model_config.system_prompt_location}")
+                prompt = cls._load_system_prompt_from_location(config.model_config.deep_analyze_prompt_location)
+                print(f"\nUsing custom deep analyze prompt from: {config.model_config.deep_analyze_prompt_location}")
                 return prompt
-            except ValueError as e:
-                print(f"\nWarning: {e}")
-                print("Falling back to default system prompt from templates directory")
+            except Exception as e:
+                print(f"\nWarning: Could not load custom deep analyze prompt: {str(e)}")
+                print("Falling back to default system prompt.")
                 return cls.get_default_system_prompt()
-        print("\nNo custom system prompt location specified. Using default system prompt from templates directory")
-        return cls.get_default_system_prompt() 
+        return cls.get_default_system_prompt()
+
+    @classmethod
+    def get_system_prompt(cls, config: Config, prompt_type: str = "general") -> str:
+        """Get the system prompt from the configured location or use default.
+        
+        Args:
+            config: The current configuration
+            prompt_type: Either "general" or "deep" to specify which prompt to load
+        """
+        if prompt_type == "deep":
+            return cls.get_deep_analyze_prompt(config)
+        elif prompt_type == "general":
+            if config.model_config.general_analyze_prompt_location:
+                try:
+                    prompt = cls._load_system_prompt_from_location(config.model_config.general_analyze_prompt_location)
+                    print(f"\nUsing custom system prompt from: {config.model_config.general_analyze_prompt_location}")
+                    return prompt
+                except Exception as e:
+                    print(f"\nWarning: Could not load custom system prompt: {str(e)}")
+                    print("Falling back to default system prompt.")
+                    return cls.get_default_system_prompt()
+            return cls.get_default_system_prompt()
+        else:
+            raise ValueError(f"Invalid prompt type: {prompt_type}. Must be either 'general' or 'deep'") 
