@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 from config_manager import ConfigManager, Config
 import os
 
@@ -224,35 +224,42 @@ def get_deep_analysis_files(tag: str, benchmark_name: str) -> Dict[str, str]:
     function_dirs = [d for d in base_dir.iterdir() if d.is_dir() and d.name.endswith('_functions')]
     
     # Collect content from all function directories
-    functions_content = ""
+    functions_content = []
     for func_dir in function_dirs:
         profile_type = func_dir.name.replace('_functions', '')
         benchmark_dir = func_dir / benchmark_name
         if benchmark_dir.exists():
-            functions_content += f"\n=== {profile_type.upper()} Functions ===\n"
+            profile_content = []
             for txt_file in benchmark_dir.glob("*.txt"):
                 try:
                     with open(txt_file, 'r') as f:
-                        functions_content += f"\n--- {txt_file.name} ---\n"
-                        functions_content += f.read()
+                        # Skip empty files or files with only whitespace
+                        content = f.read().strip()
+                        if content:
+                            # Only include the filename without extension
+                            profile_content.append(f"{txt_file.stem}:{content}")
                 except Exception as e:
                     print(f"Error reading functions file {txt_file}: {e}")
+            if profile_content:
+                functions_content.append(f"{profile_type}:{'|'.join(profile_content)}")
     
     # Get files from text directory
     text_dir = base_dir / "text" / benchmark_name
-    text_content = ""
+    text_content = []
     if text_dir.exists():
         for txt_file in text_dir.glob("*.txt"):
             try:
                 with open(txt_file, 'r') as f:
-                    text_content += f"\n=== {txt_file.name} ===\n"
-                    text_content += f.read()
+                    content = f.read().strip()
+                    if content:
+                        # Only include the filename without extension
+                        text_content.append(f"{txt_file.stem}:{content}")
             except Exception as e:
                 print(f"Error reading text file {txt_file}: {e}")
     
     return {
-        "functions_content": functions_content,
-        "text_content": text_content
+        "functions_content": "\n".join(functions_content),
+        "text_content": "\n".join(text_content)
     }
 
 def save_deep_analysis(tag: str, benchmark_name: str, analysis: str) -> None:
@@ -340,13 +347,12 @@ def send_to_model_deep(tag: str, benchmark_name: str) -> None:
     print("Using deep analysis prompt from configuration or default")
 
     user_prompt = f"""Benchmark: {benchmark_name}
-Deep Analysis Request
 
-Detailed Function Profiles:
-{files['functions_content']}
+Function Profiles:
+{files['functions_content'].strip()}
 
-Detailed Text Profiles:
-{files['text_content']}"""
+Profile Data:
+{files['text_content'].strip()}"""
 
     messages = [
         {"role": "system", "content": deep_analysis_prompt},
