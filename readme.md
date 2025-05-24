@@ -1,8 +1,7 @@
-## What We're Building
+## Two Main Idea
 
-1. Simplify the process of running Go benchmarks with profiling enabled by reducing the number of commands in less than half to perform complex benchmark comparisons.
-2. Make it easier to understand and analyze profile data
-3. Use AI to provide meaningful insights about performance bottlenecks
+1. Simplify running Go benchmarks with profiling by reducing the process to a single command, even for complex benchmark comparisons.
+2. Create a multi agent flow capapable of assisting on the analyses.
 
 ## Getting Involved
 
