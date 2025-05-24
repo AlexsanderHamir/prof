@@ -48,6 +48,23 @@ def log_profile_content(content: str, profile_type: str) -> None:
 
 def prepare_deep_analysis_prompt(
         benchmark_name: str, files: Dict[str, str]) -> List[Dict[str, str]]:
+    """Prepare a structured prompt for deep analysis of benchmark profiles.
+    
+    This function constructs a prompt for AI analysis by:
+    1. Loading the deep analysis prompt template from config
+    2. Combining benchmark name with function and text profiles
+    3. Structuring the prompt in a format suitable for the AI model
+    
+    Args:
+        benchmark_name: Name of the benchmark to analyze
+        files: Dictionary containing function and text profile contents
+        
+    Returns:
+        List of message dictionaries formatted for the AI model API
+        
+    Raises:
+        ValueError: If deep analysis prompt template is not configured
+    """
     config = ConfigManager.load()
     deep_analysis_prompt = get_deep_analysis_prompt(config)
 
@@ -70,6 +87,23 @@ Profile Data:
 
 def request_model_analysis(messages: List[Dict[str, str]],
                            config: Config) -> str:
+    """Send a request to the AI model for profile analysis.
+    
+    This function handles the interaction with the AI model API:
+    1. Configures the model client with appropriate settings
+    2. Sends the prepared messages to the model
+    3. Processes and returns the model's response
+    
+    Args:
+        messages: List of message dictionaries for the model
+        config: Configuration containing model settings
+        
+    Returns:
+        String containing the model's analysis
+        
+    Raises:
+        RuntimeError: If the model request fails
+    """
     client = ConfigManager.get_client()
     print(f"\nSending request to model: {config.model_config.model}")
 
@@ -107,17 +141,6 @@ class ProfileReadError(Exception):
 
 
 def read_profile_file(file_path: Path) -> str:
-    """Read and return the contents of a profile file.
-    
-    Args:
-        file_path: Path to the profile file
-        
-    Returns:
-        str: Contents of the profile file
-        
-    Raises:
-        ProfileReadError: If the file cannot be read or is empty
-    """
     try:
         with open(file_path, 'r') as f:
             content = f.read().strip()
@@ -152,6 +175,21 @@ def get_function_directories(base_dir: Path) -> List[Path]:
 
 def collect_function_profiles(base_dir: Path,
                               benchmark_name: str) -> List[str]:
+    """Collect and organize function profiles from multiple profile types.
+    
+    This function aggregates function profiles across different profile types:
+    1. Discovers all function profile directories
+    2. Collects profiles for each benchmark
+    3. Organizes profiles by type and content
+    4. Handles file reading and error cases
+    
+    Args:
+        base_dir: Base directory containing profile data
+        benchmark_name: Name of the benchmark to collect profiles for
+        
+    Returns:
+        List of formatted profile strings, organized by profile type
+    """
     functions_content = []
     for func_dir in get_function_directories(base_dir):
         profile_type = func_dir.name.replace('_functions', '')
@@ -171,6 +209,25 @@ def collect_text_profiles(base_dir: Path, benchmark_name: str) -> List[str]:
 
 
 def send_to_model_deep(tag: str, benchmark_name: str) -> None:
+    """Perform deep analysis of benchmark profiles using AI model.
+    
+    This function orchestrates the entire deep analysis process:
+    1. Gathers all relevant profile data
+    2. Prepares the analysis prompt
+    3. Sends data to the AI model
+    4. Saves the analysis results
+    
+    The function handles the complete workflow from data collection
+    to result storage, including error handling and logging.
+    
+    Args:
+        tag: Unique identifier for this analysis run
+        benchmark_name: Name of the benchmark to analyze
+        
+    Raises:
+        ProfileReadError: If profile files cannot be read
+        RuntimeError: If model analysis fails
+    """
     # Step 1: Gather profile data
     files = get_deep_analysis_files(tag, benchmark_name)
 
@@ -202,6 +259,22 @@ def send_to_model_deep(tag: str, benchmark_name: str) -> None:
 
 
 def analyze_all_deep(tag: str, benchmark_names: List[str]) -> None:
+    """Perform deep analysis for multiple benchmarks.
+    
+    This function manages the analysis of multiple benchmarks:
+    1. Validates the benchmark directory structure
+    2. Processes each benchmark sequentially
+    3. Handles errors for individual benchmarks
+    4. Provides progress feedback
+    
+    Args:
+        tag: Unique identifier for this analysis run
+        benchmark_names: List of benchmarks to analyze
+        
+    Note:
+        Errors in individual benchmark analysis are logged but don't
+        stop the overall process
+    """
     print(f"\nStarting deep analysis for tag: {tag}")
     print(f"Benchmarks: {', '.join(benchmark_names)}")
     print("=" * 100)
@@ -216,6 +289,22 @@ def analyze_all_deep(tag: str, benchmark_names: List[str]) -> None:
 
 
 def get_deep_analysis_files(tag: str, benchmark_name: str) -> Dict[str, str]:
+    """Collect and organize all files needed for deep analysis.
+    
+    This function gathers and structures all necessary profile data:
+    1. Collects function profiles from all profile types
+    2. Gathers text profiles for the benchmark
+    3. Organizes the data into a structured format
+    
+    Args:
+        tag: Unique identifier for this analysis run
+        benchmark_name: Name of the benchmark to analyze
+        
+    Returns:
+        Dictionary containing:
+        - functions_content: Combined function profiles
+        - text_content: Combined text profiles
+    """
     base_dir = Path("bench") / tag
 
     functions_content = collect_function_profiles(base_dir, benchmark_name)

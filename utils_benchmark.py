@@ -71,6 +71,25 @@ def setup_from_current_directory():
 
 
 def validate_arguments(args) -> Tuple[List[str], List[str], Optional[Dict]]:
+    """Validate and process command line arguments for benchmark execution.
+    
+    This function performs several validation steps:
+    1. Parses benchmark and profile lists from arguments
+    2. Loads and validates benchmark configurations from the config file
+    3. Ensures all specified benchmarks have valid configurations
+    
+    Args:
+        args: Command line arguments containing benchmarks and profiles
+        
+    Returns:
+        Tuple containing:
+        - List of validated benchmark names
+        - List of validated profile types
+        - Optional dictionary of benchmark configurations
+        
+    Raises:
+        ConfigurationError: If config file cannot be loaded or is invalid
+    """
     benchmarks = parse_list_argument(args.benchmarks)
     profiles = parse_list_argument(args.profiles)
 
@@ -176,6 +195,24 @@ def print_configuration(benchmarks: List[str], profiles: List[str], tag: str,
 def run_benchmarks_and_process_profiles(
         benchmarks: List[str], profiles: List[str], count: int, tag: str,
         benchmark_config: Optional[Dict]) -> None:
+    """Execute benchmarks and process their profiles in a specific sequence.
+    
+    This function orchestrates the entire benchmark workflow:
+    1. Runs each benchmark sequentially with specified profiles
+    2. Processes the generated profile files
+    3. Analyzes profile functions based on configuration
+    4. Handles all file operations and directory management
+    
+    Args:
+        benchmarks: List of benchmark names to run
+        profiles: List of profile types to collect (e.g., cpu, memory)
+        count: Number of iterations for each benchmark
+        tag: Unique identifier for this benchmark run
+        benchmark_config: Optional configuration for function analysis
+        
+    Raises:
+        BenchmarkError: If any step in the process fails
+    """
     print("\nRunning benchmarks sequentially...")
     for benchmark in benchmarks:
         run_benchmark(benchmark, profiles, count, tag)
@@ -211,8 +248,6 @@ def run_benchmark(benchmark: str, profiles: List[str], count: int,
 
 
 def wait_for_profile_file(profile_file: str, timeout: int = 5) -> bool:
-    """Wait for a profile file to be written and become non-empty.
-    Returns True if the file exists and is non-empty, False if timeout is reached."""
     start_time = time.time()
     while time.time() - start_time < timeout:
         if os.path.exists(profile_file) and os.path.getsize(profile_file) > 0:
@@ -370,10 +405,16 @@ def extract_function_name(line: str, function_prefixes: List[str],
                           ignore_functions: Set[str]) -> Optional[str]:
     """Extract and validate a function name from a profile line.
     
+    This function performs parsing of profile output lines to extract
+    function names while applying filtering rules:
+    1. Matches function names against allowed prefixes
+    2. Excludes functions in the ignore list
+    3. Handles various line formats and edge cases
+    
     Args:
-        line: Profile line to parse
-        function_prefixes: List of allowed function prefixes
-        ignore_functions: Set of functions to ignore
+        line: Raw line from profile output
+        function_prefixes: List of allowed function name prefixes
+        ignore_functions: Set of function names to exclude
         
     Returns:
         Extracted function name if valid, None otherwise
@@ -402,18 +443,24 @@ def extract_function_name(line: str, function_prefixes: List[str],
 
 def extract_functions_from_profile(profile_text_file: Path,
                                    config: ProfileAnalysisConfig) -> Set[str]:
-    """Extract function names from a profile text file.
+    """Extract and filter function names from a profile text file.
+    
+    This function processes a profile text file to extract relevant function names
+    based on configuration rules. It handles:
+    1. File reading and parsing
+    2. Function name extraction and validation
+    3. Application of prefix and ignore rules
+    4. Deduplication of results
     
     Args:
         profile_text_file: Path to the profile text file
-        config: Profile analysis configuration
+        config: Configuration specifying extraction rules
         
     Returns:
-        Set of extracted function names
+        Set of unique, validated function names
         
     Raises:
-        FileNotFoundError: If profile file doesn't exist
-        RuntimeError: If profile file is invalid
+        ProfileReadError: If the profile file cannot be read
     """
     if not profile_text_file.exists():
         raise FileNotFoundError(
@@ -481,6 +528,23 @@ def analyze_profile_functions(
         profiles: List[str],
         benchmarks: List[str],
         benchmark_config: Optional[Dict[str, Dict[str, str]]] = None) -> None:
+    """Analyze profile functions across multiple benchmarks and profile types.
+    
+    This function performs comprehensive analysis of profile data:
+    1. Processes each benchmark and profile type combination
+    2. Applies benchmark-specific analysis configurations
+    3. Generates detailed analysis for each function
+    4. Manages output file organization
+    
+    Args:
+        tag: Unique identifier for this analysis run
+        profiles: List of profile types to analyze
+        benchmarks: List of benchmarks to process
+        benchmark_config: Optional configuration for analysis rules
+        
+    Raises:
+        BenchmarkError: If analysis fails for any benchmark/profile
+    """
     pprof_profiles = [p for p in profiles if p != "trace"]
 
     for profile in pprof_profiles:
@@ -602,8 +666,23 @@ def parse_list_argument(arg: str) -> List[str]:
 
 
 def parse_benchmark_config(config_str: str) -> Dict[str, Dict[str, str]]:
-    """Parse a JSON-like string containing benchmark-specific configurations.
-    Example format: '{"BenchmarkGenPool":{"prefix":"github.com/AlexsanderHamir/GenPool","ignore":"func1,performWorkload"}}'"""
+    """Parse benchmark configuration from a string representation.
+    
+    This function handles complex parsing of benchmark configuration strings
+    that specify function prefixes and ignore lists. It supports:
+    1. Multiple benchmark configurations
+    2. Prefix and ignore list specifications
+    3. Validation of configuration format
+    
+    Args:
+        config_str: String containing benchmark configurations
+        
+    Returns:
+        Dictionary mapping benchmark names to their configurations
+        
+    Raises:
+        ValueError: If the configuration string is malformed
+    """
     try:
         # Replace single quotes with double quotes for valid JSON
         config_str = config_str.replace("'", '"')
