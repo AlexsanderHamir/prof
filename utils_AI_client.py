@@ -117,22 +117,21 @@ def request_model_analysis(messages: List[Dict[str, str]],
     return response.choices[0].message.content
 
 
-def validate_benchmark_directories(
-        tag: str) -> tuple[bool, str, list[str] | None]:
+def validate_benchmark_directories(tag: str) -> list[str]:
     base_dir = Path("bench") / tag
 
     if not base_dir.exists():
-        return False, f"No benchmark data found for tag '{tag}'", None
+        raise ValueError(f"No benchmark data found for tag '{tag}'")
 
     text_dir = base_dir / "text"
     if not text_dir.exists():
-        return False, f"No text profiles found in {text_dir}", None
+        raise ValueError(f"No text profiles found in {text_dir}")
 
     benchmark_names = [d.name for d in text_dir.iterdir() if d.is_dir()]
     if not benchmark_names:
-        return False, f"No benchmark directories found in {text_dir}", None
+        raise ValueError(f"No benchmark directories found in {text_dir}")
 
-    return True, "", benchmark_names
+    return benchmark_names
 
 
 class ProfileReadError(Exception):
