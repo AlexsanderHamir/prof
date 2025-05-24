@@ -17,12 +17,16 @@ from utils_config_manager import (
 )
 
 
+class ConfigurationError(Exception):
+    """Custom exception for configuration-related errors."""
+    pass
+
+
 class ConfigManager:
     _config_path: Optional[str] = None
 
     @classmethod
     def create_template(cls, output_path: Optional[str] = None) -> None:
-        """Create a template configuration file."""
         template = create_config_template()
         template_path = Path(output_path) if output_path else Path.cwd(
         ) / "config_template.json"
@@ -59,20 +63,20 @@ class ConfigManager:
         print("✓ All benchmark configurations are valid")
 
         cls._config_path = config_path
-        print_validation_progress("Configuration validation completed successfully! 🎉")
+        print_validation_progress(
+            "Configuration validation completed successfully! 🎉")
 
     @classmethod
     def load(cls) -> Config:
         if not cls._config_path:
-            from utils_benchmark import print_configuration_error
-            print_configuration_error("Configuration not found.")
-            sys.exit(1)
+            raise ConfigurationError(
+                "Configuration not found. Please run setup first.")
 
         try:
             config_data = load_config_from_file(cls._config_path)
             return create_config_from_data(config_data)
         except Exception as e:
-            raise ValueError(f"Error loading configuration: {str(e)}")
+            raise ConfigurationError(f"Error loading configuration: {str(e)}")
 
     @classmethod
     def get_client(cls) -> OpenAI:

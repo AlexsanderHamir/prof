@@ -29,7 +29,6 @@ class Config:
 
 
 def validate_config_structure(config_data: Dict[str, Any]) -> None:
-    """Validate the basic structure of the configuration file."""
     required_fields = ["api_key", "base_url", "model_config"]
     for field in required_fields:
         if field not in config_data:
@@ -37,7 +36,6 @@ def validate_config_structure(config_data: Dict[str, Any]) -> None:
 
 
 def validate_model_config(model_config: Dict[str, Any]) -> None:
-    """Validate the model configuration section."""
     model_config_fields = ["model", "max_tokens", "temperature", "top_p"]
     for field in model_config_fields:
         if field not in model_config:
@@ -46,7 +44,6 @@ def validate_model_config(model_config: Dict[str, Any]) -> None:
 
 
 def validate_benchmark_configs(benchmark_configs: Dict[str, Any]) -> None:
-    """Validate the benchmark configurations section."""
     for benchmark, config in benchmark_configs.items():
         if not isinstance(config, dict):
             raise ValueError(
@@ -107,7 +104,6 @@ def save_template_to_file(template: Dict[str, Any], output_path: Path) -> None:
 
 
 def load_config_from_file(config_path: str) -> Dict[str, Any]:
-    """Load and parse the configuration file."""
     try:
         with open(config_path, "r") as f:
             return json.load(f)

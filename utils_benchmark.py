@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 from typing import Dict, List, Optional, Tuple, Set, Pattern
-from config_manager import ConfigManager
+from config_manager import ConfigManager, ConfigurationError
 from dataclasses import dataclass
 
 PROFILE_FLAGS: Dict[str, str] = {
@@ -18,11 +18,7 @@ PROFILE_FLAGS: Dict[str, str] = {
 }
 
 PPROF_TEXT_PARAMS = [
-    "-nodecount=1000000",
-    "-cum",
-    "-edgefraction=0",
-    "-nodefraction=0",
-    "-top"
+    "-nodecount=1000000", "-cum", "-edgefraction=0", "-nodefraction=0", "-top"
 ]
 
 
@@ -57,18 +53,21 @@ class BenchmarkError(Exception):
 def setup_from_current_directory():
     template_path = os.path.join(os.getcwd(), "config_template.json")
     if os.path.exists(template_path):
-        print("\nFound config_template.json in current directory. Attempting automatic setup...")
+        print(
+            "\nFound config_template.json in current directory. Attempting automatic setup..."
+        )
         try:
             ConfigManager.setup_from_file(template_path)
             print("Automatic configuration completed successfully!")
-        except ValueError as e:
+        except (ValueError, ConfigurationError) as e:
             print_configuration_error(
                 f"Error during automatic configuration: {e}")
-            sys.exit(1)
+            raise  # Let the caller handle the error
     else:
         print_configuration_error(
             "Error: Configuration not found. Please run setup first:")
-        sys.exit(1)
+        raise ConfigurationError(
+            "Configuration not found. Please run setup first.")
 
 
 def validate_arguments(args) -> Tuple[List[str], List[str], Optional[Dict]]:
@@ -85,14 +84,15 @@ def validate_arguments(args) -> Tuple[List[str], List[str], Optional[Dict]]:
                     "prefixes": bench_config.prefixes,
                     "ignore": bench_config.ignore
                 }
-    except ValueError as e:
+    except ConfigurationError as e:
         print(f"Error loading benchmark configuration: {e}", file=sys.stderr)
-        sys.exit(1)
+        raise  # Let the caller handle the error
 
     return benchmarks, profiles, benchmark_config
 
 
-def setup_directories(tag: str, benchmarks: List[str], profiles: List[str]) -> None:
+def setup_directories(tag: str, benchmarks: List[str],
+                      profiles: List[str]) -> None:
     create_bench_directories(tag, benchmarks)
     create_profile_function_directories(tag, profiles, benchmarks)
 
@@ -135,7 +135,8 @@ def create_bench_directories(tag: str, benchmarks: List[str]):
         os.exit(1)
 
 
-def create_profile_function_directories(tag: str, profiles: List[str], benchmarks: List[str]):
+def create_profile_function_directories(tag: str, profiles: List[str],
+                                        benchmarks: List[str]):
     tag_dir = os.path.join("bench", tag)
 
     pprof_profiles = [p for p in profiles if p != "trace"]
@@ -154,7 +155,6 @@ def create_profile_function_directories(tag: str, profiles: List[str], benchmark
 
 def print_configuration(benchmarks: List[str], profiles: List[str], tag: str,
                         count: int, benchmark_config: Optional[Dict]) -> None:
-    """Print the configuration details for verification."""
     print("\nParsed arguments:")
     print(f"Benchmarks: {benchmarks}")
     print(f"Profiles: {profiles}")
@@ -168,10 +168,14 @@ def print_configuration(benchmarks: List[str], profiles: List[str], tag: str,
             if config.get("ignore"):
                 print(f"    Ignore: {config['ignore']}")
     else:
-        print("\nNo benchmark configuration found in config file - analyzing all functions")
+        print(
+            "\nNo benchmark configuration found in config file - analyzing all functions"
+        )
 
 
-def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[str], count: int, tag: str, benchmark_config: Optional[Dict]) -> None:
+def run_benchmarks_and_process_profiles(
+        benchmarks: List[str], profiles: List[str], count: int, tag: str,
+        benchmark_config: Optional[Dict]) -> None:
     print("\nRunning benchmarks sequentially...")
     for benchmark in benchmarks:
         run_benchmark(benchmark, profiles, count, tag)
@@ -186,13 +190,14 @@ def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[st
     print("\nAll benchmarks and profile processing completed successfully!")
 
 
-def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str) -> None:
+def run_benchmark(benchmark: str, profiles: List[str], count: int,
+                  tag: str) -> None:
     config = BenchmarkConfig(benchmark, profiles, count, tag)
 
     # Build command and setup directories
     cmd = build_benchmark_command(config)
-    _, text_dir, bin_dir = setup_output_directories(
-        config.benchmark_name, config.tag)
+    _, text_dir, bin_dir = setup_output_directories(config.benchmark_name,
+                                                    config.tag)
 
     # Run benchmark and capture output
     output_file = text_dir / f"{config.benchmark_name}.txt"
@@ -216,7 +221,10 @@ def wait_for_profile_file(profile_file: str, timeout: int = 5) -> bool:
     return False
 
 
-def run_pprof_command(cmd: List[str], output_path: Path, binary_mode: bool = False) -> subprocess.CompletedProcess:
+def run_pprof_command(
+        cmd: List[str],
+        output_path: Path,
+        binary_mode: bool = False) -> subprocess.CompletedProcess:
     """Run a pprof command and write output to a file.
 
     Args:
@@ -233,16 +241,15 @@ def run_pprof_command(cmd: List[str], output_path: Path, binary_mode: bool = Fal
     mode = 'wb' if binary_mode else 'w'
     try:
         with open(output_path, mode) as f:
-            process = subprocess.run(
-                cmd,
-                stdout=f,
-                stderr=subprocess.PIPE,
-                text=not binary_mode,
-                check=True
-            )
+            process = subprocess.run(cmd,
+                                     stdout=f,
+                                     stderr=subprocess.PIPE,
+                                     text=not binary_mode,
+                                     check=True)
         return process
     except subprocess.CalledProcessError as e:
-        error_msg = e.stderr.decode() if isinstance(e.stderr, bytes) else e.stderr
+        error_msg = e.stderr.decode() if isinstance(e.stderr,
+                                                    bytes) else e.stderr
         raise RuntimeError(f"pprof command failed: {error_msg}")
 
 
@@ -274,10 +281,11 @@ def generate_png_visualization(profile_file: Path, output_file: Path) -> None:
     run_pprof_command(cmd, output_file, binary_mode=True)
 
 
-def process_profile(profile: str, benchmark: str, profile_file: Path,  text_dir: Path, profile_functions_dir: Path) -> None:
+def process_profile(profile: str, benchmark: str, profile_file: Path,
+                    text_dir: Path, profile_functions_dir: Path) -> None:
     if not profile_file.exists():
-        print(
-            f"Warning: Profile file not found: {profile_file}", file=sys.stderr)
+        print(f"Warning: Profile file not found: {profile_file}",
+              file=sys.stderr)
         return
 
     output_file = text_dir / f"{benchmark}_{profile}.txt"
@@ -291,11 +299,12 @@ def process_profile(profile: str, benchmark: str, profile_file: Path,  text_dir:
         # Generate PNG visualization
         generate_png_visualization(profile_file, png_file)
         print(
-            f"Generated PNG visualization for {profile} profile of {benchmark} in {profile_functions_dir}")
+            f"Generated PNG visualization for {profile} profile of {benchmark} in {profile_functions_dir}"
+        )
 
     except RuntimeError as e:
-        print(
-            f"Error processing {profile} profile for {benchmark}: {e}", file=sys.stderr)
+        print(f"Error processing {profile} profile for {benchmark}: {e}",
+              file=sys.stderr)
         raise
 
 
@@ -312,14 +321,16 @@ def process_profiles(benchmark: str, profiles: List[str], tag: str) -> None:
         profile_functions_dir = tag_dir / f"{profile}_functions" / benchmark
 
         try:
-            process_profile(profile, benchmark, profile_file,
-                            text_dir, profile_functions_dir)
+            process_profile(profile, benchmark, profile_file, text_dir,
+                            profile_functions_dir)
         except RuntimeError as e:
-            print(f"Fatal error processing profiles: {e}", file=sys.stderr)
-            sys.exit(1)
+            print(f"Error processing profiles: {e}", file=sys.stderr)
+            raise  # Let the caller handle the error
 
 
-def get_profile_analysis_config(benchmark: str, benchmark_config: Optional[Dict[str, Dict[str, str]]]) -> ProfileAnalysisConfig:
+def get_profile_analysis_config(
+    benchmark: str, benchmark_config: Optional[Dict[str, Dict[str, str]]]
+) -> ProfileAnalysisConfig:
     """Get configuration for profile analysis of a specific benchmark.
     
     Args:
@@ -332,8 +343,8 @@ def get_profile_analysis_config(benchmark: str, benchmark_config: Optional[Dict[
     config = benchmark_config.get(benchmark, {}) if benchmark_config else {}
     return ProfileAnalysisConfig(
         function_prefixes=config.get("prefixes", []),
-        ignore_functions=set(parse_list_argument(config.get("ignore", ""))) if config.get("ignore") else set()
-    )
+        ignore_functions=set(parse_list_argument(config.get("ignore", "")))
+        if config.get("ignore") else set())
 
 
 def get_profile_paths(tag: str, benchmark: str, profile: str) -> ProfilePaths:
@@ -348,14 +359,15 @@ def get_profile_paths(tag: str, benchmark: str, profile: str) -> ProfilePaths:
         ProfilePaths containing all necessary file paths
     """
     tag_dir = Path("bench") / tag
-    return ProfilePaths(
-        profile_text=tag_dir / "text" / benchmark / f"{benchmark}_{profile}.txt",
-        profile_binary=tag_dir / "bin" / benchmark / f"{benchmark}_{profile}.out",
-        output=tag_dir / f"{profile}_functions" / benchmark
-    )
+    return ProfilePaths(profile_text=tag_dir / "text" / benchmark /
+                        f"{benchmark}_{profile}.txt",
+                        profile_binary=tag_dir / "bin" / benchmark /
+                        f"{benchmark}_{profile}.out",
+                        output=tag_dir / f"{profile}_functions" / benchmark)
 
 
-def extract_function_name(line: str, function_prefixes: List[str], ignore_functions: Set[str]) -> Optional[str]:
+def extract_function_name(line: str, function_prefixes: List[str],
+                          ignore_functions: Set[str]) -> Optional[str]:
     """Extract and validate a function name from a profile line.
     
     Args:
@@ -367,13 +379,16 @@ def extract_function_name(line: str, function_prefixes: List[str], ignore_functi
         Extracted function name if valid, None otherwise
     """
     parts = line.split()
-    if len(parts) < 6:  # Need at least 6 columns (flat, flat%, sum%, cum, cum%, function)
+    if len(
+            parts
+    ) < 6:  # Need at least 6 columns (flat, flat%, sum%, cum, cum%, function)
         return None
 
     func_name = " ".join(parts[5:])
-    
+
     # Check prefixes if specified
-    if function_prefixes and not any(prefix in func_name for prefix in function_prefixes):
+    if function_prefixes and not any(prefix in func_name
+                                     for prefix in function_prefixes):
         return None
 
     # Extract function name after last dot
@@ -385,7 +400,8 @@ def extract_function_name(line: str, function_prefixes: List[str], ignore_functi
     return func_name if func_name and func_name not in ignore_functions else None
 
 
-def extract_functions_from_profile(profile_text_file: Path, config: ProfileAnalysisConfig) -> Set[str]:
+def extract_functions_from_profile(profile_text_file: Path,
+                                   config: ProfileAnalysisConfig) -> Set[str]:
     """Extract function names from a profile text file.
     
     Args:
@@ -400,7 +416,8 @@ def extract_functions_from_profile(profile_text_file: Path, config: ProfileAnaly
         RuntimeError: If profile file is invalid
     """
     if not profile_text_file.exists():
-        raise FileNotFoundError(f"Profile text file not found: {profile_text_file}")
+        raise FileNotFoundError(
+            f"Profile text file not found: {profile_text_file}")
 
     functions = set()
     found_header = False
@@ -419,7 +436,9 @@ def extract_functions_from_profile(profile_text_file: Path, config: ProfileAnaly
                 if not found_header:
                     continue
 
-                if func_name := extract_function_name(line, config.function_prefixes, config.ignore_functions):
+                if func_name := extract_function_name(line,
+                                                      config.function_prefixes,
+                                                      config.ignore_functions):
                     functions.add(func_name)
 
         if not found_header:
@@ -428,7 +447,8 @@ def extract_functions_from_profile(profile_text_file: Path, config: ProfileAnaly
         return functions
 
     except Exception as e:
-        raise RuntimeError(f"Error reading profile file {profile_text_file}: {e}")
+        raise RuntimeError(
+            f"Error reading profile file {profile_text_file}: {e}")
 
 
 def analyze_single_function(func: str, paths: ProfilePaths) -> None:
@@ -446,30 +466,41 @@ def analyze_single_function(func: str, paths: ProfilePaths) -> None:
 
     try:
         with open(output_file, 'w') as f:
-            subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, text=True, check=True)
+            subprocess.run(cmd,
+                           stdout=f,
+                           stderr=subprocess.PIPE,
+                           text=True,
+                           check=True)
         print(f"Analyzed function {func}")
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Error analyzing function {func}: {e.stderr}")
 
 
-def analyze_profile_functions(tag: str, profiles: List[str], benchmarks: List[str], benchmark_config: Optional[Dict[str, Dict[str, str]]] = None) -> None:
+def analyze_profile_functions(
+        tag: str,
+        profiles: List[str],
+        benchmarks: List[str],
+        benchmark_config: Optional[Dict[str, Dict[str, str]]] = None) -> None:
     pprof_profiles = [p for p in profiles if p != "trace"]
 
     for profile in pprof_profiles:
         for benchmark in benchmarks:
             try:
-                config = get_profile_analysis_config(benchmark, benchmark_config)
+                config = get_profile_analysis_config(benchmark,
+                                                     benchmark_config)
                 paths = get_profile_paths(tag, benchmark, profile)
-                
 
                 paths.output.mkdir(parents=True, exist_ok=True)
-                
-                functions = extract_functions_from_profile(paths.profile_text, config)
+
+                functions = extract_functions_from_profile(
+                    paths.profile_text, config)
                 for func in functions:
                     try:
                         analyze_single_function(func, paths)
                     except RuntimeError as e:
-                        print(f"Error analyzing function {func} for {benchmark} ({profile}): {e}")
+                        print(
+                            f"Error analyzing function {func} for {benchmark} ({profile}): {e}"
+                        )
                         continue
 
             except FileNotFoundError as e:
@@ -487,8 +518,10 @@ def print_configuration_error(error_msg: Optional[str] = None) -> None:
     print("\nPlease set up configuration manually:", file=sys.stderr)
     print("1. Create a template config file:", file=sys.stderr)
     print(
-        "   prof setup --create-template [--output-path path/to/config.json]", file=sys.stderr)
-    print("2. Use an existing config file (after creating template as well):", file=sys.stderr)
+        "   prof setup --create-template [--output-path path/to/config.json]",
+        file=sys.stderr)
+    print("2. Use an existing config file (after creating template as well):",
+          file=sys.stderr)
     print("   prof setup --config path/to/your/config.json", file=sys.stderr)
 
 
@@ -497,7 +530,9 @@ def setup_command(args):
         ConfigManager.create_template(args.output_path)
         print("\nTemplate configuration file created successfully!")
     else:
-        print("\nError: Please use --create-template to create a configuration template", file=sys.stderr)
+        print(
+            "\nError: Please use --create-template to create a configuration template",
+            file=sys.stderr)
         sys.exit(1)
 
 
@@ -537,8 +572,8 @@ def cleanup_tag_directory(tag: str):
             shutil.rmtree(tag_dir)
             print(f"Cleaned up tag directory: {tag_dir}")
         except Exception as e:
-            print(
-                f"Error cleaning up tag directory {tag_dir}: {e}", file=sys.stderr)
+            print(f"Error cleaning up tag directory {tag_dir}: {e}",
+                  file=sys.stderr)
 
 
 def clean_directory(directory: str):
@@ -554,13 +589,12 @@ def clean_directory(directory: str):
                     shutil.rmtree(item_path)
             print(f"Cleaned directory: {directory}")
         except Exception as e:
-            print(
-                f"Error cleaning directory {directory}: {e}", file=sys.stderr)
-            sys.exit(1)
+            print(f"Error cleaning directory {directory}: {e}",
+                  file=sys.stderr)
+            raise RuntimeError(f"Failed to clean directory {directory}: {e}")
 
 
 def parse_list_argument(arg: str) -> List[str]:
-    """Parse a comma-separated string into a list, removing brackets if present."""
     # Remove brackets if present
     arg = arg.strip('[]')
     # Split by comma and strip whitespace
@@ -582,7 +616,8 @@ def parse_benchmark_config(config_str: str) -> Dict[str, Dict[str, str]]:
                     f"Invalid settings format for benchmark {benchmark}")
             if "prefix" not in settings:
                 raise ValueError(f"Missing 'prefix' for benchmark {benchmark}")
-            if "ignore" in settings and not isinstance(settings["ignore"], str):
+            if "ignore" in settings and not isinstance(settings["ignore"],
+                                                       str):
                 raise ValueError(
                     f"'ignore' must be a string for benchmark {benchmark}")
 
@@ -594,20 +629,9 @@ def parse_benchmark_config(config_str: str) -> Dict[str, Dict[str, str]]:
 
 
 def build_benchmark_command(config: BenchmarkConfig) -> List[str]:
-    """Builds the go test command for running benchmarks.
-
-    Args:
-        config: Benchmark configuration containing test parameters
-
-    Returns:
-        List of command arguments
-    """
     cmd = [
-        "go", "test",
-        "-run=^$",
-        f"-bench=^{config.benchmark_name}$",
-        "-benchmem",
-        f"-count={config.iteration_count}"
+        "go", "test", "-run=^$", f"-bench=^{config.benchmark_name}$",
+        "-benchmem", f"-count={config.iteration_count}"
     ]
 
     # Add requested profile flags
@@ -618,16 +642,8 @@ def build_benchmark_command(config: BenchmarkConfig) -> List[str]:
     return cmd
 
 
-def setup_output_directories(benchmark_name: str, tag: str) -> tuple[Path, Path, Path]:
-    """Creates and returns paths for benchmark output directories.
-
-    Args:
-        benchmark_name: Name of the benchmark
-        tag: Tag for organizing results
-
-    Returns:
-        Tuple of (tag_dir, text_dir, bin_dir) paths
-    """
+def setup_output_directories(benchmark_name: str,
+                             tag: str) -> tuple[Path, Path, Path]:
     tag_dir = Path("bench") / tag
     text_dir = tag_dir / "text" / benchmark_name
     bin_dir = tag_dir / "bin" / benchmark_name
@@ -651,8 +667,11 @@ def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
     """
     try:
         with open(output_file, 'w') as f:
-            process = subprocess.run(
-                cmd, stdout=f, stderr=subprocess.STDOUT, text=True, check=True)
+            process = subprocess.run(cmd,
+                                     stdout=f,
+                                     stderr=subprocess.STDOUT,
+                                     text=True,
+                                     check=True)
     except subprocess.CalledProcessError as e:
         with open(output_file, 'r') as f:
             error_output = f.read()
@@ -660,7 +679,8 @@ def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
             f"Benchmark failed with exit code {e.returncode}:\n{error_output}")
 
 
-def move_profile_files(benchmark_name: str, profiles: List[str], bin_dir: Path) -> None:
+def move_profile_files(benchmark_name: str, profiles: List[str],
+                       bin_dir: Path) -> None:
     """Moves generated profile files to the benchmark directory.
 
     Args:
@@ -677,8 +697,9 @@ def move_profile_files(benchmark_name: str, profiles: List[str], bin_dir: Path) 
             continue
 
         if not wait_for_profile_file(str(profile_file)):
-            print(f"Warning: Profile file {profile_file} was not fully written within timeout",
-                  file=sys.stderr)
+            print(
+                f"Warning: Profile file {profile_file} was not fully written within timeout",
+                file=sys.stderr)
             continue
 
         new_profile_file = bin_dir / f"{benchmark_name}_{profile}.out"
@@ -694,8 +715,9 @@ def move_test_files(benchmark_name: str, bin_dir: Path) -> None:
     """
     for item in Path('.').glob('*.test'):
         if not wait_for_profile_file(str(item)):
-            print(f"Warning: Test file {item} was not fully written within timeout",
-                  file=sys.stderr)
+            print(
+                f"Warning: Test file {item} was not fully written within timeout",
+                file=sys.stderr)
             continue
 
         new_test_file = bin_dir / f"{benchmark_name}_{item.name}"
