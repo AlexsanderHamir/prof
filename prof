@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 import sys
-from cli_helpers import (
-    cleanup_tag_directory,
-    parse_arguments,
-    handle_benchmarks,
-    check_required_args
-)
+from cli_helpers import (parse_arguments, handle_benchmarks)
+from utils_benchmark import check_required_args, cleanup_tag_directory
+
 
 def main():
     args = parse_arguments()
-    if args.command is None and (args.benchmarks and args.profiles and args.tag and args.count):
+    if args.command is None and (args.benchmarks and args.profiles and args.tag
+                                 and args.count):
         try:
             handle_benchmarks(args)
         except Exception as e:
@@ -19,6 +17,7 @@ def main():
             sys.exit(1)
     else:
         check_required_args(args)
+
 
 if __name__ == "__main__":
     main()
