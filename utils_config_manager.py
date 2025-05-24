@@ -112,7 +112,6 @@ def load_config_from_file(config_path: str) -> Dict[str, Any]:
 
 
 def create_config_from_data(config_data: Dict[str, Any]) -> Config:
-    """Create a Config object from the configuration data."""
     model_config = ModelConfig(**config_data["model_config"])
 
     benchmark_configs = {}

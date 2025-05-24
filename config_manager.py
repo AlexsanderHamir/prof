@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Optional
 from openai import OpenAI
-import sys
 
 from utils_config_manager import (
     Config,
@@ -80,6 +79,10 @@ class ConfigManager:
 
     @classmethod
     def get_client(cls) -> OpenAI:
-        """Get an OpenAI client instance."""
         config = cls.load()
         return OpenAI(api_key=config.api_key, base_url=config.base_url)
+
+    @classmethod
+    def get_api_key(cls) -> str:
+        config = cls.load()
+        return config.api_key
