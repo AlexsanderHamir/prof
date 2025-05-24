@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import Dict, List
 
+from dataProcessingAgent import DataPreprocessingAgent
 from config_manager import Config, ConfigManager
 
 
@@ -229,6 +230,8 @@ def send_to_model_deep(tag: str, benchmark_name: str) -> None:
     """
     # Step 1: Gather profile data
     files = get_deep_analysis_files(tag, benchmark_name)
+    agent = DataPreprocessingAgent()
+    agent.process_benchmark(files)
 
     # Step 2: Log what we're analyzing
     print(
@@ -425,7 +428,6 @@ Profile Type: {profile_type}
             "content": user_prompt
         }]
 
-        print(f"Analyzing {benchmark_name} ({profile_type})...")
         analysis = request_model_general(messages, config)
         save_analysis(tag, benchmark_name, profile_type, analysis)
         print(
