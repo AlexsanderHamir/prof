@@ -195,13 +195,13 @@ def print_configuration(benchmarks: List[str], profiles: List[str], tag: str,
 def run_benchmarks_and_process_profiles(
         benchmarks: List[str], profiles: List[str], count: int, tag: str,
         benchmark_config: Optional[Dict]) -> None:
-    """Execute benchmarks and process their profiles in a specific sequence.
+    """Execute benchmarks and process their profiles in a pipeline pattern.
     
-    This function orchestrates the entire benchmark workflow:
-    1. Runs each benchmark sequentially with specified profiles
-    2. Processes the generated profile files
-    3. Analyzes profile functions based on configuration
-    4. Handles all file operations and directory management
+    This function orchestrates the benchmark workflow in a pipeline:
+    1. Runs each benchmark sequentially
+    2. As soon as a benchmark completes, processes its profiles
+    3. As soon as profiles are processed for a benchmark, analyzes its functions
+    4. This creates an efficient pipeline where each stage starts as soon as possible
     
     Args:
         benchmarks: List of benchmark names to run
@@ -213,16 +213,19 @@ def run_benchmarks_and_process_profiles(
     Raises:
         BenchmarkError: If any step in the process fails
     """
-    print("\nRunning benchmarks sequentially...")
+    print("\nStarting benchmark pipeline...")
     for benchmark in benchmarks:
+        print(f"\nRunning benchmark: {benchmark}")
         run_benchmark(benchmark, profiles, count, tag)
 
-    print("\nProcessing profiles...")
-    for benchmark in benchmarks:
+        print(f"\nProcessing profiles for {benchmark}...")
         process_profiles(benchmark, profiles, tag)
 
-    print("\nAnalyzing profile functions...")
-    analyze_profile_functions(tag, profiles, benchmarks, benchmark_config)
+        print(f"\nAnalyzing profile functions for {benchmark}...")
+        analyze_benchmark_profile_functions(tag, profiles, benchmark,
+                                            benchmark_config)
+
+        print(f"Completed pipeline for benchmark: {benchmark}")
 
     print("\nAll benchmarks and profile processing completed successfully!")
 
@@ -523,15 +526,15 @@ def analyze_single_function(func: str, paths: ProfilePaths) -> None:
         raise RuntimeError(f"Error analyzing function {func}: {e.stderr}")
 
 
-def analyze_profile_functions(
+def analyze_benchmark_profile_functions(
         tag: str,
         profiles: List[str],
-        benchmarks: List[str],
+        benchmark: str,
         benchmark_config: Optional[Dict[str, Dict[str, str]]] = None) -> None:
-    """Analyze profile functions across multiple benchmarks and profile types.
+    """Analyze profile functions for a single benchmark across multiple profile types.
     
-    This function performs comprehensive analysis of profile data:
-    1. Processes each benchmark and profile type combination
+    This function performs comprehensive analysis of profile data for a single benchmark:
+    1. Processes each profile type for the benchmark
     2. Applies benchmark-specific analysis configurations
     3. Generates detailed analysis for each function
     4. Manages output file organization
@@ -539,40 +542,38 @@ def analyze_profile_functions(
     Args:
         tag: Unique identifier for this analysis run
         profiles: List of profile types to analyze
-        benchmarks: List of benchmarks to process
+        benchmark: Name of the benchmark to process
         benchmark_config: Optional configuration for analysis rules
         
     Raises:
-        BenchmarkError: If analysis fails for any benchmark/profile
+        BenchmarkError: If analysis fails for the benchmark
     """
     pprof_profiles = [p for p in profiles if p != "trace"]
 
     for profile in pprof_profiles:
-        for benchmark in benchmarks:
-            try:
-                config = get_profile_analysis_config(benchmark,
-                                                     benchmark_config)
-                paths = get_profile_paths(tag, benchmark, profile)
+        try:
+            config = get_profile_analysis_config(benchmark, benchmark_config)
+            paths = get_profile_paths(tag, benchmark, profile)
 
-                paths.output.mkdir(parents=True, exist_ok=True)
+            paths.output.mkdir(parents=True, exist_ok=True)
 
-                functions = extract_functions_from_profile(
-                    paths.profile_text, config)
-                for func in functions:
-                    try:
-                        analyze_single_function(func, paths)
-                    except RuntimeError as e:
-                        print(
-                            f"Error analyzing function {func} for {benchmark} ({profile}): {e}"
-                        )
-                        continue
+            functions = extract_functions_from_profile(paths.profile_text,
+                                                       config)
+            for func in functions:
+                try:
+                    analyze_single_function(func, paths)
+                except RuntimeError as e:
+                    print(
+                        f"Error analyzing function {func} for {benchmark} ({profile}): {e}"
+                    )
+                    continue
 
-            except FileNotFoundError as e:
-                print(f"Error processing {benchmark} ({profile}): {e}")
-                continue
-            except Exception as e:
-                print(f"Error processing {benchmark} ({profile}): {e}")
-                sys.exit(1)
+        except FileNotFoundError as e:
+            print(f"Error processing {benchmark} ({profile}): {e}")
+            continue
+        except Exception as e:
+            print(f"Error processing {benchmark} ({profile}): {e}")
+            sys.exit(1)
 
 
 def print_configuration_error(error_msg: Optional[str] = None) -> None:
