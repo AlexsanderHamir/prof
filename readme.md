@@ -230,7 +230,6 @@ The profiler can be installed using our installation script. The script will:
 ### Prerequisites
 
 - Python 3.12+
-- virtualenv (for Python virtual environment management)
 
 ### Quick Install
 
