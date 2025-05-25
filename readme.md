@@ -5,13 +5,20 @@ This tool simplifies complex performance analysis by consolidating multiple ppro
 ## Table of Contents
 
 [Features](#features)
-[Usage](#usage) 
-[Directory Structure](#directory-structure) 
-[Configuration](#configuration) 
-[Installation](#installation) 
-[AI Analysis](#ai-analysis) 
-[Contributing](#contribution) 
-[License](#license) 
+
+[Usage](#usage)
+
+[Directory Structure](#directory-structure)
+
+[Configuration](#configuration)
+
+[Installation](#installation)
+
+[AI Analysis](#ai-analysis)
+
+[Contributing](#contribution)
+
+[License](#license)
 
 ## Features
 
