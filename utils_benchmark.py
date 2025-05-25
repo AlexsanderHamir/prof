@@ -18,7 +18,7 @@ PROFILE_FLAGS: Dict[str, str] = {
 }
 
 PPROF_TEXT_PARAMS = [
-    "-nodecount=1000000", "-cum", "-edgefraction=0", "-nodefraction=0", "-top"
+    "-nodecount=100000000", "-cum", "-edgefraction=0", "-nodefraction=0", "-top"
 ]
 
 
