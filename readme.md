@@ -63,34 +63,35 @@ What it does:
 
 ## Directory Structure
 
-When you run a benchmark analysis, a new directory is created inside bench (named according to your `-tag` parameter) with the following structure:
+When you run a benchmark analysis, a new directory is created inside `bench/` (named according to your `-tag` parameter) with the following structure:
 
 ```
-test1/
-├── bin/                   # Binary files
-│   ├── BenchmarkGenPool/
-│   └── BenchmarkSyncPool/
-├── cpu_functions/         # CPU profile line-level function mappings
-│   ├── BenchmarkGenPool/
-│   └── BenchmarkSyncPool/
-├── memory_functions/       # Memory profile line-level function mappings
-│   ├── BenchmarkGenPool/
-│   └── BenchmarkSyncPool/
-├── mutex_functions/        # Mutex profile line-level function mappings
-│   ├── BenchmarkGenPool/
-│   └── BenchmarkSyncPool/
-├── text/                  # Profile reports
-│   ├── BenchmarkGenPool/
-│   │   ├── BenchmarkGenPool.txt        # Benchmark results
-│   │   ├── BenchmarkGenPool_cpu.txt    # CPU profile analysis
-│   │   ├── BenchmarkGenPool_memory.txt # Memory profile analysis
-│   │   └── BenchmarkGenPool_mutex.txt  # Mutex profile analysis
-│   └── BenchmarkSyncPool/
-│       ├── BenchmarkSyncPool.txt
-│       ├── BenchmarkSyncPool_cpu.txt
-│       ├── BenchmarkSyncPool_memory.txt
-│       └── BenchmarkSyncPool_mutex.txt
-└── description.txt        # A file for you to describe what you're doing, what has changed and how it impacted performance.
+bench/
+└── test1/                # Directory named after your -tag parameter
+    ├── bin/              # Binary files
+    │   ├── BenchmarkGenPool/
+    │   └── BenchmarkSyncPool/
+    ├── cpu_functions/    # CPU profile line-level function mappings
+    │   ├── BenchmarkGenPool/
+    │   └── BenchmarkSyncPool/
+    ├── memory_functions/ # Memory profile line-level function mappings
+    │   ├── BenchmarkGenPool/
+    │   └── BenchmarkSyncPool/
+    ├── mutex_functions/  # Mutex profile line-level function mappings
+    │   ├── BenchmarkGenPool/
+    │   └── BenchmarkSyncPool/
+    ├── text/            # Profile reports
+    │   ├── BenchmarkGenPool/
+    │   │   ├── BenchmarkGenPool.txt        # Benchmark results
+    │   │   ├── BenchmarkGenPool_cpu.txt    # CPU profile analysis
+    │   │   ├── BenchmarkGenPool_memory.txt # Memory profile analysis
+    │   │   └── BenchmarkGenPool_mutex.txt  # Mutex profile analysis
+    │   └── BenchmarkSyncPool/
+    │       ├── BenchmarkSyncPool.txt
+    │       ├── BenchmarkSyncPool_cpu.txt
+    │       ├── BenchmarkSyncPool_memory.txt
+    │       └── BenchmarkSyncPool_mutex.txt
+    └── description.txt  # A file for you to describe what you're doing, what has changed and how it impacted performance.
 ```
 
 ## Configuration
@@ -101,8 +102,8 @@ The configuration file (`config_template.json`) controls how the profiler intera
 
 ```json
 {
-  "api_key": "your-api-key-here", // Your OpenAI API key
-  "base_url": "https://api.openai.com/v1" // OpenAI API endpoint
+  "api_key": "your-api-key-here",
+  "base_url": "https://api.openai.com/v1"
 }
 ```
 
@@ -112,11 +113,11 @@ The `model_config` section controls how the AI analyzes your profiles:
 
 ```json
 "model_config": {
-    "model": "gpt-4-turbo-preview",        // AI model to use for analysis
-    "max_tokens": 4096,                    // Maximum response length
-    "temperature": 0.7,                    // Creativity level (0.0-1.0)
-    "top_p": 1.0,                         // Response diversity (0.0-1.0)
-    "general_analyze_prompt_location": "path/to/your/system_prompt.txt" // Custom analysis prompt
+    "model": "gpt-4-turbo-preview",
+    "max_tokens": 4096,
+    "temperature": 0.7,
+    "top_p": 1.0,
+    "general_analyze_prompt_location": "path/to/your/system_prompt.txt"
 }
 ```
 
@@ -126,13 +127,13 @@ The `benchmark_configs` section lets you customize analysis for each benchmark:
 
 ```json
 "benchmark_configs": {
-    "BenchmarkGenPool": {                  // Name of your benchmark function
-        "prefixes": [                      // Package prefixes to include in analysis
+    "BenchmarkGenPool": {
+        "prefixes": [
             "github.com/example/GenPool",
             "github.com/example/GenPool/internal",
             "github.com/example/GenPool/pkg"
         ],
-        "ignore": "init,TestMain,BenchmarkMain"  // Functions to exclude from analysis
+        "ignore": "init,TestMain,BenchmarkMain"
     }
 }
 ```
