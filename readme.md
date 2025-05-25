@@ -213,56 +213,43 @@ Bring your skills, share your ideas, and contribute your code.
 
 ## Installation
 
-### Docker-based Installation (Recommended)
+The profiler can be installed using our installation script. The script will:
 
-The easiest way to install and use the Go Benchmark Profiler is through Docker. This method requires no Python installation and works consistently across different operating systems.
+1. Clone the repository to `~/.prof`
+2. Set up a Python virtual environment
+3. Install all required dependencies
+4. Create a wrapper script in `~/bin`
 
-1. **Prerequisites**:
+### Quick Install
 
-   - Install [Docker](https://docs.docker.com/get-docker/)
-   - Make sure Docker daemon is running
+Run this command in your terminal:
 
-2. **Installation Steps**:
+```bash
+curl -sSL https://raw.githubusercontent.com/AlexsanderHamir/prof/main/install.sh | bash
+```
 
-   ```bash
-   # Clone the repository
-   git clone https://github.com/yourusername/go-benchmark-profiler.git
-   cd go-benchmark-profiler
+### Post-Installation
 
-   # Run the installation script
-   chmod +x install.sh
-   sudo ./install.sh
-   ```
+After installation, you need to add `~/bin` to your PATH. Add this line to your shell configuration file (`.zshrc`, `.bashrc`, etc.):
 
-3. **Verify Installation**:
-   ```bash
-   prof --help
-   ```
+```bash
+export PATH="$HOME/bin:$PATH"
+```
 
-The installation script will:
+Then either:
 
-- Build a Docker image with all required dependencies
-- Create a `prof` command wrapper in `/usr/local/bin`
-- Set up persistent configuration storage
+- Restart your terminal, or
+- Run: `source ~/.zshrc` (or your shell's config file)
 
-### Manual Installation (Alternative)
+### Verification
 
-If you prefer to install without Docker, you'll need:
+To verify the installation, run:
 
-- Python 3.11 or later
-- Go 1.21 or later
-- pip (Python package manager)
+```bash
+prof
+```
 
-Then follow these steps:
-
-1. Clone the repository
-2. Create a virtual environment: `python -m venv venv`
-3. Activate the virtual environment:
-   - On Unix/macOS: `source venv/bin/activate`
-   - On Windows: `.\venv\Scripts\activate`
-4. Install dependencies: `pip install -r requirements.txt`
-5. Make the prof script executable: `chmod +x prof`
-6. Add the script to your PATH or use it with `./prof`
+If you see the `Error: Missing required arguments:`, the installation was successful!
 
 ## License
 
