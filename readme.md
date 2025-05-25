@@ -227,6 +227,11 @@ The profiler can be installed using our installation script. The script will:
 3. Install all required dependencies
 4. Create a wrapper script in `~/bin`
 
+### Prerequisites
+
+- Python 3.12 or later is required
+- Go 1.21 or later (for running benchmarks)
+
 ### Quick Install
 
 Run this command in your terminal:
