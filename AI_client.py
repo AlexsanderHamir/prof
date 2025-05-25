@@ -1,8 +1,8 @@
-from utils_AI_client import analyze_all_deep, analyze_all_profiles, get_profile_types, validate_benchmark_directories
+from utils_AI_client import analyze_all_profiles, get_profile_types, validate_benchmark_directories
 from pathlib import Path
 
 
-def analyze_prof_output_general(tag: str) :
+def analyze_prof_output_general(tag: str):
     try:
         benchmark_names = validate_benchmark_directories(tag)
         base_dir = Path("bench") / tag
@@ -13,16 +13,6 @@ def analyze_prof_output_general(tag: str) :
         )
 
         analyze_all_profiles(tag, benchmark_names, profile_types)
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        raise
-
-
-def analyze_prof_output_deep(tag: str):
-    try:
-        benchmark_names = validate_benchmark_directories(tag)
-        print(f"Found {len(benchmark_names)} benchmarks for deep analysis")
-        analyze_all_deep(tag, benchmark_names)
     except Exception as e:
         print(f"Error: {str(e)}")
         raise

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-from AI_client import analyze_prof_output_deep, analyze_prof_output_general
+from AI_client import analyze_prof_output_general
 from utils_benchmark import print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, setup_from_current_directory, validate_arguments
-import sys
 
 # Create parser at module level
 parser = argparse.ArgumentParser(
@@ -37,10 +36,6 @@ parser.add_argument(
     '-general_analyze',
     action='store_true',
     help='Run general AI analysis on the benchmark results after completion')
-parser.add_argument(
-    '-deep_analyze',
-    action='store_true',
-    help='Run deep AI analysis on the benchmark results after completion')
 
 
 def parse_arguments():
@@ -65,5 +60,3 @@ def handle_benchmarks(args):
 
     if args.general_analyze:
         analyze_prof_output_general(args.tag)
-    elif args.deep_analyze:
-        analyze_prof_output_deep(args.tag)

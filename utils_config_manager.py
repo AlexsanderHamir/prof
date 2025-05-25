@@ -17,7 +17,6 @@ class ModelConfig:
     temperature: float
     top_p: float
     general_analyze_prompt_location: str
-    deep_analyze_prompt_location: str
 
 
 @dataclass
@@ -70,8 +69,6 @@ def create_config_template() -> Dict[str, Any]:
             "top_p": 1.0,
             "general_analyze_prompt_location":
             "path/to/your/system_prompt.txt",
-            "deep_analyze_prompt_location":
-            "path/to/your/deep_analyze_prompt.txt",
         },
         "benchmark_configs": {
             "BenchmarkGenPool": {
