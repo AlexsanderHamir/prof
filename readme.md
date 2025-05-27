@@ -48,18 +48,18 @@ prof setup --create-template
 
 ### Step 2: Run Benchmarks and Collect Profiles
 
-This command runs the selected benchmarks, collects the specified profiles, and stores everything in a directory named after the tag:
+Use the following command to run benchmarks, collect profiles, and store results:
 
 ```bash
 prof -benchmarks "[BenchmarkGenPool, BenchmarkSyncPool]" -profiles "[cpu,memory,mutex]" -tag "test1" -count 1
 ```
 
-What it does:
+This command:
 
-1. Runs each selected benchmark the specified number of times (`-count`).
-2. Collects all selected profiles (e.g., CPU, memory, mutex).
-3. Creates a directory named `test1` to store results.
-4. Extracts and saves line-level code mapping for all functions in each profile.
+1. Runs each specified benchmark (`-benchmarks`) the given number of times (`-count`).
+2. Collects the selected profiles (e.g., CPU, memory, mutex).
+3. Saves results in a directory named after the tag (`test1`).
+4. Extracts and stores line-level code mappings for all functions in each profile.
 
 ## Directory Structure
 
@@ -201,14 +201,6 @@ The `benchmark_configs` section lets you customize analysis for each benchmark:
   }
 }
 ```
-
-### Tips for Effective Configuration:
-
-1. **Start Small**: Begin with a basic configuration and expand as needed
-2. **Use Specific Prefixes**: Narrow down the analysis scope to relevant packages
-3. **Exclude Noise**: Use the `ignore` option to exclude setup/teardown code
-4. **Custom Prompts**: Create custom analysis prompts for specific use cases
-5. **Multiple Benchmarks**: Configure each benchmark separately for targeted analysis
 
 ## AI Analysis
 
