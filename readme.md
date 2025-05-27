@@ -221,7 +221,7 @@ The profiler can be installed using our installation script. The script will:
 
 ### Prerequisites
 
-- Python 3.12+
+- Python 3.12.10+
 
 ### Quick Install
 

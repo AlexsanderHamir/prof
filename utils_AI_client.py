@@ -18,23 +18,7 @@ def log_profile_content(content: str, profile_type: str) -> None:
 
 def request_model_analysis(messages: List[Dict[str, str]],
                            config: Config) -> str:
-    """Send a request to the AI model for profile analysis.
-    
-    This function handles the interaction with the AI model API:
-    1. Configures the model client with appropriate settings
-    2. Sends the prepared messages to the model
-    3. Processes and returns the model's response
-    
-    Args:
-        messages: List of message dictionaries for the model
-        config: Configuration containing model settings
-        
-    Returns:
-        String containing the model's analysis
-        
-    Raises:
-        RuntimeError: If the model request fails
-    """
+  
     client = ConfigManager.get_client()
     print(f"\nSending request to model: {config.model_config.model}")
 
@@ -203,28 +187,6 @@ def get_general_analyze_prompt(config: Config) -> str:
         return f.read().strip()
 
 
-def request_model_general(messages: List[Dict[str, str]],
-                          config: Config) -> str:
-    """Send a request to the AI model for general profile analysis.
-    
-    This function handles the interaction with the AI model API for general analysis:
-    1. Configures the model client with appropriate settings
-    2. Sends the prepared messages to the model
-    3. Processes and returns the model's response
-    
-    Args:
-        messages: List of message dictionaries for the model
-        config: Configuration containing model settings
-        
-    Returns:
-        String containing the model's analysis
-        
-    Raises:
-        RuntimeError: If the model request fails
-    """
-    return request_model_analysis(messages, config)
-
-
 def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
     try:
         files = get_benchmark_files(tag, benchmark_name, profile_type)
@@ -248,7 +210,7 @@ Profile Type: {profile_type}
             "content": user_prompt
         }]
 
-        analysis = request_model_general(messages, config)
+        analysis = request_model_analysis(messages, config)
         save_analysis(tag, benchmark_name, profile_type, analysis)
         print(
             f"Successfully analyzed and saved results for {benchmark_name} ({profile_type})"

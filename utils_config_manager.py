@@ -58,7 +58,7 @@ def validate_benchmark_configs(benchmark_configs: Dict[str, Any]) -> None:
 
 
 def create_config_template() -> Dict[str, Any]:
-    """Create a template configuration dictionary."""
+
     return {
         "api_key": "your-api-key-here",
         "base_url": "https://api.openai.com/v1",
@@ -95,7 +95,6 @@ def create_config_template() -> Dict[str, Any]:
 
 
 def save_template_to_file(template: Dict[str, Any], output_path: Path) -> None:
-    """Save the template configuration to a file."""
     with open(output_path, "w") as f:
         json.dump(template, f, indent=4)
 
@@ -126,7 +125,7 @@ def create_config_from_data(config_data: Dict[str, Any]) -> Config:
 
 
 def print_template_creation_info(template_path: Path) -> None:
-    """Print information about the created template file."""
+
     print(f"\nTemplate configuration file created at: {template_path}")
     print(
         "\nThe template includes example benchmark configurations with multiple prefixes."
