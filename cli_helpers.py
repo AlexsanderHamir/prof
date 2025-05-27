@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from AI_client import analyze_prof_output_general
-from utils_benchmark import print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, setup_from_current_directory, validate_arguments
+from utils_benchmark import print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, validate_arguments, config_setup
 
 # Create parser at module level
 parser = argparse.ArgumentParser(
@@ -48,7 +48,7 @@ def parse_arguments():
 
 
 def handle_benchmarks(args):
-    setup_from_current_directory()
+    config_setup()
 
     benchmarks, profiles, benchmark_config = validate_arguments(args)
     setup_directories(args.tag, benchmarks, profiles)
