@@ -2,6 +2,8 @@
 
 This tool simplifies complex performance analysis by consolidating multiple pprof commands into a single step. It automatically collects all relevant profiling data, organizes it, makes it searchable within your workspace, and enhances the process with AI-powered insights.
 
+![Example Profile Analysis](example.png)
+
 ## Table of Contents
 
 [Features](#features)
