@@ -4,6 +4,9 @@ This tool simplifies complex performance analysis by consolidating multiple ppro
 
 ![Example Profile Analysis](example.png)
 
+> Note: Media files (example.png and example.mp4) are not included in the repository.
+> Please contact the maintainers for access to these demonstration files.
+
 [Example Video Demo](example.mp4)
 
 ## Table of Contents
