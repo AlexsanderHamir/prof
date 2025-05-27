@@ -4,6 +4,8 @@ This tool simplifies complex performance analysis by consolidating multiple ppro
 
 ![Example Profile Analysis](example.png)
 
+[Example Video Demo](example.mp4)
+
 ## Table of Contents
 
 [Features](#features)
