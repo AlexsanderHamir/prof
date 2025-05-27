@@ -7,3 +7,15 @@ build/
 __pycache__
 .yapf
 *.json
+example.mp4
+example.png
+
+# Media files
+*.mp4
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mov
+*.avi
+*.mkv
