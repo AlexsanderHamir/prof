@@ -398,7 +398,7 @@ def analyze_single_function(func: str, paths: ProfilePaths) -> None:
                            stderr=subprocess.PIPE,
                            text=True,
                            check=True)
-        print(f"Analyzed function {func}")
+        print(f"Collected function {func}")
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Error analyzing function {func}: {e.stderr}")
 
