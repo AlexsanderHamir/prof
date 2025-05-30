@@ -239,6 +239,10 @@ Bring your skills, share your ideas, and contribute your code.
 
 ## Installation
 
+The profiler can be installed using either Python or Docker. Choose the method that best suits your needs.
+
+### Option 1: Python Installation
+
 The profiler can be installed using our installation script. The script will:
 
 1. Clone the repository to `~/.prof`
@@ -246,11 +250,11 @@ The profiler can be installed using our installation script. The script will:
 3. Install all required dependencies
 4. Create a wrapper script in `~/bin`
 
-### Prerequisites
+#### Prerequisites
 
 - Python 3.12.10+
 
-### Quick Install
+#### Quick Install
 
 Run this command in your terminal:
 
@@ -258,7 +262,7 @@ Run this command in your terminal:
 curl -sSL https://raw.githubusercontent.com/AlexsanderHamir/prof/main/install.sh | bash
 ```
 
-### Post-Installation
+#### Post-Installation
 
 After installation, you need to add `~/bin` to your PATH. Add this line to your shell configuration file (`.zshrc`, `.bashrc`, etc.):
 
@@ -267,6 +271,41 @@ export PATH="$HOME/bin:$PATH"
 ```
 
 Then either:
+
+- Restart your terminal, or
+- Run: `source ~/.zshrc` (or your shell's config file)
+
+### Option 2: Docker Installation
+
+#### Prerequisites
+
+- Docker installed on your system
+
+#### Quick Install
+
+Run this command in your terminal:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/AlexsanderHamir/prof/main/install-docker.sh | bash
+```
+
+This script will:
+
+1. Check if Docker is installed and running
+2. Create necessary directories (`~/.prof/prompts`)
+3. Create a default config file if it doesn't exist
+4. Pull the Docker image
+5. Set up the `prof` command alias in your shell configuration
+6. Test the installation
+
+After installation, either:
+
+- Restart your terminal, or
+- Run: `source ~/.zshrc` (or your shell's config file)
+
+#### Post-Installation
+
+After setting up the alias, either:
 
 - Restart your terminal, or
 - Run: `source ~/.zshrc` (or your shell's config file)
