@@ -206,52 +206,32 @@ The `benchmark_configs` section lets you customize analysis for each benchmark:
 
 ## AI Analysis
 
-The profiler leverages AI to provide intelligent analysis of your benchmark profiles. This feature helps you understand performance patterns, identify bottlenecks, and get actionable insights from your profiling data.
+The profiler uses AI to analyze benchmark profiles, providing insights into performance patterns and bottlenecks. Each profile (CPU, memory, mutex) is analyzed individually using data from `text/Benchmark_profile.txt`, with results saved in `bench/tag/AI`.
 
-### How It Works
+### Usage
 
-1. **Profile Analysis**
-
-   - Each profile (CPU, memory, mutex) is analyzed individually
-   - The AI processes the complete profile data from `text/Benchmark_profile.txt`
-   - Analysis focuses on overall performance patterns rather than line-level mappings
-   - Results are saved alongside your profile data for easy reference
-
-2. **Analysis Types**
-   - **CPU Profiles**: Identifies hot paths, expensive operations, and optimization opportunities
-   - **Memory Profiles**: Highlights memory allocation patterns, potential leaks, and high allocation areas
-   - **Mutex Profiles**: Detects lock contention, deadlock risks, and synchronization bottlenecks
-
-### Using AI Analysis
-
-To enable AI analysis, add the `-general_analyze` flag to your benchmark command:
+Enable AI analysis by adding the `-general_analyze` flag:
 
 ```bash
 prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "test1" -general_analyze
 ```
 
-### Customizing Analysis
+### Customization
 
-You can customize the AI analysis by:
+1. **Custom Prompts**
 
-1. **Using Custom Prompts**
+   - Set `general_analyze_prompt_location` in your config (file location)
+   - Create tailored prompts for specific analysis needs (e.g., performance aspects, baseline comparisons)
 
-   - Set `general_analyze_prompt_location` in your config to specify a custom system prompt
-   - Create prompts tailored to your specific analysis needs
-   - Example: Focus on specific performance aspects or compare against baseline metrics
-
-2. **Model Configuration**
-   - Adjust model parameters in `config_template.json`:
-     ```json
-     "model_config": {
-         "model": "gpt-4-turbo-preview",
-         "max_tokens": 4096,
-         "temperature": 0.7,
-         "top_p": 1.0
-     }
-     ```
-
-### Example Analysis Output
+2. **Model Settings**
+   ```json
+   "model_config": {
+       "model": "gpt-4-turbo-preview",
+       "max_tokens": 4096,
+       "temperature": 0.7,
+       "top_p": 1.0
+   }
+   ```
 
 ## Contribution
 
