@@ -226,7 +226,7 @@ def run_pprof_command(
         cmd: List[str],
         output_path: Path,
         binary_mode: bool = False) -> subprocess.CompletedProcess:
-  
+
     mode = 'wb' if binary_mode else 'w'
     try:
         with open(output_path, mode) as f:
@@ -243,13 +243,13 @@ def run_pprof_command(
 
 
 def generate_text_profile(profile_file: Path, output_file: Path) -> None:
-   
+
     cmd = ["go", "tool", "pprof", *PPROF_TEXT_PARAMS, str(profile_file)]
     run_pprof_command(cmd, output_file)
 
 
 def generate_png_visualization(profile_file: Path, output_file: Path) -> None:
-   
+
     cmd = ["go", "tool", "pprof", "-png", str(profile_file)]
     run_pprof_command(cmd, output_file, binary_mode=True)
 
@@ -519,7 +519,7 @@ def parse_list_argument(arg: str) -> List[str]:
 
 
 def parse_benchmark_config(config_str: str) -> Dict[str, Dict[str, str]]:
-  
+
     try:
         # Replace single quotes with double quotes for valid JSON
         config_str = config_str.replace("'", '"')
@@ -572,7 +572,7 @@ def setup_output_directories(benchmark_name: str,
 
 
 def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
-  
+
     try:
         with open(output_file, 'w') as f:
             process = subprocess.run(cmd,
@@ -609,7 +609,7 @@ def move_profile_files(benchmark_name: str, profiles: List[str],
 
 
 def move_test_files(benchmark_name: str, bin_dir: Path) -> None:
-  
+
     for item in Path('.').glob('*.test'):
         if not wait_for_profile_file(str(item)):
             print(

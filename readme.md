@@ -2,8 +2,7 @@
 
 This tool simplifies complex performance analysis by consolidating multiple pprof commands into a single step. It automatically collects all relevant profiling data, organizes it, makes it searchable within your workspace, and enhances the process with AI-powered insights.
 
-![Example Profile Analysis](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/example.png)
-
+![Example Profile Analysis](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/prof.mp4)
 
 ## Table of Contents
 
@@ -207,9 +206,56 @@ The `benchmark_configs` section lets you customize analysis for each benchmark:
 
 ## AI Analysis
 
-The profiler uses AI to analyze your benchmark profiles individually and provide insights. It does not analyze line-level code mappings—its focus is on interpreting each profile as a whole.
+The profiler leverages AI to provide intelligent analysis of your benchmark profiles. This feature helps you understand performance patterns, identify bottlenecks, and get actionable insights from your profiling data.
 
-### Contribution
+### How It Works
+
+1. **Profile Analysis**
+
+   - Each profile (CPU, memory, mutex) is analyzed individually
+   - The AI processes the complete profile data from `text/Benchmark_profile.txt`
+   - Analysis focuses on overall performance patterns rather than line-level mappings
+   - Results are saved alongside your profile data for easy reference
+
+2. **Analysis Types**
+   - **CPU Profiles**: Identifies hot paths, expensive operations, and optimization opportunities
+   - **Memory Profiles**: Highlights memory allocation patterns, potential leaks, and high allocation areas
+   - **Mutex Profiles**: Detects lock contention, deadlock risks, and synchronization bottlenecks
+
+### Using AI Analysis
+
+To enable AI analysis, add the `-general_analyze` flag to your benchmark command:
+
+```bash
+prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "test1" -general_analyze
+```
+
+### Customizing Analysis
+
+You can customize the AI analysis by:
+
+1. **Using Custom Prompts**
+
+   - Set `general_analyze_prompt_location` in your config to specify a custom system prompt
+   - Create prompts tailored to your specific analysis needs
+   - Example: Focus on specific performance aspects or compare against baseline metrics
+
+2. **Model Configuration**
+   - Adjust model parameters in `config_template.json`:
+     ```json
+     "model_config": {
+         "model": "gpt-4-turbo-preview",
+         "max_tokens": 4096,
+         "temperature": 0.7,
+         "top_p": 1.0
+     }
+     ```
+
+### Example Analysis Output
+
+
+
+## Contribution
 
 Bring your skills, share your ideas, and contribute your code.
 
