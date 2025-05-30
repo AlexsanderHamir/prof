@@ -2,7 +2,7 @@
 
 This tool simplifies complex performance analysis by consolidating multiple pprof commands into a single step. It automatically collects all relevant profiling data, organizes it, makes it searchable within your workspace, and enhances the process with AI-powered insights.
 
-![Example Profile Analysis](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/prof.mp4)
+[Example Profile Analysis Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/prof.mp4)
 
 ## Table of Contents
 
@@ -252,8 +252,6 @@ You can customize the AI analysis by:
      ```
 
 ### Example Analysis Output
-
-
 
 ## Contribution
 
