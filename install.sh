@@ -27,13 +27,13 @@ if [ -d "$HOME/bin" ]; then
 fi
 
 # 1. Clone or pull latest repo
-if [ ! -d "$INSTALL_DIR" ]; then
-    echo "Cloning repository into $INSTALL_DIR"
-    git clone "$REPO_URL" "$INSTALL_DIR"
-else
-    echo "Repository already exists, pulling latest changes"
-    git -C "$INSTALL_DIR" pull
+if [ -d "$INSTALL_DIR" ]; then
+    echo "Removing existing installation directory for a fresh clone..."
+    rm -rf "$INSTALL_DIR"
 fi
+
+echo "Cloning repository into $INSTALL_DIR"
+git clone "$REPO_URL" "$INSTALL_DIR"
 
 # 2. Create virtual environment if not exists
 if [ ! -d "$VENV_DIR" ]; then
