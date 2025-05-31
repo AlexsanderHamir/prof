@@ -575,11 +575,11 @@ def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
 
     try:
         with open(output_file, 'w') as f:
-            process = subprocess.run(cmd,
-                                     stdout=f,
-                                     stderr=subprocess.STDOUT,
-                                     text=True,
-                                     check=True)
+            subprocess.run(cmd,
+                           stdout=f,
+                           stderr=subprocess.STDOUT,
+                           text=True,
+                           check=True)
     except subprocess.CalledProcessError as e:
         with open(output_file, 'r') as f:
             error_output = f.read()

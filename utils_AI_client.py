@@ -89,21 +89,6 @@ def get_function_directories(base_dir: Path) -> List[Path]:
 
 def collect_function_profiles(base_dir: Path,
                               benchmark_name: str) -> List[str]:
-    """Collect and organize function profiles from multiple profile types.
-    
-    This function aggregates function profiles across different profile types:
-    1. Discovers all function profile directories
-    2. Collects profiles for each benchmark
-    3. Organizes profiles by type and content
-    4. Handles file reading and error cases
-    
-    Args:
-        base_dir: Base directory containing profile data
-        benchmark_name: Name of the benchmark to collect profiles for
-        
-    Returns:
-        List of formatted profile strings, organized by profile type
-    """
     functions_content = []
     for func_dir in get_function_directories(base_dir):
         profile_type = func_dir.name.replace('_functions', '')

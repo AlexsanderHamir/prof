@@ -58,7 +58,6 @@ def validate_benchmark_configs(benchmark_configs: Dict[str, Any]) -> None:
 
 
 def create_config_template() -> Dict[str, Any]:
-
     return {
         "api_key": "your-api-key-here",
         "base_url": "https://api.openai.com/v1",

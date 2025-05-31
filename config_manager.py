@@ -70,7 +70,6 @@ class ConfigManager:
         if not cls._config_path:
             raise ConfigurationError(
                 "Configuration not found. Please run setup first.")
-
         try:
             config_data = load_config_from_file(cls._config_path)
             return create_config_from_data(config_data)
