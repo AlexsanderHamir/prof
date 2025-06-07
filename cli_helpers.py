@@ -59,4 +59,4 @@ def handle_benchmarks(args):
                                         args.tag, benchmark_config)
 
     if args.general_analyze:
-        analyze_prof_output_general(args.tag)
+        analyze_prof_output_general(args.tag, profiles)

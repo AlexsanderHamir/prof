@@ -4,6 +4,7 @@ from cli_helpers import (parse_arguments, handle_benchmarks)
 from utils_benchmark import check_required_args, cleanup_tag_directory, BenchmarkError
 from config_manager import ConfigurationError
 
+
 def main():
     try:
         args = parse_arguments()

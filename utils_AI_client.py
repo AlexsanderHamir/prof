@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Dict, List
 
@@ -209,8 +208,7 @@ Profile Type: {profile_type}
         raise
 
 
-def analyze_all_profiles(tag: str, benchmark_names: List[str],
-                         profile_types: List[str]) -> None:
+def analyze_all_profiles(tag: str, benchmark_names: List[str], profile_types: List[str]) -> None:
     print(f"\nStarting comprehensive analysis for tag: {tag}")
     print(f"Benchmarks: {', '.join(benchmark_names)}")
     print(f"Profile types: {', '.join(profile_types)}")

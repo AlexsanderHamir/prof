@@ -1,13 +1,10 @@
-from utils_AI_client import analyze_all_profiles, get_profile_types, validate_benchmark_directories
-from pathlib import Path
+from utils_AI_client import analyze_all_profiles, validate_benchmark_directories
+from typing import List
 
 
-def analyze_prof_output_general(tag: str):
+def analyze_prof_output_general(tag: str, profile_types: List[str]):
     try:
         benchmark_names = validate_benchmark_directories(tag)
-        base_dir = Path("bench") / tag
-        text_dir = base_dir / "text"
-        profile_types = get_profile_types(text_dir, benchmark_names[0])
         print(
             f"Found {len(benchmark_names)} benchmarks and {len(profile_types)} profile types"
         )
