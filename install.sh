@@ -26,14 +26,42 @@ if [ -d "$HOME/bin" ]; then
     fi
 fi
 
-# 1. Clone or pull latest repo
+# 1. Clone or update repository
 if [ -d "$INSTALL_DIR" ]; then
-    echo "Removing existing installation directory for a fresh clone..."
-    rm -rf "$INSTALL_DIR"
+    echo "Updating existing installation..."
+    cd "$INSTALL_DIR"
+    
+    # Ensure we're in a git repository
+    if [ ! -d ".git" ]; then
+        echo "Error: $INSTALL_DIR exists but is not a git repository"
+        echo "Removing directory for fresh installation..."
+        cd - > /dev/null
+        rm -rf "$INSTALL_DIR"
+        git clone "$REPO_URL" "$INSTALL_DIR"
+    else
+        # Force refresh git cache and update
+        echo "Fetching latest changes..."
+        git fetch --prune origin
+        git fetch --tags --force origin
+        
+        # Reset to origin/main to ensure clean state
+        echo "Updating to latest version..."
+        git reset --hard origin/main || {
+            echo "Error: Failed to update repository. Attempting clean update..."
+            git clean -fdx
+            git reset --hard origin/main || {
+                echo "Error: Could not update repository. Please check your git status."
+                exit 1
+            }
+        }
+        
+        # Return to previous directory
+        cd - > /dev/null
+    fi
+else
+    echo "Cloning repository into $INSTALL_DIR"
+    git clone "$REPO_URL" "$INSTALL_DIR"
 fi
-
-echo "Cloning repository into $INSTALL_DIR"
-git clone "$REPO_URL" "$INSTALL_DIR"
 
 # 2. Create virtual environment if not exists
 if [ ! -d "$VENV_DIR" ]; then
