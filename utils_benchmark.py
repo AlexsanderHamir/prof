@@ -10,6 +10,32 @@ from typing import Dict, List, Optional, Tuple, Set
 from config_manager import ConfigManager, ConfigurationError
 from dataclasses import dataclass
 
+
+class BenchmarkBaseError(Exception):
+    """Base exception for all benchmark-related errors."""
+    pass
+
+
+class BenchmarkError(BenchmarkBaseError):
+    """Exception for general benchmark execution errors."""
+    pass
+
+
+class BenchmarkConfigError(BenchmarkBaseError):
+    """Exception for benchmark configuration errors."""
+    pass
+
+
+class BenchmarkProfileError(BenchmarkBaseError):
+    """Exception for profile processing errors."""
+    pass
+
+
+class BenchmarkDirectoryError(BenchmarkBaseError):
+    """Exception for directory operation errors."""
+    pass
+
+
 PROFILE_FLAGS: Dict[str, str] = {
     "cpu": "-cpuprofile=cpu.out",
     "memory": "-memprofile=memory.out",
@@ -46,19 +72,19 @@ class ProfilePaths:
     output: Path
 
 
-class BenchmarkError(Exception):
-    """Custom exception for benchmark-related errors."""
-    pass
-
-
 def config_setup():
-    template_path = os.path.join(os.getcwd(), "config_template.json")
-    if os.path.exists(template_path):
+    """Set up configuration from template file.
+    
+    Raises:
+        ConfigurationError: If configuration setup fails
+    """
+    template_path = Path.cwd() / "config_template.json"
+    if template_path.exists():
         print(
             "\nFound config_template.json in current directory. Attempting automatic setup..."
         )
         try:
-            ConfigManager.setup_from_file(template_path)
+            ConfigManager.setup_from_file(str(template_path))
             print("Automatic configuration completed successfully!")
         except (ValueError, ConfigurationError) as e:
             print_configuration_error(
@@ -71,7 +97,22 @@ def config_setup():
             "Configuration not found. Please run setup first.")
 
 
-def validate_arguments(args) -> Tuple[List[str], List[str], Optional[Dict]]:
+def parse_and_load_benchmark_config(
+        args) -> Tuple[List[str], List[str], Optional[Dict]]:
+    """Parse command line arguments and load benchmark configuration.
+    
+    Args:
+        args: Command line arguments containing benchmarks and profiles
+        
+    Returns:
+        Tuple containing:
+        - List of benchmark names
+        - List of profile types
+        - Optional dictionary of benchmark configurations
+        
+    Raises:
+        ConfigurationError: If there's an error loading the benchmark configuration
+    """
     benchmarks = parse_list_argument(args.benchmarks)
     profiles = parse_list_argument(args.profiles)
 
@@ -99,32 +140,40 @@ def setup_directories(tag: str, benchmarks: List[str],
 
 
 def create_bench_directories(tag: str, benchmarks: List[str]):
-    bench_dir = "bench"
-    tag_dir = os.path.join(bench_dir, tag)
-    bin_dir = os.path.join(tag_dir, "bin")
-    text_dir = os.path.join(tag_dir, "text")
-    description_file = os.path.join(tag_dir, "description.txt")
+    """Create directory structure for benchmark results.
+    
+    Args:
+        tag: Tag for the benchmark run
+        benchmarks: List of benchmark names
+        
+    Raises:
+        BenchmarkDirectoryError: If there's an error creating directories
+    """
+    bench_dir = Path("bench")
+    tag_dir = bench_dir / tag
+    bin_dir = tag_dir / "bin"
+    text_dir = tag_dir / "text"
+    description_file = tag_dir / "description.txt"
 
     try:
-        if not os.path.exists(bench_dir):
-            os.makedirs(bench_dir)
+        if not bench_dir.exists():
+            bench_dir.mkdir()
             print(f"Created directory: {bench_dir}")
         else:
             print(f"Directory '{bench_dir}' already exists")
 
-        if os.path.exists(tag_dir):
+        if tag_dir.exists():
             print(f"Directory '{tag_dir}' already exists, cleaning it...")
             clean_directory(tag_dir)
 
-        os.makedirs(bin_dir)
-        os.makedirs(text_dir)
+        bin_dir.mkdir(parents=True)
+        text_dir.mkdir(parents=True)
 
         for benchmark in benchmarks:
-            os.makedirs(os.path.join(bin_dir, benchmark))
-            os.makedirs(os.path.join(text_dir, benchmark))
+            (bin_dir / benchmark).mkdir(parents=True)
+            (text_dir / benchmark).mkdir(parents=True)
 
-        with open(description_file, 'w') as f:
-            pass
+        description_file.touch()
 
         print(f"Created directory structure: {tag_dir}")
         print(f"  - {bin_dir} (with benchmark subdirectories)")
@@ -132,24 +181,23 @@ def create_bench_directories(tag: str, benchmarks: List[str]):
         print(f"  - {description_file}")
 
     except Exception as e:
-        print(f"Error creating directories: {e}", file=sys.stderr)
-        os.exit(1)
+        raise BenchmarkDirectoryError(f"Error creating directories: {e}")
 
 
 def create_profile_function_directories(tag: str, profiles: List[str],
                                         benchmarks: List[str]):
-    tag_dir = os.path.join("bench", tag)
+    tag_dir = Path("bench") / tag
 
     pprof_profiles = [p for p in profiles if p != "trace"]
 
     for profile in pprof_profiles:
-        profile_dir = os.path.join(tag_dir, f"{profile}_functions")
-        os.makedirs(profile_dir, exist_ok=True)
+        profile_dir = tag_dir / f"{profile}_functions"
+        profile_dir.mkdir(exist_ok=True)
 
         # Create benchmark subdirectories
         for benchmark in benchmarks:
-            benchmark_dir = os.path.join(profile_dir, benchmark)
-            os.makedirs(benchmark_dir, exist_ok=True)
+            benchmark_dir = profile_dir / benchmark
+            benchmark_dir.mkdir(exist_ok=True)
 
     print("Created profile function directories")
 
@@ -213,10 +261,19 @@ def run_benchmark(benchmark: str, profiles: List[str], count: int,
     print(f"Completed benchmark: {config.benchmark_name}")
 
 
-def wait_for_profile_file(profile_file: str, timeout: int = 5) -> bool:
+def wait_for_profile_file(profile_file: Path, timeout: int = 5) -> bool:
+    """Wait for a profile file to be created and written.
+    
+    Args:
+        profile_file: Path to the profile file
+        timeout: Maximum time to wait in seconds
+        
+    Returns:
+        bool: True if file exists and has content, False if timeout
+    """
     start_time = time.time()
     while time.time() - start_time < timeout:
-        if os.path.exists(profile_file) and os.path.getsize(profile_file) > 0:
+        if profile_file.exists() and profile_file.stat().st_size > 0:
             return True
         time.sleep(0.1)
     return False
@@ -408,7 +465,18 @@ def analyze_benchmark_profile_functions(
         profiles: List[str],
         benchmark: str,
         benchmark_config: Optional[Dict[str, Dict[str, str]]] = None) -> None:
-
+    """Analyze profile functions for a benchmark.
+    
+    Args:
+        tag: Tag for the benchmark run
+        profiles: List of profile types
+        benchmark: Name of the benchmark
+        benchmark_config: Optional benchmark configuration
+        
+    Raises:
+        BenchmarkProfileError: If there's an error processing profiles
+        BenchmarkDirectoryError: If there's an error with directory operations
+    """
     pprof_profiles = [p for p in profiles if p != "trace"]
 
     for profile in pprof_profiles:
@@ -430,11 +498,11 @@ def analyze_benchmark_profile_functions(
                     continue
 
         except FileNotFoundError as e:
-            print(f"Error processing {benchmark} ({profile}): {e}")
-            continue
+            raise BenchmarkProfileError(
+                f"Profile file not found for {benchmark} ({profile}): {e}")
         except Exception as e:
-            print(f"Error processing {benchmark} ({profile}): {e}")
-            sys.exit(1)
+            raise BenchmarkProfileError(
+                f"Error processing {benchmark} ({profile}): {e}")
 
 
 def print_configuration_error(error_msg: Optional[str] = None) -> None:
@@ -452,18 +520,34 @@ def print_configuration_error(error_msg: Optional[str] = None) -> None:
 
 
 def setup_command(args):
+    """Set up configuration based on command line arguments.
+    
+    Args:
+        args: Command line arguments
+        
+    Raises:
+        BenchmarkConfigError: If setup command is invalid or fails
+    """
     if args.create_template:
         ConfigManager.create_template(args.output_path)
         print("\nTemplate configuration file created successfully!")
     else:
-        print(
-            "\nError: Please use --create-template to create a configuration template",
-            file=sys.stderr)
-        sys.exit(1)
+        raise BenchmarkConfigError(
+            "Please use --create-template to create a configuration template")
 
 
-def check_required_args(args) -> bool:
-
+def validate_required_args(args) -> bool:
+    """Validate that all required command line arguments are present.
+    
+    Args:
+        args: Command line arguments to validate
+        
+    Returns:
+        bool: True if all required arguments are present, False otherwise
+        
+    Note:
+        Required arguments are: benchmarks, profiles, tag, and count
+    """
     missing_args = []
     if not args.benchmarks:
         missing_args.append("benchmarks")
@@ -484,9 +568,13 @@ def check_required_args(args) -> bool:
 
 
 def cleanup_tag_directory(tag: str):
-    """Clean up the tag directory if it exists."""
-    tag_dir = os.path.join("bench", tag)
-    if os.path.exists(tag_dir):
+    """Clean up the tag directory if it exists.
+    
+    Args:
+        tag: Tag for the benchmark run
+    """
+    tag_dir = Path("bench") / tag
+    if tag_dir.exists():
         try:
             shutil.rmtree(tag_dir)
             print(f"Cleaned up tag directory: {tag_dir}")
@@ -495,22 +583,29 @@ def cleanup_tag_directory(tag: str):
                   file=sys.stderr)
 
 
-def clean_directory(directory: str):
-    """Delete all contents of a directory if it exists."""
-    if os.path.exists(directory):
+def clean_directory(directory: Path):
+    """Delete all contents of a directory if it exists.
+    
+    Args:
+        directory: Path to the directory to clean
+        
+    Raises:
+        BenchmarkDirectoryError: If there's an error cleaning the directory
+    """
+    if directory.exists():
         try:
             # Remove all contents of the directory
-            for item in os.listdir(directory):
-                item_path = os.path.join(directory, item)
-                if os.path.isfile(item_path):
-                    os.remove(item_path)
-                elif os.path.isdir(item_path):
-                    shutil.rmtree(item_path)
+            for item in directory.iterdir():
+                if item.is_file():
+                    item.unlink()
+                elif item.is_dir():
+                    shutil.rmtree(item)
             print(f"Cleaned directory: {directory}")
         except Exception as e:
             print(f"Error cleaning directory {directory}: {e}",
                   file=sys.stderr)
-            raise RuntimeError(f"Failed to clean directory {directory}: {e}")
+            raise BenchmarkDirectoryError(
+                f"Failed to clean directory {directory}: {e}")
 
 
 def parse_list_argument(arg: str) -> List[str]:
@@ -589,7 +684,16 @@ def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
 
 def move_profile_files(benchmark_name: str, profiles: List[str],
                        bin_dir: Path) -> None:
-
+    """Move profile files to the benchmark directory.
+    
+    Args:
+        benchmark_name: Name of the benchmark
+        profiles: List of profile types
+        bin_dir: Directory to move files to
+        
+    Note:
+        Files are only moved if they exist and are fully written
+    """
     for profile in profiles:
         if profile not in PROFILE_FLAGS:
             continue
@@ -598,7 +702,7 @@ def move_profile_files(benchmark_name: str, profiles: List[str],
         if not profile_file.exists():
             continue
 
-        if not wait_for_profile_file(str(profile_file)):
+        if not wait_for_profile_file(profile_file):
             print(
                 f"Warning: Profile file {profile_file} was not fully written within timeout",
                 file=sys.stderr)
@@ -609,9 +713,17 @@ def move_profile_files(benchmark_name: str, profiles: List[str],
 
 
 def move_test_files(benchmark_name: str, bin_dir: Path) -> None:
-
+    """Move test files to the benchmark directory.
+    
+    Args:
+        benchmark_name: Name of the benchmark
+        bin_dir: Directory to move files to
+        
+    Note:
+        Files are only moved if they exist and are fully written
+    """
     for item in Path('.').glob('*.test'):
-        if not wait_for_profile_file(str(item)):
+        if not wait_for_profile_file(item):
             print(
                 f"Warning: Test file {item} was not fully written within timeout",
                 file=sys.stderr)

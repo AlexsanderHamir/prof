@@ -1,18 +1,32 @@
 #!/usr/bin/env python3
 import sys
 from cli_helpers import (parse_arguments, handle_benchmarks)
-from utils_benchmark import check_required_args, cleanup_tag_directory, BenchmarkError
+from utils_benchmark import (validate_required_args, cleanup_tag_directory,
+                             BenchmarkError, BenchmarkConfigError,
+                             BenchmarkProfileError, BenchmarkDirectoryError,
+                             setup_command)
 from config_manager import ConfigurationError
 
 
 def main():
     try:
         args = parse_arguments()
+
+        if args.command == "setup":
+            try:
+                setup_command(args)
+            except BenchmarkConfigError as e:
+                print(f"\nError: {e}", file=sys.stderr)
+                sys.exit(1)
+            return
+
         if args.command is None and (args.benchmarks and args.profiles
                                      and args.tag and args.count):
             try:
                 handle_benchmarks(args)
-            except (BenchmarkError, ConfigurationError, RuntimeError) as e:
+            except (BenchmarkError, BenchmarkConfigError,
+                    BenchmarkProfileError, BenchmarkDirectoryError,
+                    ConfigurationError) as e:
                 print(f"\nError: {e}", file=sys.stderr)
                 print("Cleaning up tag directory...")
                 cleanup_tag_directory(args.tag)
@@ -22,9 +36,9 @@ def main():
                 print("Cleaning up tag directory...")
                 cleanup_tag_directory(args.tag)
                 sys.exit(1)
-        else:
-            if not check_required_args(args):
-                sys.exit(1)
+        elif not validate_required_args(args):
+            sys.exit(1)
+
     except Exception as e:
         print(f"\nUnexpected error: {e}", file=sys.stderr)
         sys.exit(1)

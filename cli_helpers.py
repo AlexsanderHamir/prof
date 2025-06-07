@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from AI_client import analyze_prof_output_general
-from utils_benchmark import print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, validate_arguments, config_setup
+from utils_benchmark import parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_directories, config_setup
 
 # Create parser at module level
 parser = argparse.ArgumentParser(
@@ -40,17 +40,13 @@ parser.add_argument(
 
 def parse_arguments():
     args = parser.parse_args()
-
-    if args.command == "setup":
-        setup_command(args)
-
     return args
 
 
 def handle_benchmarks(args):
     config_setup()
 
-    benchmarks, profiles, benchmark_config = validate_arguments(args)
+    benchmarks, profiles, benchmark_config = parse_and_load_benchmark_config(args)
     setup_directories(args.tag, benchmarks, profiles)
     print_configuration(benchmarks, profiles, args.tag, args.count,
                         benchmark_config)
