@@ -190,7 +190,6 @@ def print_configuration(benchmarks: List[str], profiles: List[str], tag: str, co
 
 
 def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[str], count: int, tag: str, function_filter_configs: Dict[str, Dict[str, str]]) -> None:
-
     print("\nStarting benchmark pipeline...")
 
     for benchmark in benchmarks:
@@ -212,7 +211,7 @@ def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str) -> 
     config = BenchmarkConfig(benchmark, profiles, count, tag)
 
     cmd = build_benchmark_command(config)
-    _, text_dir, bin_dir = setup_output_directories(config.benchmark_name, config.tag)
+    text_dir, bin_dir = setup_output_directories(config.benchmark_name, config.tag)
 
     output_file = text_dir / f"{config.benchmark_name}.txt"
     run_benchmark_command(cmd, output_file)
@@ -224,15 +223,6 @@ def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str) -> 
 
 
 def wait_for_profile_file(profile_file: Path, timeout: int = 5) -> bool:
-    """Wait for a profile file to be created and written.
-    
-    Args:
-        profile_file: Path to the profile file
-        timeout: Maximum time to wait in seconds
-        
-    Returns:
-        bool: True if file exists and has content, False if timeout
-    """
     start_time = time.time()
     while time.time() - start_time < timeout:
         if profile_file.exists() and profile_file.stat().st_size > 0:
@@ -509,16 +499,15 @@ def build_benchmark_command(config: BenchmarkConfig) -> List[str]:
     return cmd
 
 
-def setup_output_directories(benchmark_name: str, tag: str) -> tuple[Path, Path, Path]:
+def setup_output_directories(benchmark_name: str, tag: str) -> Tuple[Path, Path]:
     tag_dir = Path("bench") / tag
     text_dir = tag_dir / "text" / benchmark_name
     bin_dir = tag_dir / "bin" / benchmark_name
 
-    # Create directories if they don't exist
     text_dir.mkdir(parents=True, exist_ok=True)
     bin_dir.mkdir(parents=True, exist_ok=True)
 
-    return tag_dir, text_dir, bin_dir
+    return text_dir, bin_dir
 
 
 def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
