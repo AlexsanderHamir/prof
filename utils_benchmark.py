@@ -113,6 +113,16 @@ def parse_and_load_benchmark_config(
     Raises:
         ConfigurationError: If there's an error loading the benchmark configuration
     """
+    # Check for empty list string for benchmarks or profiles
+    if args.benchmarks is not None and args.benchmarks.strip() == "[]":
+        raise ConfigurationError(
+            "Benchmarks argument cannot be an empty list (i.e., '[]'). Please provide at least one benchmark."
+        )
+    if args.profiles is not None and args.profiles.strip() == "[]":
+        raise ConfigurationError(
+            "Profiles argument cannot be an empty list (i.e., '[]'). Please provide at least one profile."
+        )
+
     benchmarks = parse_list_argument(args.benchmarks)
     profiles = parse_list_argument(args.profiles)
 
