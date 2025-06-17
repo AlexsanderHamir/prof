@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from AI_client import analyze_prof_output_general, flag_profiles
+from AI_client import analyze_prof_output_general
 from config_manager import ConfigManager
 from utils_benchmark import parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_directories, config_setup
 
