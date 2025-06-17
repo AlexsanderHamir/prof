@@ -114,8 +114,8 @@ def read_profile_text_file(file_path: str) -> str:
         raise ProfileReadError(f"Error reading profile file {file_path}: {e}")
 
 
-def get_benchmark_files(tag: str, benchmark_name: str,
-                        profile_type: str) -> Dict[str, str]:
+def get_benchmark_file(tag: str, benchmark_name: str,
+                       profile_type: str) -> Dict[str, str]:
     base_dir = Path("bench") / tag
     text_dir = base_dir / "text" / benchmark_name
     profile_file = text_dir / f"{benchmark_name}_{profile_type}.txt"
@@ -185,7 +185,7 @@ def get_general_analyze_prompt(config: Config) -> str:
 
 def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
     try:
-        files = get_benchmark_files(tag, benchmark_name, profile_type)
+        files = get_benchmark_file(tag, benchmark_name, profile_type)
         if not files['text_content']:
             raise ValueError(
                 f"No content found for {benchmark_name} ({profile_type})")
@@ -196,7 +196,7 @@ def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
         profile_info = f"""Benchmark: {benchmark_name}
 Profile Type: {profile_type}
 
-{files['text_content']}"""
+Profile Content: {files['text_content']}"""
 
         messages = [{
             "role": "system",
