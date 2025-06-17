@@ -17,7 +17,7 @@ def log_profile_content(content: str, profile_type: str) -> None:
 
 def request_model_analysis(messages: List[Dict[str, str]],
                            config: Config) -> str:
-  
+
     client = ConfigManager.get_client()
     print(f"\nSending request to model: {config.model_config.model}")
 
@@ -127,12 +127,8 @@ def get_benchmark_files(tag: str, benchmark_name: str,
 
 def save_analysis(tag: str, benchmark_name: str, profile_type: str,
                   analysis: str) -> None:
-    # Create the directory structure
-    analysis_dir = Path("bench") / tag / "AI" / "generalistic" / benchmark_name
-    analysis_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create the analysis file
-    analysis_file = analysis_dir / f"generalistic_analysis_{profile_type}.txt"
+    analysis_file = get_file_path(tag, benchmark_name, profile_type)
 
     try:
         with open(analysis_file, 'w') as f:
@@ -143,6 +139,22 @@ def save_analysis(tag: str, benchmark_name: str, profile_type: str,
         print(f"Analysis saved to: {analysis_file}")
     except Exception as e:
         print(f"Error saving analysis to {analysis_file}: {e}")
+
+
+def get_file_path(tag: str, benchmark_name: str, profile_type: str) -> Path:
+    if ConfigManager.is_flagging:
+        return Path(
+            "bench"
+        ) / tag / "text" / benchmark_name / f"{benchmark_name}_{profile_type}.txt"
+
+    # Create the directory structure
+    analysis_dir = Path("bench") / tag / "AI" / "generalistic" / benchmark_name
+    analysis_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create the analysis file
+    analysis_file = analysis_dir / f"generalistic_analysis_{profile_type}.txt"
+
+    return analysis_file
 
 
 def get_default_prompt(template_name: str) -> str:
@@ -181,7 +193,7 @@ def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
         config = ConfigManager.load()
         general_prompt = get_general_analyze_prompt(config)
 
-        user_prompt = f"""Benchmark: {benchmark_name}
+        profile_info = f"""Benchmark: {benchmark_name}
 Profile Type: {profile_type}
 
 {files['text_content']}"""
@@ -191,7 +203,7 @@ Profile Type: {profile_type}
             "content": general_prompt
         }, {
             "role": "user",
-            "content": user_prompt
+            "content": profile_info
         }]
 
         analysis = request_model_analysis(messages, config)
@@ -208,7 +220,8 @@ Profile Type: {profile_type}
         raise
 
 
-def analyze_all_profiles(tag: str, benchmark_names: List[str], profile_types: List[str]) -> None:
+def analyze_all_profiles(tag: str, benchmark_names: List[str],
+                         profile_types: List[str]) -> None:
     print(f"\nStarting comprehensive analysis for tag: {tag}")
     print(f"Benchmarks: {', '.join(benchmark_names)}")
     print(f"Profile types: {', '.join(profile_types)}")

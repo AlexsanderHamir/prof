@@ -23,9 +23,10 @@ class ConfigurationError(Exception):
 
 class ConfigManager:
     _config_path: Optional[str] = None
+    is_flagging: bool = False
 
-    @classmethod
-    def create_template(cls, output_path: Optional[str] = None) -> None:
+    @staticmethod
+    def create_template(output_path: Optional[str] = None) -> None:
         template = create_config_template()
         template_path = Path(output_path) if output_path else Path.cwd(
         ) / "config_template.json"

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-from AI_client import analyze_prof_output_general
+from AI_client import analyze_prof_output_general, flag_profiles
+from config_manager import ConfigManager
 from utils_benchmark import parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_directories, config_setup
 
 # Create parser at module level
@@ -37,6 +38,10 @@ parser.add_argument(
     action='store_true',
     help='Run general AI analysis on the benchmark results after completion')
 
+parser.add_argument('-flag_profiles',
+                    action='store_true',
+                    help='Flag the benchmark results')
+
 
 def parse_arguments():
     args = parser.parse_args()
@@ -46,7 +51,8 @@ def parse_arguments():
 def handle_benchmarks(args):
     config_setup()
 
-    benchmarks, profiles, benchmark_config = parse_and_load_benchmark_config(args)
+    benchmarks, profiles, benchmark_config = parse_and_load_benchmark_config(
+        args)
     setup_directories(args.tag, benchmarks, profiles)
     print_configuration(benchmarks, profiles, args.tag, args.count,
                         benchmark_config)
@@ -55,4 +61,7 @@ def handle_benchmarks(args):
                                         args.tag, benchmark_config)
 
     if args.general_analyze:
+        analyze_prof_output_general(args.tag, profiles)
+    if args.flag_profiles:
+        ConfigManager.is_flagging = True
         analyze_prof_output_general(args.tag, profiles)
