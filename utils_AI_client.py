@@ -16,13 +16,15 @@ def log_profile_content(content: str, profile_type: str) -> None:
 
 
 def request_model_analysis(messages: List[Dict[str, str]], config: Config) -> str:
-
     client = ConfigManager.get_client()
     print(f"\nSending request to model: {config.model_config.model}")
 
     response = client.chat.completions.create(model=config.model_config.model, messages=messages, max_tokens=config.model_config.max_tokens, temperature=config.model_config.temperature, top_p=config.model_config.top_p)
 
-    return response.choices[0].message.content
+    content = response.choices[0].message.content
+    if content is None:
+        raise ValueError("No content received from model")
+    return content
 
 
 def validate_benchmark_directories(tag: str) -> list[str]:

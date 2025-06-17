@@ -28,8 +28,8 @@ class ConfigurationNotFound(ConfigurationError):
 
 class ConfigurationSetupFailed(ConfigurationError):
 
-    def __init__(self):
-        super().__init__("Configuration setup failed, please check the configuration file and try again.")
+    def __init__(self, message: str = "Configuration setup failed, please check the configuration file and try again."):
+        super().__init__(message)
 
 
 class ConfigManager:

@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import sys
 import time
-from typing import Dict, List, Optional, Tuple, Set
+from typing import Dict, List, Optional, Tuple, Set, Any
 from config_manager import ConfigManager, ConfigurationError, ConfigurationNotFound
 from dataclasses import dataclass
 
@@ -86,7 +86,7 @@ def validate_list_arguments(benchmarks_arg: str, profiles_arg: str) -> None:
         raise ConfigurationError("Profiles argument has closing bracket ']' but missing opening bracket '['. Please provide a properly formatted list.")
 
 
-def parse_and_load_benchmark_config(args) -> Tuple[List[str], List[str], Dict[str, Dict[str, str]]]:
+def parse_and_load_benchmark_config(args) -> Tuple[List[str], List[str], Dict[str, Dict[str, Any]]]:
     validate_list_arguments(args.benchmarks, args.profiles)
 
     benchmarks = parse_list_argument(args.benchmarks)
@@ -101,11 +101,11 @@ def parse_and_load_benchmark_config(args) -> Tuple[List[str], List[str], Dict[st
     return benchmarks, profiles, benchmark_configs
 
 
-def filter_configs(benchmarks: List[str]) -> Dict[str, Dict[str, str]]:
+def filter_configs(benchmarks: List[str]) -> Dict[str, Dict[str, Any]]:
     """Filter the benchmarks config to only include the config for benchmarks that are in the benchmarks list."""
 
     config = ConfigManager.load()
-    function_filter_configs: Dict[str, Dict[str, str]] = {}
+    function_filter_configs: Dict[str, Dict[str, Any]] = {}
     for benchmark in benchmarks:
         if benchmark in config.benchmark_configs:
             bench_config = config.benchmark_configs[benchmark]
@@ -172,7 +172,7 @@ def create_profile_function_directories(tag: str, profiles: List[str], benchmark
     print("Created profile function directories")
 
 
-def print_configuration(benchmarks: List[str], profiles: List[str], tag: str, count: int, function_filter_configs: Dict[str, Dict[str, str]]) -> None:
+def print_configuration(benchmarks: List[str], profiles: List[str], tag: str, count: int, function_filter_configs: Dict[str, Dict[str, Any]]) -> None:
     print("\nParsed arguments:")
     print(f"Benchmarks: {benchmarks}")
     print(f"Profiles: {profiles}")
@@ -189,7 +189,7 @@ def print_configuration(benchmarks: List[str], profiles: List[str], tag: str, co
         print("\nNo benchmark configuration found in config file - analyzing all functions")
 
 
-def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[str], count: int, tag: str, function_filter_configs: Dict[str, Dict[str, str]]) -> None:
+def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[str], count: int, tag: str, function_filter_configs: Dict[str, Dict[str, Any]]) -> None:
     print("\nStarting benchmark pipeline...")
 
     for benchmark in benchmarks:
@@ -296,10 +296,15 @@ def process_profiles(benchmark: str, profiles: List[str], tag: str) -> None:
             raise  # Let the caller handle the error
 
 
-def get_profile_analysis_config(benchmark: str, function_filter_configs: Dict[str, Dict[str, str]]) -> ProfileAnalysisConfig:
+def get_profile_analysis_config(benchmark: str, function_filter_configs: Dict[str, Dict[str, Any]]) -> ProfileAnalysisConfig:
 
     config = function_filter_configs.get(benchmark, {})
-    return ProfileAnalysisConfig(function_prefixes=config.get("prefixes", []), ignore_functions=set(parse_list_argument(config.get("ignore", ""))) if config.get("ignore") else set())
+    prefixes = config.get("prefixes", [])
+    if not isinstance(prefixes, list):
+        prefixes = []
+    ignore_str = config.get("ignore", "")
+    ignore_functions = set(parse_list_argument(ignore_str)) if ignore_str else set()
+    return ProfileAnalysisConfig(function_prefixes=prefixes, ignore_functions=ignore_functions)
 
 
 def get_profile_paths(tag: str, benchmark: str, profile: str) -> ProfilePaths:
@@ -376,7 +381,7 @@ def analyze_single_function(func: str, paths: ProfilePaths) -> None:
         raise RuntimeError(f"Error analyzing function {func}: {e.stderr}")
 
 
-def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark: str, function_filter_configs: Dict[str, Dict[str, str]]) -> None:
+def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark: str, function_filter_configs: Dict[str, Dict[str, Any]]) -> None:
     pprof_profiles = [p for p in profiles if p != "trace"]
 
     for profile in pprof_profiles:
