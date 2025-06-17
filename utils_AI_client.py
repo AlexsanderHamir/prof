@@ -227,6 +227,11 @@ def analyze_all_profiles(tag: str, benchmark_names: List[str],
     print(f"Profile types: {', '.join(profile_types)}")
     print("=" * 100)
 
+    profile_types = [
+        profile_type for profile_type in profile_types
+        if "trace" not in profile_type
+    ]
+
     for benchmark in benchmark_names:
         for profile_type in profile_types:
             print(f"\nAnalyzing {benchmark} ({profile_type})...")
