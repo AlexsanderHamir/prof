@@ -88,24 +88,32 @@ def validate_list_arguments(benchmarks_arg: str, profiles_arg: str) -> None:
         raise ConfigurationError("Profiles argument has closing bracket ']' but missing opening bracket '['. Please provide a properly formatted list.")
 
 
-def parse_and_load_benchmark_config(args) -> Tuple[List[str], List[str], Optional[Dict]]:
+def parse_and_load_benchmark_config(args) -> Tuple[List[str], List[str], Dict[str, Dict[str, str]]]:
     validate_list_arguments(args.benchmarks, args.profiles)
 
     benchmarks = parse_list_argument(args.benchmarks)
     profiles = parse_list_argument(args.profiles)
 
     try:
-        config = ConfigManager.load()
-        benchmark_config = {}
-        for benchmark in benchmarks:
-            if benchmark in config.benchmark_configs:
-                bench_config = config.benchmark_configs[benchmark]
-                benchmark_config[benchmark] = {"prefixes": bench_config.prefixes, "ignore": bench_config.ignore}
+        benchmark_configs = filter_configs(benchmarks)
     except ConfigurationError as e:
         print(f"Error loading benchmark configuration: {e}", file=sys.stderr)
         raise
 
-    return benchmarks, profiles, benchmark_config
+    return benchmarks, profiles, benchmark_configs
+
+
+def filter_configs(benchmarks: List[str]) -> Dict[str, Dict[str, str]]:
+    """Filter the benchmarks config to only include the config for benchmarks that are in the benchmarks list."""
+
+    config = ConfigManager.load()
+    benchmark_configs: Dict[str, Dict[str, str]] = {}
+    for benchmark in benchmarks:
+        if benchmark in config.benchmark_configs:
+            bench_config = config.benchmark_configs[benchmark]
+            benchmark_configs[benchmark] = {"prefixes": bench_config.prefixes, "ignore": bench_config.ignore}
+
+    return benchmark_configs
 
 
 def setup_directories(tag: str, benchmarks: List[str], profiles: List[str]) -> None:
@@ -166,15 +174,15 @@ def create_profile_function_directories(tag: str, profiles: List[str], benchmark
     print("Created profile function directories")
 
 
-def print_configuration(benchmarks: List[str], profiles: List[str], tag: str, count: int, benchmark_config: Optional[Dict]) -> None:
+def print_configuration(benchmarks: List[str], profiles: List[str], tag: str, count: int, benchmark_configs: Dict[str, Dict[str, str]]) -> None:
     print("\nParsed arguments:")
     print(f"Benchmarks: {benchmarks}")
     print(f"Profiles: {profiles}")
     print(f"Tag: {tag}")
     print(f"Count: {count}")
-    if benchmark_config:
+    if benchmark_configs:
         print("\nBenchmark configurations:")
-        for benchmark, config in benchmark_config.items():
+        for benchmark, config in benchmark_configs.items():
             print(f"  {benchmark}:")
             print(f"    Prefixes: {', '.join(config['prefixes'])}")
             if config.get("ignore"):
@@ -183,7 +191,7 @@ def print_configuration(benchmarks: List[str], profiles: List[str], tag: str, co
         print("\nNo benchmark configuration found in config file - analyzing all functions")
 
 
-def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[str], count: int, tag: str, benchmark_config: Optional[Dict]) -> None:
+def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[str], count: int, tag: str, benchmark_configs: Dict[str, Dict[str, str]]) -> None:
 
     print("\nStarting benchmark pipeline...")
 
@@ -195,7 +203,7 @@ def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[st
         process_profiles(benchmark, profiles, tag)
 
         print(f"\nAnalyzing profile functions for {benchmark}...")
-        analyze_benchmark_profile_functions(tag, profiles, benchmark, benchmark_config)
+        analyze_benchmark_profile_functions(tag, profiles, benchmark, benchmark_configs)
 
         print(f"Completed pipeline for benchmark: {benchmark}")
 
@@ -300,9 +308,9 @@ def process_profiles(benchmark: str, profiles: List[str], tag: str) -> None:
             raise  # Let the caller handle the error
 
 
-def get_profile_analysis_config(benchmark: str, benchmark_config: Optional[Dict[str, Dict[str, str]]]) -> ProfileAnalysisConfig:
+def get_profile_analysis_config(benchmark: str, benchmark_configs: Dict[str, Dict[str, str]]) -> ProfileAnalysisConfig:
 
-    config = benchmark_config.get(benchmark, {}) if benchmark_config else {}
+    config = benchmark_configs.get(benchmark, {})
     return ProfileAnalysisConfig(function_prefixes=config.get("prefixes", []), ignore_functions=set(parse_list_argument(config.get("ignore", ""))) if config.get("ignore") else set())
 
 
@@ -380,12 +388,12 @@ def analyze_single_function(func: str, paths: ProfilePaths) -> None:
         raise RuntimeError(f"Error analyzing function {func}: {e.stderr}")
 
 
-def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark: str, benchmark_config: Optional[Dict[str, Dict[str, str]]] = None) -> None:
+def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark: str, benchmark_configs: Dict[str, Dict[str, str]]) -> None:
     pprof_profiles = [p for p in profiles if p != "trace"]
 
     for profile in pprof_profiles:
         try:
-            config = get_profile_analysis_config(benchmark, benchmark_config)
+            config = get_profile_analysis_config(benchmark, benchmark_configs)
             paths = get_profile_paths(tag, benchmark, profile)
 
             paths.output.mkdir(parents=True, exist_ok=True)

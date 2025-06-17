@@ -30,11 +30,11 @@ def parse_arguments():
 def handle_benchmarks(args):
     config_setup()
 
-    benchmarks, profiles, benchmark_config = parse_and_load_benchmark_config(args)
+    benchmarks, profiles, benchmark_configs = parse_and_load_benchmark_config(args)
     setup_directories(args.tag, benchmarks, profiles)
-    print_configuration(benchmarks, profiles, args.tag, args.count, benchmark_config)
+    print_configuration(benchmarks, profiles, args.tag, args.count, benchmark_configs)
 
-    run_benchmarks_and_process_profiles(benchmarks, profiles, args.count, args.tag, benchmark_config)
+    run_benchmarks_and_process_profiles(benchmarks, profiles, args.count, args.tag, benchmark_configs)
 
     if args.general_analyze:
         analyze_profiles(args.tag, profiles)
