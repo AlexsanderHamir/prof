@@ -36,7 +36,7 @@ PPROF_TEXT_PARAMS = ["-nodecount=100000000", "-cum", "-edgefraction=0", "-nodefr
 
 
 @dataclass
-class BenchmarkConfig:
+class BenchmarkConfigWrapper:
     benchmark_name: str
     profiles: List[str]
     iteration_count: int
@@ -200,7 +200,8 @@ def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[st
         process_profiles(benchmark, profiles, tag)
 
         print(f"\nAnalyzing profile functions for {benchmark}...")
-        analyze_benchmark_profile_functions(tag, profiles, benchmark, function_filter_configs)
+        analysis_config = get_profile_analysis_config(benchmark, function_filter_configs)
+        analyze_benchmark_profile_functions(tag, profiles, benchmark, analysis_config)
 
         print(f"Completed pipeline for benchmark: {benchmark}")
 
@@ -208,7 +209,7 @@ def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[st
 
 
 def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str) -> None:
-    config = BenchmarkConfig(benchmark, profiles, count, tag)
+    config = BenchmarkConfigWrapper(benchmark, profiles, count, tag)
 
     cmd = build_benchmark_command(config)
     text_dir, bin_dir = setup_output_directories(config.benchmark_name, config.tag)
@@ -381,17 +382,16 @@ def analyze_single_function(func: str, paths: ProfilePaths) -> None:
         raise RuntimeError(f"Error analyzing function {func}: {e.stderr}")
 
 
-def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark: str, function_filter_configs: Dict[str, Dict[str, Any]]) -> None:
+def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark: str, analysis_config: ProfileAnalysisConfig) -> None:
     pprof_profiles = [p for p in profiles if p != "trace"]
 
     for profile in pprof_profiles:
         try:
-            config = get_profile_analysis_config(benchmark, function_filter_configs)
             paths = get_profile_paths(tag, benchmark, profile)
 
             paths.output.mkdir(parents=True, exist_ok=True)
 
-            functions = extract_functions_from_profile(paths.profile_text, config)
+            functions = extract_functions_from_profile(paths.profile_text, analysis_config)
             for func in functions:
                 try:
                     analyze_single_function(func, paths)
@@ -494,7 +494,7 @@ def parse_benchmark_config(config_str: str) -> Dict[str, Dict[str, str]]:
         raise ValueError(f"Error parsing benchmark config: {e}")
 
 
-def build_benchmark_command(config: BenchmarkConfig) -> List[str]:
+def build_benchmark_command(config: BenchmarkConfigWrapper) -> List[str]:
     cmd = ["go", "test", "-run=^$", f"-bench=^{config.benchmark_name}$", "-benchmem", f"-count={config.iteration_count}"]
 
     for profile in config.profiles:
