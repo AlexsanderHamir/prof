@@ -15,18 +15,12 @@ def log_profile_content(content: str, profile_type: str) -> None:
             print(line)
 
 
-def request_model_analysis(messages: List[Dict[str, str]],
-                           config: Config) -> str:
+def request_model_analysis(messages: List[Dict[str, str]], config: Config) -> str:
 
     client = ConfigManager.get_client()
     print(f"\nSending request to model: {config.model_config.model}")
 
-    response = client.chat.completions.create(
-        model=config.model_config.model,
-        messages=messages,
-        max_tokens=config.model_config.max_tokens,
-        temperature=config.model_config.temperature,
-        top_p=config.model_config.top_p)
+    response = client.chat.completions.create(model=config.model_config.model, messages=messages, max_tokens=config.model_config.max_tokens, temperature=config.model_config.temperature, top_p=config.model_config.top_p)
 
     return response.choices[0].message.content
 
@@ -66,8 +60,7 @@ def read_profile_file(file_path: Path) -> str:
         raise ProfileReadError(f"Error reading profile file {file_path}: {e}")
 
 
-def collect_profile_content(directory: Path,
-                            file_pattern: str = "*.txt") -> List[str]:
+def collect_profile_content(directory: Path, file_pattern: str = "*.txt") -> List[str]:
     if not directory.exists():
         return []
 
@@ -80,14 +73,10 @@ def collect_profile_content(directory: Path,
 
 
 def get_function_directories(base_dir: Path) -> List[Path]:
-    return [
-        d for d in base_dir.iterdir()
-        if d.is_dir() and d.name.endswith('_functions')
-    ]
+    return [d for d in base_dir.iterdir() if d.is_dir() and d.name.endswith('_functions')]
 
 
-def collect_function_profiles(base_dir: Path,
-                              benchmark_name: str) -> List[str]:
+def collect_function_profiles(base_dir: Path, benchmark_name: str) -> List[str]:
     functions_content = []
     for func_dir in get_function_directories(base_dir):
         profile_type = func_dir.name.replace('_functions', '')
@@ -95,8 +84,7 @@ def collect_function_profiles(base_dir: Path,
 
         profile_content = collect_profile_content(benchmark_dir)
         if profile_content:
-            functions_content.append(
-                f"{profile_type}:{'|'.join(profile_content)}")
+            functions_content.append(f"{profile_type}:{'|'.join(profile_content)}")
 
     return functions_content
 
@@ -114,8 +102,7 @@ def read_profile_text_file(file_path: str) -> str:
         raise ProfileReadError(f"Error reading profile file {file_path}: {e}")
 
 
-def get_benchmark_file(tag: str, benchmark_name: str,
-                       profile_type: str) -> Dict[str, str]:
+def get_benchmark_file(tag: str, benchmark_name: str, profile_type: str) -> Dict[str, str]:
     base_dir = Path("bench") / tag
     text_dir = base_dir / "text" / benchmark_name
     profile_file = text_dir / f"{benchmark_name}_{profile_type}.txt"
@@ -125,8 +112,7 @@ def get_benchmark_file(tag: str, benchmark_name: str,
     }
 
 
-def save_analysis(tag: str, benchmark_name: str, profile_type: str,
-                  analysis: str) -> None:
+def save_analysis(tag: str, benchmark_name: str, profile_type: str, analysis: str) -> None:
 
     analysis_file = get_file_path(tag, benchmark_name, profile_type)
 
@@ -143,9 +129,7 @@ def save_analysis(tag: str, benchmark_name: str, profile_type: str,
 
 def get_file_path(tag: str, benchmark_name: str, profile_type: str) -> Path:
     if ConfigManager.is_flagging:
-        return Path(
-            "bench"
-        ) / tag / "text" / benchmark_name / f"{benchmark_name}_{profile_type}.txt"
+        return Path("bench") / tag / "text" / benchmark_name / f"{benchmark_name}_{profile_type}.txt"
 
     # Create the directory structure
     analysis_dir = Path("bench") / tag / "AI" / "generalistic" / benchmark_name
@@ -175,8 +159,7 @@ def get_general_analyze_prompt(config: Config) -> str:
 
     prompt_path = Path(config.model_config.prompt_location)
     if not prompt_path.exists():
-        raise ValueError(
-            f"General analyze prompt file not found at: {prompt_path}")
+        raise ValueError(f"General analyze prompt file not found at: {prompt_path}")
 
     with open(prompt_path, 'r') as f:
         return f.read().strip()
@@ -186,8 +169,7 @@ def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
     try:
         files = get_benchmark_file(tag, benchmark_name, profile_type)
         if not files['text_content']:
-            raise ValueError(
-                f"No content found for {benchmark_name} ({profile_type})")
+            raise ValueError(f"No content found for {benchmark_name} ({profile_type})")
 
         config = ConfigManager.load()
         general_prompt = get_general_analyze_prompt(config)
@@ -197,19 +179,11 @@ Profile Type: {profile_type}
 
 Profile Content: {files['text_content']}"""
 
-        messages = [{
-            "role": "system",
-            "content": general_prompt
-        }, {
-            "role": "user",
-            "content": profile_info
-        }]
+        messages = [{"role": "system", "content": general_prompt}, {"role": "user", "content": profile_info}]
 
         analysis = request_model_analysis(messages, config)
         save_analysis(tag, benchmark_name, profile_type, analysis)
-        print(
-            f"Successfully analyzed and saved results for {benchmark_name} ({profile_type})"
-        )
+        print(f"Successfully analyzed and saved results for {benchmark_name} ({profile_type})")
 
     except ValueError as e:
         print(f"Validation error for {benchmark_name} ({profile_type}): {e}")
@@ -219,17 +193,13 @@ Profile Content: {files['text_content']}"""
         raise
 
 
-def analyze_all_profiles(tag: str, benchmark_names: List[str],
-                         profile_types: List[str]) -> None:
+def analyze_all_profiles(tag: str, benchmark_names: List[str], profile_types: List[str]) -> None:
     print(f"\nStarting comprehensive analysis for tag: {tag}")
     print(f"Benchmarks: {', '.join(benchmark_names)}")
     print(f"Profile types: {', '.join(profile_types)}")
     print("=" * 100)
 
-    profile_types = [
-        profile_type for profile_type in profile_types
-        if "trace" not in profile_type
-    ]
+    profile_types = [profile_type for profile_type in profile_types if "trace" not in profile_type]
 
     for benchmark in benchmark_names:
         for profile_type in profile_types:

@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 import sys
-from cli_helpers import (parse_arguments, handle_benchmarks)
-from utils_benchmark import (validate_required_args, cleanup_tag_directory,
-                             BenchmarkError, BenchmarkConfigError,
-                             BenchmarkProfileError, BenchmarkDirectoryError,
-                             setup_command)
+from cli_helpers import (parse_arguments, handle_benchmarks, setup)
 from config_manager import ConfigurationError
+from utils_benchmark import (validate_required_args, cleanup_tag_directory, BenchmarkBaseError)
 
 
 def main():
@@ -13,32 +10,24 @@ def main():
         args = parse_arguments()
 
         if args.command == "setup":
-            try:
-                setup_command(args)
-            except BenchmarkConfigError as e:
-                print(f"\nError: {e}", file=sys.stderr)
-                sys.exit(1)
-            return
+            setup(args)
 
-        if args.command is None and (args.benchmarks and args.profiles
-                                     and args.tag and args.count):
+        no_command_present = args.command is None
+        if no_command_present and validate_required_args(args):
             try:
                 handle_benchmarks(args)
-            except (BenchmarkError, BenchmarkConfigError,
-                    BenchmarkProfileError, BenchmarkDirectoryError,
-                    ConfigurationError) as e:
-                print(f"\nError: {e}", file=sys.stderr)
+            except (BenchmarkBaseError, ConfigurationError) as e:
+                print(f"\nBenchmark Failed: {e}", file=sys.stderr)
                 print("Cleaning up tag directory...")
+
                 cleanup_tag_directory(args.tag)
                 sys.exit(1)
             except Exception as e:
                 print(f"\nUnexpected error: {e}", file=sys.stderr)
                 print("Cleaning up tag directory...")
+
                 cleanup_tag_directory(args.tag)
                 sys.exit(1)
-        elif not validate_required_args(args):
-            sys.exit(1)
-
     except Exception as e:
         print(f"\nUnexpected error: {e}", file=sys.stderr)
         sys.exit(1)

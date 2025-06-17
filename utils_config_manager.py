@@ -38,23 +38,19 @@ def validate_model_config(model_config: Dict[str, Any]) -> None:
     model_config_fields = ["model", "max_tokens", "temperature", "top_p"]
     for field in model_config_fields:
         if field not in model_config:
-            raise ValueError(
-                f"Missing required field in model_config: {field}")
+            raise ValueError(f"Missing required field in model_config: {field}")
 
 
 def validate_benchmark_configs(benchmark_configs: Dict[str, Any]) -> None:
     for benchmark, config in benchmark_configs.items():
         if not isinstance(config, dict):
-            raise ValueError(
-                f"Invalid benchmark config format for {benchmark}")
+            raise ValueError(f"Invalid benchmark config format for {benchmark}")
         if "prefixes" not in config:
             raise ValueError(f"Missing 'prefixes' for benchmark {benchmark}")
         if not isinstance(config["prefixes"], list):
-            raise ValueError(
-                f"'prefixes' must be a list for benchmark {benchmark}")
+            raise ValueError(f"'prefixes' must be a list for benchmark {benchmark}")
         if "ignore" in config and not isinstance(config["ignore"], str):
-            raise ValueError(
-                f"'ignore' must be a string for benchmark {benchmark}")
+            raise ValueError(f"'ignore' must be a string for benchmark {benchmark}")
 
 
 def create_config_template() -> Dict[str, Any]:
@@ -75,8 +71,7 @@ def create_config_template() -> Dict[str, Any]:
                     "github.com/example/GenPool/internal",
                     "github.com/example/GenPool/pkg",
                 ],
-                "ignore":
-                "init,TestMain,BenchmarkMain",
+                "ignore": "init,TestMain,BenchmarkMain",
             },
             "BenchmarkSyncPool": {
                 "prefixes": ["github.com/example/SyncPool"],
@@ -111,8 +106,7 @@ def create_config_from_data(config_data: Dict[str, Any]) -> Config:
     benchmark_configs = {}
     if "benchmark_configs" in config_data:
         for benchmark, config in config_data["benchmark_configs"].items():
-            benchmark_configs[benchmark] = BenchmarkConfig(
-                prefixes=config["prefixes"], ignore=config.get("ignore"))
+            benchmark_configs[benchmark] = BenchmarkConfig(prefixes=config["prefixes"], ignore=config.get("ignore"))
 
     return Config(
         api_key=config_data["api_key"],
@@ -125,20 +119,13 @@ def create_config_from_data(config_data: Dict[str, Any]) -> Config:
 def print_template_creation_info(template_path: Path) -> None:
 
     print(f"\nTemplate configuration file created at: {template_path}")
-    print(
-        "\nThe template includes example benchmark configurations with multiple prefixes."
-    )
+    print("\nThe template includes example benchmark configurations with multiple prefixes.")
     print("For each benchmark, you can specify:")
-    print(
-        "  - prefixes: A list of package prefixes to analyze (e.g., ['github.com/your/package'])"
-    )
-    print(
-        "  - ignore: Optional comma-separated list of functions to exclude from analysis"
-    )
+    print("  - prefixes: A list of package prefixes to analyze (e.g., ['github.com/your/package'])")
+    print("  - ignore: Optional comma-separated list of functions to exclude from analysis")
     print("\nPlease edit this file with your configuration and run:")
     print("  prof setup --config path/to/your/config.json")
 
 
 def print_validation_progress(message: str, *args, **kwargs) -> None:
-    print(
-        f"\n{message.format(*args, **kwargs) if args or kwargs else message}")
+    print(f"\n{message.format(*args, **kwargs) if args or kwargs else message}")
