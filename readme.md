@@ -119,7 +119,7 @@ The `model_config` section controls how the AI analyzes your profiles:
     "max_tokens": 4096,
     "temperature": 0.7,
     "top_p": 1.0,
-    "general_analyze_prompt_location": "path/to/your/system_prompt.txt"
+    "prompt_location": "path/to/your/system_prompt.txt"
 }
 ```
 
@@ -186,7 +186,7 @@ The `benchmark_configs` section lets you customize analysis for each benchmark:
     "model": "gpt-4-turbo-preview",
     "max_tokens": 4096,
     "temperature": 0.7,
-    "general_analyze_prompt_location": "./prompts/custom_analysis.txt"
+    "prompt_location": "./prompts/custom_analysis.txt"
   },
   "benchmark_configs": {
     "BenchmarkOptimized": {
@@ -220,7 +220,7 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "test1" -gen
 
 1. **Custom Prompts**
 
-   - Set `general_analyze_prompt_location` in your config (file location)
+   - Set `prompt_location` in your config (file location)
    - Create tailored prompts for specific analysis needs (e.g., performance aspects, baseline comparisons)
 
 2. **Model Settings**

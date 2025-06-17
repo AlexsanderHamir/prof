@@ -16,7 +16,7 @@ class ModelConfig:
     max_tokens: int
     temperature: float
     top_p: float
-    general_analyze_prompt_location: str
+    prompt_location: str
 
 
 @dataclass
@@ -66,8 +66,7 @@ def create_config_template() -> Dict[str, Any]:
             "max_tokens": 4096,
             "temperature": 0.7,
             "top_p": 1.0,
-            "general_analyze_prompt_location":
-            "path/to/your/system_prompt.txt",
+            "prompt_location": "path/to/your/system_prompt.txt",
         },
         "benchmark_configs": {
             "BenchmarkGenPool": {

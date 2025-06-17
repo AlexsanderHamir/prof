@@ -170,11 +170,10 @@ def get_default_prompt(template_name: str) -> str:
 
 
 def get_general_analyze_prompt(config: Config) -> str:
-    if not config.model_config.general_analyze_prompt_location:
-        raise ValueError(
-            "general_analyze_prompt_location must be provided in config")
+    if not config.model_config.prompt_location:
+        raise ValueError("prompt_location must be provided in config")
 
-    prompt_path = Path(config.model_config.general_analyze_prompt_location)
+    prompt_path = Path(config.model_config.prompt_location)
     if not prompt_path.exists():
         raise ValueError(
             f"General analyze prompt file not found at: {prompt_path}")
