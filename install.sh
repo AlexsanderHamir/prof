@@ -3,12 +3,13 @@
 set -e
 
 # Configuration
-REPO_URL="https://github.com/AlexsanderHamir/prof.git"
+REPO="AlexsanderHamir/prof"
+API_URL="https://api.github.com/repos/$REPO/releases/latest"
 INSTALL_DIR="$HOME/.prof"
 VENV_DIR="$INSTALL_DIR/venv"
 WRAPPER_PATH="$HOME/bin/prof"
 
-echo "Installing prof from GitHub..."
+echo "Installing prof from the latest GitHub release..."
 
 # Check and fix bin directory permissions if needed
 if [ -d "$HOME/bin" ]; then
@@ -26,42 +27,25 @@ if [ -d "$HOME/bin" ]; then
     fi
 fi
 
-# 1. Clone or update repository
+# 1. Download and extract the latest release tarball
 if [ -d "$INSTALL_DIR" ]; then
-    echo "Updating existing installation..."
-    cd "$INSTALL_DIR"
-    
-    # Ensure we're in a git repository
-    if [ ! -d ".git" ]; then
-        echo "Error: $INSTALL_DIR exists but is not a git repository"
-        echo "Removing directory for fresh installation..."
-        cd - > /dev/null
-        rm -rf "$INSTALL_DIR"
-        git clone "$REPO_URL" "$INSTALL_DIR"
-    else
-        # Force refresh git cache and update
-        echo "Fetching latest changes..."
-        git fetch --prune origin
-        git fetch --tags --force origin
-        
-        # Reset to origin/main to ensure clean state
-        echo "Updating to latest version..."
-        git reset --hard origin/main || {
-            echo "Error: Failed to update repository. Attempting clean update..."
-            git clean -fdx
-            git reset --hard origin/main || {
-                echo "Error: Could not update repository. Please check your git status."
-                exit 1
-            }
-        }
-        
-        # Return to previous directory
-        cd - > /dev/null
-    fi
-else
-    echo "Cloning repository into $INSTALL_DIR"
-    git clone "$REPO_URL" "$INSTALL_DIR"
+    echo "Removing existing installation at $INSTALL_DIR..."
+    rm -rf "$INSTALL_DIR"
 fi
+mkdir -p "$INSTALL_DIR"
+
+# Fetch tarball_url and tag_name from GitHub API
+RELEASE_INFO=$(curl -s $API_URL)
+TARBALL_URL=$(echo "$RELEASE_INFO" | grep tarball_url | cut -d '"' -f 4)
+TAG_NAME=$(echo "$RELEASE_INFO" | grep tag_name | cut -d '"' -f 4)
+if [ -z "$TARBALL_URL" ]; then
+    echo "Error: Could not fetch latest release tarball URL."
+    exit 1
+fi
+
+echo "Latest release tag: $TAG_NAME"
+echo "Downloading and extracting latest release..."
+curl -L "$TARBALL_URL" | tar -xz -C "$INSTALL_DIR" --strip-components=1
 
 # 2. Create virtual environment if not exists
 if [ ! -d "$VENV_DIR" ]; then
