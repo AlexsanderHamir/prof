@@ -100,6 +100,25 @@ def validate_list_arguments(benchmarks_arg: str, profiles_arg: str) -> None:
     if profiles_arg.strip().endswith("]") and not profiles_arg.strip().startswith("["):
         raise ConfigurationError("Profiles argument has closing bracket ']' but missing opening bracket '['. Please provide a properly formatted list.")
 
+    # New: Validate comma separation inside brackets
+    def check_commas(arg: str, arg_name: str):
+        stripped = arg.strip()[1:-1].strip()  # remove brackets and whitespace
+        if stripped:
+            # Detect two or more words separated by whitespace but not by a comma
+            if re.search(r'\b\w+\b\s+\b\w+\b', stripped) and ',' not in stripped:
+                raise ConfigurationError(f"{arg_name} argument items must be separated by commas, not spaces. Please provide a properly comma-separated list.")
+            # Split by comma, check for empty items or consecutive/missing commas
+            items = [item.strip() for item in stripped.split(",")]
+            if any(not item for item in items):
+                raise ConfigurationError(f"{arg_name} argument contains empty items or consecutive/missing commas. Please provide a properly comma-separated list.")
+            # Check for any item that still contains multiple words (e.g., 'foo bar')
+            for item in items:
+                if ' ' in item:
+                    raise ConfigurationError(f"{arg_name} argument items must be single words and separated by commas. Found: '{item}'")
+
+    check_commas(benchmarks_arg, "Benchmarks")
+    check_commas(profiles_arg, "Profiles")
+
 
 def parse_and_load_benchmark_config(args) -> Tuple[List[str], List[str], Dict[str, Dict[str, Any]]]:
     validate_list_arguments(args.benchmarks, args.profiles)
