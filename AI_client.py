@@ -3,6 +3,15 @@ from typing import List
 
 
 def analyze_profiles(tag: str, profile_types: List[str]):
+    """
+    Analyze benchmark profiles for a given tag and list of profile types.
+
+    Args:
+        tag (str): The tag identifying the benchmark run.
+        profile_types (List[str]): List of profile types to analyze (e.g., cpu, memory).
+    Raises:
+        Exception: If analysis or validation fails.
+    """
     try:
         benchmark_names = validate_benchmark_directories(tag)
         print(f"Found {len(benchmark_names)} benchmarks and {len(profile_types)} profile types")

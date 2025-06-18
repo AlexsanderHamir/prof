@@ -5,24 +5,26 @@ from AI_client import analyze_profiles
 from config_manager import ConfigManager
 from utils_benchmark import BenchmarkConfigError, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, config_setup
 
-# Create parser at module level
-parser = argparse.ArgumentParser(description="CLI tool for benchmarking Go code with profile analysis")
-subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
-setup_parser = subparsers.add_parser("setup", help="Create a template configuration file")
-setup_parser.add_argument("--create-template", action="store_true", help="Create a template configuration file")
-setup_parser.add_argument("--output-path", help="Path where to create the template file")
+def create_parser():
+    parser = argparse.ArgumentParser(description="CLI tool for benchmarking Go code with profile analysis")
+    subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
-parser.add_argument('-benchmarks', type=str, help='Comma-separated list of benchmark names (e.g., "[BenchmarkGenPool,BenchmarkSyncPool]")')
-parser.add_argument('-profiles', type=str, help='Comma-separated list of profile types (e.g., "[cpu,memory,mutex]")')
-parser.add_argument('-tag', type=str, help='Tag for the benchmark run (e.g., "test1")')
-parser.add_argument('-count', type=int, help='Number of benchmark iterations (e.g., 5)')
-parser.add_argument('-general_analyze', action='store_true', help='Run general AI analysis on the benchmark results after completion')
+    setup_parser = subparsers.add_parser("setup", help="Create a template configuration file")
+    setup_parser.add_argument("--create-template", action="store_true", help="Create a template configuration file")
+    setup_parser.add_argument("--output-path", help="Path where to create the template file")
 
-parser.add_argument('-flag_profiles', action='store_true', help='Flag the benchmark results')
+    parser.add_argument('-benchmarks', type=str, help='Comma-separated list of benchmark names (e.g., "[BenchmarkGenPool,BenchmarkSyncPool]")')
+    parser.add_argument('-profiles', type=str, help='Comma-separated list of profile types (e.g., "[cpu,memory,mutex]")')
+    parser.add_argument('-tag', type=str, help='Tag for the benchmark run (e.g., "test1")')
+    parser.add_argument('-count', type=int, help='Number of benchmark iterations (e.g., 5)')
+    parser.add_argument('-general_analyze', action='store_true', help='Run general AI analysis on the benchmark results after completion')
+    parser.add_argument('-flag_profiles', action='store_true', help='Flag the benchmark results')
+    return parser
 
 
 def parse_arguments():
+    parser = create_parser()
     args = parser.parse_args()
     return args
 

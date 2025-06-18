@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Optional
 from openai import OpenAI
@@ -12,8 +13,10 @@ from utils_config_manager import (
     load_config_from_file,
     create_config_from_data,
     print_template_creation_info,
-    print_validation_progress,
 )
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class ConfigurationError(Exception):
@@ -46,33 +49,30 @@ class ConfigManager:
 
     @classmethod
     def setup_from_file(cls, config_path: str) -> None:
-        print_validation_progress("Starting configuration validation process...")
-        print_validation_progress("Reading configuration from: {}", config_path)
+        logger.info("Starting configuration validation process...")
+        logger.info(f"Reading configuration from: {config_path}")
 
         config_data = load_config_from_file(config_path)
-        print("✓ Successfully read configuration file")
+        logger.info("✓ Successfully read configuration file")
 
-        print_validation_progress("Validating configuration structure...")
-
+        logger.info("Validating configuration structure...")
         validate_config_structure(config_data)
-        print("✓ All required top-level fields are present")
+        logger.info("✓ All required top-level fields are present")
 
         if "benchmark_configs" not in config_data:
             config_data["benchmark_configs"] = {}
-            print_validation_progress("No benchmark configurations provided - will analyze all functions")
+            logger.info("No benchmark configurations provided - will analyze all functions")
 
-        print_validation_progress("Validating model configuration...")
-
+        logger.info("Validating model configuration...")
         validate_model_config(config_data["model_config"])
-        print("✓ All required model configuration fields are present")
+        logger.info("✓ All required model configuration fields are present")
 
-        print_validation_progress("Validating benchmark configurations...")
-
+        logger.info("Validating benchmark configurations...")
         validate_benchmark_configs(config_data["benchmark_configs"])
-        print("✓ All benchmark configurations are valid")
+        logger.info("✓ All benchmark configurations are valid")
 
         cls._config_path = config_path
-        print_validation_progress("Configuration validation completed successfully! 🎉")
+        logger.info("Configuration validation completed successfully! 🎉")
 
     @classmethod
     def load(cls) -> Config:
