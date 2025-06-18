@@ -3,7 +3,8 @@ import argparse
 import sys
 from AI_client import analyze_profiles
 from config_manager import ConfigManager
-from utils_benchmark import BenchmarkConfigError, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, config_setup
+from utils_benchmark import (BenchmarkConfigError, BenchmarkError, BenchmarkProfileError, BenchmarkDirectoryError, BenchmarkFileError, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, config_setup)
+from utils_AI_client import ProfileReadError, ProfileSaveError, ModelAnalysisError
 
 
 def create_parser():
@@ -30,19 +31,48 @@ def parse_arguments():
 
 
 def handle_benchmarks(args):
-    config_setup()
+    try:
+        config_setup()
 
-    benchmarks, profiles, function_filter_configs = parse_and_load_benchmark_config(args)
-    setup_directories(args.tag, benchmarks, profiles)
-    print_configuration(benchmarks, profiles, args.tag, args.count, function_filter_configs)
+        benchmarks, profiles, function_filter_configs = parse_and_load_benchmark_config(args)
+        setup_directories(args.tag, benchmarks, profiles)
+        print_configuration(benchmarks, profiles, args.tag, args.count, function_filter_configs)
 
-    run_benchmarks_and_process_profiles(benchmarks, profiles, args.count, args.tag, function_filter_configs)
+        run_benchmarks_and_process_profiles(benchmarks, profiles, args.count, args.tag, function_filter_configs)
 
-    if args.general_analyze:
-        analyze_profiles(args.tag, profiles)
-    if args.flag_profiles:
-        ConfigManager.is_flagging = True
-        analyze_profiles(args.tag, profiles)
+        if args.general_analyze:
+            analyze_profiles(args.tag, profiles)
+        if args.flag_profiles:
+            ConfigManager.is_flagging = True
+            analyze_profiles(args.tag, profiles)
+
+    except BenchmarkConfigError as e:
+        print(f"\nSetup Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except BenchmarkError as e:
+        print(f"\nBenchmark error: {e}", file=sys.stderr)
+        sys.exit(2)
+    except BenchmarkProfileError as e:
+        print(f"\nBenchmark profile error: {e}", file=sys.stderr)
+        sys.exit(3)
+    except BenchmarkDirectoryError as e:
+        print(f"\nBenchmark directory error: {e}", file=sys.stderr)
+        sys.exit(4)
+    except BenchmarkFileError as e:
+        print(f"\nBenchmark file error: {e}", file=sys.stderr)
+        sys.exit(5)
+    except ProfileReadError as e:
+        print(f"\nProfile read error: {e}", file=sys.stderr)
+        sys.exit(6)
+    except ProfileSaveError as e:
+        print(f"\nProfile save error: {e}", file=sys.stderr)
+        sys.exit(7)
+    except ModelAnalysisError as e:
+        print(f"\nModel analysis error: {e}", file=sys.stderr)
+        sys.exit(8)
+    except Exception as e:
+        print(f"\nUnexpected error: {e}", file=sys.stderr)
+        sys.exit(99)
 
 
 def setup(args):

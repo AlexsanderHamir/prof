@@ -14,6 +14,8 @@ from utils_config_manager import (
     create_config_from_data,
     print_template_creation_info,
     print_validation_progress,
+    ConfigValidationError,
+    ConfigFileError,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -52,31 +54,37 @@ class ConfigManager:
     def setup_from_file(cls, config_path: str) -> None:
         print_validation_progress("Starting configuration validation process...")
         print_validation_progress("Reading configuration from: {}", config_path)
+        try:
+            config_data = load_config_from_file(config_path)
+            print("✓ Successfully read configuration file")
 
-        config_data = load_config_from_file(config_path)
-        print("✓ Successfully read configuration file")
+            print_validation_progress("Validating configuration structure...")
+            validate_config_structure(config_data)
+            print("✓ All required top-level fields are present")
 
-        print_validation_progress("Validating configuration structure...")
+            if "benchmark_configs" not in config_data:
+                config_data["benchmark_configs"] = {}
+                print_validation_progress("No benchmark configurations provided - will analyze all functions")
 
-        validate_config_structure(config_data)
-        print("✓ All required top-level fields are present")
+            print_validation_progress("Validating model configuration...")
+            validate_model_config(config_data["model_config"])
+            print("✓ All required model configuration fields are present")
 
-        if "benchmark_configs" not in config_data:
-            config_data["benchmark_configs"] = {}
-            print_validation_progress("No benchmark configurations provided - will analyze all functions")
+            print_validation_progress("Validating benchmark configurations...")
+            validate_benchmark_configs(config_data["benchmark_configs"])
+            print("✓ All benchmark configurations are valid")
 
-        print_validation_progress("Validating model configuration...")
-
-        validate_model_config(config_data["model_config"])
-        print("✓ All required model configuration fields are present")
-
-        print_validation_progress("Validating benchmark configurations...")
-
-        validate_benchmark_configs(config_data["benchmark_configs"])
-        print("✓ All benchmark configurations are valid")
-
-        cls._config_path = config_path
-        print_validation_progress("Configuration validation completed successfully! 🎉")
+            cls._config_path = config_path
+            print_validation_progress("Configuration validation completed successfully! 🎉")
+        except ConfigValidationError as e:
+            logger.error(f"Configuration validation error: {e}")
+            raise ConfigurationSetupFailed(f"Configuration validation error: {e}")
+        except ConfigFileError as e:
+            logger.error(f"Configuration file error: {e}")
+            raise ConfigurationSetupFailed(f"Configuration file error: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error during configuration setup: {e}")
+            raise ConfigurationSetupFailed(f"Unexpected error during configuration setup: {e}")
 
     @classmethod
     def load(cls) -> Config:
@@ -85,8 +93,15 @@ class ConfigManager:
         try:
             config_data = load_config_from_file(cls._config_path)
             return create_config_from_data(config_data)
+        except ConfigValidationError as e:
+            logger.error(f"Configuration validation error: {e}")
+            raise ConfigurationSetupFailed(f"Configuration validation error: {e}")
+        except ConfigFileError as e:
+            logger.error(f"Configuration file error: {e}")
+            raise ConfigurationSetupFailed(f"Configuration file error: {e}")
         except Exception as e:
-            raise ConfigurationSetupFailed(f"Error loading configuration: {str(e)}")
+            logger.error(f"Unexpected error loading configuration: {e}")
+            raise ConfigurationSetupFailed(f"Unexpected error loading configuration: {e}")
 
     @classmethod
     def get_client(cls) -> OpenAI:

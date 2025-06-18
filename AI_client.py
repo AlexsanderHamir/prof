@@ -1,4 +1,4 @@
-from utils_AI_client import analyze_all_profiles, validate_benchmark_directories
+from utils_AI_client import analyze_all_profiles, validate_benchmark_directories, ProfileReadError, ProfileSaveError, ModelAnalysisError
 from typing import List
 
 
@@ -17,6 +17,15 @@ def analyze_profiles(tag: str, profile_types: List[str]):
         print(f"Found {len(benchmark_names)} benchmarks and {len(profile_types)} profile types")
 
         analyze_all_profiles(tag, benchmark_names, profile_types)
+    except ProfileReadError as e:
+        print(f"Profile read error: {str(e)}")
+        raise
+    except ProfileSaveError as e:
+        print(f"Profile save error: {str(e)}")
+        raise
+    except ModelAnalysisError as e:
+        print(f"Model analysis error: {str(e)}")
+        raise
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"Unexpected error: {str(e)}")
         raise
