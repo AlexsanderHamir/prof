@@ -11,22 +11,37 @@ from dataclasses import dataclass
 
 
 class BenchmarkBaseError(Exception):
+    """Base exception for all benchmark-related errors."""
     pass
 
 
 class BenchmarkError(BenchmarkBaseError):
+    """Raised when a benchmark run fails."""
     pass
 
 
 class BenchmarkConfigError(BenchmarkBaseError):
+    """Raised when there is a configuration error in the benchmark setup."""
     pass
 
 
 class BenchmarkProfileError(BenchmarkBaseError):
+    """Raised when there is an error processing benchmark profiles."""
     pass
 
 
 class BenchmarkDirectoryError(BenchmarkBaseError):
+    """Raised when there is an error with benchmark directory operations."""
+    pass
+
+
+class BenchmarkSubprocessError(BenchmarkBaseError):
+    """Raised when a subprocess (e.g., pprof, go test) fails."""
+    pass
+
+
+class BenchmarkFileError(BenchmarkBaseError):
+    """Raised when a file operation fails in the benchmark pipeline."""
     pass
 
 
@@ -164,7 +179,6 @@ def create_profile_function_directories(tag: str, profiles: List[str], benchmark
         profile_dir = tag_dir / f"{profile}_functions"
         profile_dir.mkdir(exist_ok=True)
 
-        # Create benchmark subdirectories
         for benchmark in benchmarks:
             benchmark_dir = profile_dir / benchmark
             benchmark_dir.mkdir(exist_ok=True)
@@ -233,7 +247,6 @@ def wait_for_profile_file(profile_file: Path, timeout: int = 5) -> bool:
 
 
 def run_pprof_command(cmd: List[str], output_path: Path, binary_mode: bool = False) -> subprocess.CompletedProcess:
-
     mode = 'wb' if binary_mode else 'w'
     try:
         with open(output_path, mode) as f:
@@ -241,7 +254,9 @@ def run_pprof_command(cmd: List[str], output_path: Path, binary_mode: bool = Fal
         return process
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode() if isinstance(e.stderr, bytes) else e.stderr
-        raise RuntimeError(f"pprof command failed: {error_msg}")
+        raise BenchmarkSubprocessError(f"pprof command failed: {error_msg}")
+    except Exception as e:
+        raise BenchmarkFileError(f"Error running pprof command or writing to {output_path}: {e}")
 
 
 def generate_text_profile(profile_file: Path, output_file: Path) -> None:
@@ -265,15 +280,13 @@ def process_profile(profile: str, benchmark: str, profile_file: Path, text_dir: 
     png_file = profile_functions_dir / f"{benchmark}_{profile}.png"
 
     try:
-        # Generate text profile
         generate_text_profile(profile_file, output_file)
         print(f"Processed {profile} profile for {benchmark}")
 
-        # Generate PNG visualization
         generate_png_visualization(profile_file, png_file)
         print(f"Generated PNG visualization for {profile} profile of {benchmark} in {profile_functions_dir}")
 
-    except RuntimeError as e:
+    except (BenchmarkSubprocessError, BenchmarkFileError) as e:
         print(f"Error processing {profile} profile for {benchmark}: {e}", file=sys.stderr)
         raise
 
@@ -283,7 +296,6 @@ def process_profiles(benchmark: str, profiles: List[str], tag: str) -> None:
     bin_dir = tag_dir / "bin" / benchmark
     text_dir = tag_dir / "text" / benchmark
 
-    # Skip trace profile as it's not processed with pprof
     pprof_profiles = [p for p in profiles if p != "trace"]
 
     for profile in pprof_profiles:
@@ -294,7 +306,7 @@ def process_profiles(benchmark: str, profiles: List[str], tag: str) -> None:
             process_profile(profile, benchmark, profile_file, text_dir, profile_functions_dir)
         except RuntimeError as e:
             print(f"Error processing profiles: {e}", file=sys.stderr)
-            raise  # Let the caller handle the error
+            raise
 
 
 def get_profile_analysis_config(benchmark: str, function_filter_configs: Dict[str, Dict[str, Any]]) -> ProfileAnalysisConfig:
@@ -317,16 +329,14 @@ def get_profile_paths(tag: str, benchmark: str, profile: str) -> ProfilePaths:
 def extract_function_name(line: str, function_prefixes: List[str], ignore_functions: Set[str]) -> Optional[str]:
 
     parts = line.split()
-    if len(parts) < 6:  # Need at least 6 columns (flat, flat%, sum%, cum, cum%, function)
+    if len(parts) < 6:
         return None
 
     func_name = " ".join(parts[5:])
 
-    # Check prefixes if specified
     if function_prefixes and not any(prefix in func_name for prefix in function_prefixes):
         return None
 
-    # Extract function name after last dot
     match = re.search(r'\.([^.(]+)(?:\([^)]*\))?$', func_name)
     if not match:
         return None
@@ -516,7 +526,6 @@ def setup_output_directories(benchmark_name: str, tag: str) -> Tuple[Path, Path]
 
 
 def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
-
     try:
         with open(output_file, 'w') as f:
             subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, text=True, check=True)
@@ -524,6 +533,8 @@ def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
         with open(output_file, 'r') as f:
             error_output = f.read()
         raise BenchmarkError(f"Benchmark failed with exit code {e.returncode}:\n{error_output}")
+    except Exception as e:
+        raise BenchmarkFileError(f"Error running benchmark command or writing to {output_file}: {e}")
 
 
 def move_profile_files(benchmark_name: str, profiles: List[str], bin_dir: Path) -> None:
@@ -550,7 +561,10 @@ def move_profile_files(benchmark_name: str, profiles: List[str], bin_dir: Path) 
             continue
 
         new_profile_file = bin_dir / f"{benchmark_name}_{profile}.out"
-        shutil.move(str(profile_file), str(new_profile_file))
+        try:
+            shutil.move(str(profile_file), str(new_profile_file))
+        except Exception as e:
+            raise BenchmarkFileError(f"Error moving profile file {profile_file} to {new_profile_file}: {e}")
 
 
 def move_test_files(benchmark_name: str, bin_dir: Path) -> None:
@@ -569,5 +583,8 @@ def move_test_files(benchmark_name: str, bin_dir: Path) -> None:
             continue
 
         new_test_file = bin_dir / f"{benchmark_name}_{item.name}"
-        shutil.move(str(item), str(new_test_file))
-        print(f"Moved test file: {item} -> {new_test_file}")
+        try:
+            shutil.move(str(item), str(new_test_file))
+            print(f"Moved test file: {item} -> {new_test_file}")
+        except Exception as e:
+            raise BenchmarkFileError(f"Error moving test file {item} to {new_test_file}: {e}")

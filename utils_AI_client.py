@@ -4,6 +4,22 @@ from typing import Dict, List
 from config_manager import Config, ConfigManager
 
 
+# Custom exceptions for profile and analysis errors
+class ProfileReadError(Exception):
+    """Custom exception for profile file reading errors."""
+    pass
+
+
+class ProfileSaveError(Exception):
+    """Custom exception for profile file saving errors."""
+    pass
+
+
+class ModelAnalysisError(Exception):
+    """Custom exception for model analysis errors."""
+    pass
+
+
 def log_profile_content(content: str, profile_type: str) -> None:
     if not content:
         print(f"No {profile_type.lower()} profiles found")
@@ -18,13 +34,14 @@ def log_profile_content(content: str, profile_type: str) -> None:
 def request_model_analysis(messages: List[Dict[str, str]], config: Config) -> str:
     client = ConfigManager.get_client()
     print(f"\nSending request to model: {config.model_config.model}")
-
-    response = client.chat.completions.create(model=config.model_config.model, messages=messages, max_tokens=config.model_config.max_tokens, temperature=config.model_config.temperature, top_p=config.model_config.top_p)
-
-    content = response.choices[0].message.content
-    if content is None:
-        raise ValueError("No content received from model")
-    return content
+    try:
+        response = client.chat.completions.create(model=config.model_config.model, messages=messages, max_tokens=config.model_config.max_tokens, temperature=config.model_config.temperature, top_p=config.model_config.top_p)
+        content = response.choices[0].message.content
+        if content is None:
+            raise ModelAnalysisError("No content received from model")
+        return content
+    except Exception as e:
+        raise ModelAnalysisError(f"Error during model analysis request: {e}")
 
 
 def validate_benchmark_directories(tag: str) -> list[str]:
@@ -42,11 +59,6 @@ def validate_benchmark_directories(tag: str) -> list[str]:
         raise ValueError(f"No benchmark directories found in {text_dir}")
 
     return benchmark_names
-
-
-class ProfileReadError(Exception):
-    """Custom exception for profile file reading errors."""
-    pass
 
 
 def read_profile_file(file_path: Path) -> str:
@@ -115,9 +127,7 @@ def get_benchmark_file(tag: str, benchmark_name: str, profile_type: str) -> Dict
 
 
 def save_analysis(tag: str, benchmark_name: str, profile_type: str, analysis: str) -> None:
-
     analysis_file = get_file_path(tag, benchmark_name, profile_type)
-
     try:
         with open(analysis_file, 'w') as f:
             f.write(f"Benchmark: {benchmark_name}\n")
@@ -126,7 +136,7 @@ def save_analysis(tag: str, benchmark_name: str, profile_type: str, analysis: st
             f.write(analysis)
         print(f"Analysis saved to: {analysis_file}")
     except Exception as e:
-        print(f"Error saving analysis to {analysis_file}: {e}")
+        raise ProfileSaveError(f"Error saving analysis to {analysis_file}: {e}")
 
 
 def get_file_path(tag: str, benchmark_name: str, profile_type: str) -> Path:
@@ -203,11 +213,12 @@ def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
         save_analysis(tag, benchmark_name, profile_type, analysis)
         print(f"Successfully analyzed and saved results for {context}")
 
-    except ValueError as e:
-        print(f"Validation error for {context}: {e}")
+    except (ValueError, ProfileReadError, ProfileSaveError, ModelAnalysisError) as e:
+        print(f"Error for {context}: {e}")
         raise
     except Exception as e:
-        _print_and_raise_error(context, e)
+        print(f"Unexpected error for {context}: {e}")
+        raise
 
 
 def analyze_all_profiles(tag: str, benchmark_names: List[str], profile_types: List[str]) -> None:

@@ -4,6 +4,17 @@ from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 
 
+# Custom exceptions for config errors
+class ConfigValidationError(Exception):
+    """Raised when configuration validation fails."""
+    pass
+
+
+class ConfigFileError(Exception):
+    """Raised when configuration file operations fail."""
+    pass
+
+
 @dataclass
 class BenchmarkConfig:
     prefixes: List[str]
@@ -31,26 +42,26 @@ def validate_config_structure(config_data: Dict[str, Any]) -> None:
     required_fields = ["api_key", "base_url", "model_config"]
     for field in required_fields:
         if field not in config_data:
-            raise ValueError(f"Missing required field: {field}")
+            raise ConfigValidationError(f"Missing required field: {field}")
 
 
 def validate_model_config(model_config: Dict[str, Any]) -> None:
     model_config_fields = ["model", "max_tokens", "temperature", "top_p"]
     for field in model_config_fields:
         if field not in model_config:
-            raise ValueError(f"Missing required field in model_config: {field}")
+            raise ConfigValidationError(f"Missing required field in model_config: {field}")
 
 
 def validate_benchmark_configs(benchmark_configs: Dict[str, Any]) -> None:
     for benchmark, config in benchmark_configs.items():
         if not isinstance(config, dict):
-            raise ValueError(f"Invalid benchmark config format for {benchmark}")
+            raise ConfigValidationError(f"Invalid benchmark config format for {benchmark}")
         if "prefixes" not in config:
-            raise ValueError(f"Missing 'prefixes' for benchmark {benchmark}")
+            raise ConfigValidationError(f"Missing 'prefixes' for benchmark {benchmark}")
         if not isinstance(config["prefixes"], list):
-            raise ValueError(f"'prefixes' must be a list for benchmark {benchmark}")
+            raise ConfigValidationError(f"'prefixes' must be a list for benchmark {benchmark}")
         if "ignore" in config and not isinstance(config["ignore"], str):
-            raise ValueError(f"'ignore' must be a string for benchmark {benchmark}")
+            raise ConfigValidationError(f"'ignore' must be a string for benchmark {benchmark}")
 
 
 def create_config_template() -> Dict[str, Any]:
@@ -97,7 +108,7 @@ def load_config_from_file(config_path: str) -> Dict[str, Any]:
         with open(config_path, "r") as f:
             return json.load(f)
     except Exception as e:
-        raise ValueError(f"Error reading configuration file: {str(e)}")
+        raise ConfigFileError(f"Error reading configuration file: {str(e)}")
 
 
 def create_config_from_data(config_data: Dict[str, Any]) -> Config:
