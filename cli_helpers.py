@@ -1,7 +1,7 @@
 import argparse
 import sys
 from AI_client import analyze_profiles
-from config_manager import ConfigManager
+from config_manager import ConfigManager, ConfigurationNotFound
 from exit_codes import EXIT_CODE_MISSING_ARGUMENTS
 from utils_benchmark import (BenchmarkConfigError, BenchmarkError, BenchmarkProfileError, BenchmarkDirectoryError, BenchmarkFileError, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, config_setup)
 from utils_AI_client import ProfileReadError, ProfileSaveError, ModelAnalysisError
@@ -75,6 +75,9 @@ def handle_benchmarks(args):
     except ModelAnalysisError as e:
         print(f"\nModel analysis error: {e}", file=sys.stderr)
         sys.exit(8)
+    except ConfigurationNotFound as e:
+        print(f"\nConfiguration not found: {e}", file=sys.stderr)
+        sys.exit(9)
     except Exception as e:
         print(f"\nUnexpected error: {e}", file=sys.stderr)
         sys.exit(99)
