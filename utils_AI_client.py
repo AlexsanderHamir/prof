@@ -167,32 +167,47 @@ def get_general_analyze_prompt(config: Config) -> str:
         return f.read().strip()
 
 
+def _build_profile_info(benchmark_name: str, profile_type: str, profile_content: str) -> str:
+    return (f"Benchmark: {benchmark_name}\n"
+            f"Profile Type: {profile_type}\n\n"
+            f"Profile Content: {profile_content}")
+
+
+def _print_and_raise_error(context: str, error: Exception) -> None:
+    print(f"Error analyzing {context}: {error}")
+    raise error
+
+
 def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
+    context = f"{benchmark_name} ({profile_type})"
     try:
-        files = get_benchmark_file(tag, benchmark_name, profile_type)
-        if not files['text_content']:
-            raise ValueError(f"No content found for {benchmark_name} ({profile_type})")
+        profile_data = get_benchmark_file(tag, benchmark_name, profile_type)
+        profile_content = profile_data.get('text_content', '')
+        if not profile_content:
+            raise ValueError(f"No content found for {context}")
 
         config = ConfigManager.load()
         general_prompt = get_general_analyze_prompt(config)
-
-        profile_info = f"""Benchmark: {benchmark_name}
-Profile Type: {profile_type}
-
-Profile Content: {files['text_content']}"""
-
-        messages = [{"role": "system", "content": general_prompt}, {"role": "user", "content": profile_info}]
-
+        profile_info = _build_profile_info(benchmark_name, profile_type, profile_content)
+        messages = [
+            {
+                "role": "system",
+                "content": general_prompt
+            },
+            {
+                "role": "user",
+                "content": profile_info
+            },
+        ]
         analysis = request_model_analysis(messages, config)
         save_analysis(tag, benchmark_name, profile_type, analysis)
-        print(f"Successfully analyzed and saved results for {benchmark_name} ({profile_type})")
+        print(f"Successfully analyzed and saved results for {context}")
 
     except ValueError as e:
-        print(f"Validation error for {benchmark_name} ({profile_type}): {e}")
+        print(f"Validation error for {context}: {e}")
         raise
     except Exception as e:
-        print(f"Error analyzing {benchmark_name} ({profile_type}): {e}")
-        raise
+        _print_and_raise_error(context, e)
 
 
 def analyze_all_profiles(tag: str, benchmark_names: List[str], profile_types: List[str]) -> None:
