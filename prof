@@ -2,7 +2,7 @@
 import sys
 from cli_helpers import (parse_arguments, handle_benchmarks, setup)
 from config_manager import ConfigurationError, ConfigurationSetupFailed, ConfigurationNotFound
-from utils_benchmark import (validate_required_args, cleanup_tag_directory, BenchmarkBaseError, BenchmarkError, BenchmarkProfileError, BenchmarkDirectoryError, BenchmarkFileError, BenchmarkConfigError)
+from utils_benchmark import (validate_required_args, cleanup_tag_directory, BenchmarkError, BenchmarkProfileError, BenchmarkDirectoryError, BenchmarkFileError, BenchmarkConfigError)
 from utils_AI_client import ProfileReadError, ProfileSaveError, ModelAnalysisError
 from utils_config_manager import ConfigValidationError, ConfigFileError
 

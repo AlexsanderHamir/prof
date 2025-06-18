@@ -183,11 +183,6 @@ def _build_profile_info(benchmark_name: str, profile_type: str, profile_content:
             f"Profile Content: {profile_content}")
 
 
-def _print_and_raise_error(context: str, error: Exception) -> None:
-    print(f"Error analyzing {context}: {error}")
-    raise error
-
-
 def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
     context = f"{benchmark_name} ({profile_type})"
     try:
