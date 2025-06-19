@@ -9,3 +9,6 @@ __pycache__
 *.json
 .openhands/
 setup.sh
+
+tests/bench_test/
+.pytest_cache/
