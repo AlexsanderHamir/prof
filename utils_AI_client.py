@@ -3,25 +3,7 @@ import sys
 from typing import Dict, List
 
 from config_manager import Config, ConfigManager
-from exit_codes import MODEL_ANALYSIS_ERROR, PROFILE_READ_ERROR, PROFILE_SAVE_ERROR
-
-
-class ProfileReadError(Exception):
-
-    def __init__(self, message: str = "Error reading profile file"):
-        super().__init__(message)
-
-
-class ProfileSaveError(Exception):
-
-    def __init__(self, message: str = "Error saving profile file"):
-        super().__init__(message)
-
-
-class ModelAnalysisError(Exception):
-
-    def __init__(self, message: str = "Error with model analysis"):
-        super().__init__(message)
+from exit_codes import BENCHMARK_DIRECTORY_MISSING, EXIT_CODE_UNEXPECTED_ERROR, MISSING_PROMPT, MODEL_ANALYSIS_ERROR, PROFILE_READ_ERROR, PROFILE_SAVE_ERROR, TEXT_DIR_EMPTY, TEXT_DIR_MISSING
 
 
 def log_profile_content(content: str, profile_type: str) -> None:
@@ -50,19 +32,22 @@ def request_model_analysis(messages: List[Dict[str, str]], config: Config) -> st
         sys.exit(MODEL_ANALYSIS_ERROR)
 
 
-def validate_benchmark_directories(tag: str) -> list[str]:
+def validate_benchmark_directories(tag: str) -> List[str]:
     base_dir = Path("bench") / tag
 
     if not base_dir.exists():
-        raise ValueError(f"No benchmark data found for tag '{tag}'")
+        print(f"No benchmark data found for tag '{tag}'", file=sys.stderr)
+        sys.exit(BENCHMARK_DIRECTORY_MISSING)
 
     text_dir = base_dir / "text"
     if not text_dir.exists():
-        raise ValueError(f"No text profiles found in {text_dir}")
+        print(f"No text profiles found in {text_dir}", file=sys.stderr)
+        sys.exit(TEXT_DIR_MISSING)
 
     benchmark_names = [d.name for d in text_dir.iterdir() if d.is_dir()]
     if not benchmark_names:
-        raise ValueError(f"No benchmark directories found in {text_dir}")
+        print(f"No benchmark directories found in {text_dir}", file=sys.stderr)
+        sys.exit(TEXT_DIR_EMPTY)
 
     return benchmark_names
 
@@ -173,19 +158,21 @@ def get_default_prompt(template_name: str) -> str:
         return f.read().strip()
 
 
-def get_general_analyze_prompt(config: Config) -> str:
+def get_user_prompt(config: Config) -> str:
     if not config.model_config.prompt_location:
-        raise ValueError("prompt_location must be provided in config")
+        print("prompt_location must be provided in config", file=sys.stderr)
+        sys.exit(MISSING_PROMPT)
 
     prompt_path = Path(config.model_config.prompt_location)
     if not prompt_path.exists():
-        raise ValueError(f"General analyze prompt file not found at: {prompt_path}")
+        print(f"General analyze prompt file not found at: {prompt_path}", file=sys.stderr)
+        sys.exit(MISSING_PROMPT)
 
     with open(prompt_path, 'r') as f:
         return f.read().strip()
 
 
-def _build_profile_info(benchmark_name: str, profile_type: str, profile_content: str) -> str:
+def _format_profile_info(benchmark_name: str, profile_type: str, profile_content: str) -> str:
     return (f"Benchmark: {benchmark_name}\n"
             f"Profile Type: {profile_type}\n\n"
             f"Profile Content: {profile_content}")
@@ -197,15 +184,16 @@ def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
         profile_data = get_benchmark_file(tag, benchmark_name, profile_type)
         profile_content = profile_data.get('text_content', '')
         if not profile_content:
-            raise ValueError(f"No content found for {context}")
+            print(f"No content found for {context}", file=sys.stderr)
+            sys.exit(PROFILE_READ_ERROR)
 
-        config = ConfigManager.load()
-        general_prompt = get_general_analyze_prompt(config)
-        profile_info = _build_profile_info(benchmark_name, profile_type, profile_content)
+        config = ConfigManager.get_config()
+        user_prompt = get_user_prompt(config)
+        profile_info = _format_profile_info(benchmark_name, profile_type, profile_content)
         messages = [
             {
                 "role": "system",
-                "content": general_prompt
+                "content": user_prompt
             },
             {
                 "role": "user",
@@ -216,12 +204,9 @@ def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
         save_analysis(tag, benchmark_name, profile_type, analysis)
         print(f"Successfully analyzed and saved results for {context}")
 
-    except (ValueError, ProfileReadError, ProfileSaveError, ModelAnalysisError) as e:
-        print(f"Error for {context}: {e}")
-        raise
     except Exception as e:
         print(f"Unexpected error for {context}: {e}")
-        raise
+        sys.exit(EXIT_CODE_UNEXPECTED_ERROR)
 
 
 def analyze_all_profiles(tag: str, benchmark_names: List[str], profile_types: List[str]) -> None:
@@ -231,7 +216,6 @@ def analyze_all_profiles(tag: str, benchmark_names: List[str], profile_types: Li
     print("=" * 100)
 
     profile_types = [profile_type for profile_type in profile_types if "trace" not in profile_type]
-
     for benchmark in benchmark_names:
         for profile_type in profile_types:
             print(f"\nAnalyzing {benchmark} ({profile_type})...")

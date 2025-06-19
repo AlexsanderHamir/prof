@@ -272,25 +272,27 @@ def wait_for_profile_file(profile_file: Path, timeout: int = 5) -> bool:
 
 def run_pprof_command(cmd: List[str], output_path: Path, binary_mode: bool = False) -> subprocess.CompletedProcess:
     mode = 'wb' if binary_mode else 'w'
+
     try:
         with open(output_path, mode) as f:
-            process = subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, text=not binary_mode, check=True)
-        return process
-    except subprocess.CalledProcessError as e:
-        error_msg = e.stderr.decode() if isinstance(e.stderr, bytes) else e.stderr
+            return subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, text=not binary_mode, check=True)
+
     except Exception as e:
-        print(f"Error running pprof command or writing to {output_path}: {e}", file=sys.stderr)
+        if isinstance(e, subprocess.CalledProcessError):
+            stderr = e.stderr.decode() if isinstance(e.stderr, bytes) else e.stderr
+            print(f"pprof command failed:\n{stderr}", file=sys.stderr)
+        else:
+            print(f"Error running pprof command: {e}", file=sys.stderr)
+
         sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
 
 
 def generate_text_profile(profile_file: Path, output_file: Path) -> None:
-
     cmd = ["go", "tool", "pprof", *PPROF_TEXT_PARAMS, str(profile_file)]
     run_pprof_command(cmd, output_file)
 
 
 def generate_png_visualization(profile_file: Path, output_file: Path) -> None:
-
     cmd = ["go", "tool", "pprof", "-png", str(profile_file)]
     run_pprof_command(cmd, output_file, binary_mode=True)
 
@@ -298,7 +300,7 @@ def generate_png_visualization(profile_file: Path, output_file: Path) -> None:
 def process_profile(profile: str, benchmark: str, profile_file: Path, text_dir: Path, profile_functions_dir: Path) -> None:
     if not profile_file.exists():
         print(f"Warning: Profile file not found: {profile_file}", file=sys.stderr)
-        return
+        sys.exit(PROFILE_FILE_MISSING)
 
     output_file = text_dir / f"{benchmark}_{profile}.txt"
     png_file = profile_functions_dir / f"{benchmark}_{profile}.png"
@@ -310,9 +312,9 @@ def process_profile(profile: str, benchmark: str, profile_file: Path, text_dir: 
         generate_png_visualization(profile_file, png_file)
         print(f"Generated PNG visualization for {profile} profile of {benchmark} in {profile_functions_dir}")
 
-    except (BenchmarkSubprocessError, BenchmarkFileError) as e:
+    except Exception as e:
         print(f"Error processing {profile} profile for {benchmark}: {e}", file=sys.stderr)
-        raise
+        sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
 
 
 def process_profiles(benchmark: str, profiles: List[str], tag: str) -> None:
@@ -328,9 +330,9 @@ def process_profiles(benchmark: str, profiles: List[str], tag: str) -> None:
 
         try:
             process_profile(profile, benchmark, profile_file, text_dir, profile_functions_dir)
-        except RuntimeError as e:
+        except Exception as e:
             print(f"Error processing profiles: {e}", file=sys.stderr)
-            raise
+            sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
 
 
 def get_profile_analysis_config(benchmark: str, function_filter_configs: Dict[str, Dict[str, Any]]) -> ProfileAnalysisConfig:
@@ -369,7 +371,7 @@ def extract_function_name(line: str, function_prefixes: List[str], ignore_functi
     return func_name if func_name and func_name not in ignore_functions else None
 
 
-def extract_functions_from_profile(profile_text_file: Path, config: ProfileAnalysisConfig) -> Set[str]:
+def extract_all_function_names(profile_text_file: Path, config: ProfileAnalysisConfig) -> Set[str]:
     if not profile_text_file.exists():
         sys.exit(PROFILE_FILE_MISSING)
 
@@ -401,7 +403,7 @@ def extract_functions_from_profile(profile_text_file: Path, config: ProfileAnaly
         sys.exit(PROFILE_FILE_UNEXPECTED_ERROR)
 
 
-def analyze_single_function(func: str, paths: ProfilePaths) -> None:
+def extract_single_function_content(func: str, paths: ProfilePaths) -> None:
     output_file = paths.output / f"{func}.txt"
     cmd = ["go", "tool", "pprof", f"-list={func}", str(paths.profile_binary)]
 
@@ -410,7 +412,8 @@ def analyze_single_function(func: str, paths: ProfilePaths) -> None:
             subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, text=True, check=True)
         print(f"Collected function {func}")
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Error analyzing function {func}: {e.stderr}")
+        print(f"Error collecting function {func}: {e.stderr}", file=sys.stderr)
+        sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
 
 
 def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark: str, analysis_config: ProfileAnalysisConfig) -> None:
@@ -422,14 +425,11 @@ def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark
 
             paths.output.mkdir(parents=True, exist_ok=True)
 
-            functions = extract_functions_from_profile(paths.profile_text, analysis_config)
+            functions = extract_all_function_names(paths.profile_text, analysis_config)
             for func in functions:
-                try:
-                    analyze_single_function(func, paths)
-                except RuntimeError as e:
-                    print(f"Error analyzing function {func} for {benchmark} ({profile}): {e}")
-                    continue
-        except Exception:
+                extract_single_function_content(func, paths)
+        except Exception as e:
+            print(f"Error analyzing profile functions: {e}", file=sys.stderr)
             sys.exit(PROFILE_FILE_UNEXPECTED_ERROR)
 
 
@@ -563,16 +563,6 @@ def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
 
 
 def move_profile_files(benchmark_name: str, profiles: List[str], bin_dir: Path) -> None:
-    """Move profile files to the benchmark directory.
-    
-    Args:
-        benchmark_name: Name of the benchmark
-        profiles: List of profile types
-        bin_dir: Directory to move files to
-        
-    Note:
-        Files are only moved if they exist and are fully written
-    """
     for profile in profiles:
         if profile not in PROFILE_FLAGS:
             continue
@@ -594,15 +584,7 @@ def move_profile_files(benchmark_name: str, profiles: List[str], bin_dir: Path) 
 
 
 def move_test_files(benchmark_name: str, bin_dir: Path) -> None:
-    """Move test files to the benchmark directory.
-    
-    Args:
-        benchmark_name: Name of the benchmark
-        bin_dir: Directory to move files to
-        
-    Note:
-        Files are only moved if they exist and are fully written
-    """
+
     for item in Path('.').glob('*.test'):
         if not wait_for_profile_file(item):
             print(f"Warning: Test file {item} was not fully written within timeout", file=sys.stderr)
