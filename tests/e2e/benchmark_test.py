@@ -2,14 +2,14 @@ import os
 from pathlib import Path
 import subprocess
 
-from tests.helpers import create_benchmark_file, verify_benchmark_output_structure
-from tests.constants import BENCHMARK_MATRIX_MULTIPLY, BENCHMARK_PRIME_COUNT, BENCHMARK_TAG_NAME, BENCHMARK_TEST_DIR_NAME
+from tests.e2e.helpers import create_benchmark_file, verify_benchmark_output_structure
+from tests.e2e.constants import BENCHMARK_MATRIX_MULTIPLY, BENCHMARK_PRIME_COUNT, BENCHMARK_TAG_NAME, BENCHMARK_TEST_DIR_NAME
 
 import shutil
 
 
 def test_single_benchmark():
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
     prof_path = os.path.join(project_root, 'prof')
 
     benchmark_path = os.path.join(project_root, BENCHMARK_TEST_DIR_NAME)
@@ -30,7 +30,7 @@ def test_single_benchmark():
 
 
 def test_multiple_benchmarks():
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
     prof_path = os.path.join(project_root, 'prof')
 
     benchmark_path = os.path.join(project_root, BENCHMARK_TEST_DIR_NAME)

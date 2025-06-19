@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from tests.constants import BENCHMARK_FILE_NAME, BENCHMARK_MAIN_DIR_NAME, BENCHMARK_PRIME_COUNT, BENCHMARK_MATRIX_MULTIPLY, BENCHMARK_TAG_NAME
+from tests.e2e.constants import BENCHMARK_FILE_NAME, BENCHMARK_MAIN_DIR_NAME, BENCHMARK_PRIME_COUNT, BENCHMARK_MATRIX_MULTIPLY, BENCHMARK_TAG_NAME
 
 
 def create_benchmark_file(benchmark_path: str) -> None:

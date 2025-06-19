@@ -7,11 +7,11 @@ import os
 import pytest
 
 from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_CONFIG_FILE, EXIT_CODE_MODULE_ERROR, EXIT_CODE_SUCCESS
-from tests.constants import BENCHMARK_GEN_POOL
+from tests.e2e.constants import BENCHMARK_GEN_POOL
 
 
 def test_no_arguments():
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
     prof_path = os.path.join(project_root, 'prof')
 
     result = subprocess.run([prof_path], capture_output=True, text=True)
@@ -20,7 +20,7 @@ def test_no_arguments():
 
 
 def test_no_config_file():
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
     prof_path = os.path.join(project_root, 'prof')
 
     result = subprocess.run([prof_path, "-benchmarks", f"[{BENCHMARK_GEN_POOL}]", "-profiles", "[cpu]", "-tag", "test", "-count", "5"], capture_output=True, text=True)
@@ -29,7 +29,7 @@ def test_no_config_file():
 
 
 def test_setup_command():
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
     prof_path = os.path.join(project_root, 'prof')
 
     config_template_path = os.path.join(project_root, "config_template.json")
@@ -62,7 +62,7 @@ def test_setup_command():
     (["-benchmarks", f"[{BENCHMARK_GEN_POOL}, BenchmarkGenPool2, BenchmarkGenPool3]", "-profiles", "[cpu, memory, mutex]", "-tag", "test", "-count", "5"], EXIT_CODE_MODULE_ERROR),
 ])
 def test_brackets_variants(args, expected_code):
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
     prof_path = os.path.join(project_root, 'prof')
     benchmark_path = os.path.join(project_root, "bench")
 
