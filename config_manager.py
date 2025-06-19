@@ -22,17 +22,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class ConfigurationError(Exception):
-    pass
+class ConfigurationParsingError(Exception):
+
+    def __init__(self, message: str = "Error with configuration"):
+        super().__init__(message)
 
 
-class ConfigurationNotFound(ConfigurationError):
+class ConfigurationNotFound(ConfigurationParsingError):
 
     def __init__(self):
         super().__init__("Configuration file not found. Please ensure the configuration file exists and the name is correct. (config_template.json)")
 
 
-class ConfigurationSetupFailed(ConfigurationError):
+class ConfigurationSetupFailed(ConfigurationParsingError):
 
     def __init__(self, message: str = "Configuration setup failed, please check the configuration file and try again."):
         super().__init__(message)
@@ -80,13 +82,10 @@ class ConfigManager:
             cls._config_path = config_path
             print_validation_progress("Configuration validation completed successfully! 🎉")
         except ConfigValidationError as e:
-            logger.error(f"Configuration validation error: {e}")
             raise ConfigurationSetupFailed(f"Configuration validation error: {e}")
         except ConfigFileError as e:
-            logger.error(f"Configuration file error: {e}")
             raise ConfigurationSetupFailed(f"Configuration file error: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error during configuration setup: {e}")
             raise ConfigurationSetupFailed(f"Unexpected error during configuration setup: {e}")
 
     @classmethod
@@ -97,13 +96,10 @@ class ConfigManager:
             config_data = load_config_from_file(cls._config_path)
             return create_config_from_data(config_data)
         except ConfigValidationError as e:
-            logger.error(f"Configuration validation error: {e}")
             raise ConfigurationSetupFailed(f"Configuration validation error: {e}")
         except ConfigFileError as e:
-            logger.error(f"Configuration file error: {e}")
             raise ConfigurationSetupFailed(f"Configuration file error: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error loading configuration: {e}")
             raise ConfigurationSetupFailed(f"Unexpected error loading configuration: {e}")
 
     @classmethod
