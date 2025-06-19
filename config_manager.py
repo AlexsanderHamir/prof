@@ -39,19 +39,22 @@ class ConfigurationSetupFailed(ConfigurationError):
 
 
 class ConfigManager:
-    _config_path: Optional[str] = None
+    _config_path: Optional[Path] = None
     is_flagging: bool = False
 
     @staticmethod
     def create_template(output_path: Optional[str] = None) -> None:
         template = create_config_template()
         template_path = Path(output_path) if output_path else Path.cwd() / "config_template.json"
+        template_path.parent.mkdir(parents=True, exist_ok=True)
 
         save_template_to_file(template, template_path)
+        ConfigManager._config_path = template_path
+
         print_template_creation_info(template_path)
 
     @classmethod
-    def setup_from_file(cls, config_path: str) -> None:
+    def setup_from_file(cls, config_path: Path) -> None:
         print_validation_progress("Starting configuration validation process...")
         print_validation_progress("Reading configuration from: {}", config_path)
         try:
