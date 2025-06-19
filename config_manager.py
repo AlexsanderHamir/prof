@@ -40,7 +40,14 @@ class ConfigurationSetupFailed(ConfigurationParsingError):
         super().__init__(message)
 
 
+class ConfigurationObjectNotSet(ConfigurationParsingError):
+
+    def __init__(self):
+        super().__init__("Configuration object not set. Please ensure the configuration file exists and the name is correct. (config_template.json)")
+
+
 class ConfigManager:
+    _config: Optional[Config] = None
     _config_path: Optional[Path] = None
     is_flagging: bool = False
 
@@ -80,6 +87,7 @@ class ConfigManager:
             print("✓ All benchmark configurations are valid")
 
             cls._config_path = config_path
+            cls._config = create_config_from_data(config_data)
             print_validation_progress("Configuration validation completed successfully! 🎉")
         except ConfigValidationError as e:
             raise ConfigurationSetupFailed(f"Configuration validation error: {e}")
@@ -87,6 +95,12 @@ class ConfigManager:
             raise ConfigurationSetupFailed(f"Configuration file error: {e}")
         except Exception as e:
             raise ConfigurationSetupFailed(f"Unexpected error during configuration setup: {e}")
+
+    @classmethod
+    def get_config(cls) -> Config:
+        if not cls._config:
+            raise ConfigurationNotFound()
+        return cls._config
 
     @classmethod
     def load(cls) -> Config:

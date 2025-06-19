@@ -6,10 +6,11 @@ import subprocess
 import sys
 import time
 from typing import Dict, List, Optional, Tuple, Set, Any
-from config_manager import ConfigManager, ConfigurationParsingError
+from config_manager import ConfigManager, ConfigurationParsingError, ConfigurationSetupFailed
 from dataclasses import dataclass
 
 from exit_codes import EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST, PROFILE_FILE_INVALID_HEADER, PROFILE_FILE_MISSING, PROFILE_FILE_UNEXPECTED_ERROR
+from utils_config_manager import ConfigFileError, ConfigValidationError
 
 
 class BenchmarkBaseError(Exception):
@@ -96,7 +97,7 @@ def config_setup():
                 ConfigManager.setup_from_file(path)
                 print("Automatic configuration completed successfully!")
                 return
-            except (ValueError, ConfigurationParsingError) as e:
+            except ConfigurationSetupFailed as e:
                 last_error = e
 
     if last_error:
@@ -156,7 +157,7 @@ def parse_and_load_benchmark_config(args) -> Tuple[List[str], List[str], Dict[st
 def filter_configs(benchmarks: List[str]) -> Dict[str, Dict[str, Any]]:
     """Filter the benchmarks config to only include the config for benchmarks that are in the benchmarks list."""
 
-    config = ConfigManager.load()
+    config = ConfigManager.get_config()
     function_filter_configs: Dict[str, Dict[str, Any]] = {}
     for benchmark in benchmarks:
         if benchmark in config.benchmark_configs:
