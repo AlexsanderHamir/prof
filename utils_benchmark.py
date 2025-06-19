@@ -6,10 +6,10 @@ import subprocess
 import sys
 import time
 from typing import Dict, List, Optional, Tuple, Set, Any
-from config_manager import ConfigManager, ConfigurationError, ConfigurationNotFound
+from config_manager import ConfigManager, ConfigurationParsingError
 from dataclasses import dataclass
 
-from exit_codes import EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST
+from exit_codes import EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST, PROFILE_FILE_INVALID_HEADER, PROFILE_FILE_MISSING, PROFILE_FILE_UNEXPECTED_ERROR
 
 
 class BenchmarkBaseError(Exception):
@@ -17,24 +17,25 @@ class BenchmarkBaseError(Exception):
     pass
 
 
-class BenchmarkError(BenchmarkBaseError):
-    """Raised when a benchmark run fails."""
-    pass
+class BenchmarkUnexpectedProcessError(BenchmarkBaseError):
+    """Raised when a benchmark process fails and its not a go module error."""
+
+    def __init__(self, message: str = "Benchmark process failed unexpectedly"):
+        super().__init__(message)
 
 
-class BenchmarkConfigError(BenchmarkBaseError):
-    """Raised when there is a configuration error in the benchmark setup."""
-    pass
+class BenchmarkTemplateError(BenchmarkBaseError):
+    """Raised when the --create-template flag is not provided but the setup command is called."""
 
-
-class BenchmarkProfileError(BenchmarkBaseError):
-    """Raised when there is an error processing benchmark profiles."""
-    pass
+    def __init__(self, message: str = "Please use --create-template to create a configuration template"):
+        super().__init__(message)
 
 
 class BenchmarkDirectoryError(BenchmarkBaseError):
     """Raised when there is an error with benchmark directory operations."""
-    pass
+
+    def __init__(self, message: str = "Error with benchmark directory operations"):
+        super().__init__(message)
 
 
 class BenchmarkSubprocessError(BenchmarkBaseError):
@@ -44,12 +45,15 @@ class BenchmarkSubprocessError(BenchmarkBaseError):
 
 class BenchmarkFileError(BenchmarkBaseError):
     """Raised when a file operation fails in the benchmark pipeline."""
-    pass
+
+    def __init__(self, message: str = "Error with benchmark file operations"):
+        super().__init__(message)
 
 
 class BenchmarkModuleError(BenchmarkBaseError):
-    """Raised when there is a Go module error (e.g., missing go.mod file)."""
-    pass
+
+    def __init__(self, message: str = "Go module error"):
+        super().__init__(message)
 
 
 PROFILE_FLAGS: Dict[str, str] = {"cpu": "-cpuprofile=cpu.out", "memory": "-memprofile=memory.out", "mutex": "-mutexprofile=mutex.out", "trace": "-trace=trace.out"}
@@ -92,7 +96,7 @@ def config_setup():
                 ConfigManager.setup_from_file(path)
                 print("Automatic configuration completed successfully!")
                 return
-            except (ValueError, ConfigurationError) as e:
+            except (ValueError, ConfigurationParsingError) as e:
                 last_error = e
 
     if last_error:
@@ -120,15 +124,15 @@ def validate_list_arguments(benchmarks_arg: str, profiles_arg: str) -> None:
         if stripped:
             # Detect two or more words separated by whitespace but not by a comma
             if re.search(r'\b\w+\b\s+\b\w+\b', stripped) and ',' not in stripped:
-                raise ConfigurationError(f"{arg_name} argument items must be separated by commas, not spaces. Please provide a properly comma-separated list.")
+                raise ConfigurationParsingError(f"{arg_name} argument items must be separated by commas, not spaces. Please provide a properly comma-separated list.")
             # Split by comma, check for empty items or consecutive/missing commas
             items = [item.strip() for item in stripped.split(",")]
             if any(not item for item in items):
-                raise ConfigurationError(f"{arg_name} argument contains empty items or consecutive/missing commas. Please provide a properly comma-separated list.")
+                raise ConfigurationParsingError(f"{arg_name} argument contains empty items or consecutive/missing commas. Please provide a properly comma-separated list.")
             # Check for any item that still contains multiple words (e.g., 'foo bar')
             for item in items:
                 if ' ' in item:
-                    raise ConfigurationError(f"{arg_name} argument items must be single words and separated by commas. Found: '{item}'")
+                    raise ConfigurationParsingError(f"{arg_name} argument items must be single words and separated by commas. Found: '{item}'")
 
     check_commas(benchmarks_arg, "Benchmarks")
     check_commas(profiles_arg, "Profiles")
@@ -142,7 +146,7 @@ def parse_and_load_benchmark_config(args) -> Tuple[List[str], List[str], Dict[st
 
     try:
         benchmark_configs = filter_configs(benchmarks)
-    except ConfigurationError as e:
+    except ConfigurationParsingError as e:
         print(f"Error loading benchmark configuration: {e}", file=sys.stderr)
         raise
 
@@ -379,9 +383,8 @@ def extract_function_name(line: str, function_prefixes: List[str], ignore_functi
 
 
 def extract_functions_from_profile(profile_text_file: Path, config: ProfileAnalysisConfig) -> Set[str]:
-
     if not profile_text_file.exists():
-        raise FileNotFoundError(f"Profile text file not found: {profile_text_file}")
+        sys.exit(PROFILE_FILE_MISSING)
 
     functions = set()
     found_header = False
@@ -404,16 +407,14 @@ def extract_functions_from_profile(profile_text_file: Path, config: ProfileAnaly
                     functions.add(func_name)
 
         if not found_header:
-            raise RuntimeError("Profile file is invalid: header not found")
-
+            sys.exit(PROFILE_FILE_INVALID_HEADER)
         return functions
 
-    except Exception as e:
-        raise RuntimeError(f"Error reading profile file {profile_text_file}: {e}")
+    except Exception:
+        sys.exit(PROFILE_FILE_UNEXPECTED_ERROR)
 
 
 def analyze_single_function(func: str, paths: ProfilePaths) -> None:
-
     output_file = paths.output / f"{func}.txt"
     cmd = ["go", "tool", "pprof", f"-list={func}", str(paths.profile_binary)]
 
@@ -441,11 +442,8 @@ def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark
                 except RuntimeError as e:
                     print(f"Error analyzing function {func} for {benchmark} ({profile}): {e}")
                     continue
-
-        except FileNotFoundError as e:
-            raise BenchmarkProfileError(f"Profile file not found for {benchmark} ({profile}): {e}")
-        except Exception as e:
-            raise BenchmarkProfileError(f"Error processing {benchmark} ({profile}): {e}")
+        except Exception:
+            sys.exit(PROFILE_FILE_UNEXPECTED_ERROR)
 
 
 def print_configuration_error(error_msg: Optional[str] = None) -> None:
@@ -464,7 +462,7 @@ def setup_command(args):
         ConfigManager.create_template(args.output_path)
         print("\nTemplate configuration file created successfully!")
     else:
-        raise BenchmarkConfigError("Please use --create-template to create a configuration template")
+        raise BenchmarkTemplateError()
 
 
 def validate_required_args(args) -> bool:
@@ -569,7 +567,7 @@ def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
         if "go: cannot find main module" in error_output:
             raise BenchmarkModuleError(f"{error_output}")
 
-        raise BenchmarkError(f"Benchmark failed with exit code {e.returncode}:\n{error_output}")
+        raise BenchmarkUnexpectedProcessError(f"Benchmark process failed with exit code {e.returncode}:\n{error_output}")
     except Exception as e:
         raise BenchmarkFileError(f"Error running benchmark command or writing to {output_file}: {e}")
 
