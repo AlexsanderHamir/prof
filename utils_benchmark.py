@@ -9,6 +9,8 @@ from typing import Dict, List, Optional, Tuple, Set, Any
 from config_manager import ConfigManager, ConfigurationError, ConfigurationNotFound
 from dataclasses import dataclass
 
+from exit_codes import EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST
+
 
 class BenchmarkBaseError(Exception):
     """Base exception for all benchmark-related errors."""
@@ -42,6 +44,11 @@ class BenchmarkSubprocessError(BenchmarkBaseError):
 
 class BenchmarkFileError(BenchmarkBaseError):
     """Raised when a file operation fails in the benchmark pipeline."""
+    pass
+
+
+class BenchmarkModuleError(BenchmarkBaseError):
+    """Raised when there is a Go module error (e.g., missing go.mod file)."""
     pass
 
 
@@ -94,19 +101,18 @@ def config_setup():
 
 def validate_list_arguments(benchmarks_arg: str, profiles_arg: str) -> None:
     if benchmarks_arg.strip() == "[]":
-        raise ConfigurationError("Benchmarks argument cannot be an empty list (i.e., '[]'). Please provide at least one benchmark.")
+        print("Benchmarks argument cannot be an empty list (i.e., '[]'). Please provide at least one benchmark.", file=sys.stderr)
+        sys.exit(EXIT_CODE_MISSING_EMPTY_LIST)
     if profiles_arg.strip() == "[]":
-        raise ConfigurationError("Profiles argument cannot be an empty list (i.e., '[]'). Please provide at least one profile.")
+        print("Profiles argument cannot be an empty list (i.e., '[]'). Please provide at least one profile.", file=sys.stderr)
+        sys.exit(EXIT_CODE_MISSING_EMPTY_LIST)
 
-    if benchmarks_arg.strip().startswith("[") and not benchmarks_arg.strip().endswith("]"):
-        raise ConfigurationError("Benchmarks argument has opening bracket '[' but missing closing bracket ']'. Please provide a properly formatted list.")
-    if profiles_arg.strip().startswith("[") and not profiles_arg.strip().endswith("]"):
-        raise ConfigurationError("Profiles argument has opening bracket '[' but missing closing bracket ']'. Please provide a properly formatted list.")
-
-    if benchmarks_arg.strip().endswith("]") and not benchmarks_arg.strip().startswith("["):
-        raise ConfigurationError("Benchmarks argument has closing bracket ']' but missing opening bracket '['. Please provide a properly formatted list.")
-    if profiles_arg.strip().endswith("]") and not profiles_arg.strip().startswith("["):
-        raise ConfigurationError("Profiles argument has closing bracket ']' but missing opening bracket '['. Please provide a properly formatted list.")
+    if not benchmarks_arg.strip().startswith("[") or not benchmarks_arg.strip().endswith("]"):
+        print("Benchmarks argument must be wrapped in brackets (e.g., '[BenchmarkGenPool]'). Please provide a properly formatted list.", file=sys.stderr)
+        sys.exit(EXIT_CODE_MISSING_BRACKETS)
+    if not profiles_arg.strip().startswith("[") or not profiles_arg.strip().endswith("]"):
+        print("Profiles argument must be wrapped in brackets (e.g., '[cpu,memory]'). Please provide a properly formatted list.", file=sys.stderr)
+        sys.exit(EXIT_CODE_MISSING_BRACKETS)
 
     # New: Validate comma separation inside brackets
     def check_commas(arg: str, arg_name: str):
@@ -559,6 +565,10 @@ def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
     except subprocess.CalledProcessError as e:
         with open(output_file, 'r') as f:
             error_output = f.read()
+
+        if "go: cannot find main module" in error_output:
+            raise BenchmarkModuleError(f"{error_output}")
+
         raise BenchmarkError(f"Benchmark failed with exit code {e.returncode}:\n{error_output}")
     except Exception as e:
         raise BenchmarkFileError(f"Error running benchmark command or writing to {output_file}: {e}")

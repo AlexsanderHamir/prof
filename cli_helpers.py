@@ -2,8 +2,8 @@ import argparse
 import sys
 from AI_client import analyze_profiles
 from config_manager import ConfigManager, ConfigurationNotFound
-from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_MISSING_CONFIG_FILE
-from utils_benchmark import (BenchmarkConfigError, BenchmarkError, BenchmarkProfileError, BenchmarkDirectoryError, BenchmarkFileError, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, config_setup)
+from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_MISSING_CONFIG_FILE, EXIT_CODE_MODULE_ERROR
+from utils_benchmark import (BenchmarkConfigError, BenchmarkError, BenchmarkProfileError, BenchmarkDirectoryError, BenchmarkFileError, BenchmarkModuleError, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, config_setup)
 from utils_AI_client import ProfileReadError, ProfileSaveError, ModelAnalysisError
 
 
@@ -57,6 +57,9 @@ def handle_benchmarks(args):
     except BenchmarkError as e:
         print(f"\nBenchmark error: {e}", file=sys.stderr)
         sys.exit(2)
+    except BenchmarkModuleError as e:
+        print(f"\nGo module error: {e}", file=sys.stderr)
+        sys.exit(EXIT_CODE_MODULE_ERROR)
     except BenchmarkProfileError as e:
         print(f"\nBenchmark profile error: {e}", file=sys.stderr)
         sys.exit(3)
