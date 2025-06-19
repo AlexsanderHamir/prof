@@ -2,7 +2,7 @@ import argparse
 import sys
 from AI_client import analyze_profiles
 from config_manager import ConfigManager, ConfigurationNotFound
-from exit_codes import EXIT_CODE_MISSING_ARGUMENTS
+from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_MISSING_CONFIG_FILE
 from utils_benchmark import (BenchmarkConfigError, BenchmarkError, BenchmarkProfileError, BenchmarkDirectoryError, BenchmarkFileError, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, config_setup)
 from utils_AI_client import ProfileReadError, ProfileSaveError, ModelAnalysisError
 
@@ -15,10 +15,10 @@ def create_parser():
     setup_parser.add_argument("--create-template", action="store_true", help="Generate a new template configuration file for benchmarks")
     setup_parser.add_argument("--output-path", help="Destination path for the generated template configuration file (default: ./config_template.json)")
 
-    parser.add_argument('-benchmarks', required=True, help='Benchmarks to run')
-    parser.add_argument('-profiles', required=True, help='Profiles to use')
-    parser.add_argument('-tag', required=True, help='Tag for the run')
-    parser.add_argument('-count', required=True, type=int, help='Number of runs')
+    parser.add_argument('-benchmarks', help='Benchmarks to run')
+    parser.add_argument('-profiles', help='Profiles to use')
+    parser.add_argument('-tag', help='Tag for the run')
+    parser.add_argument('-count', type=int, help='Number of runs')
     parser.add_argument('-general_analyze', action='store_true', help="After benchmarks complete, run general AI analysis on the results")
     parser.add_argument('-flag_profiles', action='store_true', help="Flag the benchmark results for further review or processing")
     return parser
@@ -77,7 +77,7 @@ def handle_benchmarks(args):
         sys.exit(8)
     except ConfigurationNotFound as e:
         print(f"\nConfiguration not found: {e}", file=sys.stderr)
-        sys.exit(9)
+        sys.exit(EXIT_CODE_MISSING_CONFIG_FILE)
     except Exception as e:
         print(f"\nUnexpected error: {e}", file=sys.stderr)
         sys.exit(99)
