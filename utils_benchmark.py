@@ -73,7 +73,7 @@ class ProfilePaths:
 
 def config_setup():
     paths = [Path.cwd() / "config_template.json"]
-    if ConfigManager._config_path is not None:
+    if ConfigManager._config_path:
         paths.append(ConfigManager._config_path)
 
     last_error = None
