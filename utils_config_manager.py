@@ -4,14 +4,14 @@ from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 
 
-# Custom exceptions for config errors
 class ConfigValidationError(Exception):
-    """Raised when configuration validation fails."""
-    pass
+    """Raised when the configuration is invalid."""
+
+    def __init__(self, message: str = "Invalid configuration"):
+        super().__init__(message)
 
 
 class ConfigFileError(Exception):
-    """Raised when configuration file operations fail."""
     pass
 
 

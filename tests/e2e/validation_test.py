@@ -6,7 +6,7 @@ import os
 
 import pytest
 
-from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_CONFIG_FILE, EXIT_CODE_MODULE_ERROR, EXIT_CODE_SUCCESS
+from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_MISSING_BRACKETS, MISSING_CONFIG_FILE, EXIT_CODE_MODULE_ERROR, EXIT_CODE_SUCCESS
 from tests.e2e.constants import BENCHMARK_GEN_POOL
 
 
@@ -25,7 +25,7 @@ def test_no_config_file():
 
     result = subprocess.run([prof_path, "-benchmarks", f"[{BENCHMARK_GEN_POOL}]", "-profiles", "[cpu]", "-tag", "test", "-count", "5"], capture_output=True, text=True)
 
-    assert result.returncode == EXIT_CODE_MISSING_CONFIG_FILE, f"prof failed with error: {result.stderr}"
+    assert result.returncode == MISSING_CONFIG_FILE, f"prof failed with error: {result.stderr}"
 
 
 def test_setup_command():
