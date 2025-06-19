@@ -6,11 +6,10 @@ import subprocess
 import sys
 import time
 from typing import Dict, List, Optional, Tuple, Set, Any
-from config_manager import ConfigManager, ConfigurationParsingError, ConfigurationSetupFailed
+from config_manager import ConfigManager
 from dataclasses import dataclass
 
-from exit_codes import EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST, PROFILE_FILE_INVALID_HEADER, PROFILE_FILE_MISSING, PROFILE_FILE_UNEXPECTED_ERROR
-from utils_config_manager import ConfigFileError, ConfigValidationError
+from exit_codes import BENCHMARK_DIRECTORY_UNEXPECTED_ERROR, BENCHMARK_FILE_UNEXPECTED_ERROR, CONFIG_PARSING_ERROR, EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR, EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST, EXIT_CODE_MODULE_ERROR, PROFILE_FILE_INVALID_HEADER, PROFILE_FILE_MISSING, PROFILE_FILE_UNEXPECTED_ERROR
 
 
 class BenchmarkBaseError(Exception):
@@ -88,20 +87,12 @@ def config_setup():
     if ConfigManager._config_path:
         paths.append(ConfigManager._config_path)
 
-    last_error = None
-
     for path in paths:
         if path.exists():
             print(f"\nFound config_template.json at {path}. Attempting automatic setup...")
-            try:
-                ConfigManager.setup_from_file(path)
-                print("Automatic configuration completed successfully!")
-                return
-            except ConfigurationSetupFailed as e:
-                last_error = e
 
-    if last_error:
-        raise last_error
+    ConfigManager.setup_from_file(path)
+    print("Automatic configuration completed successfully!")
 
 
 def validate_list_arguments(benchmarks_arg: str, profiles_arg: str) -> None:
@@ -119,21 +110,23 @@ def validate_list_arguments(benchmarks_arg: str, profiles_arg: str) -> None:
         print("Profiles argument must be wrapped in brackets (e.g., '[cpu,memory]'). Please provide a properly formatted list.", file=sys.stderr)
         sys.exit(EXIT_CODE_MISSING_BRACKETS)
 
-    # New: Validate comma separation inside brackets
     def check_commas(arg: str, arg_name: str):
         stripped = arg.strip()[1:-1].strip()  # remove brackets and whitespace
         if stripped:
             # Detect two or more words separated by whitespace but not by a comma
             if re.search(r'\b\w+\b\s+\b\w+\b', stripped) and ',' not in stripped:
-                raise ConfigurationParsingError(f"{arg_name} argument items must be separated by commas, not spaces. Please provide a properly comma-separated list.")
+                print(f"{arg_name} argument items must be separated by commas, not spaces. Please provide a properly comma-separated list.", file=sys.stderr)
+                sys.exit(CONFIG_PARSING_ERROR)
             # Split by comma, check for empty items or consecutive/missing commas
             items = [item.strip() for item in stripped.split(",")]
             if any(not item for item in items):
-                raise ConfigurationParsingError(f"{arg_name} argument contains empty items or consecutive/missing commas. Please provide a properly comma-separated list.")
+                print(f"{arg_name} argument contains empty items or consecutive/missing commas. Please provide a properly comma-separated list.", file=sys.stderr)
+                sys.exit(CONFIG_PARSING_ERROR)
             # Check for any item that still contains multiple words (e.g., 'foo bar')
             for item in items:
                 if ' ' in item:
-                    raise ConfigurationParsingError(f"{arg_name} argument items must be single words and separated by commas. Found: '{item}'")
+                    print(f"{arg_name} argument items must be single words and separated by commas. Found: '{item}'", file=sys.stderr)
+                    sys.exit(CONFIG_PARSING_ERROR)
 
     check_commas(benchmarks_arg, "Benchmarks")
     check_commas(profiles_arg, "Profiles")
@@ -141,22 +134,14 @@ def validate_list_arguments(benchmarks_arg: str, profiles_arg: str) -> None:
 
 def parse_and_load_benchmark_config(args) -> Tuple[List[str], List[str], Dict[str, Dict[str, Any]]]:
     validate_list_arguments(args.benchmarks, args.profiles)
-
     benchmarks = parse_list_argument(args.benchmarks)
     profiles = parse_list_argument(args.profiles)
-
-    try:
-        benchmark_configs = filter_configs(benchmarks)
-    except ConfigurationParsingError as e:
-        print(f"Error loading benchmark configuration: {e}", file=sys.stderr)
-        raise
+    benchmark_configs = filter_configs(benchmarks)
 
     return benchmarks, profiles, benchmark_configs
 
 
 def filter_configs(benchmarks: List[str]) -> Dict[str, Dict[str, Any]]:
-    """Filter the benchmarks config to only include the config for benchmarks that are in the benchmarks list."""
-
     config = ConfigManager.get_config()
     function_filter_configs: Dict[str, Dict[str, Any]] = {}
     for benchmark in benchmarks:
@@ -205,7 +190,8 @@ def create_bench_directories(tag: str, benchmarks: List[str]):
         print(f"  - {description_file}")
 
     except Exception as e:
-        raise BenchmarkDirectoryError(f"Error creating directories: {e}")
+        print(f"Error creating directories: {e}", file=sys.stderr)
+        sys.exit(BENCHMARK_DIRECTORY_UNEXPECTED_ERROR)
 
 
 def create_profile_function_directories(tag: str, profiles: List[str], benchmarks: List[str]):
@@ -292,9 +278,9 @@ def run_pprof_command(cmd: List[str], output_path: Path, binary_mode: bool = Fal
         return process
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode() if isinstance(e.stderr, bytes) else e.stderr
-        raise BenchmarkSubprocessError(f"pprof command failed: {error_msg}")
     except Exception as e:
-        raise BenchmarkFileError(f"Error running pprof command or writing to {output_path}: {e}")
+        print(f"Error running pprof command or writing to {output_path}: {e}", file=sys.stderr)
+        sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
 
 
 def generate_text_profile(profile_file: Path, output_file: Path) -> None:
@@ -507,7 +493,7 @@ def clean_directory(directory: Path):
             print(f"Cleaned directory: {directory}")
         except Exception as e:
             print(f"Error cleaning directory {directory}: {e}", file=sys.stderr)
-            raise BenchmarkDirectoryError(f"Failed to clean directory {directory}: {e}")
+            sys.exit(BENCHMARK_DIRECTORY_UNEXPECTED_ERROR)
 
 
 def parse_list_argument(arg: str) -> List[str]:
@@ -566,11 +552,14 @@ def run_benchmark_command(cmd: List[str], output_file: Path) -> None:
             error_output = f.read()
 
         if "go: cannot find main module" in error_output:
-            raise BenchmarkModuleError(f"{error_output}")
+            print(f"{error_output}", file=sys.stderr)
+            sys.exit(EXIT_CODE_MODULE_ERROR)
 
-        raise BenchmarkUnexpectedProcessError(f"Benchmark process failed with exit code {e.returncode}:\n{error_output}")
+        print(f"Benchmark process failed with exit code {e.returncode}:\n{error_output}", file=sys.stderr)
+        sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
     except Exception as e:
-        raise BenchmarkFileError(f"Error running benchmark command or writing to {output_file}: {e}")
+        print(f"Error running benchmark command or writing to {output_file}: {e}", file=sys.stderr)
+        sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
 
 
 def move_profile_files(benchmark_name: str, profiles: List[str], bin_dir: Path) -> None:
@@ -600,7 +589,8 @@ def move_profile_files(benchmark_name: str, profiles: List[str], bin_dir: Path) 
         try:
             shutil.move(str(profile_file), str(new_profile_file))
         except Exception as e:
-            raise BenchmarkFileError(f"Error moving profile file {profile_file} to {new_profile_file}: {e}")
+            print(f"Error moving profile file {profile_file} to {new_profile_file}: {e}", file=sys.stderr)
+            sys.exit(BENCHMARK_FILE_UNEXPECTED_ERROR)
 
 
 def move_test_files(benchmark_name: str, bin_dir: Path) -> None:
@@ -623,4 +613,5 @@ def move_test_files(benchmark_name: str, bin_dir: Path) -> None:
             shutil.move(str(item), str(new_test_file))
             print(f"Moved test file: {item} -> {new_test_file}")
         except Exception as e:
-            raise BenchmarkFileError(f"Error moving test file {item} to {new_test_file}: {e}")
+            print(f"Error moving test file {item} to {new_test_file}: {e}", file=sys.stderr)
+            sys.exit(BENCHMARK_FILE_UNEXPECTED_ERROR)

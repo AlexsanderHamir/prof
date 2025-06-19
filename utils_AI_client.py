@@ -1,7 +1,9 @@
 from pathlib import Path
+import sys
 from typing import Dict, List
 
 from config_manager import Config, ConfigManager
+from exit_codes import MODEL_ANALYSIS_ERROR, PROFILE_READ_ERROR, PROFILE_SAVE_ERROR
 
 
 class ProfileReadError(Exception):
@@ -40,10 +42,12 @@ def request_model_analysis(messages: List[Dict[str, str]], config: Config) -> st
         response = client.chat.completions.create(model=config.model_config.model, messages=messages, max_tokens=config.model_config.max_tokens, temperature=config.model_config.temperature, top_p=config.model_config.top_p)
         content = response.choices[0].message.content
         if content is None:
-            raise ModelAnalysisError("No content received from model")
+            print("No content received from model", file=sys.stderr)
+            sys.exit(MODEL_ANALYSIS_ERROR)
         return content
     except Exception as e:
-        raise ModelAnalysisError(f"Error during model analysis request: {e}")
+        print(f"Error during model analysis request: {e}", file=sys.stderr)
+        sys.exit(MODEL_ANALYSIS_ERROR)
 
 
 def validate_benchmark_directories(tag: str) -> list[str]:
@@ -67,10 +71,11 @@ def read_profile_file(file_path: Path) -> str:
     try:
         content = file_path.read_text().strip()
     except OSError as e:
-        raise ProfileReadError(f"Cannot read profile file {file_path}: {e}")
-
+        print(f"Cannot read profile file {file_path}: {e}", file=sys.stderr)
+        sys.exit(PROFILE_READ_ERROR)
     if not content:
-        raise ProfileReadError(f"Profile file {file_path} is empty")
+        print(f"Profile file {file_path} is empty", file=sys.stderr)
+        sys.exit(PROFILE_READ_ERROR)
 
     return content
 
@@ -114,7 +119,8 @@ def read_profile_text_file(file_path: str) -> str:
         with open(file_path, 'r') as f:
             return f.read().strip()
     except OSError as e:
-        raise ProfileReadError(f"Cannot read profile file {file_path}: {e}")
+        print(f"Cannot read profile file {file_path}: {e}", file=sys.stderr)
+        sys.exit(PROFILE_READ_ERROR)
 
 
 def get_benchmark_file(tag: str, benchmark_name: str, profile_type: str) -> Dict[str, str]:
@@ -137,7 +143,8 @@ def save_analysis(tag: str, benchmark_name: str, profile_type: str, analysis: st
             f.write(analysis)
         print(f"Analysis saved to: {analysis_file}")
     except OSError as e:
-        raise ProfileSaveError(f"Cannot save analysis to {analysis_file}: {e}")
+        print(f"Cannot save analysis to {analysis_file}: {e}", file=sys.stderr)
+        sys.exit(PROFILE_SAVE_ERROR)
 
 
 def get_file_path(tag: str, benchmark_name: str, profile_type: str) -> Path:

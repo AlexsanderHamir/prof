@@ -1,11 +1,9 @@
 import argparse
 import sys
 from AI_client import analyze_profiles
-from config_manager import ConfigManager, ConfigurationParsingError, ConfigurationNotFound
-from exit_codes import BENCHMARK_DIRECTORY_UNEXPECTED_ERROR, BENCHMARK_FILE_UNEXPECTED_ERROR, CONFIG_PARSING_ERROR, CONFIG_VALIDATION_ERROR, EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR, EXIT_CODE_MISSING_ARGUMENTS, MISSING_CONFIG_FILE, EXIT_CODE_MODULE_ERROR, EXIT_CODE_TEMPLATE_ERROR, MODEL_ANALYSIS_ERROR, PROFILE_READ_ERROR, PROFILE_SAVE_ERROR
-from utils_benchmark import (BenchmarkTemplateError, BenchmarkUnexpectedProcessError, BenchmarkDirectoryError, BenchmarkFileError, BenchmarkModuleError, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, config_setup)
-from utils_AI_client import ProfileReadError, ProfileSaveError, ModelAnalysisError
-from utils_config_manager import ConfigValidationError
+from config_manager import ConfigManager
+from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_TEMPLATE_ERROR
+from utils_benchmark import (BenchmarkTemplateError, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, config_setup)
 
 
 def create_parser():
@@ -37,41 +35,19 @@ def parse_arguments():
 
 
 def handle_benchmarks(args) -> None:
-    try:
-        config_setup()
+    config_setup()
 
-        benchmarks, profiles, function_filter_configs = parse_and_load_benchmark_config(args)
-        setup_directories(args.tag, benchmarks, profiles)
-        print_configuration(benchmarks, profiles, args.tag, args.count, function_filter_configs)
+    benchmarks, profiles, function_filter_configs = parse_and_load_benchmark_config(args)
+    setup_directories(args.tag, benchmarks, profiles)
+    print_configuration(benchmarks, profiles, args.tag, args.count, function_filter_configs)
 
-        run_benchmarks_and_process_profiles(benchmarks, profiles, args.count, args.tag, function_filter_configs)
+    run_benchmarks_and_process_profiles(benchmarks, profiles, args.count, args.tag, function_filter_configs)
 
-        if args.general_analyze:
-            analyze_profiles(args.tag, profiles)
-        if args.flag_profiles:
-            ConfigManager.is_flagging = True
-            analyze_profiles(args.tag, profiles)
-
-    except BenchmarkUnexpectedProcessError:
-        sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
-    except BenchmarkModuleError:
-        sys.exit(EXIT_CODE_MODULE_ERROR)
-    except BenchmarkDirectoryError:
-        sys.exit(BENCHMARK_DIRECTORY_UNEXPECTED_ERROR)
-    except BenchmarkFileError:
-        sys.exit(BENCHMARK_FILE_UNEXPECTED_ERROR)
-    except ProfileReadError:
-        sys.exit(PROFILE_READ_ERROR)
-    except ProfileSaveError:
-        sys.exit(PROFILE_SAVE_ERROR)
-    except ModelAnalysisError:
-        sys.exit(MODEL_ANALYSIS_ERROR)
-    except ConfigurationNotFound:
-        sys.exit(MISSING_CONFIG_FILE)
-    except ConfigValidationError:
-        sys.exit(CONFIG_VALIDATION_ERROR)
-    except ConfigurationParsingError:
-        sys.exit(CONFIG_PARSING_ERROR)
+    if args.general_analyze:
+        analyze_profiles(args.tag, profiles)
+    if args.flag_profiles:
+        ConfigManager.is_flagging = True
+        analyze_profiles(args.tag, profiles)
 
 
 def setup(args) -> None:

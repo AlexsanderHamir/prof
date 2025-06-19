@@ -1,8 +1,10 @@
 import logging
 from pathlib import Path
+import sys
 from typing import Optional
 from openai import OpenAI
 
+from exit_codes import CONFIG_VALIDATION_ERROR, EXIT_CODE_UNEXPECTED_ERROR, MISSING_CONFIG_FILE
 from utils_config_manager import (
     Config,
     validate_config_structure,
@@ -90,16 +92,18 @@ class ConfigManager:
             cls._config = create_config_from_data(config_data)
             print_validation_progress("Configuration validation completed successfully! 🎉")
         except ConfigValidationError as e:
-            raise ConfigurationSetupFailed(f"Configuration validation error: {e}")
-        except ConfigFileError as e:
-            raise ConfigurationSetupFailed(f"Configuration file error: {e}")
+            print(f"Configuration validation error: {e}", file=sys.stderr)
+            sys.exit(CONFIG_VALIDATION_ERROR)
         except Exception as e:
-            raise ConfigurationSetupFailed(f"Unexpected error during configuration setup: {e}")
+            print(f"Unexpected error during configuration setup: {e}", file=sys.stderr)
+            sys.exit(EXIT_CODE_UNEXPECTED_ERROR)
 
     @classmethod
     def get_config(cls) -> Config:
         if not cls._config:
-            raise ConfigurationNotFound()
+            print("Configuration file not found. Please ensure the configuration file exists and the name is correct. (config_template.json)", file=sys.stderr)
+            sys.exit(MISSING_CONFIG_FILE)
+
         return cls._config
 
     @classmethod

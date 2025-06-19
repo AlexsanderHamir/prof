@@ -1,7 +1,10 @@
 import json
 from pathlib import Path
+import sys
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
+
+from exit_codes import CONFIG_VALIDATION_ERROR, MISSING_CONFIG_FILE
 
 
 class ConfigValidationError(Exception):
@@ -12,7 +15,10 @@ class ConfigValidationError(Exception):
 
 
 class ConfigFileError(Exception):
-    pass
+    """Raised when the configuration file is invalid."""
+
+    def __init__(self, message: str = "Invalid configuration file"):
+        super().__init__(message)
 
 
 @dataclass
@@ -42,26 +48,32 @@ def validate_config_structure(config_data: Dict[str, Any]) -> None:
     required_fields = ["api_key", "base_url", "model_config"]
     for field in required_fields:
         if field not in config_data:
-            raise ConfigValidationError(f"Missing required field: {field}")
+            print(f"Missing required field: {field}", file=sys.stderr)
+            sys.exit(CONFIG_VALIDATION_ERROR)
 
 
 def validate_model_config(model_config: Dict[str, Any]) -> None:
     model_config_fields = ["model", "max_tokens", "temperature", "top_p"]
     for field in model_config_fields:
         if field not in model_config:
-            raise ConfigValidationError(f"Missing required field in model_config: {field}")
+            print(f"Missing required field in model_config: {field}", file=sys.stderr)
+            sys.exit(CONFIG_VALIDATION_ERROR)
 
 
 def validate_benchmark_configs(benchmark_configs: Dict[str, Any]) -> None:
     for benchmark, config in benchmark_configs.items():
         if not isinstance(config, dict):
-            raise ConfigValidationError(f"Invalid benchmark config format for {benchmark}")
+            print(f"Invalid benchmark config format for {benchmark}", file=sys.stderr)
+            sys.exit(CONFIG_VALIDATION_ERROR)
         if "prefixes" not in config:
-            raise ConfigValidationError(f"Missing 'prefixes' for benchmark {benchmark}")
+            print(f"Missing 'prefixes' for benchmark {benchmark}", file=sys.stderr)
+            sys.exit(CONFIG_VALIDATION_ERROR)
         if not isinstance(config["prefixes"], list):
-            raise ConfigValidationError(f"'prefixes' must be a list for benchmark {benchmark}")
+            print(f"'prefixes' must be a list for benchmark {benchmark}", file=sys.stderr)
+            sys.exit(CONFIG_VALIDATION_ERROR)
         if "ignore" in config and not isinstance(config["ignore"], str):
-            raise ConfigValidationError(f"'ignore' must be a string for benchmark {benchmark}")
+            print(f"'ignore' must be a string for benchmark {benchmark}", file=sys.stderr)
+            sys.exit(CONFIG_VALIDATION_ERROR)
 
 
 def create_config_template() -> Dict[str, Any]:
@@ -108,7 +120,8 @@ def load_config_from_file(config_path: str) -> Dict[str, Any]:
         with open(config_path, "r") as f:
             return json.load(f)
     except Exception as e:
-        raise ConfigFileError(f"Error reading configuration file: {str(e)}")
+        print(f"Error reading configuration file: {str(e)}", file=sys.stderr)
+        sys.exit(MISSING_CONFIG_FILE)
 
 
 def create_config_from_data(config_data: Dict[str, Any]) -> Config:
