@@ -72,16 +72,24 @@ class ProfilePaths:
 
 
 def config_setup():
-    template_path = Path.cwd() / "config_template.json"
-    if template_path.exists():
-        print("\nFound config_template.json in current directory. Attempting automatic setup...")
-        try:
-            ConfigManager.setup_from_file(str(template_path))
-            print("Automatic configuration completed successfully!")
-        except (ValueError, ConfigurationError) as e:
-            raise ConfigurationError(f"Error during automatic configuration: {e}")
-    else:
-        raise ConfigurationNotFound()
+    paths = [Path.cwd() / "config_template.json"]
+    if ConfigManager._config_path is not None:
+        paths.append(ConfigManager._config_path)
+
+    last_error = None
+
+    for path in paths:
+        if path.exists():
+            print(f"\nFound config_template.json at {path}. Attempting automatic setup...")
+            try:
+                ConfigManager.setup_from_file(path)
+                print("Automatic configuration completed successfully!")
+                return
+            except (ValueError, ConfigurationError) as e:
+                last_error = e
+
+    if last_error:
+        raise last_error
 
 
 def validate_list_arguments(benchmarks_arg: str, profiles_arg: str) -> None:
