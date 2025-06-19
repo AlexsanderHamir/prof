@@ -1,46 +1,23 @@
 #!/usr/bin/env python3
 import sys
-from cli_helpers import (parse_arguments, handle_benchmarks, setup)
-from config_manager import ConfigurationError, ConfigurationSetupFailed, ConfigurationNotFound
-from exit_codes import EXIT_CODE_MISSING_ARGUMENTS
-from utils_benchmark import (cleanup_tag_directory, BenchmarkError, BenchmarkProfileError, BenchmarkDirectoryError, BenchmarkFileError, BenchmarkConfigError, validate_required_args)
-from utils_AI_client import ProfileReadError, ProfileSaveError, ModelAnalysisError
-from utils_config_manager import ConfigValidationError, ConfigFileError
+from cli import (parse_arguments, handle_benchmarks, setup)
+from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_UNEXPECTED_ERROR
+from utils_benchmark import (validate_required_args)
 
 
 def main():
     try:
         args = parse_arguments()
-
         if args.command == "setup":
             setup(args)
             return
 
-        no_command_present = args.command is None
-        if no_command_present and validate_required_args(args):
-            try:
-                handle_benchmarks(args)
-            except (BenchmarkConfigError, BenchmarkError, BenchmarkProfileError, BenchmarkDirectoryError, BenchmarkFileError) as e:
-                print(f"\nBenchmark error: {e}", file=sys.stderr)
-                cleanup_tag_directory(args.tag)
-                sys.exit(2)
-            except (ProfileReadError, ProfileSaveError, ModelAnalysisError) as e:
-                print(f"\nProfile/Model error: {e}", file=sys.stderr)
-                cleanup_tag_directory(args.tag)
-                sys.exit(3)
-            except (ConfigValidationError, ConfigFileError, ConfigurationError, ConfigurationSetupFailed, ConfigurationNotFound) as e:
-                print(f"\nConfiguration error: {e}", file=sys.stderr)
-                cleanup_tag_directory(args.tag)
-                sys.exit(4)
-            except Exception as e:
-                print(f"\nUnexpected error: {e}", file=sys.stderr)
-                cleanup_tag_directory(args.tag)
-                sys.exit(99)
+        if args.command is None and validate_required_args(args):
+            handle_benchmarks(args)
         else:
             sys.exit(EXIT_CODE_MISSING_ARGUMENTS)
-    except Exception as e:
-        print(f"\nUnexpected error: {e}", file=sys.stderr)
-        sys.exit(99)
+    except Exception:
+        sys.exit(EXIT_CODE_UNEXPECTED_ERROR)
 
 
 if __name__ == "__main__":
