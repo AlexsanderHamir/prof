@@ -4,20 +4,22 @@ from typing import Dict, List
 from config_manager import Config, ConfigManager
 
 
-# Custom exceptions for profile and analysis errors
 class ProfileReadError(Exception):
-    """Custom exception for profile file reading errors."""
-    pass
+
+    def __init__(self, message: str = "Error reading profile file"):
+        super().__init__(message)
 
 
 class ProfileSaveError(Exception):
-    """Custom exception for profile file saving errors."""
-    pass
+
+    def __init__(self, message: str = "Error saving profile file"):
+        super().__init__(message)
 
 
 class ModelAnalysisError(Exception):
-    """Custom exception for model analysis errors."""
-    pass
+
+    def __init__(self, message: str = "Error with model analysis"):
+        super().__init__(message)
 
 
 def log_profile_content(content: str, profile_type: str) -> None:
@@ -63,15 +65,14 @@ def validate_benchmark_directories(tag: str) -> list[str]:
 
 def read_profile_file(file_path: Path) -> str:
     try:
-        with open(file_path, 'r') as f:
-            content = f.read().strip()
-            if not content:
-                raise ProfileReadError(f"Profile file {file_path} is empty")
-            return content
-    except FileNotFoundError:
-        raise ProfileReadError(f"Profile file not found: {file_path}")
-    except Exception as e:
-        raise ProfileReadError(f"Error reading profile file {file_path}: {e}")
+        content = file_path.read_text().strip()
+    except OSError as e:
+        raise ProfileReadError(f"Cannot read profile file {file_path}: {e}")
+
+    if not content:
+        raise ProfileReadError(f"Profile file {file_path} is empty")
+
+    return content
 
 
 def collect_profile_content(directory: Path, file_pattern: str = "*.txt") -> List[str]:
@@ -112,8 +113,8 @@ def read_profile_text_file(file_path: str) -> str:
     try:
         with open(file_path, 'r') as f:
             return f.read().strip()
-    except Exception as e:
-        raise ProfileReadError(f"Error reading profile file {file_path}: {e}")
+    except OSError as e:
+        raise ProfileReadError(f"Cannot read profile file {file_path}: {e}")
 
 
 def get_benchmark_file(tag: str, benchmark_name: str, profile_type: str) -> Dict[str, str]:
@@ -135,8 +136,8 @@ def save_analysis(tag: str, benchmark_name: str, profile_type: str, analysis: st
             f.write("=" * 80 + "\n\n")
             f.write(analysis)
         print(f"Analysis saved to: {analysis_file}")
-    except Exception as e:
-        raise ProfileSaveError(f"Error saving analysis to {analysis_file}: {e}")
+    except OSError as e:
+        raise ProfileSaveError(f"Cannot save analysis to {analysis_file}: {e}")
 
 
 def get_file_path(tag: str, benchmark_name: str, profile_type: str) -> Path:
