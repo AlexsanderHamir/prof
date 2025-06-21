@@ -4,10 +4,14 @@ from analyzer.interface import analyze_profiles
 from config.config_manager import ConfigManager
 from exit_codes import EXIT_CODE_MISSING_ARGUMENTS
 from cli.helpers import (parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_directories, config_setup)
+from version import format_version_output, check_version
 
 
 def create_parser():
     parser = argparse.ArgumentParser(description="CLI tool for organizing and analyzing Go benchmarks with AI")
+
+    parser.add_argument('-version', '--version', action='store_true', help='Show version information and check for updates')
+
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
     setup_parser = subparsers.add_parser("setup", help="Set up configuration for the benchmarking tool")
@@ -32,6 +36,11 @@ def parse_arguments():
             sys.exit(EXIT_CODE_MISSING_ARGUMENTS)
         sys.exit(e.code)
     return args
+
+
+def handle_version():
+    current_version, latest_version = check_version()
+    print(format_version_output(current_version, latest_version))
 
 
 def handle_benchmarks(args) -> None:
