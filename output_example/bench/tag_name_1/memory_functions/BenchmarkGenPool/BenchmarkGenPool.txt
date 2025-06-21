@@ -1,0 +1,39 @@
+Total: 19.89MB
+ROUTINE ======================== github.com/AlexsanderHamir/GenPool/pool.BenchmarkGenPool in /Users/alexsandergomes/Documents/minimal_obj_pool/pool/pool_benchmark_test.go
+         0     1.50MB (flat, cum)  7.54% of Total
+         .          .     70:func BenchmarkGenPool(b *testing.B) {
+         .          .     71:	runtime.SetBlockProfileRate(1)
+         .          .     72:	cfg := PoolConfig[*BenchmarkObject]{
+         .          .     73:		Allocator: allocator,
+         .          .     74:		Cleaner:   cleaner,
+         .          .     75:	}
+         .          .     76:
+         .          .     77:	pool, err := NewPoolWithConfig(cfg)
+         .          .     78:	if err != nil {
+         .          .     79:		b.Fatalf("error creating pool: %v", err)
+         .          .     80:	}
+         .          .     81:
+         .          .     82:	b.SetParallelism(1000)
+         .          .     83:	b.ResetTimer()
+         .     1.50MB     84:	b.RunParallel(func(pb *testing.PB) {
+         .          .     85:		for pb.Next() {
+         .          .     86:			obj := pool.RetrieveOrCreate()
+         .          .     87:
+         .          .     88:			if obj == nil {
+         .          .     89:				b.Fatal("obj is nil")
+ROUTINE ======================== github.com/AlexsanderHamir/GenPool/pool.BenchmarkGenPool.func1 in /Users/alexsandergomes/Documents/minimal_obj_pool/pool/pool_benchmark_test.go
+         0     6.01MB (flat, cum) 30.19% of Total
+         .          .     84:	b.RunParallel(func(pb *testing.PB) {
+         .          .     85:		for pb.Next() {
+         .          .     86:			obj := pool.RetrieveOrCreate()
+         .          .     87:
+         .          .     88:			if obj == nil {
+         .          .     89:				b.Fatal("obj is nil")
+         .          .     90:			}
+         .          .     91:
+         .     6.01MB     92:			performWorkload(obj)
+         .          .     93:
+         .          .     94:			pool.Put(obj)
+         .          .     95:		}
+         .          .     96:	})
+         .          .     97:}

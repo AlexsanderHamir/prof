@@ -1,0 +1,49 @@
+File: pool.test
+Type: alloc_space
+Time: 2025-06-21 08:00:26 PDT
+Showing nodes accounting for 20369.58kB, 100% of 20369.58kB total
+      flat  flat%   sum%        cum   cum%
+ 1536.05kB  7.54%  7.54%  7685.67kB 37.73%  testing.(*B).RunParallel.func1
+         0     0%  7.54%  6149.63kB 30.19%  github.com/AlexsanderHamir/GenPool/pool.BenchmarkGenPool.func1
+ 6149.63kB 30.19% 37.73%  6149.63kB 30.19%  github.com/AlexsanderHamir/GenPool/pool.performWorkload
+ 4097.75kB 20.12% 57.85%  4097.75kB 20.12%  runtime.malg
+         0     0% 57.85%  4097.75kB 20.12%  runtime.newproc.func1
+         0     0% 57.85%  4097.75kB 20.12%  runtime.newproc1
+         0     0% 57.85%  4097.75kB 20.12%  runtime.systemstack
+         0     0% 57.85%  3552.82kB 17.44%  main.main
+         0     0% 57.85%  3552.82kB 17.44%  runtime.main
+         0     0% 57.85%  3552.82kB 17.44%  testing.(*M).Run
+         0     0% 57.85%  3552.82kB 17.44%  testing.(*M).before
+ 2368.55kB 11.63% 69.48%  2368.55kB 11.63%  runtime/trace.Start
+         0     0% 69.48%  1536.07kB  7.54%  github.com/AlexsanderHamir/GenPool/pool.BenchmarkGenPool
+ 1536.07kB  7.54% 77.02%  1536.07kB  7.54%  testing.(*B).RunParallel
+         0     0% 77.02%  1536.07kB  7.54%  testing.(*B).launch
+         0     0% 77.02%  1536.07kB  7.54%  testing.(*B).runN
+  902.59kB  4.43% 81.45%  1447.25kB  7.10%  compress/flate.NewWriter (inline)
+         0     0% 81.45%  1447.25kB  7.10%  compress/gzip.(*Writer).Write
+         0     0% 81.45%  1447.25kB  7.10%  runtime/pprof.(*profileBuilder).appendLocsForStack
+         0     0% 81.45%  1447.25kB  7.10%  runtime/pprof.(*profileBuilder).build
+         0     0% 81.45%  1447.25kB  7.10%  runtime/pprof.(*profileBuilder).emitLocation
+         0     0% 81.45%  1447.25kB  7.10%  runtime/pprof.(*profileBuilder).flush
+         0     0% 81.45%  1447.25kB  7.10%  runtime/pprof.profileWriter
+ 1184.27kB  5.81% 87.26%  1184.27kB  5.81%  runtime/pprof.StartCPUProfile
+         0     0% 87.26%  1184.27kB  5.81%  testing/internal/testdeps.TestDeps.StartCPUProfile
+    1026kB  5.04% 92.30%     1026kB  5.04%  runtime.allocm
+         0     0% 92.30%     1026kB  5.04%  runtime.newm
+         0     0% 92.30%     1026kB  5.04%  runtime.resetspinning
+         0     0% 92.30%     1026kB  5.04%  runtime.schedule
+         0     0% 92.30%     1026kB  5.04%  runtime.startm
+         0     0% 92.30%     1026kB  5.04%  runtime.wakep
+         0     0% 92.30%  1025.01kB  5.03%  runtime.mcall
+         0     0% 92.30%  1025.01kB  5.03%  runtime.park_m
+         0     0% 92.30%  1024.02kB  5.03%  runtime.(*timer).maybeAdd
+         0     0% 92.30%  1024.02kB  5.03%  runtime.(*timer).modify
+         0     0% 92.30%  1024.02kB  5.03%  runtime.(*timer).reset (inline)
+ 1024.02kB  5.03% 97.33%  1024.02kB  5.03%  runtime.(*timers).addHeap
+  544.67kB  2.67%   100%   544.67kB  2.67%  compress/flate.(*compressor).init
+         0     0%   100%      513kB  2.52%  runtime.mstart
+         0     0%   100%      513kB  2.52%  runtime.mstart0
+         0     0%   100%      513kB  2.52%  runtime.mstart1
+         0     0%   100%   512.01kB  2.51%  runtime.(*traceAdvancerState).start.func1
+         0     0%   100%   512.01kB  2.51%  runtime.(*wakeableSleep).sleep
+         0     0%   100%   512.01kB  2.51%  runtime.resetForSleep

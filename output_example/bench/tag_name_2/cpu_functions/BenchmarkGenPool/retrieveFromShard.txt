@@ -1,0 +1,21 @@
+Total: 10.90s
+ROUTINE ======================== github.com/AlexsanderHamir/GenPool/pool.(*ShardedPool[go.shape.*uint8]).retrieveFromShard in /Users/alexsandergomes/Documents/minimal_obj_pool/pool/pool.go
+      10ms       20ms (flat, cum)  0.18% of Total
+      10ms       10ms    225:func (p *ShardedPool[T]) retrieveFromShard(shard *PoolShard[T]) (zero T, success bool) {
+         .          .    226:	for {
+         .          .    227:		oldHead, ok := shard.head.Load().(T)
+         .          .    228:		if !ok {
+         .          .    229:			return zero, false
+         .          .    230:		}
+         .          .    231:
+         .          .    232:		if reflect.ValueOf(oldHead).IsNil() {
+         .          .    233:			return zero, false
+         .          .    234:		}
+         .          .    235:
+         .          .    236:		next := oldHead.GetNext()
+         .       10ms    237:		if shard.head.CompareAndSwap(oldHead, next) {
+         .          .    238:			return oldHead, true
+         .          .    239:		}
+         .          .    240:	}
+         .          .    241:}
+         .          .    242:

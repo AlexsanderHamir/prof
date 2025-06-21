@@ -1,0 +1,13 @@
+Total: 10.90s
+ROUTINE ======================== github.com/AlexsanderHamir/GenPool/pool.(*ShardedPool[go.shape.*uint8]).getShard in /Users/alexsandergomes/Documents/minimal_obj_pool/pool/pool.go
+         0       10ms (flat, cum) 0.092% of Total
+         .          .    180:func (p *ShardedPool[T]) getShard() *PoolShard[T] {
+         .          .    181:	// Use goroutine's processor ID for shard selection
+         .          .    182:	// This provides better locality for goroutines that frequently access the pool
+         .          .    183:	id := runtime_procPin()
+         .       10ms    184:	runtime_procUnpin()
+         .          .    185:
+         .          .    186:	return p.shards[id]
+         .          .    187:}
+         .          .    188:
+         .          .    189:// RetrieveOrCreate gets an object from the pool or creates a new one

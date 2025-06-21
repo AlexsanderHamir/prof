@@ -1,0 +1,52 @@
+Total: 19.89MB
+ROUTINE ======================== github.com/AlexsanderHamir/GenPool/pool.BenchmarkGenPool.func1 in /Users/alexsandergomes/Documents/minimal_obj_pool/pool/pool_benchmark_test.go
+         0     6.01MB (flat, cum) 30.19% of Total
+         .          .     84:	b.RunParallel(func(pb *testing.PB) {
+         .          .     85:		for pb.Next() {
+         .          .     86:			obj := pool.RetrieveOrCreate()
+         .          .     87:
+         .          .     88:			if obj == nil {
+         .          .     89:				b.Fatal("obj is nil")
+         .          .     90:			}
+         .          .     91:
+         .     6.01MB     92:			performWorkload(obj)
+         .          .     93:
+         .          .     94:			pool.Put(obj)
+         .          .     95:		}
+         .          .     96:	})
+         .          .     97:}
+ROUTINE ======================== runtime.(*traceAdvancerState).start.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/runtime/trace.go
+         0   512.01kB (flat, cum)  2.51% of Total
+         .          .    957:	go func() {
+         .          .    958:		for traceEnabled() {
+         .          .    959:			// Set a timer to wake us up
+         .   512.01kB    960:			s.timer.sleep(int64(debug.traceadvanceperiod))
+         .          .    961:
+         .          .    962:			// Try to advance the trace.
+         .          .    963:			traceAdvance(false)
+         .          .    964:		}
+         .          .    965:		s.done <- struct{}{}
+ROUTINE ======================== runtime.newproc.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/runtime/proc.go
+         0        4MB (flat, cum) 20.12% of Total
+         .          .   5023:	systemstack(func() {
+         .        4MB   5024:		newg := newproc1(fn, gp, pc, false, waitReasonZero)
+         .          .   5025:
+         .          .   5026:		pp := getg().m.p.ptr()
+         .          .   5027:		runqput(pp, newg, true)
+         .          .   5028:
+         .          .   5029:		if mainStarted {
+ROUTINE ======================== testing.(*B).RunParallel.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/testing/benchmark.go
+    1.50MB     7.51MB (flat, cum) 37.73% of Total
+         .          .    955:		go func() {
+         .          .    956:			defer wg.Done()
+    1.50MB     1.50MB    957:			pb := &PB{
+         .          .    958:				globalN: &n,
+         .          .    959:				grain:   grain,
+         .          .    960:				bN:      uint64(b.N),
+         .          .    961:			}
+         .     6.01MB    962:			body(pb)
+         .          .    963:		}()
+         .          .    964:	}
+         .          .    965:	wg.Wait()
+         .          .    966:	if n.Load() <= uint64(b.N) && !b.Failed() {
+         .          .    967:		b.Fatal("RunParallel: body exited without pb.Next() == false")

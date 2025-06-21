@@ -1,0 +1,6 @@
+File: pool.test
+Type: delay
+Time: 2025-06-21 08:00:26 PDT
+Showing nodes accounting for 30.85ms, 100% of 30.85ms total
+      flat  flat%   sum%        cum   cum%
+   30.85ms   100%   100%    30.85ms   100%  runtime._LostContendedRuntimeLock

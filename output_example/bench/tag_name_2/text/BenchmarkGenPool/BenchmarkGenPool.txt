@@ -1,0 +1,7 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/AlexsanderHamir/GenPool/pool
+cpu: Apple M1
+BenchmarkGenPool-8   	  697846	      1671 ns/op	       4 B/op	       0 allocs/op
+PASS
+ok  	github.com/AlexsanderHamir/GenPool/pool	2.388s

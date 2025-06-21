@@ -61,6 +61,8 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBenc
 
 [Directory Structure](#directory-structure)
 
+[Output Examples](#output-examples)
+
 [Configuration](#configuration)
 
 [Installation](#installation)
@@ -144,6 +146,24 @@ bench/
     │       └── BenchmarkSyncPool_mutex.txt
     └── description.txt  # A file for you to describe what you're doing, what has changed and how it impacted performance.
 ```
+
+## Output Examples
+
+Want to see what the output looks like before running the tool? Check out the `output_example/bench/` directory in this repository, which contains real examples of the output.
+
+The directory includes two different benchmark runs with different tag names:
+
+- **`tag_name_1/`** - Example output from one benchmark run
+- **`tag_name_2/`** - Example output from another benchmark run
+
+Each directory contains the complete structure described above, including:
+
+- Binary files in the `bin/` directory
+- Function-level info in `cpu_functions/`, `memory_functions/`, and `mutex_functions/` directories
+- Text reports in the `text/` directory
+- Description files for you to document the changes and their performance impact
+
+This gives you a concrete example of how the tool organizes and presents profiling data, making it easier to understand what you'll get when you run your own benchmarks.
 
 ## Configuration
 

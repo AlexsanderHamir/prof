@@ -1,0 +1,13 @@
+Total: 10.90s
+ROUTINE ======================== github.com/AlexsanderHamir/GenPool/pool.(*ShardedPool[go.shape.*uint8]).RetrieveOrCreate in /Users/alexsandergomes/Documents/minimal_obj_pool/pool/pool.go
+         0       20ms (flat, cum)  0.18% of Total
+         .          .    190:func (p *ShardedPool[T]) RetrieveOrCreate() T {
+         .          .    191:	shard := p.getShard()
+         .          .    192:
+         .          .    193:	// Try to get an object from the shard
+         .       20ms    194:	if obj, ok := p.retrieveFromShard(shard); ok {
+         .          .    195:		obj.IncrementUsage()
+         .          .    196:		return obj
+         .          .    197:	}
+         .          .    198:
+         .          .    199:	// Create a new object if none available

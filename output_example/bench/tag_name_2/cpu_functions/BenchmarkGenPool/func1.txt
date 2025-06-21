@@ -1,0 +1,148 @@
+Total: 10.90s
+ROUTINE ======================== github.com/AlexsanderHamir/GenPool/pool.BenchmarkGenPool.func1 in /Users/alexsandergomes/Documents/minimal_obj_pool/pool/pool_benchmark_test.go
+         0      6.51s (flat, cum) 59.72% of Total
+         .          .     84:	b.RunParallel(func(pb *testing.PB) {
+         .          .     85:		for pb.Next() {
+         .       20ms     86:			obj := pool.RetrieveOrCreate()
+         .          .     87:
+         .          .     88:			if obj == nil {
+         .          .     89:				b.Fatal("obj is nil")
+         .          .     90:			}
+         .          .     91:
+         .      6.47s     92:			performWorkload(obj)
+         .          .     93:
+         .       20ms     94:			pool.Put(obj)
+         .          .     95:		}
+         .          .     96:	})
+         .          .     97:}
+         .          .     98:func BenchmarkSyncPool(b *testing.B) {
+         .          .     99:	runtime.SetBlockProfileRate(1)
+ROUTINE ======================== runtime.(*mheap).alloc.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/runtime/mheap.go
+         0       10ms (flat, cum) 0.092% of Total
+         .          .    964:	systemstack(func() {
+         .          .    965:		// To prevent excessive heap growth, before allocating n pages
+         .          .    966:		// we need to sweep and reclaim at least n pages.
+         .          .    967:		if !isSweepDone() {
+         .          .    968:			h.reclaim(npages)
+         .          .    969:		}
+         .       10ms    970:		s = h.allocSpan(npages, spanAllocHeap, spanclass)
+         .          .    971:	})
+         .          .    972:	return s
+         .          .    973:}
+         .          .    974:
+         .          .    975:// allocManual allocates a manually-managed span of npage pages.
+ROUTINE ======================== runtime.(*traceAdvancerState).start.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/runtime/trace.go
+         0       10ms (flat, cum) 0.092% of Total
+         .          .    957:	go func() {
+         .          .    958:		for traceEnabled() {
+         .          .    959:			// Set a timer to wake us up
+         .          .    960:			s.timer.sleep(int64(debug.traceadvanceperiod))
+         .          .    961:
+         .          .    962:			// Try to advance the trace.
+         .       10ms    963:			traceAdvance(false)
+         .          .    964:		}
+         .          .    965:		s.done <- struct{}{}
+         .          .    966:	}()
+         .          .    967:}
+         .          .    968:
+ROUTINE ======================== runtime.goroutineReady.goready.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/runtime/proc.go
+         0      710ms (flat, cum)  6.51% of Total
+         .          .    455:	systemstack(func() {
+         .      710ms    456:		ready(gp, traceskip, true)
+         .          .    457:	})
+         .          .    458:}
+         .          .    459:
+         .          .    460://go:nosplit
+         .          .    461:func acquireSudog() *sudog {
+ROUTINE ======================== runtime.newproc.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/runtime/proc.go
+         0       10ms (flat, cum) 0.092% of Total
+         .          .   5023:	systemstack(func() {
+         .       10ms   5024:		newg := newproc1(fn, gp, pc, false, waitReasonZero)
+         .          .   5025:
+         .          .   5026:		pp := getg().m.p.ptr()
+         .          .   5027:		runqput(pp, newg, true)
+         .          .   5028:
+         .          .   5029:		if mainStarted {
+ROUTINE ======================== runtime.traceAdvance.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/runtime/trace.go
+      10ms       10ms (flat, cum) 0.092% of Total
+         .          .    360:	forEachGRace(func(gp *g) {
+         .          .    361:		// Make absolutely sure all Gs are ready for the next
+         .          .    362:		// generation. We need to do this even for dead Gs because
+         .          .    363:		// they may come alive with a new identity, and its status
+         .          .    364:		// traced bookkeeping might end up being stale.
+         .          .    365:		// We may miss totally new goroutines, but they'll always
+         .          .    366:		// have clean bookkeeping.
+      10ms       10ms    367:		gp.trace.readyNextGen(gen)
+         .          .    368:		// If the status was traced, nothing else to do.
+         .          .    369:		if gp.trace.statusWasTraced(gen) {
+         .          .    370:			return
+         .          .    371:		}
+         .          .    372:		// Scribble down information about this goroutine.
+ROUTINE ======================== runtime.traceStartReadCPU.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/runtime/tracecpu.go
+         0       10ms (flat, cum) 0.092% of Total
+         .          .     42:	go func() {
+         .          .     43:		for traceEnabled() {
+         .          .     44:			// Sleep here because traceReadCPU is non-blocking. This mirrors
+         .          .     45:			// how the runtime/pprof package obtains CPU profile data.
+         .          .     46:			//
+         .          .     47:			// We can't do a blocking read here because Darwin can't do a
+         .          .     48:			// wakeup from a signal handler, so all CPU profiling is just
+         .          .     49:			// non-blocking. See #61768 for more details.
+         .          .     50:			//
+         .          .     51:			// Like the runtime/pprof package, even if that bug didn't exist
+         .          .     52:			// we would still want to do a goroutine-level sleep in between
+         .          .     53:			// reads to avoid frequent wakeups.
+         .       10ms     54:			trace.cpuSleep.sleep(100_000_000)
+         .          .     55:
+         .          .     56:			tl := traceAcquire()
+         .          .     57:			if !tl.ok() {
+         .          .     58:				// Tracing disabled.
+         .          .     59:				break
+ROUTINE ======================== runtime.traceWriter.refill.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/runtime/tracebuf.go
+         0      270ms (flat, cum)  2.48% of Total
+         .          .    156:	systemstack(func() {
+         .          .    157:		lock(&trace.lock)
+         .          .    158:		if w.traceBuf != nil {
+         .          .    159:			traceBufFlush(w.traceBuf, w.gen)
+         .          .    160:		}
+         .          .    161:		if trace.empty != nil {
+         .          .    162:			w.traceBuf = trace.empty
+         .          .    163:			trace.empty = w.traceBuf.link
+         .          .    164:			unlock(&trace.lock)
+         .          .    165:		} else {
+         .          .    166:			unlock(&trace.lock)
+         .      270ms    167:			w.traceBuf = (*traceBuf)(sysAlloc(unsafe.Sizeof(traceBuf{}), &memstats.other_sys))
+         .          .    168:			if w.traceBuf == nil {
+         .          .    169:				throw("trace: out of memory")
+         .          .    170:			}
+         .          .    171:		}
+         .          .    172:	})
+ROUTINE ======================== runtime/trace.Start.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/runtime/trace/trace.go
+         0      350ms (flat, cum)  3.21% of Total
+         .          .    128:	go func() {
+         .          .    129:		for {
+         .       10ms    130:			data := runtime.ReadTrace()
+         .          .    131:			if data == nil {
+         .          .    132:				break
+         .          .    133:			}
+         .      340ms    134:			w.Write(data)
+         .          .    135:		}
+         .          .    136:	}()
+         .          .    137:	tracing.enabled.Store(true)
+         .          .    138:	return nil
+         .          .    139:}
+ROUTINE ======================== testing.(*B).RunParallel.func1 in /opt/homebrew/Cellar/go/1.24.3/libexec/src/testing/benchmark.go
+      10ms      6.52s (flat, cum) 59.82% of Total
+      10ms       10ms    955:		go func() {
+         .          .    956:			defer wg.Done()
+         .          .    957:			pb := &PB{
+         .          .    958:				globalN: &n,
+         .          .    959:				grain:   grain,
+         .          .    960:				bN:      uint64(b.N),
+         .          .    961:			}
+         .      6.51s    962:			body(pb)
+         .          .    963:		}()
+         .          .    964:	}
+         .          .    965:	wg.Wait()
+         .          .    966:	if n.Load() <= uint64(b.N) && !b.Failed() {
+         .          .    967:		b.Fatal("RunParallel: body exited without pb.Next() == false")

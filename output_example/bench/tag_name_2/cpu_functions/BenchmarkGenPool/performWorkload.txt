@@ -1,0 +1,18 @@
+Total: 10.90s
+ROUTINE ======================== github.com/AlexsanderHamir/GenPool/pool.performWorkload in /Users/alexsandergomes/Documents/minimal_obj_pool/pool/pool_benchmark_test.go
+     760ms      6.47s (flat, cum) 59.36% of Total
+         .          .     25:func performWorkload(obj *BenchmarkObject) {
+         .          .     26:	obj.Name = "test"
+         .          .     27:
+         .          .     28:	// Simulate CPU-intensive work
+     270ms      270ms     29:	for range 1000 {
+     470ms      6.15s     30:		obj.Data = append(obj.Data, byte(rand.Intn(256)))
+         .          .     31:	}
+         .          .     32:
+         .          .     33:	// Simulate some I/O or network delay
+      20ms       50ms     34:	time.Sleep(time.Microsecond * 10)
+         .          .     35:}
+         .          .     36:
+         .          .     37:func (o *BenchmarkObject) GetNext() Poolable {
+         .          .     38:	if next := o.next.Load(); next != nil {
+         .          .     39:		return next.(Poolable)
