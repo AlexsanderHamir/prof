@@ -1,3 +1,4 @@
+import argparse
 import json
 from pathlib import Path
 import re
@@ -551,3 +552,23 @@ def move_test_files(benchmark_name: str, bin_dir: Path) -> None:
         except Exception as e:
             print(f"Error moving test file {item} to {new_test_file}: {e}", file=sys.stderr)
             sys.exit(BENCHMARK_FILE_UNEXPECTED_ERROR)
+
+
+def create_parser():
+    parser = argparse.ArgumentParser(description="CLI tool for organizing and analyzing Go benchmarks with AI")
+
+    parser.add_argument('-version', '--version', action='store_true', help='Show version information and check for updates')
+
+    subparsers = parser.add_subparsers(dest="command", help="Command to run")
+
+    setup_parser = subparsers.add_parser("setup", help="Set up configuration for the benchmarking tool")
+    setup_parser.add_argument("--create-template", action="store_true", help="Generate a new template configuration file for benchmarks")
+    setup_parser.add_argument("--output-path", help="Destination path for the generated template configuration file (default: ./config_template.json)")
+
+    parser.add_argument('-benchmarks', help='Benchmarks to run')
+    parser.add_argument('-profiles', help='Profiles to use')
+    parser.add_argument('-tag', help='Tag for the run')
+    parser.add_argument('-count', type=int, help='Number of runs')
+    parser.add_argument('-general_analyze', action='store_true', help="After benchmarks complete, run general AI analysis on the results")
+    parser.add_argument('-flag_profiles', action='store_true', help="Flag the benchmark results for further review or processing")
+    return parser
