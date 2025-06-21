@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import sys
-from cli.interface import (parse_arguments, handle_benchmarks)
+from CLI.interface import (parse_arguments, handle_benchmarks)
 from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_UNEXPECTED_ERROR
-from cli.cli_helpers import (setup_command, validate_required_args)
+from CLI.helpers import (setup_command, validate_required_args)
 
 
 def main():

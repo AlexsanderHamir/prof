@@ -1,9 +1,9 @@
 import argparse
 import sys
-from AI_client import analyze_profiles
-from config.config_manager import ConfigManager
+from AI.interface import analyze_profiles
+from CONFIG.config_manager import ConfigManager
 from exit_codes import EXIT_CODE_MISSING_ARGUMENTS
-from cli.cli_helpers import (parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_directories, config_setup)
+from CLI.helpers import (parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_directories, config_setup)
 
 
 def create_parser():
