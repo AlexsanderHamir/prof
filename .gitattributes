@@ -1,0 +1,16 @@
+# Include core functionality files
+analyzer/** export-ignore
+cli/** export-ignore
+config/** export-ignore
+tests/** export-ignore
+exit_codes.py export-ignore
+requirements.txt export-ignore
+prof export-ignore
+
+# Exclude files from releases
+output_example/** -export-ignore
+.github/** -export-ignore
+venv/** -export-ignore
+install.sh -export-ignore
+LICENSE -export-ignore
+*.md -export-ignore
