@@ -3,20 +3,7 @@ from pathlib import Path
 import sys
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
-
 from exit_codes import CONFIG_VALIDATION_ERROR, MISSING_CONFIG_FILE
-
-
-class ConfigValidationError(Exception):
-
-    def __init__(self, message: str = "Invalid configuration"):
-        super().__init__(message)
-
-
-class ConfigFileError(Exception):
-
-    def __init__(self, message: str = "Invalid configuration file"):
-        super().__init__(message)
 
 
 @dataclass

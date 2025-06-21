@@ -17,7 +17,7 @@ PPROF_TEXT_PARAMS = ["-nodecount=100000000", "-cum", "-edgefraction=0", "-nodefr
 
 
 @dataclass
-class BenchmarkConfigWrapper:
+class BenchmarkParamsWrapper:
     benchmark_name: str
     profiles: List[str]
     iteration_count: int
@@ -202,7 +202,7 @@ def run_benchmarks_and_process_profiles(benchmarks: List[str], profiles: List[st
 
 
 def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str) -> None:
-    config = BenchmarkConfigWrapper(benchmark, profiles, count, tag)
+    config = BenchmarkParamsWrapper(benchmark, profiles, count, tag)
 
     cmd = build_benchmark_command(config)
     text_dir, bin_dir = setup_output_directories(config.benchmark_name, config.tag)
@@ -477,7 +477,7 @@ def parse_benchmark_config(config_str: str) -> Dict[str, Dict[str, str]]:
         raise ValueError(f"Error parsing benchmark config: {e}")
 
 
-def build_benchmark_command(config: BenchmarkConfigWrapper) -> List[str]:
+def build_benchmark_command(config: BenchmarkParamsWrapper) -> List[str]:
     cmd = ["go", "test", "-run=^$", f"-bench=^{config.benchmark_name}$", "-benchmem", f"-count={config.iteration_count}"]
 
     for profile in config.profiles:

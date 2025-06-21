@@ -4,7 +4,7 @@ import sys
 from typing import Optional
 from openai import OpenAI
 
-from exit_codes import CONFIG_VALIDATION_ERROR, EXIT_CODE_UNEXPECTED_ERROR, MISSING_CONFIG_FILE
+from exit_codes import EXIT_CODE_UNEXPECTED_ERROR, MISSING_CONFIG_FILE
 from CONFIG.helpers import (
     Config,
     validate_config_structure,
@@ -16,8 +16,6 @@ from CONFIG.helpers import (
     create_config_from_data,
     print_template_creation_info,
     print_validation_progress,
-    ConfigValidationError,
-    ConfigFileError,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -91,9 +89,6 @@ class ConfigManager:
             cls._config_path = config_path
             cls._config = create_config_from_data(config_data)
             print_validation_progress("Configuration validation completed successfully! 🎉")
-        except ConfigValidationError as e:
-            print(f"Configuration validation error: {e}", file=sys.stderr)
-            sys.exit(CONFIG_VALIDATION_ERROR)
         except Exception as e:
             print(f"Unexpected error during configuration setup: {e}", file=sys.stderr)
             sys.exit(EXIT_CODE_UNEXPECTED_ERROR)
