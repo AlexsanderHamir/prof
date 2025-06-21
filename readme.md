@@ -114,6 +114,27 @@ This command:
 3. Saves results in a directory named after the tag (`test1`).
 4. Extracts and stores line-level code mappings for all functions in each profile.
 
+### Check Version Information
+
+To check your current version and see if updates are available:
+
+```bash
+prof -version
+```
+
+This will display:
+
+- Your current installed version
+- The latest available version from GitHub
+- Whether an update is available
+
+Example output:
+
+```
+Current version: 1.0.25
+Latest version: v1.0.25 (up to date)
+```
+
 ## Directory Structure
 
 When you run a benchmark analysis, a new directory is created inside `bench/` (named according to your `-tag` parameter) with the following structure:
