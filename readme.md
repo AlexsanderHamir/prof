@@ -4,6 +4,55 @@ This tool simplifies complex performance analysis by consolidating multiple ppro
 
 [Example Profile Analysis Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/prof.mp4)
 
+## Why Use This Tool?
+
+### The Manual Way vs. Our Way
+
+**Traditional Manual Profiling:**
+
+```bash
+# Run benchmarks with profiling
+go test -run=^$ -bench=^BenchmarkGenPool$ -count 5 -benchmem -cpuprofile=cpu.out -memprofile=mem.out -trace=trace.out
+
+# Analyze CPU profile
+go tool pprof -nodecount=1000 -cum -edgefraction=0 -nodefraction=0 cpu.out
+
+# For each function you want to inspect
+list .*pool.*Get
+list .*pool.*Put
+# ... repeat for every function
+
+# Analyze memory profile
+go tool pprof -nodecount=1000 -cum -edgefraction=0 -nodefraction=0 mem.out
+# ... repeat the same process
+
+# Organize results manually
+# Create directories, move files, document changes
+```
+
+**With Our Tool:**
+
+```bash
+# One command does everything
+prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBench" -count 5
+```
+
+### What You Get
+
+1. **Complete Data Collection**: Automatically collects all profiling data you'd ever need, including code-line level mapping for every function
+2. **Organized Workspace**: All files are automatically organized into tagged directories with clear structure
+3. **Searchable Results**: Instead of running multiple pprof commands, just search your workspace for function names
+4. **Documentation**: Built-in description files help you document changes and their performance impact
+5. **AI-Powered Insights**: Optional AI analysis provides intelligent performance recommendations
+
+### Real-World Benefits
+
+- **Save Hours**: What takes 30+ minutes manually becomes a 30-second command
+- **Never Miss Data**: Automatic collection ensures you have all the profiling information you need
+- **Track Progress**: Tagged directories and description files help you document performance improvements
+- **Team Collaboration**: Organized, searchable results make it easy to share findings with your team
+- **Reproducible Analysis**: Consistent data collection and organization across all profiling sessions
+
 ## Table of Contents
 
 [Features](#features)
