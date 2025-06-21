@@ -1,4 +1,4 @@
-from AI.helpers import analyze_all_profiles, validate_benchmark_directories
+from analyzer.helpers import analyze_all_profiles, validate_benchmark_directories
 from typing import List
 
 

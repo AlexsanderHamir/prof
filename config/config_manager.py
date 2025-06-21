@@ -5,7 +5,7 @@ from typing import Optional
 from openai import OpenAI
 
 from exit_codes import EXIT_CODE_UNEXPECTED_ERROR, MISSING_CONFIG_FILE
-from CONFIG.helpers import (
+from config.helpers import (
     Config,
     validate_config_structure,
     validate_model_config,

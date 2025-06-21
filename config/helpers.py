@@ -7,7 +7,7 @@ from exit_codes import CONFIG_VALIDATION_ERROR, MISSING_CONFIG_FILE
 
 
 @dataclass
-class BenchmarkConfig:
+class BenchmarkFilter:
     prefixes: List[str]
     ignore: Optional[str] = None
 
@@ -26,7 +26,7 @@ class Config:
     api_key: str
     base_url: str
     model_config: ModelConfig
-    benchmark_configs: Dict[str, BenchmarkConfig]
+    benchmark_filters: Dict[str, BenchmarkFilter]
 
 
 def validate_config_structure(config_data: Dict[str, Any]) -> None:
@@ -45,8 +45,8 @@ def validate_model_config(model_config: Dict[str, Any]) -> None:
             sys.exit(CONFIG_VALIDATION_ERROR)
 
 
-def validate_benchmark_configs(benchmark_configs: Dict[str, Any]) -> None:
-    for benchmark, config in benchmark_configs.items():
+def validate_benchmark_configs(benchmark_filters: Dict[str, Any]) -> None:
+    for benchmark, config in benchmark_filters.items():
         if not isinstance(config, dict):
             print(f"Invalid benchmark config format for {benchmark}", file=sys.stderr)
             sys.exit(CONFIG_VALIDATION_ERROR)
@@ -112,16 +112,16 @@ def load_config_from_file(config_path: str) -> Dict[str, Any]:
 def create_config_from_data(config_data: Dict[str, Any]) -> Config:
     model_config = ModelConfig(**config_data["model_config"])
 
-    benchmark_configs = {}
+    benchmark_filters = {}
     if "benchmark_configs" in config_data:
         for benchmark, config in config_data["benchmark_configs"].items():
-            benchmark_configs[benchmark] = BenchmarkConfig(prefixes=config["prefixes"], ignore=config.get("ignore"))
+            benchmark_filters[benchmark] = BenchmarkFilter(prefixes=config["prefixes"], ignore=config.get("ignore"))
 
     return Config(
         api_key=config_data["api_key"],
         base_url=config_data["base_url"],
         model_config=model_config,
-        benchmark_configs=benchmark_configs,
+        benchmark_filters=benchmark_filters,
     )
 
 

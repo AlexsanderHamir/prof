@@ -2,7 +2,7 @@ from pathlib import Path
 import sys
 from typing import Dict, List
 
-from CONFIG.config_manager import Config, ConfigManager
+from config.config_manager import Config, ConfigManager
 from exit_codes import BENCHMARK_DIRECTORY_MISSING, EXIT_CODE_UNEXPECTED_ERROR, MISSING_PROMPT, MODEL_ANALYSIS_ERROR, PROFILE_READ_EMPTY, PROFILE_READ_ERROR, PROFILE_SAVE_ERROR, TEXT_DIR_EMPTY, TEXT_DIR_MISSING
 
 

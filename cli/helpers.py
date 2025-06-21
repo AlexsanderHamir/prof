@@ -6,7 +6,7 @@ import subprocess
 import sys
 import time
 from typing import Dict, List, Optional, Tuple, Set, Any
-from CONFIG.config_manager import ConfigManager
+from config.config_manager import ConfigManager
 from dataclasses import dataclass
 
 from exit_codes import BENCHMARK_DIRECTORY_UNEXPECTED_ERROR, BENCHMARK_FILE_UNEXPECTED_ERROR, CONFIG_PARSING_ERROR, EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR, EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST, EXIT_CODE_MODULE_ERROR, EXIT_CODE_TEMPLATE_ERROR, PROFILE_FILE_INVALID_HEADER, PROFILE_FILE_MISSING, PROFILE_FILE_UNEXPECTED_ERROR
@@ -91,17 +91,17 @@ def parse_and_load_benchmark_config(args) -> Tuple[List[str], List[str], Dict[st
     validate_list_arguments(args.benchmarks, args.profiles)
     benchmarks = parse_list_argument(args.benchmarks)
     profiles = parse_list_argument(args.profiles)
-    benchmark_configs = filter_configs(benchmarks)
+    benchmark_filters = filter_configs(benchmarks)
 
-    return benchmarks, profiles, benchmark_configs
+    return benchmarks, profiles, benchmark_filters
 
 
 def filter_configs(benchmarks: List[str]) -> Dict[str, Dict[str, Any]]:
     config = ConfigManager.get_config()
     function_filter_configs: Dict[str, Dict[str, Any]] = {}
     for benchmark in benchmarks:
-        if benchmark in config.benchmark_configs:
-            bench_config = config.benchmark_configs[benchmark]
+        if benchmark in config.benchmark_filters:
+            bench_config = config.benchmark_filters[benchmark]
             function_filter_configs[benchmark] = {"prefixes": bench_config.prefixes, "ignore": bench_config.ignore}
 
     return function_filter_configs
