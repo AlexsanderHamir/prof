@@ -47,7 +47,7 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBenc
 
 ### Real-World Benefits
 
-- **Save Hours**: What takes 30+ minutes manually becomes a 30-second command
+- **Save Hours**: What takes 30+ minutes manually of annoying back and forth work becomes a single command of a couple seconds
 - **Never Miss Data**: Automatic collection ensures you have all the profiling information you need
 - **Track Progress**: Tagged directories and description files help you document performance improvements
 - **Team Collaboration**: Organized, searchable results make it easy to share findings with your team
