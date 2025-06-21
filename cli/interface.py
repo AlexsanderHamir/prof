@@ -1,7 +1,7 @@
 import argparse
 import sys
 from AI_client import analyze_profiles
-from config_manager import ConfigManager
+from config.config_manager import ConfigManager
 from exit_codes import EXIT_CODE_MISSING_ARGUMENTS
 from cli.cli_helpers import (parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_directories, config_setup)
 

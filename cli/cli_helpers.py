@@ -6,7 +6,7 @@ import subprocess
 import sys
 import time
 from typing import Dict, List, Optional, Tuple, Set, Any
-from config_manager import ConfigManager
+from config.config_manager import ConfigManager
 from dataclasses import dataclass
 
 from exit_codes import BENCHMARK_DIRECTORY_UNEXPECTED_ERROR, BENCHMARK_FILE_UNEXPECTED_ERROR, CONFIG_PARSING_ERROR, EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR, EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST, EXIT_CODE_MODULE_ERROR, EXIT_CODE_TEMPLATE_ERROR, PROFILE_FILE_INVALID_HEADER, PROFILE_FILE_MISSING, PROFILE_FILE_UNEXPECTED_ERROR
