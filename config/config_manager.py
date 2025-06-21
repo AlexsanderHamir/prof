@@ -14,7 +14,6 @@ from config.helpers import (
     load_config_from_file,
     create_config_from_data,
     print_template_creation_info,
-    print_validation_progress,
 )
 
 

@@ -25,7 +25,7 @@ class BenchmarkParamsWrapper:
 
 
 @dataclass
-class ProfileAnalysisConfig:
+class ProfileFilter:
     function_prefixes: List[str]
     ignore_functions: Set[str]
 
@@ -291,7 +291,7 @@ def process_profiles(benchmark: str, profiles: List[str], tag: str) -> None:
             sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
 
 
-def get_profile_analysis_config(benchmark: str, function_filter_configs: Dict[str, Dict[str, Any]]) -> ProfileAnalysisConfig:
+def get_profile_analysis_config(benchmark: str, function_filter_configs: Dict[str, Dict[str, Any]]) -> ProfileFilter:
 
     config = function_filter_configs.get(benchmark, {})
     prefixes = config.get("prefixes", [])
@@ -299,7 +299,7 @@ def get_profile_analysis_config(benchmark: str, function_filter_configs: Dict[st
         prefixes = []
     ignore_str = config.get("ignore", "")
     ignore_functions = set(parse_list_argument(ignore_str)) if ignore_str else set()
-    return ProfileAnalysisConfig(function_prefixes=prefixes, ignore_functions=ignore_functions)
+    return ProfileFilter(function_prefixes=prefixes, ignore_functions=ignore_functions)
 
 
 def get_profile_paths(tag: str, benchmark: str, profile: str) -> ProfilePaths:
@@ -327,7 +327,7 @@ def extract_function_name(line: str, function_prefixes: List[str], ignore_functi
     return func_name if func_name and func_name not in ignore_functions else None
 
 
-def extract_all_function_names(profile_text_file: Path, config: ProfileAnalysisConfig) -> Set[str]:
+def extract_all_function_names(profile_text_file: Path, config: ProfileFilter) -> Set[str]:
     if not profile_text_file.exists():
         sys.exit(PROFILE_FILE_MISSING)
 
@@ -372,7 +372,7 @@ def extract_single_function_content(func: str, paths: ProfilePaths) -> None:
         sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
 
 
-def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark: str, analysis_config: ProfileAnalysisConfig) -> None:
+def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark: str, analysis_config: ProfileFilter) -> None:
     pprof_profiles = [p for p in profiles if p != "trace"]
 
     for profile in pprof_profiles:
