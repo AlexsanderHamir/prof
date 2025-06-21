@@ -18,7 +18,7 @@ This tool simplifies complex performance analysis by consolidating multiple ppro
 
 [AI Analysis](#ai-analysis)
 
-[Contributing](#contribution)
+[Contribution](#contribution)
 
 [License](#license)
 
@@ -235,7 +235,167 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "test1" -gen
 
 ## Contribution
 
-Bring your skills, share your ideas, and contribute your code.
+We welcome contributions! This section will help you set up your local development environment to contribute to the project.
+
+### Prerequisites
+
+Before setting up your development environment, ensure you have:
+
+- **Python 3.12+** - The project requires Python 3.12.10 or higher
+- **Go 1.21+** - Required for running benchmarks and testing
+- **Git** - For version control
+
+### Local Development Setup
+
+#### 1. Clone the Repository
+
+```bash
+git clone https://github.com/AlexsanderHamir/prof.git
+cd prof
+```
+
+#### 2. Set Up Python Virtual Environment
+
+Create and activate a virtual environment:
+
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+# On macOS/Linux:
+source venv/bin/activate
+# On Windows:
+# venv\Scripts\activate
+```
+
+#### 3. Install Dependencies
+
+Install the required Python packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+#### 4. Set Up Local Testing
+
+Make the `prof` script executable and create a local alias for testing:
+
+```bash
+# Make the script executable
+chmod +x prof
+
+# Create a local alias (optional, for easier testing), example:
+alias profDev="/Users/alexsandergomes/Documents/prof_AI/prof"
+```
+
+#### 5. Verify Installation
+
+Test that everything is working:
+
+```bash
+# Test the command
+profDev
+
+# You should see: "Error: Missing required arguments:" - this means it's working!
+```
+
+### Development Workflow
+
+#### Running Tests
+
+The project includes end-to-end tests to ensure functionality:
+
+```bash
+# Run all tests
+pytest
+
+# Run tests with verbose output
+pytest -v
+
+# Run specific test file
+pytest tests/e2e/benchmark_test.py
+```
+
+#### Testing Locally
+
+To test the profiler locally, run the `profDev` command in any golang project where the benchmarks are located:
+
+```bash
+profDev -benchmarks "[BenchmarkSimple]" -profiles "[cpu,memory]" -tag "test" -count 1
+```
+
+#### Code Style and Standards
+
+- Follow Python PEP 8 style guidelines
+- Use meaningful variable and function names
+- Add docstrings to functions and classes
+- Write tests for new functionality
+
+**Style Configuration:**
+
+- **Indent width**: 4 spaces (no tabs)
+- **Column limit**: 300 characters
+- **Style**: PEP 8 compliant
+- **Formatter**: YAPF
+
+For Cursor/VS Code users, you can configure your editor with:
+
+```json
+{
+  "[python]": {
+    "editor.formatOnSaveMode": "file",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "eeyore.yapf"
+  },
+  "yapf.args": [
+    "--style",
+    "{based_on_style: pep8, indent_width: 4, column_limit: 300}"
+  ]
+}
+```
+
+#### Making Changes
+
+1. Create a new branch for your feature/fix:
+
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. Make your changes and test them thoroughly
+
+3. Run the test suite to ensure nothing is broken:
+
+   ```bash
+   pytest
+   ```
+
+4. Commit your changes with clear, descriptive commit messages
+
+5. Push your branch and create a pull request
+
+### Project Structure
+
+Understanding the project structure will help you contribute effectively:
+
+```
+prof_AI/
+├── prof                    # Main executable script
+├── cli/                    # Command-line interface modules
+│   ├── interface.py        # Argument parsing and main CLI logic
+│   └── helpers.py          # CLI helper functions
+├── analyzer/               # Profile analysis modules
+│   ├── interface.py        # Analysis interface
+│   └── helpers.py          # Analysis helper functions
+├── config/                 # Configuration management
+│   ├── config_manager.py   # Configuration handling
+│   └── helpers.py          # Config helper functions
+├── tests/                  # Test suite
+│   └── e2e/               # End-to-end tests
+├── requirements.txt        # Python dependencies
+└── install.sh             # Installation script
+```
 
 ## Installation
 

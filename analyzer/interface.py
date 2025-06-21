@@ -4,6 +4,6 @@ from typing import List
 
 def analyze_profiles(tag: str, profile_types: List[str]):
     benchmark_names = validate_benchmark_directories(tag)
-    print(f"Found {len(benchmark_names)} benchmarks and {len(profile_types)} profile types")
+    print(f"Found {len(benchmark_names)} benchmarks and {len(profile_types)} profile types \n")
 
     analyze_all_profiles(tag, benchmark_names, profile_types)
