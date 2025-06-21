@@ -107,25 +107,6 @@ class ConfigManager:
         return cls._config
 
     @classmethod
-    def load(cls) -> Config:
-        if not cls._config_path:
-            raise ConfigurationNotFound()
-        try:
-            config_data = load_config_from_file(cls._config_path)
-            return create_config_from_data(config_data)
-        except ConfigValidationError as e:
-            raise ConfigurationSetupFailed(f"Configuration validation error: {e}")
-        except ConfigFileError as e:
-            raise ConfigurationSetupFailed(f"Configuration file error: {e}")
-        except Exception as e:
-            raise ConfigurationSetupFailed(f"Unexpected error loading configuration: {e}")
-
-    @classmethod
     def get_client(cls) -> OpenAI:
-        config = cls.load()
+        config = cls.get_config()
         return OpenAI(api_key=config.api_key, base_url=config.base_url)
-
-    @classmethod
-    def get_api_key(cls) -> str:
-        config = cls.load()
-        return config.api_key
