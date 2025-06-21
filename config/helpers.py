@@ -5,6 +5,9 @@ from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from exit_codes import CONFIG_VALIDATION_ERROR, MISSING_CONFIG_FILE
 
+REQUIRED_FIELDS = ["api_key", "base_url", "model_config"]
+MODEL_CONFIG_FIELDS = ["model", "max_tokens", "temperature", "top_p", "prompt_location"]
+
 
 @dataclass
 class BenchmarkFilter:
@@ -30,16 +33,14 @@ class Config:
 
 
 def validate_config_structure(config_data: Dict[str, Any]) -> None:
-    required_fields = ["api_key", "base_url", "model_config"]
-    for field in required_fields:
+    for field in REQUIRED_FIELDS:
         if field not in config_data:
             print(f"Missing required field: {field}", file=sys.stderr)
             sys.exit(CONFIG_VALIDATION_ERROR)
 
 
 def validate_model_config(model_config: Dict[str, Any]) -> None:
-    model_config_fields = ["model", "max_tokens", "temperature", "top_p"]
-    for field in model_config_fields:
+    for field in MODEL_CONFIG_FIELDS:
         if field not in model_config:
             print(f"Missing required field in model_config: {field}", file=sys.stderr)
             sys.exit(CONFIG_VALIDATION_ERROR)
