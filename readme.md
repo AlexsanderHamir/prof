@@ -280,7 +280,22 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "test1" -gen
 
 ## Contribution
 
-We welcome contributions! This section will help you set up your local development environment to contribute to the project.
+We welcome contributions of all kinds! Whether you have ideas for new features, improvements to existing functionality, bug reports, or just want to help expand this software - we'd love to hear from you. This project is actively being developed and expanded, and your input is invaluable in making it even better.
+
+### What We're Looking For
+
+- **Feature Ideas**: Have an idea for a new capability? We're excited to hear about it!
+- **Performance Improvements**: Suggestions for making the tool faster or more efficient
+- **UI/UX Enhancements**: Ways to make the tool more user-friendly
+- **Documentation**: Help improve guides, examples, or code comments
+- **Bug Reports**: Found an issue? Let us know so we can fix it
+- **Code Contributions**: Pull requests for new features or fixes
+- **Testing**: Help improve test coverage or add new test cases
+- **Community**: Share how you're using the tool, provide feedback, or help others
+
+### Getting Started
+
+This section will help you set up your local development environment to contribute to the project. We're looking forward to expanding the software with your help!
 
 ### Prerequisites
 
@@ -362,9 +377,9 @@ pytest -v
 pytest tests/e2e/benchmark_test.py
 ```
 
-#### Testing Locally
+#### Testing Manually
 
-To test the profiler locally, run the `profDev` command in any golang project where the benchmarks are located:
+To test the your local changes manually, run the `profDev` command in any golang project where the benchmarks are located:
 
 ```bash
 profDev -benchmarks "[BenchmarkSimple]" -profiles "[cpu,memory]" -tag "test" -count 1
