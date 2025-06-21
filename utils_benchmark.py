@@ -9,52 +9,7 @@ from typing import Dict, List, Optional, Tuple, Set, Any
 from config_manager import ConfigManager
 from dataclasses import dataclass
 
-from exit_codes import BENCHMARK_DIRECTORY_UNEXPECTED_ERROR, BENCHMARK_FILE_UNEXPECTED_ERROR, CONFIG_PARSING_ERROR, EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR, EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST, EXIT_CODE_MODULE_ERROR, PROFILE_FILE_INVALID_HEADER, PROFILE_FILE_MISSING, PROFILE_FILE_UNEXPECTED_ERROR
-
-
-class BenchmarkBaseError(Exception):
-    """Base exception for all benchmark-related errors."""
-    pass
-
-
-class BenchmarkUnexpectedProcessError(BenchmarkBaseError):
-    """Raised when a benchmark process fails and its not a go module error."""
-
-    def __init__(self, message: str = "Benchmark process failed unexpectedly"):
-        super().__init__(message)
-
-
-class BenchmarkTemplateError(BenchmarkBaseError):
-    """Raised when the --create-template flag is not provided but the setup command is called."""
-
-    def __init__(self, message: str = "Please use --create-template to create a configuration template"):
-        super().__init__(message)
-
-
-class BenchmarkDirectoryError(BenchmarkBaseError):
-    """Raised when there is an error with benchmark directory operations."""
-
-    def __init__(self, message: str = "Error with benchmark directory operations"):
-        super().__init__(message)
-
-
-class BenchmarkSubprocessError(BenchmarkBaseError):
-    """Raised when a subprocess (e.g., pprof, go test) fails."""
-    pass
-
-
-class BenchmarkFileError(BenchmarkBaseError):
-    """Raised when a file operation fails in the benchmark pipeline."""
-
-    def __init__(self, message: str = "Error with benchmark file operations"):
-        super().__init__(message)
-
-
-class BenchmarkModuleError(BenchmarkBaseError):
-
-    def __init__(self, message: str = "Go module error"):
-        super().__init__(message)
-
+from exit_codes import BENCHMARK_DIRECTORY_UNEXPECTED_ERROR, BENCHMARK_FILE_UNEXPECTED_ERROR, CONFIG_PARSING_ERROR, EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR, EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST, EXIT_CODE_MODULE_ERROR, EXIT_CODE_TEMPLATE_ERROR, PROFILE_FILE_INVALID_HEADER, PROFILE_FILE_MISSING, PROFILE_FILE_UNEXPECTED_ERROR
 
 PROFILE_FLAGS: Dict[str, str] = {"cpu": "-cpuprofile=cpu.out", "memory": "-memprofile=memory.out", "mutex": "-mutexprofile=mutex.out", "trace": "-trace=trace.out"}
 
@@ -450,7 +405,7 @@ def setup_command(args):
         ConfigManager.create_template(args.output_path)
         print("\nTemplate configuration file created successfully!")
     else:
-        raise BenchmarkTemplateError()
+        sys.exit(EXIT_CODE_TEMPLATE_ERROR)
 
 
 def validate_required_args(args) -> bool:

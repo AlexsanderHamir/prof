@@ -2,8 +2,8 @@ import argparse
 import sys
 from AI_client import analyze_profiles
 from config_manager import ConfigManager
-from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_TEMPLATE_ERROR
-from utils_benchmark import (BenchmarkTemplateError, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_command, setup_directories, config_setup)
+from exit_codes import EXIT_CODE_MISSING_ARGUMENTS
+from utils_benchmark import (parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_directories, config_setup)
 
 
 def create_parser():
@@ -48,10 +48,3 @@ def handle_benchmarks(args) -> None:
     if args.flag_profiles:
         ConfigManager.is_flagging = True
         analyze_profiles(args.tag, profiles)
-
-
-def setup(args) -> None:
-    try:
-        setup_command(args)
-    except BenchmarkTemplateError:
-        sys.exit(EXIT_CODE_TEMPLATE_ERROR)

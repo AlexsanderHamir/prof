@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 import sys
-from cli import (parse_arguments, handle_benchmarks, setup)
+from cli import (parse_arguments, handle_benchmarks)
 from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_UNEXPECTED_ERROR
-from utils_benchmark import (validate_required_args)
+from utils_benchmark import (setup_command, validate_required_args)
 
 
 def main():
     try:
         args = parse_arguments()
         if args.command == "setup":
-            setup(args)
+            setup_command(args)
             return
 
         if args.command is None and validate_required_args(args):
