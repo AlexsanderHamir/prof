@@ -85,7 +85,7 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBenc
    All the profiling data is saved to your workspace, making it easy to search. Instead of running multiple commands to inspect different functions, just use Command + P (in VSCode or similar editors) and search by function name.
 
 4. **AI Analysis**
-   Each profile is analyzed using AI with data extracted from `go tool pprof profile.out top` (including all nodes). There are no default prompts — you provide your own prompt to guide and customize the analysis output.
+   Each profile is analyzed using AI with data extracted from `go tool pprof profile.out top` (including all nodes). There are no default prompts — you must provide your own prompt to guide and customize the analysis output.
 
 ## Usage
 
@@ -144,6 +144,7 @@ bench/
     │       ├── BenchmarkSyncPool_cpu.txt
     │       ├── BenchmarkSyncPool_memory.txt
     │       └── BenchmarkSyncPool_mutex.txt
+    ├── AI/              # AI analysis results
     └── description.txt  # A file for you to describe what you're doing, what has changed and how it impacted performance.
 ```
 
@@ -214,38 +215,13 @@ The `benchmark_configs` section lets you customize analysis for each benchmark:
 1. **Prefixes**:
 
    - List of package prefixes to include in the analysis
-   - Only functions from these packages will be analyzed in detail
-   - Helps focus the analysis on relevant code
    - Example: `"github.com/your-project/core"`
 
 2. **Ignore**:
    - Comma-separated list of function names to exclude
-   - Useful for excluding setup/teardown code
    - Example: `"init,TestMain,BenchmarkMain,setup,teardown"`
 
 ### Example Use Cases:
-
-1. **Basic Configuration**:
-
-```json
-{
-  "api_key": "your-api-key-here",
-  "base_url": "https://api.openai.com/v1",
-  "model_config": {
-    "model": "gpt-4-turbo-preview",
-    "max_tokens": 4096,
-    "temperature": 0.7
-  },
-  "benchmark_configs": {
-    "BenchmarkMyFunction": {
-      "prefixes": ["github.com/myproject"],
-      "ignore": "init,TestMain"
-    }
-  }
-}
-```
-
-2. **Advanced Configuration** (Multiple Benchmarks):
 
 ```json
 {
