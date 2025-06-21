@@ -149,7 +149,7 @@ bench/
 
 ## Output Examples
 
-Want to see what the output looks like before running the tool? Check out the `output_example/bench/` directory in this repository, which contains real examples of the output.
+Want to see what the output looks like before running the tool? Check out the [`output_example/bench/`](output_example/bench/) directory in this repository, which contains real examples of the output.
 
 The directory includes two different benchmark runs with different tag names:
 
