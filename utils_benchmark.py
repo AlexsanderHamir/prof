@@ -261,6 +261,7 @@ def run_benchmark(benchmark: str, profiles: List[str], count: int, tag: str) -> 
     print(f"Completed benchmark: {config.benchmark_name}")
 
 
+# TODO: space for improvement.
 def wait_for_profile_file(profile_file: Path, timeout: int = 5) -> bool:
     start_time = time.time()
     while time.time() - start_time < timeout:
@@ -502,7 +503,6 @@ def parse_list_argument(arg: str) -> List[str]:
 
 
 def parse_benchmark_config(config_str: str) -> Dict[str, Dict[str, str]]:
-
     try:
         config_str = config_str.replace("'", '"')
         config = json.loads(config_str)
@@ -584,7 +584,6 @@ def move_profile_files(benchmark_name: str, profiles: List[str], bin_dir: Path) 
 
 
 def move_test_files(benchmark_name: str, bin_dir: Path) -> None:
-
     for item in Path('.').glob('*.test'):
         if not wait_for_profile_file(item):
             print(f"Warning: Test file {item} was not fully written within timeout", file=sys.stderr)

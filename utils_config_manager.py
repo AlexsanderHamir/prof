@@ -8,14 +8,12 @@ from exit_codes import CONFIG_VALIDATION_ERROR, MISSING_CONFIG_FILE
 
 
 class ConfigValidationError(Exception):
-    """Raised when the configuration is invalid."""
 
     def __init__(self, message: str = "Invalid configuration"):
         super().__init__(message)
 
 
 class ConfigFileError(Exception):
-    """Raised when the configuration file is invalid."""
 
     def __init__(self, message: str = "Invalid configuration file"):
         super().__init__(message)

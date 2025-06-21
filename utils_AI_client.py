@@ -3,7 +3,7 @@ import sys
 from typing import Dict, List
 
 from config_manager import Config, ConfigManager
-from exit_codes import BENCHMARK_DIRECTORY_MISSING, EXIT_CODE_UNEXPECTED_ERROR, MISSING_PROMPT, MODEL_ANALYSIS_ERROR, PROFILE_READ_ERROR, PROFILE_SAVE_ERROR, TEXT_DIR_EMPTY, TEXT_DIR_MISSING
+from exit_codes import BENCHMARK_DIRECTORY_MISSING, EXIT_CODE_UNEXPECTED_ERROR, MISSING_PROMPT, MODEL_ANALYSIS_ERROR, PROFILE_READ_EMPTY, PROFILE_READ_ERROR, PROFILE_SAVE_ERROR, TEXT_DIR_EMPTY, TEXT_DIR_MISSING
 
 
 def log_profile_content(content: str, profile_type: str) -> None:
@@ -60,7 +60,7 @@ def read_profile_file(file_path: Path) -> str:
         sys.exit(PROFILE_READ_ERROR)
     if not content:
         print(f"Profile file {file_path} is empty", file=sys.stderr)
-        sys.exit(PROFILE_READ_ERROR)
+        sys.exit(PROFILE_READ_EMPTY)
 
     return content
 
@@ -136,26 +136,12 @@ def get_file_path(tag: str, benchmark_name: str, profile_type: str) -> Path:
     if ConfigManager.is_flagging:
         return Path("bench") / tag / "text" / benchmark_name / f"{benchmark_name}_{profile_type}.txt"
 
-    # Create the directory structure
     analysis_dir = Path("bench") / tag / "AI" / "generalistic" / benchmark_name
     analysis_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create the analysis file
     analysis_file = analysis_dir / f"generalistic_analysis_{profile_type}.txt"
 
     return analysis_file
-
-
-def get_default_prompt(template_name: str) -> str:
-    """Get a default prompt template if none is provided in config."""
-    template_dir = Path(__file__).parent / "prompts"
-    template_file = template_dir / f"{template_name}.txt"
-
-    if not template_file.exists():
-        raise ValueError(f"Default prompt template not found: {template_file}")
-
-    with open(template_file, 'r') as f:
-        return f.read().strip()
 
 
 def get_user_prompt(config: Config) -> str:
@@ -220,29 +206,3 @@ def analyze_all_profiles(tag: str, benchmark_names: List[str], profile_types: Li
         for profile_type in profile_types:
             print(f"\nAnalyzing {benchmark} ({profile_type})...")
             send_to_model(tag, benchmark, profile_type)
-
-
-def validate_benchmark_directory(tag: str) -> Path:
-    base_dir = Path("bench") / tag
-    if not base_dir.exists():
-        raise ValueError(f"No benchmark data found for tag '{tag}'")
-    return base_dir
-
-
-def get_benchmark_names(text_dir: Path) -> List[str]:
-    benchmark_names = [d.name for d in text_dir.iterdir() if d.is_dir()]
-    if not benchmark_names:
-        raise ValueError(f"No benchmark directories found in {text_dir}")
-    return benchmark_names
-
-
-def get_profile_types(text_dir: Path, benchmark_name: str) -> List[str]:
-    benchmark_dir = text_dir / benchmark_name
-    if not benchmark_dir.exists():
-        raise ValueError(f"No benchmark directory found: {benchmark_dir}")
-
-    profile_files = list(benchmark_dir.glob(f"{benchmark_name}_*.txt"))
-    if not profile_files:
-        raise ValueError(f"No profile files found for {benchmark_name}")
-
-    return [f.stem.split('_', 1)[1] for f in profile_files]
