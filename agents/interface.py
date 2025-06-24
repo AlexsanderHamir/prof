@@ -30,4 +30,6 @@ def multi_agent_analysis(tag: str, profile_types: List[str]):
                 },
             ]
 
-            print(messages)
+            # write messages to a file messages.txt in the root of the project
+            with open(f"{benchmark}_{profile_type}_messages.txt", "w") as f:
+                f.write(str(messages))

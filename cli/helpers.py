@@ -310,7 +310,6 @@ def get_profile_paths(tag: str, benchmark: str, profile: str) -> ProfilePaths:
 
 
 def extract_function_name(line: str, function_prefixes: List[str], ignore_functions: Set[str]) -> Optional[str]:
-
     parts = line.split()
     if len(parts) < 6:
         return None

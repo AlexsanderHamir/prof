@@ -159,7 +159,7 @@ def get_user_prompt(config: Config) -> str:
 
 
 def _format_profile_info(benchmark_name: str, profile_type: str, profile_content: str) -> str:
-    return (f"Benchmark: {benchmark_name}\n"
+    return (f"BenchmarkName: {benchmark_name}\n"
             f"Profile Type: {profile_type}\n\n"
             f"Profile Content: {profile_content}")
 
