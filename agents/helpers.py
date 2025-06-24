@@ -4,7 +4,6 @@ from pathlib import Path
 import re
 import sys
 from typing import Dict, List, Set
-
 from exit_codes import PROFILE_FILE_INVALID_HEADER, PROFILE_FILE_MISSING, PROFILE_FILE_UNEXPECTED_ERROR
 
 
@@ -68,7 +67,7 @@ def extract_all_function_names(profile_text_file: Path) -> Set[str]:
         sys.exit(PROFILE_FILE_UNEXPECTED_ERROR)
 
 
-def group_similar_prefixes(prefixes: Set[str], depth: int = 2) -> Dict[str, List[str]]:
+def group_similar_prefixes(prefixes: Set[str], depth: int = 1) -> Dict[str, List[str]]:
     grouped = defaultdict(list)
     for s in prefixes:
         parts = re.split(r'[./]', s)
@@ -77,5 +76,28 @@ def group_similar_prefixes(prefixes: Set[str], depth: int = 2) -> Dict[str, List
     return grouped
 
 
-def reduce_prefixes(prefixes: Dict[str, List[str]]) -> Dict[str, List[str]]:
-    pass
+def longest_common_prefix_groups(groups: Dict[str, List[str]]) -> Set[str]:
+
+    def common_prefix(paths: List[str]) -> str:
+        if not paths:
+            return ""
+        split_paths = [re.split(r'[./]', p) for p in paths]
+        min_len = min(len(p) for p in split_paths)
+        result = []
+        for i in range(min_len):
+            tokens = {p[i] for p in split_paths}
+            if len(tokens) == 1:
+                result.append(tokens.pop())
+            else:
+                break
+        return ".".join(result)
+
+    return {common_prefix(group) for group in groups.values()}
+
+
+def compress_profile_content(file_path: Path) -> None:
+    prefixes = extract_all_function_names(file_path)
+    print(prefixes)
+    grouped_prefixes = group_similar_prefixes(prefixes, depth=1)
+    longest_common_prefixes = longest_common_prefix_groups(grouped_prefixes)
+    print(longest_common_prefixes)
