@@ -1,6 +1,3 @@
-"""
-Version management for the prof package.
-"""
 import json
 import urllib.request
 from typing import Optional, Tuple
