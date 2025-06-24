@@ -186,6 +186,7 @@ def send_to_model(tag: str, benchmark_name: str, profile_type: str) -> None:
                 "content": profile_info
             },
         ]
+
         analysis = request_model_analysis(messages, config)
         save_analysis(tag, benchmark_name, profile_type, analysis)
         print(f"Successfully analyzed and saved results for {context}")
