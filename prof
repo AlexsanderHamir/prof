@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import sys
 from cli.interface import (parse_arguments, handle_benchmarks, handle_version)
-from exit_codes import EXIT_CODE_MISSING_ARGUMENTS, EXIT_CODE_UNEXPECTED_ERROR
-from cli.helpers import (setup_command, validate_required_args)
+from exit_codes import EXIT_CODE_UNEXPECTED_ERROR
+from cli.helpers import setup_command
 
 
 def main():
@@ -17,10 +17,7 @@ def main():
             setup_command(args)
             return
 
-        if args.command is None and validate_required_args(args):
-            handle_benchmarks(args)
-        else:
-            sys.exit(EXIT_CODE_MISSING_ARGUMENTS)
+        handle_benchmarks(args)
     except Exception:
         sys.exit(EXIT_CODE_UNEXPECTED_ERROR)
 

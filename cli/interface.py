@@ -3,7 +3,7 @@ from agents.interface import multi_agent_analysis
 from analyzer.interface import analyze_profiles
 from config.config_manager import ConfigManager
 from exit_codes import EXIT_CODE_MISSING_ARGUMENTS
-from cli.helpers import (create_parser, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_directories, config_setup)
+from cli.helpers import (create_parser, parse_and_load_benchmark_config, print_configuration, run_benchmarks_and_process_profiles, setup_directories, config_setup, validate_required_args)
 from version import format_version_output, check_version
 
 
@@ -24,8 +24,10 @@ def parse_arguments():
 
 
 def handle_benchmarks(args) -> None:
-    config_setup()
+    if args.command or not validate_required_args(args):
+        sys.exit(EXIT_CODE_MISSING_ARGUMENTS)
 
+    config_setup()
     benchmarks, profiles, function_filter_configs = parse_and_load_benchmark_config(args)
     setup_directories(args.tag, benchmarks, profiles)
     print_configuration(benchmarks, profiles, args.tag, args.count, function_filter_configs)
