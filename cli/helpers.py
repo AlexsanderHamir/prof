@@ -39,15 +39,7 @@ class ProfilePaths:
 
 
 def config_setup():
-    paths = [Path.cwd() / "config_template.json"]
-    if ConfigManager._config_path:
-        paths.append(ConfigManager._config_path)
-
-    for path in paths:
-        if path.exists():
-            print(f"\nFound config_template.json at {path}. Attempting automatic setup...")
-
-    ConfigManager.setup_from_file(path)
+    ConfigManager.setup_from_file(Path.cwd() / "config_template.json")
     print("Automatic configuration completed successfully!")
 
 

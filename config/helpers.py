@@ -62,6 +62,49 @@ def validate_benchmark_configs(benchmark_filters: Dict[str, Any]) -> None:
             sys.exit(CONFIG_VALIDATION_ERROR)
 
 
+def fail(msg: str) -> None:
+    print(f"[config error] {msg}", file=sys.stderr)
+    sys.exit(CONFIG_VALIDATION_ERROR)
+
+
+def validate_ai_config(ai_config: Dict[str, Any]) -> None:
+    if not ai_config:
+        fail("ai_config is required")
+
+    all_benchmarks = ai_config.get("all_benchmarks", True)
+    all_profiles = ai_config.get("all_profiles", True)
+    specific_benchmarks = ai_config.get("specific_benchmarks", [])
+    specific_profiles = ai_config.get("specific_profiles", [])
+    per_benchmark_config = ai_config.get("per_benchmark_config", {})
+    universal_profile_filter = ai_config.get("universal_profile_filter")
+
+    if all_benchmarks and all_profiles:
+        if specific_benchmarks:
+            fail("When all_benchmarks and all_profiles are both True, specific_benchmarks must be empty")
+        if specific_profiles:
+            fail("When all_benchmarks and all_profiles are both True, specific_profiles must be empty")
+        if per_benchmark_config:
+            fail("When all_benchmarks and all_profiles are both True, per_benchmark_config must be empty")
+
+    if not all_benchmarks and not (specific_benchmarks or per_benchmark_config):
+        fail("When all_benchmarks is False, provide specific_benchmarks or per_benchmark_config")
+
+    if not all_profiles and not (specific_profiles or per_benchmark_config):
+        fail("When all_profiles is False, provide specific_profiles or per_benchmark_config")
+
+    if bool(specific_benchmarks) != bool(specific_profiles):
+        fail("specific_benchmarks and specific_profiles must both be set or both be empty")
+
+    if per_benchmark_config and (specific_benchmarks or specific_profiles):
+        fail("When per_benchmark_config exists, specific_benchmarks and specific_profiles must be empty")
+
+    if universal_profile_filter:
+        if not isinstance(universal_profile_filter, dict):
+            fail("universal_profile_filter must be a dictionary")
+        if "profile_values" not in universal_profile_filter:
+            fail("universal_profile_filter must contain 'profile_values'")
+
+
 def create_config_template() -> Dict[str, Any]:
     return {
         "api_key": "your-api-key-here",
@@ -93,6 +136,31 @@ def create_config_template() -> Dict[str, Any]:
                 ]
             },
         },
+        "ai_config": {
+            "all_benchmarks": True,
+            "all_profiles": True,
+            "universal_profile_filter": {
+                "profile_values": {
+                    "flat": 0.1,
+                    "flat%": 0.1,
+                    "sum%": 0.1,
+                    "cum": 0.1,
+                    "cum%": 0.1,
+                },
+                "ignore_functions": ["init", "TestMain", "BenchmarkMain"],
+                "ignore_prefixes": ["github.com/example/GenPool", "github.com/example/GenPool/internal", "github.com/example/GenPool/pkg"],
+            },
+            "specific_benchmarks": ["BenchmarkGenPool", "BenchmarkSyncPool"],
+            "specific_profiles": ["cpu", "mem"],
+            "per_benchmark_config": {
+                "BenchmarkGenPool": {
+                    "specific_profiles": ["cpu", "mem", "mutex"],
+                },
+                "BenchmarkSyncPool": {
+                    "specific_profiles": ["cpu", "mem"],
+                }
+            }
+        }
     }
 
 

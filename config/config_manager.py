@@ -6,6 +6,7 @@ from openai import OpenAI
 from exit_codes import EXIT_CODE_UNEXPECTED_ERROR, MISSING_CONFIG_FILE
 from config.helpers import (
     Config,
+    validate_ai_config,
     validate_config_structure,
     validate_model_config,
     validate_benchmark_configs,
@@ -19,7 +20,6 @@ from config.helpers import (
 
 class ConfigManager:
     _config: Optional[Config] = None
-    _config_path: Optional[Path] = None
     is_flagging: bool = False
 
     @staticmethod
@@ -29,7 +29,6 @@ class ConfigManager:
         template_path.parent.mkdir(parents=True, exist_ok=True)
 
         save_template_to_file(template, template_path)
-        ConfigManager._config_path = template_path
 
         print_template_creation_info(template_path)
 
@@ -47,7 +46,8 @@ class ConfigManager:
 
             validate_benchmark_configs(config_data["benchmark_configs"])
 
-            cls._config_path = config_path
+            validate_ai_config(config_data.get("ai_config", {}))
+
             cls._config = create_config_from_data(config_data)
         except Exception as e:
             print(f"Unexpected error during configuration setup: {e}", file=sys.stderr)
