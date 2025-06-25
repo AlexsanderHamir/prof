@@ -1,7 +1,13 @@
 # Exclude files from releases
-output_example/** export-ignore
 .github/** export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+
 venv/** export-ignore
 install.sh export-ignore
+
 LICENSE export-ignore
 *.md export-ignore
+
+output_example/** export-ignore
+tests/** export-ignore
