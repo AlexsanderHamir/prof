@@ -100,7 +100,7 @@ def collect_text_profiles(base_dir: Path, benchmark_name: str) -> List[str]:
     return collect_profile_content(text_dir)
 
 
-def read_profile_text_file(file_path: str) -> str:
+def read_profile_text_file(file_path: str, profile_type: str) -> str:
     config = ConfigManager.get_config()
 
     profile_values = config.ai_config.universal_profile_filter.profile_values
@@ -115,15 +115,13 @@ def read_profile_text_file(file_path: str) -> str:
         4: profile_values.cum_percent,
     }
 
+    header_index = 6 if profile_type == "cpu" else 5
     try:
         with open(file_path, 'r') as f:
             content = f.readlines()
-            header = [line.strip() for line in content[:6]]
-            body = [line.strip() for line in content[6:] if should_keep_line(line.strip(), profile_values_dict, ignore_functions, ignore_prefixes)]
+            header = [line.strip() for line in content[:header_index]]
+            body = [line.strip() for line in content[header_index:] if should_keep_line(line.strip(), profile_values_dict, ignore_functions, ignore_prefixes)]
             filtered_content = header + body
-
-            print(filtered_content)
-            sys.exit(0)  # TODO: remove this when done
             return "\n".join(filtered_content)
     except OSError as e:
         print(f"Cannot read profile file {file_path}: {e}", file=sys.stderr)
@@ -136,7 +134,7 @@ def get_benchmark_file(tag: str, benchmark_name: str, profile_type: str) -> Dict
     profile_file = text_dir / f"{benchmark_name}_{profile_type}.txt"
 
     return {
-        "text_content": read_profile_text_file(str(profile_file)),
+        "text_content": read_profile_text_file(str(profile_file), profile_type),
     }
 
 
