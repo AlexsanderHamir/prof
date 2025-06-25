@@ -3,6 +3,8 @@ from pathlib import Path
 import sys
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
+
+from config.utils import check_benchmark_profile_logic, fail, validate_string_list, validate_universal_profile_filter
 from exit_codes import CONFIG_VALIDATION_ERROR, MISSING_CONFIG_FILE
 
 REQUIRED_FIELDS = ["api_key", "base_url", "model_config"]
@@ -104,11 +106,6 @@ def validate_benchmark_configs(benchmark_filters: Dict[str, Any]) -> None:
             sys.exit(CONFIG_VALIDATION_ERROR)
 
 
-def fail(msg: str) -> None:
-    print(f"[config error] {msg}", file=sys.stderr)
-    sys.exit(CONFIG_VALIDATION_ERROR)
-
-
 def validate_ai_config(ai_config: Dict[str, Any]) -> None:
     if not ai_config:
         fail("ai_config is required")
@@ -119,33 +116,16 @@ def validate_ai_config(ai_config: Dict[str, Any]) -> None:
     specific_profiles = ai_config.get("specific_profiles", [])
     universal_profile_filter = ai_config.get("universal_profile_filter")
 
-    if all_benchmarks and all_profiles:
-        if specific_benchmarks or specific_profiles:
-            fail("When all_benchmarks and all_profiles are both True, specific_benchmarks and specific_profiles must be empty")
+    check_benchmark_profile_logic(all_benchmarks, all_profiles, specific_benchmarks, specific_profiles)
 
-    if not all_benchmarks and not specific_benchmarks:
-        fail("When all_benchmarks is False, provide specific_benchmarks")
+    if specific_benchmarks:
+        validate_string_list(specific_benchmarks, "specific_benchmarks")
 
-    if not all_profiles and not specific_profiles:
-        fail("When all_profiles is False, provide specific_profiles")
+    if specific_profiles:
+        validate_string_list(specific_profiles, "specific_profiles")
 
     if universal_profile_filter:
-        if not isinstance(universal_profile_filter, dict):
-            fail("universal_profile_filter must be a dictionary")
-        if "profile_values" not in universal_profile_filter:
-            fail("universal_profile_filter must contain 'profile_values'")
-
-        # Validate profile_values structure
-        profile_values = universal_profile_filter["profile_values"]
-        if not isinstance(profile_values, dict):
-            fail("profile_values must be a dictionary")
-
-        required_profile_fields = ["flat", "flat%", "sum%", "cum", "cum%"]
-        for field in required_profile_fields:
-            if field not in profile_values:
-                fail(f"profile_values must contain '{field}'")
-            if not isinstance(profile_values[field], (int, float)):
-                fail(f"profile_values '{field}' must be a number")
+        validate_universal_profile_filter(universal_profile_filter)
 
 
 def create_config_template(model_config_override: Optional[Dict[str, Any]] = None, benchmark_configs_override: Optional[Dict[str, Any]] = None, ai_config_override: Optional[Dict[str, Any]] = None, global_override: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -251,7 +231,3 @@ def print_template_creation_info(template_path: Path) -> None:
     print("  - ignore: Optional comma-separated list of functions to exclude from analysis")
     print("\nPlease edit this file with your configuration and run:")
     print("  prof setup --config path/to/your/config.json")
-
-
-def print_validation_progress(message: str, *args, **kwargs) -> None:
-    print(f"\n{message.format(*args, **kwargs) if args or kwargs else message}")
