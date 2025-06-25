@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 
 def filter_by_ignore_functions(ignore_functions_set: Set[str], parts: List[str]) -> bool:
@@ -55,3 +55,21 @@ def filter_by_ignore_prefixes(ignore_prefixes_set: Set[str], parts: List[str]) -
             return False
 
     return True
+
+
+def extract_function_name(line: str, function_prefixes: List[str], ignore_functions: Set[str]) -> Optional[str]:
+    parts = line.split()
+    if len(parts) < 6:
+        return None
+
+    func_name = " ".join(parts[5:])
+
+    if function_prefixes and not any(prefix in func_name for prefix in function_prefixes):
+        return None
+
+    match = re.search(r'\.([^.(]+)(?:\([^)]*\))?$', func_name)
+    if not match:
+        return None
+
+    func_name = match.group(1).strip().replace(" ", "")
+    return func_name if func_name and func_name not in ignore_functions else None

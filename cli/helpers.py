@@ -6,11 +6,13 @@ import shutil
 import subprocess
 import sys
 import time
-from typing import Dict, List, Optional, Tuple, Set, Any
+from typing import Any, Dict, List, Optional, Tuple
 from config.config_manager import ConfigManager
 from dataclasses import dataclass
 
-from exit_codes import BENCHMARK_DIRECTORY_UNEXPECTED_ERROR, BENCHMARK_FILE_UNEXPECTED_ERROR, CONFIG_PARSING_ERROR, EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR, EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST, EXIT_CODE_MODULE_ERROR, EXIT_CODE_TEMPLATE_ERROR, PROFILE_FILE_INVALID_HEADER, PROFILE_FILE_MISSING, PROFILE_FILE_UNEXPECTED_ERROR
+from exit_codes import BENCHMARK_DIRECTORY_UNEXPECTED_ERROR, BENCHMARK_FILE_UNEXPECTED_ERROR, CONFIG_PARSING_ERROR, EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR, EXIT_CODE_MISSING_BRACKETS, EXIT_CODE_MISSING_EMPTY_LIST, EXIT_CODE_MODULE_ERROR, EXIT_CODE_TEMPLATE_ERROR, PROFILE_FILE_MISSING, PROFILE_FILE_UNEXPECTED_ERROR
+from parser.interface import extract_all_function_names
+from shared import ProfileFilter
 
 PROFILE_FLAGS: Dict[str, str] = {"cpu": "-cpuprofile=cpu.out", "memory": "-memprofile=memory.out", "mutex": "-mutexprofile=mutex.out", "trace": "-trace=trace.out"}
 
@@ -23,12 +25,6 @@ class BenchmarkParamsWrapper:
     profiles: List[str]
     iteration_count: int
     tag: str
-
-
-@dataclass
-class ProfileFilter:
-    function_prefixes: List[str]
-    ignore_functions: Set[str]
 
 
 @dataclass
@@ -301,69 +297,6 @@ def get_profile_paths(tag: str, benchmark: str, profile: str) -> ProfilePaths:
     return ProfilePaths(profile_text=tag_dir / "text" / benchmark / f"{benchmark}_{profile}.txt", profile_binary=tag_dir / "bin" / benchmark / f"{benchmark}_{profile}.out", output=tag_dir / f"{profile}_functions" / benchmark)
 
 
-def extract_function_name(line: str, function_prefixes: List[str], ignore_functions: Set[str]) -> Optional[str]:
-    parts = line.split()
-    if len(parts) < 6:
-        return None
-
-    func_name = " ".join(parts[5:])
-
-    if function_prefixes and not any(prefix in func_name for prefix in function_prefixes):
-        return None
-
-    match = re.search(r'\.([^.(]+)(?:\([^)]*\))?$', func_name)
-    if not match:
-        return None
-
-    func_name = match.group(1).strip().replace(" ", "")
-    return func_name if func_name and func_name not in ignore_functions else None
-
-
-def extract_all_function_names(profile_text_file: Path, config: ProfileFilter) -> Set[str]:
-    if not profile_text_file.exists():
-        sys.exit(PROFILE_FILE_MISSING)
-
-    functions = set()
-    found_header = False
-
-    try:
-        with open(profile_text_file, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-
-                if "flat  flat%   sum%        cum   cum%" in line:
-                    found_header = True
-                    continue
-
-                if not found_header:
-                    continue
-
-                if func_name := extract_function_name(line, config.function_prefixes, config.ignore_functions):
-                    functions.add(func_name)
-
-        if not found_header:
-            sys.exit(PROFILE_FILE_INVALID_HEADER)
-        return functions
-
-    except Exception:
-        sys.exit(PROFILE_FILE_UNEXPECTED_ERROR)
-
-
-def extract_single_function_content(func: str, paths: ProfilePaths) -> None:
-    output_file = paths.output / f"{func}.txt"
-    cmd = ["go", "tool", "pprof", f"-list={func}", str(paths.profile_binary)]
-
-    try:
-        with open(output_file, 'w') as f:
-            subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, text=True, check=True)
-        print(f"Collected function {func}")
-    except subprocess.CalledProcessError as e:
-        print(f"Error collecting function {func}: {e.stderr}", file=sys.stderr)
-        sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
-
-
 def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark: str, analysis_config: ProfileFilter) -> None:
     pprof_profiles = [p for p in profiles if p != "trace"]
 
@@ -379,6 +312,19 @@ def analyze_benchmark_profile_functions(tag: str, profiles: List[str], benchmark
         except Exception as e:
             print(f"Error analyzing profile functions: {e}", file=sys.stderr)
             sys.exit(PROFILE_FILE_UNEXPECTED_ERROR)
+
+
+def extract_single_function_content(func: str, paths: ProfilePaths) -> None:
+    output_file = paths.output / f"{func}.txt"
+    cmd = ["go", "tool", "pprof", f"-list={func}", str(paths.profile_binary)]
+
+    try:
+        with open(output_file, 'w') as f:
+            subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, text=True, check=True)
+        print(f"Collected function {func}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error collecting function {func}: {e.stderr}", file=sys.stderr)
+        sys.exit(EXIT_CODE_BENCHMARK_PROCESS_UNEXPECTED_ERROR)
 
 
 def print_configuration_error(error_msg: Optional[str] = None) -> None:
