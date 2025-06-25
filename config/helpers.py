@@ -120,19 +120,14 @@ def validate_ai_config(ai_config: Dict[str, Any]) -> None:
     universal_profile_filter = ai_config.get("universal_profile_filter")
 
     if all_benchmarks and all_profiles:
-        if specific_benchmarks:
-            fail("When all_benchmarks and all_profiles are both True, specific_benchmarks must be empty")
-        if specific_profiles:
-            fail("When all_benchmarks and all_profiles are both True, specific_profiles must be empty")
+        if specific_benchmarks or specific_profiles:
+            fail("When all_benchmarks and all_profiles are both True, specific_benchmarks and specific_profiles must be empty")
 
     if not all_benchmarks and not specific_benchmarks:
         fail("When all_benchmarks is False, provide specific_benchmarks")
 
     if not all_profiles and not specific_profiles:
         fail("When all_profiles is False, provide specific_profiles")
-
-    if bool(specific_benchmarks) != bool(specific_profiles):
-        fail("specific_benchmarks and specific_profiles must both be set or both be empty")
 
     if universal_profile_filter:
         if not isinstance(universal_profile_filter, dict):
