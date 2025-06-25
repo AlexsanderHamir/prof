@@ -153,8 +153,8 @@ def validate_ai_config(ai_config: Dict[str, Any]) -> None:
                 fail(f"profile_values '{field}' must be a number")
 
 
-def create_config_template() -> Dict[str, Any]:
-    return {
+def create_config_template(model_config_override: Optional[Dict[str, Any]] = None, benchmark_configs_override: Optional[Dict[str, Any]] = None, ai_config_override: Optional[Dict[str, Any]] = None, global_override: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    config = {
         "api_key": "your-api-key-here",
         "base_url": "https://api.openai.com/v1",
         "model_config": {
@@ -187,8 +187,8 @@ def create_config_template() -> Dict[str, Any]:
         "ai_config": {
             "all_benchmarks": True,
             "all_profiles": True,
-            "specific_benchmarks": ["BenchmarkName", "BenchmarkName2"],
-            "specific_profiles": ["cpu", "mem"],
+            "specific_benchmarks": [],
+            "specific_profiles": [],
             "universal_profile_filter": {
                 "profile_values": {
                     "flat": 0.0,
@@ -202,6 +202,18 @@ def create_config_template() -> Dict[str, Any]:
             },
         }
     }
+
+    # Apply overrides if provided
+    if model_config_override:
+        config["model_config"].update(model_config_override)
+    if benchmark_configs_override:
+        config["benchmark_configs"].update(benchmark_configs_override)
+    if ai_config_override:
+        config["ai_config"].update(ai_config_override)
+    if global_override:
+        config.update(global_override)
+
+    return config
 
 
 def save_template_to_file(template: Dict[str, Any], output_path: Path) -> None:

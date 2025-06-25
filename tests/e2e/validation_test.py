@@ -42,7 +42,7 @@ def test_setup_command():
         with open(config_template_path, "r") as f:
             config = json.load(f)
 
-        expected_keys = {'api_key', 'base_url', 'model_config', 'benchmark_configs'}
+        expected_keys = {'api_key', 'base_url', 'model_config', 'benchmark_configs', 'ai_config'}
         actual_keys = set(config.keys())
         assert actual_keys == expected_keys, f"Expected keys {expected_keys}, but got {actual_keys}"
 
