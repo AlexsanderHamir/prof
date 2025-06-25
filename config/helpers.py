@@ -25,11 +25,72 @@ class ModelConfig:
 
 
 @dataclass
+class ProfileValues:
+    flat: float
+    flat_percent: float
+    sum_percent: float
+    cum: float
+    cum_percent: float
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, float]) -> 'ProfileValues':
+        return cls(flat=data.get("flat", 0.0), flat_percent=data.get("flat%", 0.0), sum_percent=data.get("sum%", 0.0), cum=data.get("cum", 0.0), cum_percent=data.get("cum%", 0.0))
+
+
+@dataclass
+class UniversalProfileFilter:
+    profile_values: ProfileValues
+    ignore_functions: Optional[List[str]] = None
+    ignore_prefixes: Optional[List[str]] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'UniversalProfileFilter':
+        return cls(profile_values=ProfileValues.from_dict(data["profile_values"]), ignore_functions=data.get("ignore_functions"), ignore_prefixes=data.get("ignore_prefixes"))
+
+
+@dataclass
+class PerBenchmarkConfig:
+    specific_profiles: List[str]
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'PerBenchmarkConfig':
+        return cls(specific_profiles=data["specific_profiles"])
+
+
+@dataclass
+class AIConfig:
+    all_benchmarks: bool = True
+    all_profiles: bool = True
+    universal_profile_filter: Optional[UniversalProfileFilter] = None
+    specific_benchmarks: Optional[List[str]] = None
+    specific_profiles: Optional[List[str]] = None
+    per_benchmark_config: Optional[Dict[str, PerBenchmarkConfig]] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'AIConfig':
+        universal_profile_filter = None
+        if data.get("universal_profile_filter"):
+            universal_profile_filter = UniversalProfileFilter.from_dict(data["universal_profile_filter"])
+
+        per_benchmark_config = None
+        if data.get("per_benchmark_config"):
+            per_benchmark_config = {name: PerBenchmarkConfig.from_dict(config) for name, config in data["per_benchmark_config"].items()}
+
+        return cls(all_benchmarks=data.get("all_benchmarks", True),
+                   all_profiles=data.get("all_profiles", True),
+                   universal_profile_filter=universal_profile_filter,
+                   specific_benchmarks=data.get("specific_benchmarks"),
+                   specific_profiles=data.get("specific_profiles"),
+                   per_benchmark_config=per_benchmark_config)
+
+
+@dataclass
 class Config:
     api_key: str
     base_url: str
     model_config: ModelConfig
     benchmark_filters: Dict[str, BenchmarkFilter]
+    ai_config: AIConfig
 
 
 def validate_config_structure(config_data: Dict[str, Any]) -> None:
@@ -104,6 +165,18 @@ def validate_ai_config(ai_config: Dict[str, Any]) -> None:
         if "profile_values" not in universal_profile_filter:
             fail("universal_profile_filter must contain 'profile_values'")
 
+        # Validate profile_values structure
+        profile_values = universal_profile_filter["profile_values"]
+        if not isinstance(profile_values, dict):
+            fail("profile_values must be a dictionary")
+
+        required_profile_fields = ["flat", "flat%", "sum%", "cum", "cum%"]
+        for field in required_profile_fields:
+            if field not in profile_values:
+                fail(f"profile_values must contain '{field}'")
+            if not isinstance(profile_values[field], (int, float)):
+                fail(f"profile_values '{field}' must be a number")
+
 
 def create_config_template() -> Dict[str, Any]:
     return {
@@ -150,13 +223,13 @@ def create_config_template() -> Dict[str, Any]:
                 "ignore_functions": ["init", "TestMain", "BenchmarkMain"],
                 "ignore_prefixes": ["github.com/example/GenPool", "github.com/example/GenPool/internal", "github.com/example/GenPool/pkg"],
             },
-            "specific_benchmarks": ["BenchmarkGenPool", "BenchmarkSyncPool"],
+            "specific_benchmarks": ["BenchmarkName", "BenchmarkName2"],
             "specific_profiles": ["cpu", "mem"],
             "per_benchmark_config": {
-                "BenchmarkGenPool": {
+                "BenchmarkName": {
                     "specific_profiles": ["cpu", "mem", "mutex"],
                 },
-                "BenchmarkSyncPool": {
+                "BenchmarkName2": {
                     "specific_profiles": ["cpu", "mem"],
                 }
             }
@@ -191,6 +264,7 @@ def create_config_from_data(config_data: Dict[str, Any]) -> Config:
         base_url=config_data["base_url"],
         model_config=model_config,
         benchmark_filters=benchmark_filters,
+        ai_config=AIConfig.from_dict(config_data["ai_config"]),
     )
 
 
