@@ -4,6 +4,7 @@ from typing import Dict, List
 
 from config.config_manager import Config, ConfigManager
 from exit_codes import BENCHMARK_DIRECTORY_MISSING, EXIT_CODE_UNEXPECTED_ERROR, MISSING_PROMPT, MODEL_ANALYSIS_ERROR, PROFILE_READ_EMPTY, PROFILE_READ_ERROR, PROFILE_SAVE_ERROR, TEXT_DIR_EMPTY, TEXT_DIR_MISSING
+from parser.interface import should_keep_line
 
 
 def log_profile_content(content: str, profile_type: str) -> None:
@@ -100,9 +101,30 @@ def collect_text_profiles(base_dir: Path, benchmark_name: str) -> List[str]:
 
 
 def read_profile_text_file(file_path: str) -> str:
+    config = ConfigManager.get_config()
+
+    profile_values = config.ai_config.universal_profile_filter.profile_values
+    ignore_functions = config.ai_config.universal_profile_filter.ignore_functions
+    ignore_prefixes = config.ai_config.universal_profile_filter.ignore_prefixes
+
+    profile_values_dict = {
+        0: profile_values.flat,
+        1: profile_values.flat_percent,
+        2: profile_values.sum_percent,
+        3: profile_values.cum,
+        4: profile_values.cum_percent,
+    }
+
     try:
         with open(file_path, 'r') as f:
-            return f.read().strip()
+            content = f.readlines()
+            header = [line.strip() for line in content[:6]]
+            body = [line.strip() for line in content[6:] if should_keep_line(line.strip(), profile_values_dict, ignore_functions, ignore_prefixes)]
+            filtered_content = header + body
+
+            print(filtered_content)
+            sys.exit(0)  # TODO: remove this when done
+            return "\n".join(filtered_content)
     except OSError as e:
         print(f"Cannot read profile file {file_path}: {e}", file=sys.stderr)
         sys.exit(PROFILE_READ_ERROR)
@@ -202,8 +224,9 @@ def analyze_all_profiles(tag: str, benchmark_names: List[str], profile_types: Li
     print(f"Profile types: {', '.join(profile_types)}")
     print("=" * 100)
 
-    profile_types = [profile_type for profile_type in profile_types if "trace" not in profile_type]
     for benchmark in benchmark_names:
         for profile_type in profile_types:
+            if profile_type == "trace":
+                continue
             print(f"\nAnalyzing {benchmark} ({profile_type})...")
             send_to_model(tag, benchmark, profile_type)

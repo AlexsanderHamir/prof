@@ -191,14 +191,14 @@ def create_config_template() -> Dict[str, Any]:
             "specific_profiles": ["cpu", "mem"],
             "universal_profile_filter": {
                 "profile_values": {
-                    "flat": 0.1,
-                    "flat%": 0.1,
-                    "sum%": 0.1,
-                    "cum": 0.1,
-                    "cum%": 0.1,
+                    "flat": 0.0,
+                    "flat%": 0.0,
+                    "sum%": 0.0,
+                    "cum": 0.0,
+                    "cum%": 0.0,
                 },
                 "ignore_functions": ["init", "TestMain", "BenchmarkMain"],
-                "ignore_prefixes": ["github.com/example/GenPool", "github.com/example/GenPool/internal", "github.com/example/GenPool/pkg"],
+                "ignore_prefixes": ["github.com/example/BenchmarkName", "github.com/example/BenchmarkName/internal", "github.com/example/BenchmarkName/pkg"],
             },
         }
     }

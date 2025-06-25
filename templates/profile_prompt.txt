@@ -1,2 +1,0 @@
-Perform a detailed analysis on the profile information being fed to you, don't be reduntant on your analysis, 
-there's no reason to repeat something multiple times, be concise and insightful.
