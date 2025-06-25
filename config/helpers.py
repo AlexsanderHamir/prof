@@ -49,22 +49,12 @@ class UniversalProfileFilter:
 
 
 @dataclass
-class PerBenchmarkConfig:
-    specific_profiles: List[str]
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'PerBenchmarkConfig':
-        return cls(specific_profiles=data["specific_profiles"])
-
-
-@dataclass
 class AIConfig:
     all_benchmarks: bool = True
     all_profiles: bool = True
     universal_profile_filter: Optional[UniversalProfileFilter] = None
     specific_benchmarks: Optional[List[str]] = None
     specific_profiles: Optional[List[str]] = None
-    per_benchmark_config: Optional[Dict[str, PerBenchmarkConfig]] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'AIConfig':
@@ -72,16 +62,7 @@ class AIConfig:
         if data.get("universal_profile_filter"):
             universal_profile_filter = UniversalProfileFilter.from_dict(data["universal_profile_filter"])
 
-        per_benchmark_config = None
-        if data.get("per_benchmark_config"):
-            per_benchmark_config = {name: PerBenchmarkConfig.from_dict(config) for name, config in data["per_benchmark_config"].items()}
-
-        return cls(all_benchmarks=data.get("all_benchmarks", True),
-                   all_profiles=data.get("all_profiles", True),
-                   universal_profile_filter=universal_profile_filter,
-                   specific_benchmarks=data.get("specific_benchmarks"),
-                   specific_profiles=data.get("specific_profiles"),
-                   per_benchmark_config=per_benchmark_config)
+        return cls(all_benchmarks=data.get("all_benchmarks", True), all_profiles=data.get("all_profiles", True), universal_profile_filter=universal_profile_filter, specific_benchmarks=data.get("specific_benchmarks"), specific_profiles=data.get("specific_profiles"))
 
 
 @dataclass
@@ -136,7 +117,6 @@ def validate_ai_config(ai_config: Dict[str, Any]) -> None:
     all_profiles = ai_config.get("all_profiles", True)
     specific_benchmarks = ai_config.get("specific_benchmarks", [])
     specific_profiles = ai_config.get("specific_profiles", [])
-    per_benchmark_config = ai_config.get("per_benchmark_config", {})
     universal_profile_filter = ai_config.get("universal_profile_filter")
 
     if all_benchmarks and all_profiles:
@@ -144,20 +124,15 @@ def validate_ai_config(ai_config: Dict[str, Any]) -> None:
             fail("When all_benchmarks and all_profiles are both True, specific_benchmarks must be empty")
         if specific_profiles:
             fail("When all_benchmarks and all_profiles are both True, specific_profiles must be empty")
-        if per_benchmark_config:
-            fail("When all_benchmarks and all_profiles are both True, per_benchmark_config must be empty")
 
-    if not all_benchmarks and not (specific_benchmarks or per_benchmark_config):
-        fail("When all_benchmarks is False, provide specific_benchmarks or per_benchmark_config")
+    if not all_benchmarks and not specific_benchmarks:
+        fail("When all_benchmarks is False, provide specific_benchmarks")
 
-    if not all_profiles and not (specific_profiles or per_benchmark_config):
-        fail("When all_profiles is False, provide specific_profiles or per_benchmark_config")
+    if not all_profiles and not specific_profiles:
+        fail("When all_profiles is False, provide specific_profiles")
 
     if bool(specific_benchmarks) != bool(specific_profiles):
         fail("specific_benchmarks and specific_profiles must both be set or both be empty")
-
-    if per_benchmark_config and (specific_benchmarks or specific_profiles):
-        fail("When per_benchmark_config exists, specific_benchmarks and specific_profiles must be empty")
 
     if universal_profile_filter:
         if not isinstance(universal_profile_filter, dict):
@@ -212,6 +187,8 @@ def create_config_template() -> Dict[str, Any]:
         "ai_config": {
             "all_benchmarks": True,
             "all_profiles": True,
+            "specific_benchmarks": ["BenchmarkName", "BenchmarkName2"],
+            "specific_profiles": ["cpu", "mem"],
             "universal_profile_filter": {
                 "profile_values": {
                     "flat": 0.1,
@@ -223,16 +200,6 @@ def create_config_template() -> Dict[str, Any]:
                 "ignore_functions": ["init", "TestMain", "BenchmarkMain"],
                 "ignore_prefixes": ["github.com/example/GenPool", "github.com/example/GenPool/internal", "github.com/example/GenPool/pkg"],
             },
-            "specific_benchmarks": ["BenchmarkName", "BenchmarkName2"],
-            "specific_profiles": ["cpu", "mem"],
-            "per_benchmark_config": {
-                "BenchmarkName": {
-                    "specific_profiles": ["cpu", "mem", "mutex"],
-                },
-                "BenchmarkName2": {
-                    "specific_profiles": ["cpu", "mem"],
-                }
-            }
         }
     }
 
