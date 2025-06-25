@@ -570,5 +570,4 @@ def create_parser():
     parser.add_argument('-count', type=int, help='Number of runs')
     parser.add_argument('-general_analyze', action='store_true', help="After benchmarks complete, run general AI analysis on the results")
     parser.add_argument('-flag_profiles', action='store_true', help="Flag the benchmark results for further review or processing")
-    parser.add_argument('-multi_agent_analysis', action='store_true', help="Run multi-agent analysis on the benchmark results")
     return parser

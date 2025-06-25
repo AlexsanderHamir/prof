@@ -1,5 +1,4 @@
 import sys
-from agents.interface import multi_agent_analysis
 from analyzer.interface import analyze_profiles
 from config.config_manager import ConfigManager
 from exit_codes import EXIT_CODE_MISSING_ARGUMENTS
@@ -39,5 +38,3 @@ def handle_benchmarks(args) -> None:
     if args.flag_profiles:
         ConfigManager.is_flagging = True
         analyze_profiles(args.tag, profiles)
-    if args.multi_agent_analysis:
-        multi_agent_analysis(args.tag, profiles)

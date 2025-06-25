@@ -282,8 +282,8 @@ Enable AI analysis by adding the `-general_analyze`, or `-flag_profiles` flag:
 prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "test1" -general_analyze
 ```
 
-1. The `-general_analyze` will create a different file containing the analysis which depends on your prompt.
-2. The `-flag_profiles` will rewrite the `text/Benchmark_profile.txt` file according to your prompt.
+1. The `-general_analyze` will create a file per profile containing the analysis which depends on your prompt.
+2. The `-flag_profiles` will rewrite the profile files (`text/Benchmark_profile.txt`) according to your prompt.
 
 ### Customization
 
