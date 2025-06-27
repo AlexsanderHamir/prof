@@ -9,5 +9,3 @@ __pycache__
 .vscode/
 .DS_Store
 tasks.md
-BenchmarkGenPool_cpu.txt
-current_parsing_output.txt
