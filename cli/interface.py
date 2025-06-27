@@ -6,6 +6,7 @@ from cli.helpers import (create_parser, parse_and_load_benchmark_config, print_c
 from version import format_version_output, check_version
 
 
+
 def handle_version():
     current_version, latest_version = check_version()
     print(format_version_output(current_version, latest_version))
