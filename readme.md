@@ -79,7 +79,7 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBenc
    Collects all the info you would see if you ran `go tool pprof profile.out top` (including all nodes) for each profile you requested.
 
 2. **Line-Level Source Mapping by Default**
-   Collects for all functions in the profile by default. You can limit this by specifying function prefixes to include and specific functions to exclude.
+   Collects all functions in the profile by default. You can limit this by specifying function prefixes to include and specific functions to exclude.
 
 3. **Searchable, File-Based Reports**
    All the profiling data is saved to your workspace, making it easy to search. Instead of running multiple commands to inspect different functions, just use Command + P (in VSCode or similar editors) and search by function name.
@@ -272,27 +272,17 @@ The `benchmark_configs` section lets you customize analysis for each benchmark:
 
 ## AI Analysis
 
-The profiler uses AI to analyze benchmark profiles, providing insights into performance patterns and bottlenecks. Each profile (CPU, memory, mutex) is analyzed individually using data from `text/Benchmark_profile.txt`, with results saved in `bench/tag/AI`.
-
-### Usage
-
-Enable AI analysis by adding the `-general_analyze`, or `-flag_profiles` flag:
-
-```bash
-prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "test1" -general_analyze
-```
-
-1. The `-general_analyze` will create a file per profile containing the analysis which depends on your prompt.
-2. The `-flag_profiles` will rewrite the profile files (`text/Benchmark_profile.txt`) according to your prompt.
+The profiler uses AI to analyze benchmark profiles, providing intelligent insights into performance patterns and bottlenecks. Each profile (CPU, memory, mutex) is analyzed individually using data from `text/Benchmark_profile.txt`, with results saved in `bench/tag/AI`.
 
 ### Customization
 
 1. **Custom Prompts**
 
-   - Set `prompt_location` in your config (file location)
    - Create tailored prompts for specific analysis needs (e.g., performance aspects, baseline comparisons)
+   - Set `prompt_location` in your config (file location)
 
 2. **Model Settings**
+
    ```json
    "model_config": {
        "model": "gpt-4-turbo-preview",
@@ -301,6 +291,162 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "test1" -gen
        "top_p": 1.0
    }
    ```
+
+### Usage
+
+Enable AI analysis by adding the `-general_analyze` or `-flag_profiles` flag:
+
+```bash
+prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "test1" -general_analyze
+```
+
+**Analysis Modes:**
+
+1. **`-general_analyze`**: Creates a separate analysis file per profile containing AI insights based on your custom prompt
+2. **`-flag_profiles`**: Rewrites the original profile files (`text/Benchmark_profile.txt`) with AI-enhanced content according to your prompt
+
+### Configuration
+
+The `ai_config` section in your configuration file controls which benchmarks and profiles are analyzed, as well as how the data is filtered before being sent to the AI.
+
+#### Basic Configuration
+
+```json
+"ai_config": {
+    "all_benchmarks": true,
+    "all_profiles": true,
+    "specific_benchmarks": [],
+    "specific_profiles": [],
+    "universal_profile_filter": {
+        "profile_values": {
+            "flat": 0.0,
+            "flat%": 0.0,
+            "sum%": 0.0,
+            "cum": 0.0,
+            "cum%": 0.0
+        },
+        "ignore_functions": ["init", "TestMain", "BenchmarkMain"],
+        "ignore_prefixes": ["github.com/example/BenchmarkName"]
+    }
+}
+```
+
+#### Configuration Options
+
+**Benchmark and Profile Selection:**
+
+- **`all_benchmarks`** (boolean): When `true`, analyzes all benchmarks found in the tag directory. When `false`, only analyzes benchmarks listed in `specific_benchmarks`
+- **`all_profiles`** (boolean): When `true`, analyzes all profile types (cpu, memory, mutex). When `false`, only analyzes profiles listed in `specific_profiles`
+- **`specific_benchmarks`** (array): List of benchmark names to analyze when `all_benchmarks` is `false`
+- **`specific_profiles`** (array): List of profile types to analyze when `all_profiles` is `false`
+
+**Important Rules:**
+
+- If `all_benchmarks` is `true`, `specific_benchmarks` must be empty
+- If `all_profiles` is `true`, `specific_profiles` must be empty
+- If `all_benchmarks` is `false`, you must provide `specific_benchmarks`
+- If `all_profiles` is `false`, you must provide `specific_profiles`
+
+#### Data Filtering
+
+The `universal_profile_filter` controls which profile data is sent to the AI, helping to focus the analysis on the most relevant information.
+
+**Profile Value Filtering:**
+
+The `profile_values` section filters out profile entries based on their performance metrics. Any line with values less than or equal to the specified thresholds will be excluded from AI analysis.
+
+```json
+"profile_values": {
+    "flat": 0.0,      // Flat time (s) - excludes functions with flat time ≤ this value
+    "flat%": 0.0,     // Flat percentage - excludes functions with flat% ≤ this value
+    "sum%": 0.0,      // Sum percentage - excludes functions with sum% ≤ this value
+    "cum": 0.0,       // Cumulative time (s) - excludes functions with cum time ≤ this value
+    "cum%": 0.0       // Cumulative percentage - excludes functions with cum% ≤ this value
+}
+```
+
+**Examples:**
+
+- `"flat%": 1.0` - Only include functions that consume more than 1% of flat time
+- `"cum": 3` - Only include functions with cumulative time greater than 3s
+- `"flat": 0.0` - Include all functions regardless of flat time (default behavior)
+
+**Function Filtering:**
+
+- **`ignore_functions`** (array): List of function names to exclude from analysis. The tool matches the function name after the last dot. For example:
+  - `"math/rand.Intn"` → specify `"Intn"` to ignore
+  - `"github.com/example/pkg.Pool.Get"` → specify `"Get"` to ignore
+- **`ignore_prefixes`** (array): List of package prefixes to exclude. Functions from these packages will be filtered out:
+  - `"github.com/example/BenchmarkName"` - excludes all functions from this package
+  - `"github.com/example/BenchmarkName/internal"` - excludes internal package functions
+
+#### Example Configurations
+
+**Analyze Only Specific Benchmarks:**
+
+```json
+"ai_config": {
+    "all_benchmarks": false,
+    "all_profiles": true,
+    "specific_benchmarks": ["BenchmarkGenPool", "BenchmarkSyncPool"],
+    "specific_profiles": [],
+    "universal_profile_filter": {
+        "profile_values": {
+            "flat": 0.0,
+            "flat%": 0.5,
+            "sum%": 0.0,
+            "cum": 0.0,
+            "cum%": 0.0
+        },
+        "ignore_functions": ["init", "TestMain"],
+        "ignore_prefixes": ["runtime", "testing"]
+    }
+}
+```
+
+**Focus on High-Impact Functions:**
+
+```json
+"ai_config": {
+    "all_benchmarks": true,
+    "all_profiles": false,
+    "specific_benchmarks": [],
+    "specific_profiles": ["cpu", "memory"],
+    "universal_profile_filter": {
+        "profile_values": {
+            "flat": 0.0,
+            "flat%": 2.0,
+            "sum%": 0.0,
+            "cum": 0.0,
+            "cum%": 5.0
+        },
+        "ignore_functions": ["init", "TestMain", "BenchmarkMain", "setup", "teardown"],
+        "ignore_prefixes": ["runtime", "testing", "reflect"]
+    }
+}
+```
+
+**Minimal Filtering for Comprehensive Analysis:**
+
+```json
+"ai_config": {
+    "all_benchmarks": true,
+    "all_profiles": true,
+    "specific_benchmarks": [],
+    "specific_profiles": [],
+    "universal_profile_filter": {
+        "profile_values": {
+            "flat": 0.0,
+            "flat%": 0.0,
+            "sum%": 0.0,
+            "cum": 0.0,
+            "cum%": 0.0
+        },
+        "ignore_functions": ["init", "TestMain"],
+        "ignore_prefixes": []
+    }
+}
+```
 
 ## Contribution
 
@@ -388,7 +534,7 @@ profDev
 
 #### Running Tests
 
-The project includes end-to-end tests to ensure functionality:
+The project includes end-to-end and unit tests to ensure functionality:
 
 ```bash
 # Run all tests
