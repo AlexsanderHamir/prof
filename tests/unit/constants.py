@@ -8,3 +8,7 @@ UNIVERSAL_PROFILE_FILTER_MISSING_PROFILE_VALUES = "[config error] universal_prof
 UNIVERSAL_PROFILE_FILTER_PROFILE_VALUES_NOT_DICT = "[config error] profile_values must be a dictionary"
 UNIVERSAL_PROFILE_FILTER_PROFILE_VALUES_MISSING_FIELDS = "[config error] profile_values must contain 'flat'"
 UNIVERSAL_PROFILE_FILTER_PROFILE_VALUES_INVALID_VALUES = "[config error] profile_values 'flat' must be a number"
+
+## Values
+
+ONLY_HEADER_INCLUDED = 6

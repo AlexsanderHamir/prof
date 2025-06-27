@@ -9,5 +9,5 @@ install.sh export-ignore
 LICENSE export-ignore
 *.md export-ignore
 
-output_example/** export-ignore
-tests/** export-ignore
+output_example/ export-ignore
+tests/ export-ignore
