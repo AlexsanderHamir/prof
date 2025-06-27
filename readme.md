@@ -1,5 +1,13 @@
 # Go Benchmark Profiler
 
+![Build](https://github.com/AlexsanderHamir/prof/actions/workflows/test.yml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Issues](https://img.shields.io/github/issues/AlexsanderHamir/Prof)
+![Last Commit](https://img.shields.io/github/last-commit/AlexsanderHamir/Prof)
+![Code Size](https://img.shields.io/github/languages/code-size/AlexsanderHamir/Prof)
+![Version](https://img.shields.io/github/v/tag/AlexsanderHamir/Prof?sort=semver)
+
+
 This tool simplifies complex performance analysis by consolidating multiple pprof commands into a single step. It automatically collects all relevant profiling data, organizes it, makes it searchable within your workspace, and enhances the process with AI-powered insights.
 
 [Example Profile Analysis Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/prof.mp4)
