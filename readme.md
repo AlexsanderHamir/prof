@@ -7,8 +7,8 @@
 ![Code Size](https://img.shields.io/github/languages/code-size/AlexsanderHamir/Prof)
 ![Version](https://img.shields.io/github/v/tag/AlexsanderHamir/Prof?sort=semver)
 
+This tool makes performance analysis easier by combining multiple pprof commands into one step. It automatically collects all relevant profiling data—including code-line level mappings based on your configuration—organizes everything neatly, makes it searchable in your workspace, and adds helpful AI-powered insights.
 
-This tool simplifies complex performance analysis by consolidating multiple pprof commands into a single step. It automatically collects all relevant profiling data, organizes it, makes it searchable within your workspace, and enhances the process with AI-powered insights.
 
 [Example Profile Analysis Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/prof.mp4)
 
@@ -55,11 +55,10 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBenc
 
 ### Real-World Benefits
 
-- **Save Hours**: What takes 30+ minutes manually of annoying back and forth work becomes a single command of a couple seconds
-- **Never Miss Data**: Automatic collection ensures you have all the profiling information you need
-- **Track Progress**: Tagged directories and description files help you document performance improvements
-- **Team Collaboration**: Organized, searchable results make it easy to share findings with your team
-- **Reproducible Analysis**: Consistent data collection and organization across all profiling sessions
+- **Save Hours**: What normally takes a lot of manual back-and-forth work can now be done with a single command in just seconds.
+- **Track Progress**: Tagged directories and description files help you document and monitor performance improvements throughout your work.
+- **Team Collaboration**: Organized, searchable results make it easy to share findings with your team.
+- **Codebase Snapshot**: Choosing to collect all functions creates a comprehensive performance snapshot of your entire codebase.
 
 ## Table of Contents
 
@@ -181,20 +180,6 @@ bench/
 
 Want to see what the output looks like before running the tool? Check out the [`output_example/bench/`](output_example/bench/) directory in this repository, which contains real examples of the output.
 
-The directory includes two different benchmark runs with different tag names:
-
-- **`tag_name_1/`** - Example output from one benchmark run
-- **`tag_name_2/`** - Example output from another benchmark run
-
-Each directory contains the complete structure described above, including:
-
-- Binary files in the `bin/` directory
-- Function-level info in `cpu_functions/`, `memory_functions/`, and `mutex_functions/` directories
-- Text reports in the `text/` directory
-- Description files for you to document the changes and their performance impact
-
-This gives you a concrete example of how the tool organizes and presents profiling data, making it easier to understand what you'll get when you run your own benchmarks.
-
 ## Configuration
 
 The configuration file (`config_template.json`) controls how the profiler interacts with the AI service and manages benchmark analysis. Here's a detailed breakdown of each section:
@@ -223,8 +208,12 @@ The `model_config` section controls how the AI analyzes your profiles:
 ```
 
 ### Benchmark Configurations
+The `benchmark_configs` section lets you control which functions are included for collecting code-line performance data and which ones to exclude.
 
-The `benchmark_configs` section lets you customize analysis for each benchmark:
+1. If you provide one or more **prefixes**, only functions whose path contain those prefixes will be included. All others will be ignored and excluded from your workspace.
+
+2. Even when using prefixes, you can explicitly **ignore** specific functions by name (matching the part after the last dot). For example, in `github.com/AlexsanderHamir/GenPool/pool.BenchmarkGenPool.func1`, specifying `func1` in the ignore list will exclude that function—even though it matches the prefix `github.com/example/GenPool`.
+
 
 ```json
 "benchmark_configs": {
@@ -234,7 +223,7 @@ The `benchmark_configs` section lets you customize analysis for each benchmark:
             "github.com/example/GenPool/internal",
             "github.com/example/GenPool/pkg"
         ],
-        "ignore": "init,TestMain,BenchmarkMain"
+        "ignore": "init,TestMain,BenchmarkMain,func1"
     }
 }
 ```
