@@ -31,8 +31,6 @@ This tool makes performance analysis easier by combining multiple pprof commands
 
 [Contribution](#contribution)
 
-[License](#license)
-
 ## Why Use This Tool?
 
 ### The Manual Way vs. Our Way
@@ -478,7 +476,3 @@ prof
 ```
 
 If you see the `Error: Missing required arguments:`, the installation was successful!
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
