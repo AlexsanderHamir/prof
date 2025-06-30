@@ -129,12 +129,6 @@ To check your current version and see if updates are available:
 prof -version
 ```
 
-This will display:
-
-- Your current installed version
-- The latest available version from GitHub
-- Whether an update is available
-
 Example output:
 
 ```
@@ -182,7 +176,7 @@ Want to see what the output looks like before running the tool? Check out the [`
 
 ## Configuration
 
-The configuration file (`config_template.json`) controls how the profiler interacts with the AI service and manages benchmark analysis. Here's a detailed breakdown of each section:
+The configuration file (`config_template.json`) controls the data to be collected, and AI behavior. Here's a detailed breakdown of each section:
 
 ### API Configuration
 
@@ -210,7 +204,7 @@ The `model_config` section controls how the AI analyzes your profiles:
 ### Benchmark Configurations
 The `benchmark_configs` section lets you control which functions are included for collecting code-line performance data and which ones to exclude.
 
-1. If you provide one or more **prefixes**, only functions whose path contain those prefixes will be included. All others will be ignored and excluded from your workspace.
+1. If you provide one or more **prefixes**, only functions whose path contain those prefixes will be included. All others will be included into your workspace.
 
 2. Even when using prefixes, you can explicitly **ignore** specific functions by name (matching the part after the last dot). For example, in `github.com/AlexsanderHamir/GenPool/pool.BenchmarkGenPool.func1`, specifying `func1` in the ignore list will exclude that function—even though it matches the prefix `github.com/example/GenPool`.
 
@@ -228,68 +222,7 @@ The `benchmark_configs` section lets you control which functions are included fo
 }
 ```
 
-#### Key Configuration Options:
-
-1. **Prefixes**:
-
-   - List of package prefixes to include in the analysis
-   - Example: `"github.com/your-project/core"`
-
-2. **Ignore**:
-   - Comma-separated list of function names to exclude
-   - Example: `"init,TestMain,BenchmarkMain,setup,teardown"`
-
-### Example Use Cases:
-
-```json
-{
-  "api_key": "your-api-key-here",
-  "base_url": "https://api.openai.com/v1",
-  "model_config": {
-    "model": "gpt-4-turbo-preview",
-    "max_tokens": 4096,
-    "temperature": 0.7,
-    "prompt_location": "./prompts/custom_analysis.txt"
-  },
-  "benchmark_configs": {
-    "BenchmarkOptimized": {
-      "prefixes": [
-        "github.com/myproject/optimized",
-        "github.com/myproject/core"
-      ],
-      "ignore": "setup,teardown,TestMain"
-    },
-    "BenchmarkStandard": {
-      "prefixes": ["github.com/myproject/standard"],
-      "ignore": "init,TestMain"
-    }
-  }
-}
-```
-
 ## AI Analysis
-
-The profiler uses AI to analyze benchmark profiles, providing intelligent insights into performance patterns and bottlenecks. Each profile (CPU, memory, mutex) is analyzed individually using data from `text/Benchmark_profile.txt`, with results saved in `bench/tag/AI`.
-
-### Customization
-
-1. **Custom Prompts**
-
-   - Create tailored prompts for specific analysis needs (e.g., performance aspects, baseline comparisons)
-   - Set `prompt_location` in your config (file location)
-
-2. **Model Settings**
-
-   ```json
-   "model_config": {
-       "model": "gpt-4-turbo-preview",
-       "max_tokens": 4096,
-       "temperature": 0.7,
-       "top_p": 1.0
-   }
-   ```
-
-### Usage
 
 Enable AI analysis by adding the `-general_analyze` or `-flag_profiles` flag:
 
@@ -339,10 +272,8 @@ The `ai_config` section in your configuration file controls which benchmarks and
 
 **Important Rules:**
 
-- If `all_benchmarks` is `true`, `specific_benchmarks` must be empty
-- If `all_profiles` is `true`, `specific_profiles` must be empty
-- If `all_benchmarks` is `false`, you must provide `specific_benchmarks`
-- If `all_profiles` is `false`, you must provide `specific_profiles`
+- If `all_benchmarks` is `true`, `specific_benchmarks` must be empty (vice-versa)
+- If `all_profiles` is `true`, `specific_profiles` must be empty (vice-versa)
 
 #### Data Filtering
 
@@ -377,92 +308,13 @@ The `profile_values` section filters out profile entries based on their performa
   - `"github.com/example/BenchmarkName"` - excludes all functions from this package
   - `"github.com/example/BenchmarkName/internal"` - excludes internal package functions
 
-#### Example Configurations
-
-**Analyze Only Specific Benchmarks:**
-
-```json
-"ai_config": {
-    "all_benchmarks": false,
-    "all_profiles": true,
-    "specific_benchmarks": ["BenchmarkGenPool", "BenchmarkSyncPool"],
-    "specific_profiles": [],
-    "universal_profile_filter": {
-        "profile_values": {
-            "flat": 0.0,
-            "flat%": 0.5,
-            "sum%": 0.0,
-            "cum": 0.0,
-            "cum%": 0.0
-        },
-        "ignore_functions": ["init", "TestMain"],
-        "ignore_prefixes": ["runtime", "testing"]
-    }
-}
-```
-
-**Focus on High-Impact Functions:**
-
-```json
-"ai_config": {
-    "all_benchmarks": true,
-    "all_profiles": false,
-    "specific_benchmarks": [],
-    "specific_profiles": ["cpu", "memory"],
-    "universal_profile_filter": {
-        "profile_values": {
-            "flat": 0.0,
-            "flat%": 2.0,
-            "sum%": 0.0,
-            "cum": 0.0,
-            "cum%": 5.0
-        },
-        "ignore_functions": ["init", "TestMain", "BenchmarkMain", "setup", "teardown"],
-        "ignore_prefixes": ["runtime", "testing", "reflect"]
-    }
-}
-```
-
-**Minimal Filtering for Comprehensive Analysis:**
-
-```json
-"ai_config": {
-    "all_benchmarks": true,
-    "all_profiles": true,
-    "specific_benchmarks": [],
-    "specific_profiles": [],
-    "universal_profile_filter": {
-        "profile_values": {
-            "flat": 0.0,
-            "flat%": 0.0,
-            "sum%": 0.0,
-            "cum": 0.0,
-            "cum%": 0.0
-        },
-        "ignore_functions": ["init", "TestMain"],
-        "ignore_prefixes": []
-    }
-}
-```
-
 ## Contribution
 
-We welcome contributions of all kinds! Whether you have ideas for new features, improvements to existing functionality, bug reports, or just want to help expand this software - we'd love to hear from you. This project is actively being developed and expanded, and your input is invaluable in making it even better.
-
-### What We're Looking For
-
-- **Feature Ideas**: Have an idea for a new capability? We're excited to hear about it!
-- **Performance Improvements**: Suggestions for making the tool faster or more efficient
-- **UI/UX Enhancements**: Ways to make the tool more user-friendly
-- **Documentation**: Help improve guides, examples, or code comments
-- **Bug Reports**: Found an issue? Let us know so we can fix it
-- **Code Contributions**: Pull requests for new features or fixes
-- **Testing**: Help improve test coverage or add new test cases
-- **Community**: Share how you're using the tool, provide feedback, or help others
+Share your ideas !!
 
 ### Getting Started
 
-This section will help you set up your local development environment to contribute to the project. We're looking forward to expanding the software with your help!
+This section will help you set up your local development environment to contribute to the project.
 
 ### Prerequisites
 
@@ -552,14 +404,7 @@ To test the your local changes manually, run the `profDev` command in any golang
 profDev -benchmarks "[BenchmarkSimple]" -profiles "[cpu,memory]" -tag "test" -count 1
 ```
 
-#### Code Style and Standards
-
-- Follow Python PEP 8 style guidelines
-- Use meaningful variable and function names
-- Add docstrings to functions and classes
-- Write tests for new functionality
-
-**Style Configuration:**
+#### Style Configuration:
 
 - **Indent width**: 4 spaces (no tabs)
 - **Column limit**: 300 characters
@@ -609,19 +454,23 @@ Understanding the project structure will help you contribute effectively:
 ```
 prof_AI/
 ├── prof                    # Main executable script
-├── cli/                    # Command-line interface modules
-│   ├── interface.py        # Argument parsing and main CLI logic
-│   └── helpers.py          # CLI helper functions
-├── analyzer/               # Profile analysis modules
-│   ├── interface.py        # Analysis interface
-│   └── helpers.py          # Analysis helper functions
-├── config/                 # Configuration management
-│   ├── config_manager.py   # Configuration handling
-│   └── helpers.py          # Config helper functions
-├── tests/                  # Test suite
-│   └── e2e/               # End-to-end tests
+├── cli/                    # Command-line module
+│   ├── interface.py        # Main logic
+│   └── helpers.py          # helper functions
+├── analyzer/               # AI analysis module
+│   ├── interface.py        
+│   └── helpers.py          
+├── config/                 # Configuration management module
+│   ├── config_manager.py   
+│   └── helpers.py
+├── parser/                 # Text parser
+│   ├── interface.py      
+│   └── helpers.py          
+├── tests/                  # Test module
+│   └── e2e/                # End-to-end module
+|   └── unit/               # Unit tests module
 ├── requirements.txt        # Python dependencies
-└── install.sh             # Installation script
+└── install.sh              # Installation script
 ```
 
 ## Installation
