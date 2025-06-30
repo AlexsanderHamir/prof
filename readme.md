@@ -17,8 +17,6 @@ This tool makes performance analysis easier by combining multiple pprof commands
 
 [Why Use This Tool ?](#why-use-this-tool)
 
-[Features](#features)
-
 [Usage](#usage)
 
 [Output Examples](#output-examples)
@@ -31,62 +29,55 @@ This tool makes performance analysis easier by combining multiple pprof commands
 
 [Contribution](#contribution)
 
+Here's a **compact, Markdown-friendly version** that merges all the sections into one streamlined section while preserving clarity and structure:
+
+````markdown
 ## Why Use This Tool?
 
-### The Manual Way vs. Our Way
+Skip the manual grind. Instead of running multiple profiling commands, filtering through function lists, and manually inspecting each one...
 
-**Traditional Manual Profiling:**
+### The Traditional Way:
 
 ```bash
-# Run benchmarks with profiling
-go test -run=^$ -bench=^BenchmarkGenPool$ -count 5 -benchmem -cpuprofile=cpu.out -memprofile=mem.out -trace=trace.out
+# Run benchmarks and generate profiles
+go test -bench=^BenchmarkGenPool$ -count 5 -benchmem -cpuprofile=cpu.out -memprofile=mem.out -trace=trace.out
 
-# Analyze CPU profile
-go tool pprof -nodecount=1000 -cum -edgefraction=0 -nodefraction=0 cpu.out
-
-# For each function you want to inspect
+# Manually inspect each profile
+go tool pprof cpu.out
 list .*pool.*Get
 list .*pool.*Put
-# ... repeat for every function
+# Repeat for every function...
+````
 
-# Analyze memory prof
-```
-
-**With Our Tool:**
+### With This Tool:
 
 ```bash
 # One command does everything
 prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBench" -count 5
 ```
 
-### What You Get
+### What You Get in One Command
 
-1. **Complete Data Collection**: Automatically collects all profiling data you'd ever need, including code-line level mapping for every function
-2. **Organized Workspace**: All files are automatically organized into tagged directories with clear structure
-3. **Searchable Results**: Instead of running multiple pprof commands, just search your workspace for function names
-4. **Documentation**: Built-in description files help you document changes and their performance impact
-5. **AI-Powered Insights**: Optional AI analysis provides intelligent performance recommendations
+* **Complete Profiling** – Automatically collects CPU, memory, and code-line-level data for every function.
+* **Organized Output** – Tagged directories with clear structure for easy navigation.
+* **Searchable Workspace** – Just use Command+P (in VSCode or similar) to find any function by name.
+* **Built-in Docs** – Description files help you log what changed and how it affected performance.
+* **Optional AI Insights** – Get intelligent analysis tailored to your prompt.
 
 ### Real-World Benefits
 
-- **Save Hours**: What normally takes a lot of manual back-and-forth work can now be done with a single command in just seconds.
-- **Track Progress**: Tagged directories and description files help you document and monitor performance improvements throughout your work.
-- **Team Collaboration**: Organized, searchable results make it easy to share findings with your team.
-- **Codebase Snapshot**: Choosing to collect all functions creates a comprehensive performance snapshot of your entire codebase.
+* ⏱️ **Save Time** – Replace hours of manual inspection with seconds.
+* 🤝 **Collaborate Easily** – Share structured results with your team.
+* 🧠 **Snapshot Your Codebase** – Not specifying the functions or prefixes to ignore will result in a codebase performance snapshot.
 
-## Features
+### Bonus Features
 
-1. **Automatic Profile Extraction**
-   Collects all the info you would see if you ran `go tool pprof profile.out top` (including all nodes) for each profile you requested.
+* **Customizable Function Scope** – Collect all functions by default, or filter by prefix and exclusion rules.
+* **AI-Powered Analysis** – Plug in your own prompts to generate focused performance insights.
 
-2. **Line-Level Source Mapping by Default**
-   Collects all functions in the profile by default. You can limit this by specifying function prefixes to include and specific functions to exclude.
+```
+```
 
-3. **Searchable, File-Based Reports**
-   All the profiling data is saved to your workspace, making it easy to search. Instead of running multiple commands to inspect different functions, just use Command + P (in VSCode or similar editors) and search by function name.
-
-4. **AI Analysis**
-   Each profile is analyzed using AI with data extracted from `go tool pprof profile.out top` (including all nodes). There are no default prompts — you must provide your own prompt to guide and customize the analysis output.
 
 ## Usage
 
