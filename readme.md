@@ -75,10 +75,6 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBenc
 * **Customizable Function Scope** – Collect all functions by default, or filter by prefix and exclusion rules.
 * **AI-Powered Analysis** – Plug in your own prompts to generate focused performance insights.
 
-```
-```
-
-
 ## Usage
 
 > ⚠️ Always run commands from the directory where your benchmark code is located.
