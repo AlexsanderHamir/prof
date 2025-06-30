@@ -12,6 +12,29 @@ This tool makes performance analysis easier by combining multiple pprof commands
 
 [Example Profile Analysis Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/prof.mp4)
 
+
+## Table of Contents
+
+[Why Use This Tool ?](#why-use-this-tool)
+
+[Features](#features)
+
+[Usage](#usage)
+
+[Directory Structure](#directory-structure)
+
+[Output Examples](#output-examples)
+
+[Configuration](#configuration)
+
+[Installation](#installation)
+
+[AI Analysis](#ai-analysis)
+
+[Contribution](#contribution)
+
+[License](#license)
+
 ## Why Use This Tool?
 
 ### The Manual Way vs. Our Way
@@ -30,12 +53,7 @@ list .*pool.*Get
 list .*pool.*Put
 # ... repeat for every function
 
-# Analyze memory profile
-go tool pprof -nodecount=1000 -cum -edgefraction=0 -nodefraction=0 mem.out
-# ... repeat the same process
-
-# Organize results manually
-# Create directories, move files, document changes
+# Analyze memory prof
 ```
 
 **With Our Tool:**
@@ -59,26 +77,6 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBenc
 - **Track Progress**: Tagged directories and description files help you document and monitor performance improvements throughout your work.
 - **Team Collaboration**: Organized, searchable results make it easy to share findings with your team.
 - **Codebase Snapshot**: Choosing to collect all functions creates a comprehensive performance snapshot of your entire codebase.
-
-## Table of Contents
-
-[Features](#features)
-
-[Usage](#usage)
-
-[Directory Structure](#directory-structure)
-
-[Output Examples](#output-examples)
-
-[Configuration](#configuration)
-
-[Installation](#installation)
-
-[AI Analysis](#ai-analysis)
-
-[Contribution](#contribution)
-
-[License](#license)
 
 ## Features
 
