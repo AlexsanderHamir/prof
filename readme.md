@@ -21,8 +21,6 @@ This tool makes performance analysis easier by combining multiple pprof commands
 
 [Usage](#usage)
 
-[Directory Structure](#directory-structure)
-
 [Output Examples](#output-examples)
 
 [Configuration](#configuration)
@@ -132,40 +130,6 @@ Example output:
 ```
 Current version: 1.0.25
 Latest version: v1.0.25 (up to date)
-```
-
-## Directory Structure
-
-When you run a benchmark analysis, a new directory is created inside `bench/` (named according to your `-tag` parameter) with the following structure:
-
-```
-bench/
-└── test1/                # Directory named after your -tag parameter
-    ├── bin/              # Binary files
-    │   ├── BenchmarkGenPool/
-    │   └── BenchmarkSyncPool/
-    ├── cpu_functions/    # CPU profile line-level function mappings
-    │   ├── BenchmarkGenPool/
-    │   └── BenchmarkSyncPool/
-    ├── memory_functions/ # Memory profile line-level function mappings
-    │   ├── BenchmarkGenPool/
-    │   └── BenchmarkSyncPool/
-    ├── mutex_functions/  # Mutex profile line-level function mappings
-    │   ├── BenchmarkGenPool/
-    │   └── BenchmarkSyncPool/
-    ├── text/            # Profile reports
-    │   ├── BenchmarkGenPool/
-    │   │   ├── BenchmarkGenPool.txt        # Benchmark results
-    │   │   ├── BenchmarkGenPool_cpu.txt    # CPU profile analysis
-    │   │   ├── BenchmarkGenPool_memory.txt # Memory profile analysis
-    │   │   └── BenchmarkGenPool_mutex.txt  # Mutex profile analysis
-    │   └── BenchmarkSyncPool/
-    │       ├── BenchmarkSyncPool.txt
-    │       ├── BenchmarkSyncPool_cpu.txt
-    │       ├── BenchmarkSyncPool_memory.txt
-    │       └── BenchmarkSyncPool_mutex.txt
-    ├── AI/              # AI analysis results
-    └── description.txt  # A file for you to describe what you're doing, what has changed and how it impacted performance.
 ```
 
 ## Output Examples
