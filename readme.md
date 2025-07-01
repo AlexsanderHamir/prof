@@ -417,9 +417,9 @@ prof_AI/
 │   ├── interface.py      
 │   └── helpers.py          
 ├── tests/                  # Test module
-│   └── e2e/                # End-to-end module
-|   └── unit/               # Unit tests module
-├── requirements.txt        # Python dependencies
+│   └── e2e/                
+|   └── unit/               
+├── requirements.txt        
 └── install.sh              # Installation script
 ```
 
