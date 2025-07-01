@@ -219,8 +219,6 @@ The `ai_config` section in your configuration file controls which benchmarks and
 
 - **`all_benchmarks`** (boolean): When `true`, analyzes all benchmarks found in the tag directory. When `false`, only analyzes benchmarks listed in `specific_benchmarks`
 - **`all_profiles`** (boolean): When `true`, analyzes all profile types (cpu, memory, mutex). When `false`, only analyzes profiles listed in `specific_profiles`
-- **`specific_benchmarks`** (array): List of benchmark names to analyze when `all_benchmarks` is `false`
-- **`specific_profiles`** (array): List of profile types to analyze when `all_profiles` is `false`
 
 **Important Rules:**
 
