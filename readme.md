@@ -85,7 +85,14 @@ Generate a starter config file with:
 prof setup --create-template
 ```
 
-### Step 2: Run Benchmarks and Collect Profiles
+### Stage 2: Customize the Configuration File
+
+The configuration dictates what will be collected from `pprof`, and what the AI should analyze.
+
+See [Configuration](#configuration), and [AI Analysis](#ai-analysis).
+
+
+### Step 3: Run Benchmarks and Collect Profiles
 
 Use the following command to run benchmarks, collect profiles, and store results:
 
