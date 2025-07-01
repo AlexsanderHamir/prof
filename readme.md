@@ -156,7 +156,7 @@ The `model_config` section controls how the AI analyzes your profiles:
 ### Benchmark Configurations
 The `benchmark_configs` section lets you control which functions are included for collecting code-line performance data and which ones to exclude.
 
-1. If you provide one or more **prefixes**, only functions whose path contain those prefixes will be included. All others will not be included into your workspace.
+1. If you provide one or more **prefixes**, only functions whose path contain those prefixes will be included into your workspace.
 
 2. Even when using prefixes, you can explicitly **ignore** specific functions by name (matching the part after the last dot). For example, in `github.com/AlexsanderHamir/GenPool/pool.BenchmarkGenPool.func1`, specifying `func1` in the ignore list will exclude that function—even though it matches the prefix `github.com/example/GenPool`.
 
