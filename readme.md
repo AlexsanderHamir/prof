@@ -29,9 +29,7 @@ This tool makes performance analysis easier by combining multiple pprof commands
 
 [Contribution](#contribution)
 
-Here's a **compact, Markdown-friendly version** that merges all the sections into one streamlined section while preserving clarity and structure:
 
-````markdown
 ## Why Use This Tool?
 
 Skip the manual grind. Instead of running multiple profiling commands, filtering through function lists, and manually inspecting each one...
