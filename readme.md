@@ -18,7 +18,7 @@
 
 ## Table of Contents
 
-[Why Use This Tool ?](#why-use-this-tool)
+[Why Automate Profiling?](#why-automate-profiling)
 
 [Usage](#usage)
 
@@ -33,48 +33,48 @@
 [Contribution](#contribution)
 
 
-## Why Use This Tool?
+## 🔁 Why Automate Profiling?
 
-Skip the manual grind. Instead of running multiple profiling commands, filtering through function lists, and manually inspecting each one...
+Manually running `pprof`, filtering functions, and inspecting profiles is time-consuming, and during a long profiling section it becomes error prone.
 
-### The Traditional Way:
+### 🛠️ The Traditional Workflow
 
 ```bash
 # Run benchmarks and generate profiles
-go test -bench=^BenchmarkGenPool$ -count 5 -benchmem -cpuprofile=cpu.out -memprofile=mem.out -trace=trace.out
+go test -bench=^BenchmarkGenPool$ -count 5 -benchmem \
+  -cpuprofile=cpu.out -memprofile=mem.out -trace=trace.out
 
-# Manually inspect each profile
+# Inspect profiles manually
 go tool pprof cpu.out
 list .*pool.*Get
 list .*pool.*Put
-# Repeat for every function...
-````
+# Repeat for every function of interest...
+```
 
-### With This Tool:
+### ✅ The Automated Way
 
 ```bash
-# One command does everything
 prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBench" -count 5
 ```
 
-### What You Get in One Command
+## ⚙️ What You Get with One Command
 
-* **Complete Profiling** – Automatically collects CPU, memory, and code-line-level data for every function.
-* **Organized Output** – Tagged directories with clear structure for easy navigation.
-* **Searchable Workspace** – Just use Command+P (in VSCode or similar) to find any function by name.
-* **Built-in Docs** – Description files help you log what changed and how it affected performance.
-* **Optional AI Insights** – Get intelligent analysis tailored to your prompt.
+* **Comprehensive Profiling** – Automatically captures CPU, memory, and mutex profiles, along with code-level performance data for every function based on your configuration.
+* **Structured Output** – Results saved under clean, tagged directories.
+* **Quick Search** – Use `Cmd+P` in VSCode to jump to any function.
+* **Documentation (Optional)** – Creates documentation text files so you can add context for each tag.
+* **AI Insights (Optional)** – Get summaries and recommendations using your own prompts.
 
-### Real-World Benefits
+## 🌟 Key Benefits
 
-* ⏱️ **Save Time** – Replace hours of manual inspection with seconds.
-* 🤝 **Collaborate Easily** – Share structured results with your team.
-* 🧠 **Snapshot Your Codebase** – Not specifying the functions or prefixes to ignore will result in a codebase performance snapshot.
+* ⏱️ **Faster Iteration** – From hours to seconds
+* 📤 **Team-Friendly** – Share clean, consistent results
+* 🧠 **Codebase Snapshots** – Capture performance state with minimal config
 
-### Bonus Features
+## 🧩 Bonus Features
 
-* **Customizable Function Scope** – Collect all functions by default, or filter by prefix and exclusion rules.
-* **AI-Powered Analysis** – Plug in your own prompts to generate focused performance insights.
+* 🔍 **Scoped Analysis** – Target specific packages/functions or exclude noise
+* 🤖 **AI-Driven Reports** – Automated interpretations tailored to your needs
 
 ## Usage
 
