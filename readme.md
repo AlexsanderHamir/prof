@@ -7,11 +7,14 @@
 ![Code Size](https://img.shields.io/github/languages/code-size/AlexsanderHamir/Prof)
 ![Version](https://img.shields.io/github/v/tag/AlexsanderHamir/Prof?sort=semver)
 
-This tool makes performance analysis easier by combining multiple pprof commands into one step. It automatically collects all relevant profiling data—including code-line level mappings based on your configuration—organizes everything neatly, makes it searchable in your workspace, and adds helpful AI-powered insights.
+**Go Benchmark Profiler** is a high-efficiency tool for automated performance profiling in Go. It simplifies and accelerates benchmarking workflows by:
 
+* 🔁 Combining multiple `pprof` steps into a single command
+* 📁 Organizing outputs by benchmark, tag, and profile type
+* 🧠 Generating AI-powered insights based on custom prompts
+* 🔍 Making performance data searchable and shareable
 
-[Example Profile Analysis Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/prof.mp4)
-
+[▶ Example Profile Analysis Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/prof.mp4)
 
 ## Table of Contents
 
