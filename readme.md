@@ -75,7 +75,7 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBenc
 
 ## Usage
 
-> ⚠️ Always run commands from the directory where your benchmark code is located.
+> ⚠️ Always run commands from the directory where your benchmark file is located.
 
 ### Step 1: Create a Template Configuration
 
