@@ -59,7 +59,7 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBenc
 
 ## ⚙️ What You Get with One Command
 
-* **Comprehensive Profiling** – Automatically captures CPU, memory, and mutex profiles, along with code-level performance data for every function based on your configuration.
+* **Comprehensive Profiling** – Automatically captures CPU, memory, and mutex profiles text files, along with code-level performance data for every function based on your configuration.
 * **Structured Output** – Results saved under clean, tagged directories.
 * **Quick Search** – Use `Cmd+P` in VSCode to jump to any function.
 * **Documentation (Optional)** – Creates documentation text files so you can add context for each tag.
