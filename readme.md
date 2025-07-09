@@ -7,6 +7,7 @@
 ![Code Size](https://img.shields.io/github/languages/code-size/AlexsanderHamir/Prof)
 ![Version](https://img.shields.io/github/v/tag/AlexsanderHamir/Prof?sort=semver)
 
+
 This tool simplifies complex performance analysis by consolidating multiple pprof commands into a single step. It automatically collects all relevant profiling data, organizes it, makes it searchable within your workspace, and enhances the process with AI-powered insights.
 
 [Example Profile Analysis Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/prof.mp4)
@@ -62,11 +63,9 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBenc
 
 ## Table of Contents
 
-[Features](#features)
+[Why Automate Profiling?](#why-automate-profiling)
 
 [Usage](#usage)
-
-[Directory Structure](#directory-structure)
 
 [Output Examples](#output-examples)
 
@@ -78,25 +77,53 @@ prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBenc
 
 [Contribution](#contribution)
 
-[License](#license)
 
-## Features
+## 🔁 Why Automate Profiling?
 
-1. **Automatic Profile Extraction**
-   Collects all the info you would see if you ran `go tool pprof profile.out top` (including all nodes) for each profile you requested.
+Manually running `pprof`, filtering functions, and inspecting profiles is time-consuming, and during a long profiling section it becomes error prone.
 
-2. **Line-Level Source Mapping by Default**
-   Collects all functions in the profile by default. You can limit this by specifying function prefixes to include and specific functions to exclude.
+### 🛠️ The Traditional Workflow
 
-3. **Searchable, File-Based Reports**
-   All the profiling data is saved to your workspace, making it easy to search. Instead of running multiple commands to inspect different functions, just use Command + P (in VSCode or similar editors) and search by function name.
+```bash
+# Run benchmarks and generate profiles
+go test -bench=^BenchmarkGenPool$ -count 5 -benchmem \
+  -cpuprofile=cpu.out -memprofile=mem.out -trace=trace.out
 
-4. **AI Analysis**
-   Each profile is analyzed using AI with data extracted from `go tool pprof profile.out top` (including all nodes). There are no default prompts — you must provide your own prompt to guide and customize the analysis output.
+# Inspect profiles manually
+go tool pprof cpu.out
+list .*pool.*Get
+list .*pool.*Put
+# Repeat for every function of interest...
+```
+
+### ✅ The Automated Way
+
+```bash
+prof -benchmarks "[BenchmarkGenPool]" -profiles "[cpu,memory]" -tag "initialBench" -count 5
+```
+
+## ⚙️ What You Get with One Command
+
+* **Comprehensive Profiling** – Automatically captures CPU, memory, and mutex profiles text files, along with code-level performance data for every function based on your configuration.
+* **Structured Output** – Results saved under clean, tagged directories.
+* **Quick Search** – Use `Cmd+P` in VSCode to jump to any function.
+* **Documentation (Optional)** – Creates documentation text files so you can add context for each tag.
+* **AI Insights (Optional)** – Get summaries and recommendations using your own prompts.
+
+## 🌟 Key Benefits
+
+* ⏱️ **Faster Iteration** – From hours to seconds
+* 📤 **Team-Friendly** – Share clean, consistent results
+* 🧠 **Codebase Snapshots** – Capture performance state with minimal config
+
+## 🧩 Bonus Features
+
+* 🔍 **Scoped Analysis** – Target specific packages/functions or exclude noise
+* 🤖 **AI-Driven Reports** – Automated interpretations tailored to your needs
 
 ## Usage
 
-> ⚠️ Always run commands from the directory where your benchmark code is located.
+> ⚠️ Always run commands from the directory where your benchmark file is located.
 
 ### Step 1: Create a Template Configuration
 
@@ -106,7 +133,14 @@ Generate a starter config file with:
 prof setup --create-template
 ```
 
-### Step 2: Run Benchmarks and Collect Profiles
+### Stage 2: Customize the Configuration File
+
+The configuration dictates what will be collected from `pprof`, and what the AI should analyze.
+
+See [Configuration](#configuration), and [AI Analysis](#ai-analysis).
+
+
+### Step 3: Run Benchmarks and Collect Profiles
 
 Use the following command to run benchmarks, collect profiles, and store results:
 
@@ -136,61 +170,13 @@ Current version: 1.0.25
 Latest version: v1.0.25 (up to date)
 ```
 
-## Directory Structure
-
-When you run a benchmark analysis, a new directory is created inside `bench/` (named according to your `-tag` parameter) with the following structure:
-
-```
-bench/
-└── test1/                # Directory named after your -tag parameter
-    ├── bin/              # Binary files
-    │   ├── BenchmarkGenPool/
-    │   └── BenchmarkSyncPool/
-    ├── cpu_functions/    # CPU profile line-level function mappings
-    │   ├── BenchmarkGenPool/
-    │   └── BenchmarkSyncPool/
-    ├── memory_functions/ # Memory profile line-level function mappings
-    │   ├── BenchmarkGenPool/
-    │   └── BenchmarkSyncPool/
-    ├── mutex_functions/  # Mutex profile line-level function mappings
-    │   ├── BenchmarkGenPool/
-    │   └── BenchmarkSyncPool/
-    ├── text/            # Profile reports
-    │   ├── BenchmarkGenPool/
-    │   │   ├── BenchmarkGenPool.txt        # Benchmark results
-    │   │   ├── BenchmarkGenPool_cpu.txt    # CPU profile analysis
-    │   │   ├── BenchmarkGenPool_memory.txt # Memory profile analysis
-    │   │   └── BenchmarkGenPool_mutex.txt  # Mutex profile analysis
-    │   └── BenchmarkSyncPool/
-    │       ├── BenchmarkSyncPool.txt
-    │       ├── BenchmarkSyncPool_cpu.txt
-    │       ├── BenchmarkSyncPool_memory.txt
-    │       └── BenchmarkSyncPool_mutex.txt
-    ├── AI/              # AI analysis results
-    └── description.txt  # A file for you to describe what you're doing, what has changed and how it impacted performance.
-```
-
 ## Output Examples
 
 Want to see what the output looks like before running the tool? Check out the [`output_example/bench/`](output_example/bench/) directory in this repository, which contains real examples of the output.
 
-The directory includes two different benchmark runs with different tag names:
-
-- **`tag_name_1/`** - Example output from one benchmark run
-- **`tag_name_2/`** - Example output from another benchmark run
-
-Each directory contains the complete structure described above, including:
-
-- Binary files in the `bin/` directory
-- Function-level info in `cpu_functions/`, `memory_functions/`, and `mutex_functions/` directories
-- Text reports in the `text/` directory
-- Description files for you to document the changes and their performance impact
-
-This gives you a concrete example of how the tool organizes and presents profiling data, making it easier to understand what you'll get when you run your own benchmarks.
-
 ## Configuration
 
-The configuration file (`config_template.json`) controls how the profiler interacts with the AI service and manages benchmark analysis. Here's a detailed breakdown of each section:
+The configuration file (`config_template.json`) controls the data to be collected, and AI behavior. Here's a detailed breakdown of each section:
 
 ### API Configuration
 
@@ -216,8 +202,13 @@ The `model_config` section controls how the AI analyzes your profiles:
 ```
 
 ### Benchmark Configurations
+The `benchmark_configs` section lets you control which functions are included for collecting code-line performance data and which ones to exclude.
 
-The `benchmark_configs` section lets you customize code-line level mapping data collection:
+1. If you provide one or more **prefixes**, only functions whose path contain those prefixes will be included into your workspace.
+
+2. Even when using prefixes, you can explicitly **ignore** specific functions by name (matching the part after the last dot). For example, in `github.com/AlexsanderHamir/GenPool/pool.BenchmarkGenPool.func1`, specifying `func1` in the ignore list will exclude that function—even though it matches the prefix `github.com/example/GenPool`.
+
+The `benchmark_configs` section lets you customize analysis for each benchmark:
 
 ```json
 "benchmark_configs": {
@@ -228,11 +219,21 @@ The `benchmark_configs` section lets you customize code-line level mapping data 
             "github.com/example/GenPool/internal",
             "github.com/example/GenPool/pkg"
         ],
-        // even within the prefixes above, this functions will be ignored.
         "ignore": "init,TestMain,BenchmarkMain"
     }
 }
 ```
+
+#### Key Configuration Options:
+
+1. **Prefixes**:
+
+   - List of package prefixes to include in the analysis
+   - Example: `"github.com/your-project/core"`
+
+2. **Ignore**:
+   - Comma-separated list of function names to exclude
+   - Example: `"init,TestMain,BenchmarkMain,setup,teardown"`
 
 ### Example Use Cases:
 
@@ -253,34 +254,16 @@ The `benchmark_configs` section lets you customize code-line level mapping data 
         "github.com/myproject/core"
       ],
       "ignore": "setup,teardown,TestMain"
+    },
+    "BenchmarkStandard": {
+      "prefixes": ["github.com/myproject/standard"],
+      "ignore": "init,TestMain"
     }
   }
 }
 ```
 
 ## AI Analysis
-
-The profiler uses AI to analyze benchmark profiles, providing intelligent insights into performance patterns and bottlenecks. Each profile (CPU, memory, mutex) is analyzed individually using data from `text/Benchmark_profile.txt`, with results saved in `bench/tag/AI`.
-
-### Customization
-
-1. **Custom Prompts**
-
-   - Create tailored prompts for specific analysis needs (e.g., performance aspects, baseline comparisons)
-   - Set `prompt_location` in your config (file location)
-
-2. **Model Settings**
-
-   ```json
-   "model_config": {
-       "model": "gpt-4-turbo-preview",
-       "max_tokens": 4096,
-       "temperature": 0.7,
-       "top_p": 1.0
-   }
-   ```
-
-### Usage
 
 Enable AI analysis by adding the `-general_analyze` or `-flag_profiles` flag:
 
@@ -327,6 +310,13 @@ The `ai_config` section in your configuration file controls which benchmarks and
 - **`all_profiles`** (boolean): When `true`, analyzes all profile types (cpu, memory, mutex). When `false`, only analyzes profiles listed in `specific_profiles`
 - **`specific_benchmarks`** (array): List of benchmark names to analyze when `all_benchmarks` is `false`
 - **`specific_profiles`** (array): List of profile types to analyze when `all_profiles` is `false`
+
+**Important Rules:**
+
+- If `all_benchmarks` is `true`, `specific_benchmarks` must be empty
+- If `all_profiles` is `true`, `specific_profiles` must be empty
+- If `all_benchmarks` is `false`, you must provide `specific_benchmarks`
+- If `all_profiles` is `false`, you must provide `specific_profiles`
 
 #### Data Filtering
 
@@ -385,9 +375,64 @@ The `profile_values` section filters out profile entries based on their performa
 }
 ```
 
+**Focus on High-Impact Functions:**
+
+```json
+"ai_config": {
+    "all_benchmarks": true,
+    "all_profiles": false,
+    "specific_benchmarks": [],
+    "specific_profiles": ["cpu", "memory"],
+    "universal_profile_filter": {
+        "profile_values": {
+            "flat": 0.0,
+            "flat%": 2.0,
+            "sum%": 0.0,
+            "cum": 0.0,
+            "cum%": 5.0
+        },
+        "ignore_functions": ["init", "TestMain", "BenchmarkMain", "setup", "teardown"],
+        "ignore_prefixes": ["runtime", "testing", "reflect"]
+    }
+}
+```
+
+**Minimal Filtering for Comprehensive Analysis:**
+
+```json
+"ai_config": {
+    "all_benchmarks": true,
+    "all_profiles": true,
+    "specific_benchmarks": [],
+    "specific_profiles": [],
+    "universal_profile_filter": {
+        "profile_values": {
+            "flat": 0.0,
+            "flat%": 0.0,
+            "sum%": 0.0,
+            "cum": 0.0,
+            "cum%": 0.0
+        },
+        "ignore_functions": ["init", "TestMain"],
+        "ignore_prefixes": []
+    }
+}
+```
+
 ## Contribution
 
 We welcome contributions of all kinds! Whether you have ideas for new features, improvements to existing functionality, bug reports, or just want to help expand this software - we'd love to hear from you. This project is actively being developed and expanded, and your input is invaluable in making it even better.
+
+### What We're Looking For
+
+- **Feature Ideas**: Have an idea for a new capability? We're excited to hear about it!
+- **Performance Improvements**: Suggestions for making the tool faster or more efficient
+- **UI/UX Enhancements**: Ways to make the tool more user-friendly
+- **Documentation**: Help improve guides, examples, or code comments
+- **Bug Reports**: Found an issue? Let us know so we can fix it
+- **Code Contributions**: Pull requests for new features or fixes
+- **Testing**: Help improve test coverage or add new test cases
+- **Community**: Share how you're using the tool, provide feedback, or help others
 
 ### Getting Started
 
@@ -481,14 +526,7 @@ To test your local changes manually, run the `profDev` command in any golang pro
 profDev -benchmarks "[BenchmarkSimple]" -profiles "[cpu,memory]" -tag "test" -count 1
 ```
 
-#### Code Style and Standards
-
-- Follow Python PEP 8 style guidelines
-- Use meaningful variable and function names
-- Add docstrings to functions and classes
-- Write tests for new functionality
-
-**Style Configuration:**
+#### Style Configuration:
 
 - **Indent width**: 4 spaces (no tabs)
 - **Column limit**: 300 characters
@@ -539,22 +577,18 @@ Understanding the project structure will help you contribute effectively:
 prof_AI/
 ├── prof                    # Main executable script
 ├── cli/                    # Command-line interface modules
-│   ├── interface.py
-│   └── helpers.py
+│   ├── interface.py        # Argument parsing and main CLI logic
+│   └── helpers.py          # CLI helper functions
 ├── analyzer/               # Profile analysis modules
-│   ├── interface.py
-│   └── helpers.py
+│   ├── interface.py        # Analysis interface
+│   └── helpers.py          # Analysis helper functions
 ├── config/                 # Configuration management
-│   ├── config_manager.py
-│   └── helpers.py
-├── parser/
-│   └── helpers.py/
-│   └── interface.py/
+│   ├── config_manager.py   # Configuration handling
+│   └── helpers.py          # Config helper functions
 ├── tests/                  # Test suite
-│   └── e2e/                # End-to-end tests
-│   └── unit/               # Unit tests
+│   └── e2e/               # End-to-end tests
 ├── requirements.txt        # Python dependencies
-└── install.sh              # Installation script
+└── install.sh             # Installation script
 ```
 
 ## Installation
@@ -600,7 +634,3 @@ prof
 ```
 
 If you see the `Error: Missing required arguments:`, the installation was successful!
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
