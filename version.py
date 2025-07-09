@@ -2,7 +2,7 @@ import json
 import urllib.request
 from typing import Optional, Tuple
 
-CURRENT_VERSION = "1.0.25"
+CURRENT_VERSION = "1.0.30"
 
 GITHUB_REPO = "AlexsanderHamir/prof"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
