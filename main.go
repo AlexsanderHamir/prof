@@ -71,9 +71,9 @@ func handleBenchmarks(args *cli.Arguments) error {
 		return fmt.Errorf("failed to setup directories: %w", err)
 	}
 
-	cli.PrintConfiguration(benchmarks, profiles, args.Tag, args.Count, cfg.BenchmarkConfigs)
+	cli.PrintConfiguration(benchmarks, profiles, args.Tag, args.Count, cfg.FunctionCollectionFilter)
 
-	if err := cli.RunBenchmarksAndProcessProfiles(benchmarks, profiles, args.Count, args.Tag, cfg.BenchmarkConfigs); err != nil {
+	if err := cli.RunBenchmarksAndProcessProfiles(benchmarks, profiles, args.Count, args.Tag, cfg.FunctionCollectionFilter); err != nil {
 		return fmt.Errorf("failed to run benchmarks: %w", err)
 	}
 

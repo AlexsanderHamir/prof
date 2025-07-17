@@ -80,7 +80,7 @@ func readProfileTextFile(filePath, profileType string, cfg *config.Config) (stri
 
 	collectHeader(scanner, profileType, &lines)
 
-	isFilterAvailable := cfg.AIConfig.UniversalProfileFilter != nil
+	isFilterAvailable := cfg.AIConfig.ProfileFilter != nil
 
 	if isFilterAvailable {
 		filterProfileBody(cfg, scanner, &lines)
@@ -116,13 +116,13 @@ func collectHeader(scanner *bufio.Scanner, profileType string, lines *[]string) 
 }
 
 func getUserPrompt(cfg *config.Config) (string, error) {
-	if cfg.ModelConfig.PromptLocation == "" {
+	if cfg.ModelConfig.PromptFileLocation == "" {
 		return "", fmt.Errorf("prompt_location must be provided in config")
 	}
 
-	data, err := os.ReadFile(cfg.ModelConfig.PromptLocation)
+	data, err := os.ReadFile(cfg.ModelConfig.PromptFileLocation)
 	if err != nil {
-		return "", fmt.Errorf("failed to read prompt file %s: %w", cfg.ModelConfig.PromptLocation, err)
+		return "", fmt.Errorf("failed to read prompt file %s: %w", cfg.ModelConfig.PromptFileLocation, err)
 	}
 
 	return strings.TrimSpace(string(data)), nil

@@ -142,21 +142,23 @@ func SetupDirectories(tag string, benchmarks, profiles []string) error {
 }
 
 // PrintConfiguration prints the parsed configuration and benchmark filter details.
-func PrintConfiguration(benchmarks, profiles []string, tag string, count int, benchmarkConfigs map[string]config.BenchmarkFilter) {
+func PrintConfiguration(benchmarks, profiles []string, tag string, count int, functionFilterPerBench map[string]config.FunctionCollectionFilter) {
 	log.Printf("\nParsed arguments:\n")
 	log.Printf("Benchmarks: %v\n", benchmarks)
 	log.Printf("Profiles: %v\n", profiles)
 	log.Printf("Tag: %s\n", tag)
 	log.Printf("Count: %d\n", count)
 
-	if len(benchmarkConfigs) > 0 {
+	if len(functionFilterPerBench) > 0 {
 		log.Printf("\nBenchmark Function Filter Configurations:\n")
-		for benchmark, cfg := range benchmarkConfigs {
+		for benchmark, cfg := range functionFilterPerBench {
 			log.Printf("  %s:\n", benchmark)
-			log.Printf("    Prefixes: %v\n", cfg.Prefixes)
-			if cfg.Ignore != "" {
-				log.Printf("    Ignore: %s\n", cfg.Ignore)
+			log.Printf("    Prefixes: %v\n", cfg.IncludePrefixes)
+
+			if len(cfg.IgnoreFunctions) > 0 {
+				log.Printf("    Ignore: %+v\n", cfg.IgnoreFunctions)
 			}
+
 		}
 	} else {
 		log.Printf("\nNo benchmark configuration found in config file - analyzing all functions\n")
@@ -164,7 +166,7 @@ func PrintConfiguration(benchmarks, profiles []string, tag string, count int, be
 }
 
 // RunBenchmarksAndProcessProfiles runs the full benchmark pipeline for each benchmark.
-func RunBenchmarksAndProcessProfiles(benchmarks, profiles []string, count int, tag string, benchmarkConfigs map[string]config.BenchmarkFilter) error {
+func RunBenchmarksAndProcessProfiles(benchmarks, profiles []string, count int, tag string, benchmarkConfigs map[string]config.FunctionCollectionFilter) error {
 	log.Printf("\nStarting benchmark pipeline...\n")
 
 	for _, benchmarkName := range benchmarks {

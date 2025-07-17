@@ -1,0 +1,28 @@
+package config
+
+import "fmt"
+
+func validateConfig(config *Config) error {
+	if config.APIKey == "" {
+		return fmt.Errorf("api_key is required")
+	}
+	if config.BaseURL == "" {
+		return fmt.Errorf("base_url is required")
+	}
+	if config.ModelConfig.Model == "" {
+		return fmt.Errorf("model is required")
+	}
+	if config.ModelConfig.PromptFileLocation == "" {
+		return fmt.Errorf("prompt_location is required")
+	}
+
+	// Validate AI config logic
+	if !config.AIConfig.AllBenchmarks && len(config.AIConfig.SpecificBenchmarks) == 0 {
+		return fmt.Errorf("when all_benchmarks is false, specific_benchmarks must be provided")
+	}
+	if !config.AIConfig.AllProfiles && len(config.AIConfig.SpecificProfiles) == 0 {
+		return fmt.Errorf("when all_profiles is false, specific_profiles must be provided")
+	}
+
+	return nil
+}

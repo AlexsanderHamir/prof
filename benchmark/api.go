@@ -76,7 +76,7 @@ func ProcessProfiles(benchmarkName string, profiles []string, tag string) error 
 }
 
 // CollectProfileFunctions collects all pprof information for each function, according to configurations.
-func CollectProfileFunctions(tag string, profiles []string, benchmarkName string, benchmarkConfig config.BenchmarkFilter) error {
+func CollectProfileFunctions(tag string, profiles []string, benchmarkName string, benchmarkConfig config.FunctionCollectionFilter) error {
 	for _, profile := range profiles {
 		if profile == shared.TRACE {
 			continue
@@ -88,8 +88,8 @@ func CollectProfileFunctions(tag string, profiles []string, benchmarkName string
 		}
 
 		filter := parser.ProfileFilter{
-			FunctionPrefixes: benchmarkConfig.Prefixes,
-			IgnoreFunctions:  parseIgnoreList(benchmarkConfig.Ignore),
+			FunctionPrefixes: benchmarkConfig.IncludePrefixes,
+			IgnoreFunctions:  benchmarkConfig.IgnoreFunctions,
 		}
 
 		functions, err := parser.GetAllFunctionNames(paths.ProfileTextFile, filter)
