@@ -270,7 +270,6 @@ func AnalyzeProfileFunctions(tag string, profiles []string, benchmarkName string
 		}
 
 		paths := getProfilePaths(tag, benchmarkName, profile)
-
 		if err := os.MkdirAll(paths.Output, permDir); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}

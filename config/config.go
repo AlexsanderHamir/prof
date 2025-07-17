@@ -22,6 +22,18 @@ type Config struct {
 	AIConfig         AIConfig                   `json:"ai_config"`
 }
 
+func (cfg *Config) GetProfileFilters() map[int]float64 {
+	profileValues := map[int]float64{
+		0: cfg.AIConfig.UniversalProfileFilter.ProfileValues.Flat,
+		1: cfg.AIConfig.UniversalProfileFilter.ProfileValues.FlatPercent,
+		2: cfg.AIConfig.UniversalProfileFilter.ProfileValues.SumPercent,
+		3: cfg.AIConfig.UniversalProfileFilter.ProfileValues.Cum,
+		4: cfg.AIConfig.UniversalProfileFilter.ProfileValues.CumPercent,
+	}
+
+	return profileValues
+}
+
 // ModelConfig holds the configuration for the AI model.
 type ModelConfig struct {
 	Model          string  `json:"model"`

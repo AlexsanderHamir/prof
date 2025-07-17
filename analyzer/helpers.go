@@ -3,7 +3,6 @@ package analyzer
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -14,66 +13,6 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 	"github.com/sashabaranov/go-openai"
 )
-
-const (
-	permDir  = 0o755
-	permFile = 0o644
-)
-
-// ValidateBenchmarkDirectories checks if the benchmark directories exist for a given tag and returns the benchmark names.
-func ValidateBenchmarkDirectories(tag string) ([]string, error) {
-	baseDir := filepath.Join("bench", tag)
-
-	if _, err := os.Stat(baseDir); errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("no benchmark data found for tag '%s'", tag)
-	}
-
-	textDir := filepath.Join(baseDir, "text")
-	if _, err := os.Stat(textDir); errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("no text profiles found in %s", textDir)
-	}
-
-	entries, err := os.ReadDir(textDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read text directory: %w", err)
-	}
-
-	var benchmarkNames []string
-	for _, entry := range entries {
-		if entry.IsDir() {
-			benchmarkNames = append(benchmarkNames, entry.Name())
-		}
-	}
-
-	if len(benchmarkNames) == 0 {
-		return nil, fmt.Errorf("no benchmark directories found in %s", textDir)
-	}
-
-	return benchmarkNames, nil
-}
-
-// AnalyzeAllProfiles runs analysis for all benchmarks and profile types for a given tag.
-func AnalyzeAllProfiles(tag string, benchmarkNames, profileTypes []string, cfg *config.Config, isFlag bool) error {
-	log.Printf("\nStarting comprehensive analysis for tag: %s\n", tag)
-	log.Printf("Benchmarks: %v\n", benchmarkNames)
-	log.Printf("Profile types: %v\n", profileTypes)
-	log.Printf("================================================================================\n")
-
-	for _, benchmarkName := range benchmarkNames {
-		for _, profileType := range profileTypes {
-			if profileType == "trace" {
-				continue
-			}
-
-			log.Printf("\nAnalyzing %s (%s)...\n", benchmarkName, profileType)
-			if err := sendToModel(tag, benchmarkName, profileType, cfg, isFlag); err != nil {
-				return fmt.Errorf("failed to analyze %s (%s): %w", benchmarkName, profileType, err)
-			}
-		}
-	}
-
-	return nil
-}
 
 func sendToModel(tag, benchmarkName, profileType string, cfg *config.Config, isFlag bool) error {
 	profileData, err := getBenchmarkFile(tag, benchmarkName, profileType, cfg)
@@ -111,51 +50,53 @@ func getBenchmarkFile(tag, benchmarkName, profileType string, cfg *config.Config
 	return readProfileTextFile(profileFile, profileType, cfg)
 }
 
-func readProfileTextFile(filePath, profileType string, cfg *config.Config) (string, error) {
+func getScanner(filePath string) (*bufio.Scanner, *os.File, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", fmt.Errorf("cannot read profile file %s: %w", filePath, err)
+		return nil, nil, fmt.Errorf("cannot read profile file %s: %w", filePath, err)
+	}
+
+	scanner := bufio.NewScanner(file)
+
+	return scanner, file, nil
+}
+
+func filterProfileBody(cfg *config.Config, scanner *bufio.Scanner, lines *[]string) {
+	profileFilters := cfg.GetProfileFilters()
+	ignoreFunctions := cfg.AIConfig.UniversalProfileFilter.IgnoreFunctions
+	ignorePrefixes := cfg.AIConfig.UniversalProfileFilter.IgnorePrefixes
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if parser.ShouldKeepLine(line, profileFilters, ignoreFunctions, ignorePrefixes) {
+			*lines = append(*lines, line)
+		}
+	}
+}
+
+func getAllProfileLines(scanner *bufio.Scanner, lines *[]string) {
+	for scanner.Scan() {
+		*lines = append(*lines, scanner.Text())
+	}
+}
+
+func readProfileTextFile(filePath, profileType string, cfg *config.Config) (string, error) {
+	var lines []string
+
+	scanner, file, err := getScanner(filePath)
+	if err != nil {
+		return "", err
 	}
 	defer file.Close()
 
-	var lines []string
-	scanner := bufio.NewScanner(file)
-	lineCount := 0
+	collectHeader(scanner, profileType, &lines)
 
-	// Read header
-	headerIndex := 6
-	if profileType != "cpu" {
-		headerIndex = 5
-	}
+	isFilterAvailable := cfg.AIConfig.UniversalProfileFilter != nil
 
-	for scanner.Scan() && lineCount < headerIndex {
-		lines = append(lines, scanner.Text())
-		lineCount++
-	}
-
-	// Read and filter body
-	if cfg.AIConfig.UniversalProfileFilter != nil {
-		profileValues := map[int]float64{
-			0: cfg.AIConfig.UniversalProfileFilter.ProfileValues.Flat,
-			1: cfg.AIConfig.UniversalProfileFilter.ProfileValues.FlatPercent,
-			2: cfg.AIConfig.UniversalProfileFilter.ProfileValues.SumPercent,
-			3: cfg.AIConfig.UniversalProfileFilter.ProfileValues.Cum,
-			4: cfg.AIConfig.UniversalProfileFilter.ProfileValues.CumPercent,
-		}
-
-		for scanner.Scan() {
-			line := scanner.Text()
-			if parser.ShouldKeepLine(line, profileValues,
-				cfg.AIConfig.UniversalProfileFilter.IgnoreFunctions,
-				cfg.AIConfig.UniversalProfileFilter.IgnorePrefixes) {
-				lines = append(lines, line)
-			}
-		}
+	if isFilterAvailable {
+		filterProfileBody(cfg, scanner, &lines)
 	} else {
-		// No filtering, include all lines
-		for scanner.Scan() {
-			lines = append(lines, scanner.Text())
-		}
+		getAllProfileLines(scanner, &lines)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -168,6 +109,21 @@ func readProfileTextFile(filePath, profileType string, cfg *config.Config) (stri
 	}
 
 	return content, nil
+}
+
+// POTENTIAL IMPROVEMENT: shouldn't this be part of the parser ?
+func collectHeader(scanner *bufio.Scanner, profileType string, lines *[]string) {
+	lineCount := 0
+
+	headerIndex := 6
+	if profileType != "cpu" {
+		headerIndex = 5
+	}
+
+	for scanner.Scan() && lineCount < headerIndex {
+		*lines = append(*lines, scanner.Text())
+		lineCount++
+	}
 }
 
 func getUserPrompt(cfg *config.Config) (string, error) {
