@@ -3,7 +3,9 @@ package analyzer
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,15 +15,21 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
+const (
+	permDir  = 0o755
+	permFile = 0o644
+)
+
+// ValidateBenchmarkDirectories checks if the benchmark directories exist for a given tag and returns the benchmark names.
 func ValidateBenchmarkDirectories(tag string) ([]string, error) {
 	baseDir := filepath.Join("bench", tag)
 
-	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+	if _, err := os.Stat(baseDir); errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("no benchmark data found for tag '%s'", tag)
 	}
 
 	textDir := filepath.Join(baseDir, "text")
-	if _, err := os.Stat(textDir); os.IsNotExist(err) {
+	if _, err := os.Stat(textDir); errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("no text profiles found in %s", textDir)
 	}
 
@@ -44,11 +52,12 @@ func ValidateBenchmarkDirectories(tag string) ([]string, error) {
 	return benchmarkNames, nil
 }
 
+// AnalyzeAllProfiles runs analysis for all benchmarks and profile types for a given tag.
 func AnalyzeAllProfiles(tag string, benchmarkNames, profileTypes []string, cfg *config.Config, isFlag bool) error {
-	fmt.Printf("\nStarting comprehensive analysis for tag: %s\n", tag)
-	fmt.Printf("Benchmarks: %v\n", benchmarkNames)
-	fmt.Printf("Profile types: %v\n", profileTypes)
-	fmt.Printf("================================================================================\n")
+	log.Printf("\nStarting comprehensive analysis for tag: %s\n", tag)
+	log.Printf("Benchmarks: %v\n", benchmarkNames)
+	log.Printf("Profile types: %v\n", profileTypes)
+	log.Printf("================================================================================\n")
 
 	for _, benchmarkName := range benchmarkNames {
 		for _, profileType := range profileTypes {
@@ -56,7 +65,7 @@ func AnalyzeAllProfiles(tag string, benchmarkNames, profileTypes []string, cfg *
 				continue
 			}
 
-			fmt.Printf("\nAnalyzing %s (%s)...\n", benchmarkName, profileType)
+			log.Printf("\nAnalyzing %s (%s)...\n", benchmarkName, profileType)
 			if err := sendToModel(tag, benchmarkName, profileType, cfg, isFlag); err != nil {
 				return fmt.Errorf("failed to analyze %s (%s): %w", benchmarkName, profileType, err)
 			}
@@ -90,7 +99,7 @@ func sendToModel(tag, benchmarkName, profileType string, cfg *config.Config, isF
 		return fmt.Errorf("failed to save analysis: %w", err)
 	}
 
-	fmt.Printf("Successfully analyzed and saved results for %s (%s)\n", benchmarkName, profileType)
+	log.Printf("Successfully analyzed and saved results for %s (%s)\n", benchmarkName, profileType)
 	return nil
 }
 
@@ -185,7 +194,7 @@ func requestModelAnalysis(systemPrompt, profileContent, benchmarkName, profileTy
 	profileInfo := fmt.Sprintf("BenchmarkName: %s\nProfile Type: %s\n\nProfile Content: %s",
 		benchmarkName, profileType, profileContent)
 
-	fmt.Printf("\nSending request to model: %s\n", cfg.ModelConfig.Model)
+	log.Printf("\nSending request to model: %s\n", cfg.ModelConfig.Model)
 
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
@@ -227,7 +236,7 @@ func saveAnalysis(tag, benchmarkName, profileType, analysis string, isFlag bool)
 	analysisFile := getFilePath(tag, benchmarkName, profileType, isFlag)
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(analysisFile), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(analysisFile), permDir); err != nil {
 		return fmt.Errorf("failed to create analysis directory: %w", err)
 	}
 
@@ -239,11 +248,11 @@ func saveAnalysis(tag, benchmarkName, profileType, analysis string, isFlag bool)
 			benchmarkName, profileType, strings.Repeat("=", 80), analysis)
 	}
 
-	if err := os.WriteFile(analysisFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(analysisFile, []byte(content), permFile); err != nil {
 		return fmt.Errorf("cannot save analysis to %s: %w", analysisFile, err)
 	}
 
-	fmt.Printf("Analysis saved to: %s\n", analysisFile)
+	log.Printf("Analysis saved to: %s\n", analysisFile)
 	return nil
 }
 

@@ -3,10 +3,17 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 )
 
+const (
+	permDir  = 0o755
+	permFile = 0o644
+)
+
+// Config holds the main configuration for the prof tool.
 type Config struct {
 	APIKey           string                     `json:"api_key"`
 	BaseURL          string                     `json:"base_url"`
@@ -15,6 +22,7 @@ type Config struct {
 	AIConfig         AIConfig                   `json:"ai_config"`
 }
 
+// ModelConfig holds the configuration for the AI model.
 type ModelConfig struct {
 	Model          string  `json:"model"`
 	MaxTokens      int     `json:"max_tokens"`
@@ -23,11 +31,13 @@ type ModelConfig struct {
 	PromptLocation string  `json:"prompt_location"`
 }
 
+// BenchmarkFilter defines filters for a specific benchmark.
 type BenchmarkFilter struct {
 	Prefixes []string `json:"prefixes"`
 	Ignore   string   `json:"ignore,omitempty"`
 }
 
+// AIConfig holds configuration for AI-driven analysis.
 type AIConfig struct {
 	AllBenchmarks          bool                    `json:"all_benchmarks"`
 	AllProfiles            bool                    `json:"all_profiles"`
@@ -36,12 +46,14 @@ type AIConfig struct {
 	UniversalProfileFilter *UniversalProfileFilter `json:"universal_profile_filter,omitempty"`
 }
 
+// UniversalProfileFilter defines universal filters for profile analysis.
 type UniversalProfileFilter struct {
 	ProfileValues   ProfileValues `json:"profile_values"`
 	IgnoreFunctions []string      `json:"ignore_functions,omitempty"`
 	IgnorePrefixes  []string      `json:"ignore_prefixes,omitempty"`
 }
 
+// ProfileValues holds threshold values for filtering profile data.
 type ProfileValues struct {
 	Flat        float64 `json:"flat"`
 	FlatPercent float64 `json:"flat%"`
@@ -50,6 +62,7 @@ type ProfileValues struct {
 	CumPercent  float64 `json:"cum%"`
 }
 
+// LoadFromFile loads and validates a Config from a JSON file.
 func LoadFromFile(filename string) (*Config, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -93,6 +106,7 @@ func validateConfig(config *Config) error {
 	return nil
 }
 
+// CreateTemplate creates a template configuration file at the specified output path.
 func CreateTemplate(outputPath string) error {
 	if outputPath == "" {
 		outputPath = "./config_template.json"
@@ -152,7 +166,7 @@ func CreateTemplate(outputPath string) error {
 	}
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(outputPath), permDir); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
@@ -161,16 +175,16 @@ func CreateTemplate(outputPath string) error {
 		return fmt.Errorf("failed to marshal template: %w", err)
 	}
 
-	if err := os.WriteFile(outputPath, data, 0644); err != nil {
+	if err := os.WriteFile(outputPath, data, permFile); err != nil {
 		return fmt.Errorf("failed to write template file: %w", err)
 	}
 
-	fmt.Printf("Template configuration file created at: %s\n", outputPath)
-	fmt.Printf("\nThe template includes example benchmark configurations with multiple prefixes.\n")
-	fmt.Printf("For each benchmark, you can specify:\n")
-	fmt.Printf("  - prefixes: A list of package prefixes to analyze\n")
-	fmt.Printf("  - ignore: Optional comma-separated list of functions to exclude\n")
-	fmt.Printf("\nPlease edit this file with your configuration.\n")
+	log.Printf("Template configuration file created at: %s\n", outputPath)
+	log.Printf("\nThe template includes example benchmark configurations with multiple prefixes.\n")
+	log.Printf("For each benchmark, you can specify:\n")
+	log.Printf("  - prefixes: A list of package prefixes to analyze\n")
+	log.Printf("  - ignore: Optional comma-separated list of functions to exclude\n")
+	log.Printf("\nPlease edit this file with your configuration.\n")
 
 	return nil
 }

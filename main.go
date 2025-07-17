@@ -9,13 +9,16 @@ import (
 	"github.com/AlexsanderHamir/prof/version"
 )
 
+const configFilePath = "config_template.json"
 
+// main is the entry point for the prof tool.
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
 }
 
+// run parses arguments and dispatches to the appropriate handler.
 func run() error {
 	args, err := cli.ParseArguments()
 	if err != nil {
@@ -33,12 +36,14 @@ func run() error {
 	return handleBenchmarks(args)
 }
 
+// handleVersion prints the current and latest version information.
 func handleVersion() error {
 	current, latest := version.Check()
 	fmt.Print(version.FormatOutput(current, latest))
 	return nil
 }
 
+// handleSetup processes the setup command and creates a template if requested.
 func handleSetup(args *cli.Arguments) error {
 	if args.CreateTemplate {
 		return config.CreateTemplate(args.OutputPath)
@@ -46,12 +51,13 @@ func handleSetup(args *cli.Arguments) error {
 	return fmt.Errorf("setup command requires --create-template flag")
 }
 
+// handleBenchmarks runs the benchmark pipeline based on parsed arguments.
 func handleBenchmarks(args *cli.Arguments) error {
 	if !cli.ValidateRequiredArgs(args) {
 		return fmt.Errorf("missing required arguments")
 	}
 
-	cfg, err := config.LoadFromFile("config_template.json")
+	cfg, err := config.LoadFromFile(configFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}

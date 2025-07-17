@@ -9,11 +9,18 @@ import (
 	"strings"
 )
 
+var (
+	funcNameRegexp = regexp.MustCompile(`\.([^.(]+)(?:\([^)]*\))?$`)
+	floatRegexp    = regexp.MustCompile(`\d+(?:\.\d+)?`)
+)
+
+// ProfileFilter defines filters for extracting function names from a profile.
 type ProfileFilter struct {
 	FunctionPrefixes []string
 	IgnoreFunctions  []string
 }
 
+// ExtractAllFunctionNames extracts all unique function names from a profile text file, applying the given filter.
 func ExtractAllFunctionNames(profileTextFile string, filter ProfileFilter) ([]string, error) {
 	file, err := os.Open(profileTextFile)
 	if err != nil {
@@ -22,9 +29,9 @@ func ExtractAllFunctionNames(profileTextFile string, filter ProfileFilter) ([]st
 	defer file.Close()
 
 	var functions []string
-	ignoreSet := make(map[string]bool)
+	ignoreSet := make(map[string]struct{})
 	for _, f := range filter.IgnoreFunctions {
-		ignoreSet[f] = true
+		ignoreSet[f] = struct{}{}
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -59,11 +66,11 @@ func ExtractAllFunctionNames(profileTextFile string, filter ProfileFilter) ([]st
 	}
 
 	// Remove duplicates
-	seen := make(map[string]bool)
+	seen := make(map[string]struct{})
 	var uniqueFunctions []string
 	for _, f := range functions {
-		if !seen[f] {
-			seen[f] = true
+		if _, ok := seen[f]; !ok {
+			seen[f] = struct{}{}
 			uniqueFunctions = append(uniqueFunctions, f)
 		}
 	}
@@ -71,7 +78,8 @@ func ExtractAllFunctionNames(profileTextFile string, filter ProfileFilter) ([]st
 	return uniqueFunctions, nil
 }
 
-func extractFunctionName(line string, functionPrefixes []string, ignoreFunctions map[string]bool) string {
+// extractFunctionName extracts a function name from a line, applying prefix and ignore filters.
+func extractFunctionName(line string, functionPrefixes []string, ignoreFunctions map[string]struct{}) string {
 	parts := strings.Fields(line)
 	if len(parts) < 6 {
 		return ""
@@ -94,20 +102,23 @@ func extractFunctionName(line string, functionPrefixes []string, ignoreFunctions
 	}
 
 	// Extract the actual function name (part after the last dot)
-	re := regexp.MustCompile(`\.([^.(]+)(?:\([^)]*\))?$`)
-	matches := re.FindStringSubmatch(funcName)
+	matches := funcNameRegexp.FindStringSubmatch(funcName)
 	if len(matches) < 2 {
 		return ""
 	}
 
 	cleanName := strings.TrimSpace(strings.ReplaceAll(matches[1], " ", ""))
-	if cleanName == "" || ignoreFunctions[cleanName] {
+	if cleanName == "" {
+		return ""
+	}
+	if _, ignored := ignoreFunctions[cleanName]; ignored {
 		return ""
 	}
 
 	return cleanName
 }
 
+// ShouldKeepLine determines if a line from a profile should be kept based on profile values and ignore filters.
 func ShouldKeepLine(line string, profileValues map[int]float64, ignoreFunctions, ignorePrefixes []string) bool {
 	if line == "" {
 		return false
@@ -118,14 +129,14 @@ func ShouldKeepLine(line string, profileValues map[int]float64, ignoreFunctions,
 		return false
 	}
 
-	ignoreSet := make(map[string]bool)
+	ignoreSet := make(map[string]struct{})
 	for _, f := range ignoreFunctions {
-		ignoreSet[f] = true
+		ignoreSet[f] = struct{}{}
 	}
 
-	ignorePrefixSet := make(map[string]bool)
+	ignorePrefixSet := make(map[string]struct{})
 	for _, p := range ignorePrefixes {
-		ignorePrefixSet[p] = true
+		ignorePrefixSet[p] = struct{}{}
 	}
 
 	// Filter by profile values
@@ -142,6 +153,7 @@ func ShouldKeepLine(line string, profileValues map[int]float64, ignoreFunctions,
 	return filterByIgnorePrefixes(ignorePrefixSet, parts)
 }
 
+// filterByNumber returns true if all relevant profile values in the line exceed the configured thresholds.
 func filterByNumber(profileValues map[int]float64, parts []string) bool {
 	for i := 0; i < 5 && i < len(parts); i++ {
 		configValue, exists := profileValues[i]
@@ -161,16 +173,19 @@ func filterByNumber(profileValues map[int]float64, parts []string) bool {
 	return true
 }
 
-func filterByIgnoreFunctions(ignoreSet map[string]bool, parts []string) bool {
+// filterByIgnoreFunctions returns false if the function is in the ignore set.
+func filterByIgnoreFunctions(ignoreSet map[string]struct{}, parts []string) bool {
 	if len(ignoreSet) == 0 {
 		return true
 	}
 
 	fullFunctionName := cleanFunctionName(strings.Join(parts[5:], " "))
-	return !ignoreSet[fullFunctionName]
+	_, ignored := ignoreSet[fullFunctionName]
+	return !ignored
 }
 
-func filterByIgnorePrefixes(ignorePrefixSet map[string]bool, parts []string) bool {
+// filterByIgnorePrefixes returns false if the function name starts with any ignored prefix.
+func filterByIgnorePrefixes(ignorePrefixSet map[string]struct{}, parts []string) bool {
 	if len(ignorePrefixSet) == 0 {
 		return true
 	}
@@ -188,6 +203,7 @@ func filterByIgnorePrefixes(ignorePrefixSet map[string]bool, parts []string) boo
 	return true
 }
 
+// cleanFunctionName returns the function name after the last dot, removing inline markers and trimming spaces.
 func cleanFunctionName(s string) string {
 	s = strings.ReplaceAll(s, " (inline)", "")
 	s = strings.TrimSpace(s)
@@ -200,9 +216,9 @@ func cleanFunctionName(s string) string {
 	return s
 }
 
+// extractFloat extracts the first float from a string.
 func extractFloat(s string) (float64, error) {
-	re := regexp.MustCompile(`\d+(?:\.\d+)?`)
-	match := re.FindString(s)
+	match := floatRegexp.FindString(s)
 	if match == "" {
 		return 0, fmt.Errorf("no float found in '%s'", s)
 	}

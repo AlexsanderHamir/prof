@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/AlexsanderHamir/prof/analyzer"
@@ -10,6 +12,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	ErremptyBenchmarks = errors.New("benchmarks argument cannot be an empty list")
+	ErremptyProfiles   = errors.New("profiles argument cannot be an empty list")
+	Errbracket         = errors.New("argument must be wrapped in brackets")
+)
+
+// Arguments holds the CLI arguments for the prof tool.
 type Arguments struct {
 	Version        bool
 	Command        string
@@ -23,6 +32,7 @@ type Arguments struct {
 	FlagProfiles   bool
 }
 
+// ParseArguments parses CLI arguments using cobra and returns an Arguments struct.
 func ParseArguments() (*Arguments, error) {
 	var args Arguments
 
@@ -63,6 +73,7 @@ func ParseArguments() (*Arguments, error) {
 	return &args, nil
 }
 
+// ValidateRequiredArgs checks if the required arguments are present for running the main command.
 func ValidateRequiredArgs(args *Arguments) bool {
 	if args.Command != "" || args.Version {
 		return true
@@ -70,6 +81,7 @@ func ValidateRequiredArgs(args *Arguments) bool {
 	return args.Benchmarks != "" && args.Profiles != "" && args.Tag != "" && args.Count > 0
 }
 
+// ParseBenchmarkConfig parses the benchmarks and profiles arguments into string slices.
 func ParseBenchmarkConfig(benchmarks, profiles string) ([]string, []string, error) {
 	if err := validateListArguments(benchmarks, profiles); err != nil {
 		return nil, nil, err
@@ -81,27 +93,29 @@ func ParseBenchmarkConfig(benchmarks, profiles string) ([]string, []string, erro
 	return benchmarkList, profileList, nil
 }
 
+// validateListArguments checks if the benchmarks and profiles arguments are valid lists.
 func validateListArguments(benchmarks, profiles string) error {
 	if strings.TrimSpace(benchmarks) == "[]" {
-		return fmt.Errorf("benchmarks argument cannot be an empty list")
+		return ErremptyBenchmarks
 	}
 	if strings.TrimSpace(profiles) == "[]" {
-		return fmt.Errorf("profiles argument cannot be an empty list")
+		return ErremptyProfiles
 	}
 
 	benchmarks = strings.TrimSpace(benchmarks)
 	profiles = strings.TrimSpace(profiles)
 
 	if !strings.HasPrefix(benchmarks, "[") || !strings.HasSuffix(benchmarks, "]") {
-		return fmt.Errorf("benchmarks argument must be wrapped in brackets")
+		return fmt.Errorf("benchmarks %w %s", Errbracket, benchmarks)
 	}
 	if !strings.HasPrefix(profiles, "[") || !strings.HasSuffix(profiles, "]") {
-		return fmt.Errorf("profiles argument must be wrapped in brackets")
+		return fmt.Errorf("profiles %w %s", Errbracket, profiles)
 	}
 
 	return nil
 }
 
+// parseListArgument parses a bracketed, comma-separated string into a slice of strings.
 func parseListArgument(arg string) []string {
 	arg = strings.Trim(arg, "[]")
 	if arg == "" {
@@ -116,57 +130,61 @@ func parseListArgument(arg string) []string {
 	return result
 }
 
+// SetupDirectories delegates directory setup to the benchmark package.
 func SetupDirectories(tag string, benchmarks, profiles []string) error {
 	return benchmark.SetupDirectories(tag, benchmarks, profiles)
 }
 
+// PrintConfiguration prints the parsed configuration and benchmark filter details.
 func PrintConfiguration(benchmarks, profiles []string, tag string, count int, benchmarkConfigs map[string]config.BenchmarkFilter) {
-	fmt.Printf("\nParsed arguments:\n")
-	fmt.Printf("Benchmarks: %v\n", benchmarks)
-	fmt.Printf("Profiles: %v\n", profiles)
-	fmt.Printf("Tag: %s\n", tag)
-	fmt.Printf("Count: %d\n", count)
+	log.Printf("\nParsed arguments:\n")
+	log.Printf("Benchmarks: %v\n", benchmarks)
+	log.Printf("Profiles: %v\n", profiles)
+	log.Printf("Tag: %s\n", tag)
+	log.Printf("Count: %d\n", count)
 
 	if len(benchmarkConfigs) > 0 {
-		fmt.Printf("\nBenchmark Function Filter Configurations:\n")
+		log.Printf("\nBenchmark Function Filter Configurations:\n")
 		for benchmark, cfg := range benchmarkConfigs {
-			fmt.Printf("  %s:\n", benchmark)
-			fmt.Printf("    Prefixes: %v\n", cfg.Prefixes)
+			log.Printf("  %s:\n", benchmark)
+			log.Printf("    Prefixes: %v\n", cfg.Prefixes)
 			if cfg.Ignore != "" {
-				fmt.Printf("    Ignore: %s\n", cfg.Ignore)
+				log.Printf("    Ignore: %s\n", cfg.Ignore)
 			}
 		}
 	} else {
-		fmt.Printf("\nNo benchmark configuration found in config file - analyzing all functions\n")
+		log.Printf("\nNo benchmark configuration found in config file - analyzing all functions\n")
 	}
 }
 
+// RunBenchmarksAndProcessProfiles runs the full benchmark pipeline for each benchmark.
 func RunBenchmarksAndProcessProfiles(benchmarks, profiles []string, count int, tag string, benchmarkConfigs map[string]config.BenchmarkFilter) error {
-	fmt.Printf("\nStarting benchmark pipeline...\n")
+	log.Printf("\nStarting benchmark pipeline...\n")
 
 	for _, benchmarkName := range benchmarks {
-		fmt.Printf("\nRunning benchmark: %s\n", benchmarkName)
+		log.Printf("\nRunning benchmark: %s\n", benchmarkName)
 		if err := benchmark.RunBenchmark(benchmarkName, profiles, count, tag); err != nil {
 			return fmt.Errorf("failed to run benchmark %s: %w", benchmarkName, err)
 		}
 
-		fmt.Printf("\nProcessing profiles for %s...\n", benchmarkName)
+		log.Printf("\nProcessing profiles for %s...\n", benchmarkName)
 		if err := benchmark.ProcessProfiles(benchmarkName, profiles, tag); err != nil {
 			return fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err)
 		}
 
-		fmt.Printf("\nAnalyzing profile functions for %s...\n", benchmarkName)
+		log.Printf("\nAnalyzing profile functions for %s...\n", benchmarkName)
 		if err := benchmark.AnalyzeProfileFunctions(tag, profiles, benchmarkName, benchmarkConfigs[benchmarkName]); err != nil {
 			return fmt.Errorf("failed to analyze profile functions for %s: %w", benchmarkName, err)
 		}
 
-		fmt.Printf("Completed pipeline for benchmark: %s\n", benchmarkName)
+		log.Printf("Completed pipeline for benchmark: %s\n", benchmarkName)
 	}
 
-	fmt.Printf("\nAll benchmarks and profile processing completed successfully!\n")
+	log.Printf("\nAll benchmarks and profile processing completed successfully!\n")
 	return nil
 }
 
+// AnalyzeProfiles runs AI analysis for the given tag and profiles using the provided config.
 func AnalyzeProfiles(tag string, profiles []string, cfg *config.Config, isFlag bool) error {
 	var benchmarks []string
 	var profileTypes []string
@@ -187,7 +205,7 @@ func AnalyzeProfiles(tag string, profiles []string, cfg *config.Config, isFlag b
 		profileTypes = cfg.AIConfig.SpecificProfiles
 	}
 
-	fmt.Printf("Found %v benchmarks and %v profile types\n", benchmarks, profileTypes)
+	log.Printf("Found %v benchmarks and %v profile types\n", benchmarks, profileTypes)
 
 	return analyzer.AnalyzeAllProfiles(tag, benchmarks, profileTypes, cfg, isFlag)
 }

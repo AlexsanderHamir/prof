@@ -8,20 +8,24 @@ import (
 	"time"
 )
 
+// CurrentVersion is the current version of the prof tool.
 const (
 	CurrentVersion = "1.0.30"
 	GitHubRepo     = "AlexsanderHamir/prof"
 	GitHubAPIURL   = "https://api.github.com/repos/AlexsanderHamir/prof/releases/latest"
 )
 
+// GitHubRelease represents the structure of a GitHub release response.
 type GitHubRelease struct {
 	TagName string `json:"tag_name"`
 }
 
+// normalizeVersion removes the 'v' prefix from a version string.
 func normalizeVersion(version string) string {
 	return strings.TrimPrefix(version, "v")
 }
 
+// getLatestVersion fetches the latest release tag from GitHub.
 func getLatestVersion() (string, error) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -29,7 +33,7 @@ func getLatestVersion() (string, error) {
 
 	resp, err := client.Get(GitHubAPIURL)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to fetch latest version: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -39,12 +43,13 @@ func getLatestVersion() (string, error) {
 
 	var release GitHubRelease
 	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to decode GitHub release: %w", err)
 	}
 
 	return release.TagName, nil
 }
 
+// Check returns the current and latest available version.
 func Check() (string, string) {
 	latest, err := getLatestVersion()
 	if err != nil {
@@ -53,6 +58,7 @@ func Check() (string, string) {
 	return CurrentVersion, latest
 }
 
+// FormatOutput formats the version information for display.
 func FormatOutput(current, latest string) string {
 	output := fmt.Sprintf("Current version: %s\n", current)
 
