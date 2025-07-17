@@ -90,42 +90,58 @@ func extractFloat(s string) (float64, error) {
 	return strconv.ParseFloat(match, 64)
 }
 
+func matchPrefix(funcName string, functionPrefixes []string) bool {
+	var hasPrefix bool
+	for _, prefix := range functionPrefixes {
+		if strings.Contains(funcName, prefix) {
+			hasPrefix = true
+			break
+		}
+	}
+
+	return hasPrefix
+}
+
 // extractFunctionName extracts a function name from a line, applying prefix and ignore filters.
-func extractFunctionName(line string, functionPrefixes []string, ignoreFunctions map[string]struct{}) string {
+func extractFunctionName(line string, functionPrefixes []string, ignoreFunctionSet map[string]struct{}) string {
 	parts := strings.Fields(line)
-	if len(parts) < 6 {
+	missingFields := len(parts) < 6
+	if missingFields {
 		return ""
 	}
 
 	funcName := strings.Join(parts[5:], " ")
+	isPrefixConfigSet := len(functionPrefixes) > 0
 
-	// Check if function matches any prefix
-	if len(functionPrefixes) > 0 {
-		hasPrefix := false
-		for _, prefix := range functionPrefixes {
-			if strings.Contains(funcName, prefix) {
-				hasPrefix = true
-				break
-			}
-		}
-		if !hasPrefix {
-			return ""
-		}
+	if isPrefixConfigSet && !matchPrefix(funcName, functionPrefixes) {
+		return ""
 	}
 
-	// Extract the actual function name (part after the last dot)
 	matches := funcNameRegexp.FindStringSubmatch(funcName)
+	// TODO: need more info
 	if len(matches) < 2 {
 		return ""
 	}
 
+	// TODO: need more info
 	cleanName := strings.TrimSpace(strings.ReplaceAll(matches[1], " ", ""))
 	if cleanName == "" {
 		return ""
 	}
-	if _, ignored := ignoreFunctions[cleanName]; ignored {
+
+	// TODO: need more info
+	if _, ignored := ignoreFunctionSet[cleanName]; ignored {
 		return ""
 	}
 
 	return cleanName
+}
+
+func getFilterSets(ignoreFunctions []string) map[string]struct{} {
+	ignoreSet := make(map[string]struct{})
+	for _, f := range ignoreFunctions {
+		ignoreSet[f] = struct{}{}
+	}
+
+	return ignoreSet
 }

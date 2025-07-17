@@ -62,8 +62,19 @@ type ModelConfig struct {
 
 // BenchmarkFilter defines filters for a specific benchmark.
 type BenchmarkFilter struct {
+	// Prefixes specifies function name prefixes to include in the benchmark results.
+	// Only functions whose names start with one of these prefixes will be processed.
+	// Example: []string{"github.com/myorg/", "main."} includes only functions from
+	// the specified package and main package.
 	Prefixes []string `json:"prefixes"`
-	Ignore   string   `json:"ignore,omitempty"`
+
+	// The string my be comma separated.
+	//
+	// Ignore specifies a regex pattern to exclude functions from the results.
+	// The pattern is matched against the function name after the last dot.
+	// Example: "Get|Set" would ignore functions ending with "Get" or "Set",
+	// so "pool.Get()" and "cache.Set()" would be filtered out.
+	Ignore string `json:"ignore,omitempty"`
 }
 
 // AIConfig holds configuration for AI-driven analysis.

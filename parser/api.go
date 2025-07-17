@@ -1,40 +1,40 @@
 package parser
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
+
+	"github.com/AlexsanderHamir/prof/shared"
 )
 
 var (
 	funcNameRegexp = regexp.MustCompile(`\.([^.(]+)(?:\([^)]*\))?$`)
 	floatRegexp    = regexp.MustCompile(`\d+(?:\.\d+)?`)
+	header         = "flat  flat%   sum%        cum   cum%"
 )
 
-// ProfileFilter defines filters for extracting function names from a profile.
+// ProfileFilter collects filters for extracting function names from a profile.
 type ProfileFilter struct {
+	// Include only lines starting with specified prefix
 	FunctionPrefixes []string
-	IgnoreFunctions  []string
+
+	// Ignore all functions after the last dot even if includes the above prefix
+	IgnoreFunctions []string
 }
 
-// ExtractAllFunctionNames extracts all unique function names from a profile text file, applying the given filter.
-func ExtractAllFunctionNames(profileTextFile string, filter ProfileFilter) ([]string, error) {
-	file, err := os.Open(profileTextFile)
+// GetAllFunctionNames extracts all function names from a profile text file, applying the given filter.
+func GetAllFunctionNames(filePath string, filter ProfileFilter) ([]string, error) {
+	scanner, file, err := shared.GetScanner(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open profile file: %w", err)
+		return nil, fmt.Errorf("GetAllFunctionNames Failed: %w", err)
 	}
 	defer file.Close()
 
-	var functions []string
-	ignoreSet := make(map[string]struct{})
-	for _, f := range filter.IgnoreFunctions {
-		ignoreSet[f] = struct{}{}
-	}
+	ignoreSet := getFilterSets(filter.IgnoreFunctions)
 
-	scanner := bufio.NewScanner(file)
-	foundHeader := false
+	var functions []string
+	var foundHeader bool
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -42,11 +42,12 @@ func ExtractAllFunctionNames(profileTextFile string, filter ProfileFilter) ([]st
 			continue
 		}
 
-		if strings.Contains(line, "flat  flat%   sum%        cum   cum%") {
+		if strings.Contains(line, header) {
 			foundHeader = true
 			continue
 		}
 
+		// Skip lines until we find the header, then process profile data
 		if !foundHeader {
 			continue
 		}
@@ -64,6 +65,7 @@ func ExtractAllFunctionNames(profileTextFile string, filter ProfileFilter) ([]st
 		return nil, fmt.Errorf("profile file header not found")
 	}
 
+	// TODO: Questionable
 	// Remove duplicates
 	seen := make(map[string]struct{})
 	var uniqueFunctions []string
@@ -88,16 +90,13 @@ func ShouldKeepLine(line string, profileFilters map[int]float64, ignoreFunctionS
 		return false
 	}
 
-	// Filter by profile values
 	if !filterByNumber(profileFilters, parts) {
 		return false
 	}
 
-	// Filter by ignore functions
 	if !filterByIgnoreFunctions(ignoreFunctionSet, parts) {
 		return false
 	}
 
-	// Filter by ignore prefixes
 	return filterByIgnorePrefixes(ignorePrefixSet, parts)
 }

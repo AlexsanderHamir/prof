@@ -270,7 +270,7 @@ func AnalyzeProfileFunctions(tag string, profiles []string, benchmarkName string
 		}
 
 		paths := getProfilePaths(tag, benchmarkName, profile)
-		if err := os.MkdirAll(paths.Output, permDir); err != nil {
+		if err := os.MkdirAll(paths.FunctionDirectory, permDir); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
 
@@ -279,13 +279,14 @@ func AnalyzeProfileFunctions(tag string, profiles []string, benchmarkName string
 			IgnoreFunctions:  parseIgnoreList(benchmarkConfig.Ignore),
 		}
 
-		functions, err := parser.ExtractAllFunctionNames(paths.ProfileText, filter)
+		// TODO: Does it really need to happen in two steps ?
+		functions, err := parser.GetAllFunctionNames(paths.ProfileTextFile, filter)
 		if err != nil {
 			return fmt.Errorf("failed to extract function names: %w", err)
 		}
-
+		//
 		for _, function := range functions {
-			if err := extractSingleFunctionContent(function, paths); err != nil {
+			if err := getFunctionPprofContent(function, paths); err != nil {
 				return fmt.Errorf("failed to extract function content for %s: %w", function, err)
 			}
 		}
@@ -296,23 +297,41 @@ func AnalyzeProfileFunctions(tag string, profiles []string, benchmarkName string
 
 // ProfilePaths holds paths for profile text, binary, and output directories.
 type ProfilePaths struct {
-	ProfileText   string
-	ProfileBinary string
-	Output        string
+	// Desired file path for specified profile
+	ProfileTextFile string
+
+	// Desired bin path for specified profile
+	ProfileBinaryFile string
+
+	// Desired benchmark directory for function data collection
+	FunctionDirectory string
 }
 
+// getProfilePaths constructs file paths for benchmark profile data organized by tag and benchmark.
+//
+// Returns paths for:
+//   - ProfileTextFile: bench/{tag}/text/{benchmarkName}/{benchmarkName}_{profile}.txt
+//   - ProfileBinaryFile: bench/{tag}/bin/{benchmarkName}/{benchmarkName}_{profile}.out
+//   - FunctionDirectory: bench/{tag}/{profile}_functions/{benchmarkName}/
+//
+// Example with tag="v1.0", benchmarkName="BenchmarkPool", profile="cpu":
+//   - bench/v1.0/text/BenchmarkPool/BenchmarkPool_cpu.txt
+//   - bench/v1.0/bin/BenchmarkPool/BenchmarkPool_cpu.out
+//   - bench/v1.0/cpu_functions/BenchmarkPool/function1.txt
 func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 	tagDir := filepath.Join("bench", tag)
 	return ProfilePaths{
-		ProfileText:   filepath.Join(tagDir, "text", benchmarkName, fmt.Sprintf("%s_%s.txt", benchmarkName, profile)),
-		ProfileBinary: filepath.Join(tagDir, "bin", benchmarkName, fmt.Sprintf("%s_%s.out", benchmarkName, profile)),
-		Output:        filepath.Join(tagDir, profile+"_functions", benchmarkName),
+		ProfileTextFile:   filepath.Join(tagDir, "text", benchmarkName, fmt.Sprintf("%s_%s.txt", benchmarkName, profile)),
+		ProfileBinaryFile: filepath.Join(tagDir, "bin", benchmarkName, fmt.Sprintf("%s_%s.out", benchmarkName, profile)),
+		FunctionDirectory: filepath.Join(tagDir, profile+"_functions", benchmarkName),
 	}
 }
 
-func extractSingleFunctionContent(function string, paths ProfilePaths) error {
-	outputFile := filepath.Join(paths.Output, function+".txt")
-	cmd := []string{"go", "tool", "pprof", fmt.Sprintf("-list=%s", function), paths.ProfileBinary}
+// getFunctionPprofContent gets code line level mapping of specified function
+// and writes the data to a file named after the function.
+func getFunctionPprofContent(function string, paths ProfilePaths) error {
+	outputFile := filepath.Join(paths.FunctionDirectory, function+".txt")
+	cmd := []string{"go", "tool", "pprof", fmt.Sprintf("-list=%s", function), paths.ProfileBinaryFile}
 
 	execCmd := exec.Command(cmd[0], cmd[1:]...)
 	output, err := execCmd.Output()
@@ -328,6 +347,8 @@ func extractSingleFunctionContent(function string, paths ProfilePaths) error {
 	return nil
 }
 
+// parseIgnoreList receives a comma separated
+// string and turning it into a string slice.
 func parseIgnoreList(ignore string) []string {
 	if ignore == "" {
 		return nil

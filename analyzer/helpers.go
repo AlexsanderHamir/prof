@@ -11,6 +11,7 @@ import (
 
 	"github.com/AlexsanderHamir/prof/config"
 	"github.com/AlexsanderHamir/prof/parser"
+	"github.com/AlexsanderHamir/prof/shared"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -50,17 +51,6 @@ func getBenchmarkFile(tag, benchmarkName, profileType string, cfg *config.Config
 	return readProfileTextFile(profileFile, profileType, cfg)
 }
 
-func getScanner(filePath string) (*bufio.Scanner, *os.File, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("cannot read profile file %s: %w", filePath, err)
-	}
-
-	scanner := bufio.NewScanner(file)
-
-	return scanner, file, nil
-}
-
 func filterProfileBody(cfg *config.Config, scanner *bufio.Scanner, lines *[]string) {
 	profileFilters := cfg.GetProfileFilters()
 	ignoreFunctionSet, ignorePrefixSet := cfg.GetIgnoreSets()
@@ -82,7 +72,7 @@ func getAllProfileLines(scanner *bufio.Scanner, lines *[]string) {
 func readProfileTextFile(filePath, profileType string, cfg *config.Config) (string, error) {
 	var lines []string
 
-	scanner, file, err := getScanner(filePath)
+	scanner, file, err := shared.GetScanner(filePath)
 	if err != nil {
 		return "", err
 	}
