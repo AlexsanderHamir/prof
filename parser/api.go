@@ -78,7 +78,7 @@ func ExtractAllFunctionNames(profileTextFile string, filter ProfileFilter) ([]st
 }
 
 // ShouldKeepLine determines if a line from a profile should be kept based on profile values and ignore filters.
-func ShouldKeepLine(line string, profileValues map[int]float64, ignoreFunctions, ignorePrefixes []string) bool {
+func ShouldKeepLine(line string, profileValues map[int]float64, ignoreFunctionSet, ignorePrefixSet map[string]struct{}) bool {
 	if line == "" {
 		return false
 	}
@@ -88,23 +88,13 @@ func ShouldKeepLine(line string, profileValues map[int]float64, ignoreFunctions,
 		return false
 	}
 
-	ignoreSet := make(map[string]struct{})
-	for _, f := range ignoreFunctions {
-		ignoreSet[f] = struct{}{}
-	}
-
-	ignorePrefixSet := make(map[string]struct{})
-	for _, p := range ignorePrefixes {
-		ignorePrefixSet[p] = struct{}{}
-	}
-
 	// Filter by profile values
 	if !filterByNumber(profileValues, parts) {
 		return false
 	}
 
 	// Filter by ignore functions
-	if !filterByIgnoreFunctions(ignoreSet, parts) {
+	if !filterByIgnoreFunctions(ignoreFunctionSet, parts) {
 		return false
 	}
 
