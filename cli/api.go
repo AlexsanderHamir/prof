@@ -1,42 +1,14 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/AlexsanderHamir/prof/analyzer"
 	"github.com/AlexsanderHamir/prof/benchmark"
 	"github.com/AlexsanderHamir/prof/config"
 	"github.com/spf13/cobra"
 )
-
-var (
-	ErremptyBenchmarks = errors.New("benchmarks argument cannot be an empty list")
-	ErremptyProfiles   = errors.New("profiles argument cannot be an empty list")
-	Errbracket         = errors.New("argument must be wrapped in brackets")
-)
-
-// Arguments holds the CLI arguments for the prof tool.
-type Arguments struct {
-	Version        bool
-	Command        string
-	CreateTemplate bool
-	OutputPath     string
-	Benchmarks     string
-	Profiles       string
-	Tag            string
-	Count          int
-
-	// Performs analyzes on specified profile, according to specified configuration
-	// and saves the results in a different file under the AI directory.
-	GeneralAnalyze bool
-
-	// Rewrites the profile file instead of saving an analysis in a different place,
-	// useful for flagging requests.
-	FlagProfiles bool
-}
 
 // ParseArguments parses CLI arguments using cobra and returns an Arguments struct.
 func ParseArguments() (*Arguments, error) {
@@ -97,43 +69,6 @@ func ParseBenchmarkConfig(benchmarks, profiles string) ([]string, []string, erro
 	profileList := parseListArgument(profiles)
 
 	return benchmarkList, profileList, nil
-}
-
-// validateListArguments checks if the benchmarks and profiles arguments are valid lists.
-func validateListArguments(benchmarks, profiles string) error {
-	if strings.TrimSpace(benchmarks) == "[]" {
-		return ErremptyBenchmarks
-	}
-	if strings.TrimSpace(profiles) == "[]" {
-		return ErremptyProfiles
-	}
-
-	benchmarks = strings.TrimSpace(benchmarks)
-	profiles = strings.TrimSpace(profiles)
-
-	if !strings.HasPrefix(benchmarks, "[") || !strings.HasSuffix(benchmarks, "]") {
-		return fmt.Errorf("benchmarks %w %s", Errbracket, benchmarks)
-	}
-	if !strings.HasPrefix(profiles, "[") || !strings.HasSuffix(profiles, "]") {
-		return fmt.Errorf("profiles %w %s", Errbracket, profiles)
-	}
-
-	return nil
-}
-
-// parseListArgument parses a bracketed, comma-separated string into a slice of strings.
-func parseListArgument(arg string) []string {
-	arg = strings.Trim(arg, "[]")
-	if arg == "" {
-		return []string{}
-	}
-
-	parts := strings.Split(arg, ",")
-	var result []string
-	for _, part := range parts {
-		result = append(result, strings.TrimSpace(part))
-	}
-	return result
 }
 
 // SetupDirectories delegates directory setup to the benchmark package.
