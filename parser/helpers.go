@@ -6,20 +6,32 @@ import (
 	"strings"
 )
 
-// filterByNumber returns true if all relevant profile values in the line exceed the configured thresholds.
-func filterByNumber(profileValues map[int]float64, parts []string) bool {
-	for i := 0; i < 5 && i < len(parts); i++ {
-		configValue, exists := profileValues[i]
-		if !exists || configValue == 0.0 {
+const (
+	FlatIndex = iota
+	FlatPercentIndex
+	SumPercentIndex
+	CumIndex
+	CumPercentIndex
+	MeasurementFieldCount
+)
+
+// filterByNumber returns true if all profile measurement values exceed their configured thresholds.
+// It checks up to MeasurementFieldCount fields: flat, flat%, sum%, cum, cum%
+func filterByNumber(thresholds map[int]float64, profileFields []string) bool {
+	maxFields := min(MeasurementFieldCount, len(profileFields))
+
+	for fieldIndex := range maxFields {
+		threshold, hasThreshold := thresholds[fieldIndex]
+		if !hasThreshold || threshold == 0.0 {
 			continue
 		}
 
-		lineValue, err := extractFloat(parts[i])
+		fieldValue, err := extractFloat(profileFields[fieldIndex])
 		if err != nil {
 			continue
 		}
 
-		if lineValue <= configValue {
+		if fieldValue <= threshold {
 			return false
 		}
 	}
