@@ -65,18 +65,7 @@ func GetAllFunctionNames(filePath string, filter ProfileFilter) ([]string, error
 		return nil, fmt.Errorf("profile file header not found")
 	}
 
-	// TODO: Questionable
-	// Remove duplicates
-	seen := make(map[string]struct{})
-	var uniqueFunctions []string
-	for _, f := range functions {
-		if _, ok := seen[f]; !ok {
-			seen[f] = struct{}{}
-			uniqueFunctions = append(uniqueFunctions, f)
-		}
-	}
-
-	return uniqueFunctions, nil
+	return functions, nil
 }
 
 // ShouldKeepLine determines if a line from a profile should be kept based on profile values and ignore filters.

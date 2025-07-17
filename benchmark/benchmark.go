@@ -279,17 +279,15 @@ func AnalyzeProfileFunctions(tag string, profiles []string, benchmarkName string
 			IgnoreFunctions:  parseIgnoreList(benchmarkConfig.Ignore),
 		}
 
-		// TODO: Does it really need to happen in two steps ?
 		functions, err := parser.GetAllFunctionNames(paths.ProfileTextFile, filter)
 		if err != nil {
 			return fmt.Errorf("failed to extract function names: %w", err)
 		}
-		//
-		for _, function := range functions {
-			if err := getFunctionPprofContent(function, paths); err != nil {
-				return fmt.Errorf("failed to extract function content for %s: %w", function, err)
-			}
+
+		if err := saveAllFunctionsPprofContents(functions, paths); err != nil {
+			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", err)
 		}
+
 	}
 
 	return nil
@@ -325,6 +323,17 @@ func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 		ProfileBinaryFile: filepath.Join(tagDir, "bin", benchmarkName, fmt.Sprintf("%s_%s.out", benchmarkName, profile)),
 		FunctionDirectory: filepath.Join(tagDir, profile+"_functions", benchmarkName),
 	}
+}
+
+// saveAllFunctionsPprofContents calls [getFunctionPprofContent] sequentially.
+func saveAllFunctionsPprofContents(functions []string, paths ProfilePaths) error {
+	for _, function := range functions {
+		if err := getFunctionPprofContent(function, paths); err != nil {
+			return fmt.Errorf("failed to extract function content for %s: %w", function, err)
+		}
+	}
+
+	return nil
 }
 
 // getFunctionPprofContent gets code line level mapping of specified function
