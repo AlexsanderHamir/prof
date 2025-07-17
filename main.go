@@ -78,13 +78,13 @@ func handleBenchmarks(args *cli.Arguments) error {
 	}
 
 	if args.GeneralAnalyze {
-		if err := cli.AnalyzeProfiles(args.Tag, profiles, cfg, false); err != nil {
+		if err := cli.AnalyzeProfiles(args.Tag, profiles, cfg, args.FlagProfiles); err != nil {
 			return fmt.Errorf("failed to analyze profiles: %w", err)
 		}
 	}
 
 	if args.FlagProfiles {
-		if err := cli.AnalyzeProfiles(args.Tag, profiles, cfg, true); err != nil {
+		if err := cli.AnalyzeProfiles(args.Tag, profiles, cfg, args.FlagProfiles); err != nil {
 			return fmt.Errorf("failed to flag profiles: %w", err)
 		}
 	}

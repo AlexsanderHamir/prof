@@ -12,6 +12,7 @@ import (
 
 	"github.com/AlexsanderHamir/prof/config"
 	"github.com/AlexsanderHamir/prof/parser"
+	"github.com/AlexsanderHamir/prof/shared"
 )
 
 var profileFlags = map[string]string{
@@ -80,7 +81,7 @@ func createProfileFunctionDirectories(tag string, profiles, benchmarks []string)
 
 	// Only create directories for pprof profiles (not trace)
 	for _, profile := range profiles {
-		if profile == "trace" {
+		if profile == shared.TRACE {
 			continue
 		}
 
@@ -207,7 +208,7 @@ func ProcessProfiles(benchmarkName string, profiles []string, tag string) error 
 	textDir := filepath.Join(tagDir, "text", benchmarkName)
 
 	for _, profile := range profiles {
-		if profile == "trace" {
+		if profile == shared.TRACE {
 			continue
 		}
 
@@ -265,7 +266,7 @@ func generatePNGVisualization(profileFile, outputFile string) error {
 
 func AnalyzeProfileFunctions(tag string, profiles []string, benchmarkName string, benchmarkConfig config.BenchmarkFilter) error {
 	for _, profile := range profiles {
-		if profile == "trace" {
+		if profile == shared.TRACE {
 			continue
 		}
 

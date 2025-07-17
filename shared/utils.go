@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 )
+const TRACE = "trace"
 
 func GetScanner(filePath string) (*bufio.Scanner, *os.File, error) {
 	file, err := os.Open(filePath)

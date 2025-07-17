@@ -130,12 +130,14 @@ func getUserPrompt(cfg *config.Config) (string, error) {
 
 func requestModelAnalysis(systemPrompt, profileContent, benchmarkName, profileType string, cfg *config.Config) (string, error) {
 	client := openai.NewClient(cfg.APIKey)
+	// TODO: ??
 	if cfg.BaseURL != "https://api.openai.com/v1" {
 		config := openai.DefaultConfig(cfg.APIKey)
 		config.BaseURL = cfg.BaseURL
 		client = openai.NewClientWithConfig(config)
 	}
 
+	// TODO: prompt redundancy
 	profileInfo := fmt.Sprintf("BenchmarkName: %s\nProfile Type: %s\n\nProfile Content: %s",
 		benchmarkName, profileType, profileContent)
 
@@ -180,7 +182,6 @@ func requestModelAnalysis(systemPrompt, profileContent, benchmarkName, profileTy
 func saveAnalysis(tag, benchmarkName, profileType, analysis string, isFlag bool) error {
 	analysisFile := getFilePath(tag, benchmarkName, profileType, isFlag)
 
-	// Ensure directory exists
 	if err := os.MkdirAll(filepath.Dir(analysisFile), permDir); err != nil {
 		return fmt.Errorf("failed to create analysis directory: %w", err)
 	}

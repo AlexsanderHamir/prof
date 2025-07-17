@@ -28,8 +28,14 @@ type Arguments struct {
 	Profiles       string
 	Tag            string
 	Count          int
+
+	// Performs analyzes on specified profile, according to specified configuration
+	// and saves the results in a different file under the AI directory.
 	GeneralAnalyze bool
-	FlagProfiles   bool
+
+	// Rewrites the profile file instead of saving an analysis in a different place,
+	// useful for flagging requests.
+	FlagProfiles bool
 }
 
 // ParseArguments parses CLI arguments using cobra and returns an Arguments struct.

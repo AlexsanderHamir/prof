@@ -8,22 +8,25 @@ import (
 	"path/filepath"
 
 	"github.com/AlexsanderHamir/prof/config"
+	"github.com/AlexsanderHamir/prof/shared"
 )
 
 const (
-	permDir  = 0o755
-	permFile = 0o644
+	permDir                      = 0o755
+	permFile                     = 0o644
+	main_dir_output              = "bench"
+	profile_text_files_directory = "text"
 )
 
 // ValidateBenchmarkDirectories checks if the benchmark directories exist for a given tag and returns the benchmark names.
 func ValidateBenchmarkDirectories(tag string) ([]string, error) {
-	baseDir := filepath.Join("bench", tag)
+	baseDir := filepath.Join(main_dir_output, tag)
 
 	if _, err := os.Stat(baseDir); errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("no benchmark data found for tag '%s'", tag)
 	}
 
-	textDir := filepath.Join(baseDir, "text")
+	textDir := filepath.Join(baseDir, profile_text_files_directory)
 	if _, err := os.Stat(textDir); errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("no text profiles found in %s", textDir)
 	}
@@ -56,7 +59,7 @@ func AnalyzeAllProfiles(tag string, benchmarkNames, profileTypes []string, cfg *
 
 	for _, benchmarkName := range benchmarkNames {
 		for _, profileType := range profileTypes {
-			if profileType == "trace" {
+			if profileType == shared.TRACE {
 				continue
 			}
 
