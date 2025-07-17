@@ -5,7 +5,15 @@ import (
 	"fmt"
 	"os"
 )
-const TRACE = "trace"
+
+const (
+	TRACE                        = "trace"
+	Main_dir_output              = "bench"
+	Profile_text_files_directory = "text"
+	Profile_bin_files_directory  = "bin"
+	PermDir                      = 0o755
+	PermFile                     = 0o644
+)
 
 func GetScanner(filePath string) (*bufio.Scanner, *os.File, error) {
 	file, err := os.Open(filePath)

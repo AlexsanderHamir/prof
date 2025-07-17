@@ -182,7 +182,7 @@ func requestModelAnalysis(systemPrompt, profileContent, benchmarkName, profileTy
 func saveAnalysis(tag, benchmarkName, profileType, analysis string, isFlag bool) error {
 	analysisFile := getFilePath(tag, benchmarkName, profileType, isFlag)
 
-	if err := os.MkdirAll(filepath.Dir(analysisFile), permDir); err != nil {
+	if err := os.MkdirAll(filepath.Dir(analysisFile), shared.PermDir); err != nil {
 		return fmt.Errorf("failed to create analysis directory: %w", err)
 	}
 
@@ -194,7 +194,7 @@ func saveAnalysis(tag, benchmarkName, profileType, analysis string, isFlag bool)
 			benchmarkName, profileType, strings.Repeat("=", 80), analysis)
 	}
 
-	if err := os.WriteFile(analysisFile, []byte(content), permFile); err != nil {
+	if err := os.WriteFile(analysisFile, []byte(content), shared.PermFile); err != nil {
 		return fmt.Errorf("cannot save analysis to %s: %w", analysisFile, err)
 	}
 

@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/prof/config"
-	"github.com/AlexsanderHamir/prof/parser"
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
@@ -31,44 +29,40 @@ var pprofTextParams = []string{
 }
 
 const (
-	permDir  = 0o755
-	permFile = 0o644
+	functionsDirSuffix  = "_functions"
+	textExtension       = "txt"
+	binExtension        = "out"
+	descriptionFileName = "description.txt"
+	moduleNotFoundMsg   = "go: cannot find main module"
 )
 
-func SetupDirectories(tag string, benchmarks, profiles []string) error {
-	if err := createBenchDirectories(tag, benchmarks); err != nil {
-		return err
-	}
-	return createProfileFunctionDirectories(tag, profiles, benchmarks)
-}
-
+// createBenchDirectories creates the main structure of the library's output.
 func createBenchDirectories(tag string, benchmarks []string) error {
-	benchDir := "bench"
-	tagDir := filepath.Join(benchDir, tag)
-	binDir := filepath.Join(tagDir, "bin")
-	textDir := filepath.Join(tagDir, "text")
-	descFile := filepath.Join(tagDir, "description.txt")
+	tagDir := filepath.Join(shared.Main_dir_output, tag)
+	binDir := filepath.Join(tagDir, shared.Profile_bin_files_directory)
+	textDir := filepath.Join(tagDir, shared.Profile_text_files_directory)
+	descFile := filepath.Join(tagDir, descriptionFileName)
 
 	// Create main directories
-	if err := os.MkdirAll(binDir, permDir); err != nil {
+	if err := os.MkdirAll(binDir, shared.PermDir); err != nil {
 		return fmt.Errorf("failed to create bin directory: %w", err)
 	}
-	if err := os.MkdirAll(textDir, permDir); err != nil {
+	if err := os.MkdirAll(textDir, shared.PermDir); err != nil {
 		return fmt.Errorf("failed to create text directory: %w", err)
 	}
 
 	// Create benchmark subdirectories
 	for _, benchmark := range benchmarks {
-		if err := os.MkdirAll(filepath.Join(binDir, benchmark), permDir); err != nil {
+		if err := os.MkdirAll(filepath.Join(binDir, benchmark), shared.PermDir); err != nil {
 			return fmt.Errorf("failed to create bin subdirectory for %s: %w", benchmark, err)
 		}
-		if err := os.MkdirAll(filepath.Join(textDir, benchmark), permDir); err != nil {
+		if err := os.MkdirAll(filepath.Join(textDir, benchmark), shared.PermDir); err != nil {
 			return fmt.Errorf("failed to create text subdirectory for %s: %w", benchmark, err)
 		}
 	}
 
 	// Create description file
-	if err := os.WriteFile(descFile, []byte(""), permFile); err != nil {
+	if err := os.WriteFile(descFile, []byte(""), shared.PermFile); err != nil {
 		return fmt.Errorf("failed to create description file: %w", err)
 	}
 
@@ -76,23 +70,23 @@ func createBenchDirectories(tag string, benchmarks []string) error {
 	return nil
 }
 
+// createProfileFunctionDirectories creates the structure for the code line level data collection.
 func createProfileFunctionDirectories(tag string, profiles, benchmarks []string) error {
-	tagDir := filepath.Join("bench", tag)
+	tagDir := filepath.Join(shared.Main_dir_output, tag)
 
-	// Only create directories for pprof profiles (not trace)
 	for _, profile := range profiles {
 		if profile == shared.TRACE {
 			continue
 		}
 
-		profileDir := filepath.Join(tagDir, profile+"_functions")
-		if err := os.MkdirAll(profileDir, permDir); err != nil {
+		profileDir := filepath.Join(tagDir, profile+functionsDirSuffix)
+		if err := os.MkdirAll(profileDir, shared.PermDir); err != nil {
 			return fmt.Errorf("failed to create profile directory %s: %w", profileDir, err)
 		}
 
 		for _, benchmark := range benchmarks {
 			benchmarkDir := filepath.Join(profileDir, benchmark)
-			if err := os.MkdirAll(benchmarkDir, permDir); err != nil {
+			if err := os.MkdirAll(benchmarkDir, shared.PermDir); err != nil {
 				return fmt.Errorf("failed to create benchmark directory %s: %w", benchmarkDir, err)
 			}
 		}
@@ -102,22 +96,7 @@ func createProfileFunctionDirectories(tag string, profiles, benchmarks []string)
 	return nil
 }
 
-func RunBenchmark(benchmarkName string, profiles []string, count int, tag string) error {
-	cmd := buildBenchmarkCommand(benchmarkName, profiles, count)
-	textDir, binDir := getOutputDirectories(benchmarkName, tag)
-
-	outputFile := filepath.Join(textDir, benchmarkName+".txt")
-	if err := runBenchmarkCommand(cmd, outputFile); err != nil {
-		return err
-	}
-
-	if err := moveProfileFiles(benchmarkName, profiles, binDir); err != nil {
-		return err
-	}
-
-	return moveTestFiles(benchmarkName, binDir)
-}
-
+// buildBenchmarkCommand builds the command to run the benchmark.
 func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) []string {
 	cmd := []string{
 		"go", "test", "-run=^$",
@@ -135,14 +114,15 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) [
 	return cmd
 }
 
+// getOutputDirectories gets or creates the output directories.
 func getOutputDirectories(benchmarkName, tag string) (string, string) {
-	tagDir := filepath.Join("bench", tag)
-	textDir := filepath.Join(tagDir, "text", benchmarkName)
-	binDir := filepath.Join(tagDir, "bin", benchmarkName)
+	tagDir := filepath.Join(shared.Main_dir_output, tag)
+	textDir := filepath.Join(tagDir, shared.Profile_text_files_directory, benchmarkName)
+	binDir := filepath.Join(tagDir, shared.Profile_bin_files_directory, benchmarkName)
 
 	// Only create if not exists
-	_ = os.MkdirAll(textDir, permDir)
-	_ = os.MkdirAll(binDir, permDir)
+	_ = os.MkdirAll(textDir, shared.PermDir)
+	_ = os.MkdirAll(binDir, shared.PermDir)
 
 	return textDir, binDir
 }
@@ -152,13 +132,13 @@ func runBenchmarkCommand(cmd []string, outputFile string) error {
 
 	output, err := execCmd.CombinedOutput()
 	if err != nil {
-		if strings.Contains(string(output), "go: cannot find main module") {
-			return fmt.Errorf("go: cannot find main module - ensure you're in a Go project directory")
+		if strings.Contains(string(output), moduleNotFoundMsg) {
+			return fmt.Errorf("%s - ensure you're in a Go project directory", moduleNotFoundMsg)
 		}
 		return fmt.Errorf("benchmark failed: %s", string(output))
 	}
 
-	return os.WriteFile(outputFile, output, permFile)
+	return os.WriteFile(outputFile, output, shared.PermFile)
 }
 
 func moveProfileFiles(benchmarkName string, profiles []string, binDir string) error {
@@ -176,10 +156,10 @@ func moveProfileFiles(benchmarkName string, profiles []string, binDir string) er
 			return fmt.Errorf("failed to stat profile file %s: %w", profileFile, err)
 		}
 
-		// Wait for file to be fully written (still a workaround)
+		// Wait for file to be fully written (workaround)
 		time.Sleep(100 * time.Millisecond)
 
-		newPath := filepath.Join(binDir, fmt.Sprintf("%s_%s.out", benchmarkName, profile))
+		newPath := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
 		if err := os.Rename(profileFile, newPath); err != nil {
 			return fmt.Errorf("failed to move profile file %s: %w", profileFile, err)
 		}
@@ -202,43 +182,6 @@ func moveTestFiles(benchmarkName, binDir string) error {
 	return nil
 }
 
-func ProcessProfiles(benchmarkName string, profiles []string, tag string) error {
-	tagDir := filepath.Join("bench", tag)
-	binDir := filepath.Join(tagDir, "bin", benchmarkName)
-	textDir := filepath.Join(tagDir, "text", benchmarkName)
-
-	for _, profile := range profiles {
-		if profile == shared.TRACE {
-			continue
-		}
-
-		profileFile := filepath.Join(binDir, fmt.Sprintf("%s_%s.out", benchmarkName, profile))
-		if _, err := os.Stat(profileFile); err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				log.Printf("Warning: Profile file not found: %s\n", profileFile)
-				continue
-			}
-			return fmt.Errorf("failed to stat profile file %s: %w", profileFile, err)
-		}
-
-		outputFile := filepath.Join(textDir, fmt.Sprintf("%s_%s.txt", benchmarkName, profile))
-		profileFunctionsDir := filepath.Join(tagDir, profile+"_functions", benchmarkName)
-
-		if err := generateTextProfile(profileFile, outputFile); err != nil {
-			return fmt.Errorf("failed to generate text profile for %s: %w", profile, err)
-		}
-
-		pngFile := filepath.Join(profileFunctionsDir, fmt.Sprintf("%s_%s.png", benchmarkName, profile))
-		if err := generatePNGVisualization(profileFile, pngFile); err != nil {
-			return fmt.Errorf("failed to generate PNG visualization for %s: %w", profile, err)
-		}
-
-		log.Printf("Processed %s profile for %s\n", profile, benchmarkName)
-	}
-
-	return nil
-}
-
 func generateTextProfile(profileFile, outputFile string) error {
 	cmd := append([]string{"go", "tool", "pprof"}, pprofTextParams...)
 	cmd = append(cmd, profileFile)
@@ -249,7 +192,7 @@ func generateTextProfile(profileFile, outputFile string) error {
 		return fmt.Errorf("pprof command failed: %w", err)
 	}
 
-	return os.WriteFile(outputFile, output, permFile)
+	return os.WriteFile(outputFile, output, shared.PermFile)
 }
 
 func generatePNGVisualization(profileFile, outputFile string) error {
@@ -261,37 +204,7 @@ func generatePNGVisualization(profileFile, outputFile string) error {
 		return fmt.Errorf("pprof PNG generation failed: %w", err)
 	}
 
-	return os.WriteFile(outputFile, output, permFile)
-}
-
-func AnalyzeProfileFunctions(tag string, profiles []string, benchmarkName string, benchmarkConfig config.BenchmarkFilter) error {
-	for _, profile := range profiles {
-		if profile == shared.TRACE {
-			continue
-		}
-
-		paths := getProfilePaths(tag, benchmarkName, profile)
-		if err := os.MkdirAll(paths.FunctionDirectory, permDir); err != nil {
-			return fmt.Errorf("failed to create output directory: %w", err)
-		}
-
-		filter := parser.ProfileFilter{
-			FunctionPrefixes: benchmarkConfig.Prefixes,
-			IgnoreFunctions:  parseIgnoreList(benchmarkConfig.Ignore),
-		}
-
-		functions, err := parser.GetAllFunctionNames(paths.ProfileTextFile, filter)
-		if err != nil {
-			return fmt.Errorf("failed to extract function names: %w", err)
-		}
-
-		if err := saveAllFunctionsPprofContents(functions, paths); err != nil {
-			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", err)
-		}
-
-	}
-
-	return nil
+	return os.WriteFile(outputFile, output, shared.PermFile)
 }
 
 // ProfilePaths holds paths for profile text, binary, and output directories.
@@ -320,9 +233,9 @@ type ProfilePaths struct {
 func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 	tagDir := filepath.Join("bench", tag)
 	return ProfilePaths{
-		ProfileTextFile:   filepath.Join(tagDir, "text", benchmarkName, fmt.Sprintf("%s_%s.txt", benchmarkName, profile)),
-		ProfileBinaryFile: filepath.Join(tagDir, "bin", benchmarkName, fmt.Sprintf("%s_%s.out", benchmarkName, profile)),
-		FunctionDirectory: filepath.Join(tagDir, profile+"_functions", benchmarkName),
+		ProfileTextFile:   filepath.Join(tagDir, "text", benchmarkName, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, textExtension)),
+		ProfileBinaryFile: filepath.Join(tagDir, "bin", benchmarkName, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension)),
+		FunctionDirectory: filepath.Join(tagDir, profile+functionsDirSuffix, benchmarkName),
 	}
 }
 
@@ -340,7 +253,7 @@ func saveAllFunctionsPprofContents(functions []string, paths ProfilePaths) error
 // getFunctionPprofContent gets code line level mapping of specified function
 // and writes the data to a file named after the function.
 func getFunctionPprofContent(function string, paths ProfilePaths) error {
-	outputFile := filepath.Join(paths.FunctionDirectory, function+".txt")
+	outputFile := filepath.Join(paths.FunctionDirectory, function+"."+textExtension)
 	cmd := []string{"go", "tool", "pprof", fmt.Sprintf("-list=%s", function), paths.ProfileBinaryFile}
 
 	execCmd := exec.Command(cmd[0], cmd[1:]...)
@@ -349,7 +262,7 @@ func getFunctionPprofContent(function string, paths ProfilePaths) error {
 		return fmt.Errorf("pprof list command failed: %w", err)
 	}
 
-	if err := os.WriteFile(outputFile, output, permFile); err != nil {
+	if err := os.WriteFile(outputFile, output, shared.PermFile); err != nil {
 		return fmt.Errorf("failed to write function content: %w", err)
 	}
 

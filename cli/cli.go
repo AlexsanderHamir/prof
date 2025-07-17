@@ -179,7 +179,7 @@ func RunBenchmarksAndProcessProfiles(benchmarks, profiles []string, count int, t
 		}
 
 		log.Printf("\nAnalyzing profile functions for %s...\n", benchmarkName)
-		if err := benchmark.AnalyzeProfileFunctions(tag, profiles, benchmarkName, benchmarkConfigs[benchmarkName]); err != nil {
+		if err := benchmark.CollectProfileFunctions(tag, profiles, benchmarkName, benchmarkConfigs[benchmarkName]); err != nil {
 			return fmt.Errorf("failed to analyze profile functions for %s: %w", benchmarkName, err)
 		}
 
