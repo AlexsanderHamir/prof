@@ -63,12 +63,11 @@ func getScanner(filePath string) (*bufio.Scanner, *os.File, error) {
 
 func filterProfileBody(cfg *config.Config, scanner *bufio.Scanner, lines *[]string) {
 	profileFilters := cfg.GetProfileFilters()
-	ignoreFunctions := cfg.AIConfig.UniversalProfileFilter.IgnoreFunctions
-	ignorePrefixes := cfg.AIConfig.UniversalProfileFilter.IgnorePrefixes
+	ignoreFunctionSet, ignorePrefixSet := cfg.GetIgnoreSets()
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		if parser.ShouldKeepLine(line, profileFilters, ignoreFunctions, ignorePrefixes) {
+		if parser.ShouldKeepLine(line, profileFilters, ignoreFunctionSet, ignorePrefixSet) {
 			*lines = append(*lines, line)
 		}
 	}

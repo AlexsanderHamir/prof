@@ -22,6 +22,23 @@ type Config struct {
 	AIConfig         AIConfig                   `json:"ai_config"`
 }
 
+func (cfg *Config) GetIgnoreSets() (map[string]struct{}, map[string]struct{}) {
+	ignoreFunctions := cfg.AIConfig.UniversalProfileFilter.IgnoreFunctions
+	ignorePrefixes := cfg.AIConfig.UniversalProfileFilter.IgnorePrefixes
+
+	ignoreFunctionSet := make(map[string]struct{})
+	for _, f := range ignoreFunctions {
+		ignoreFunctionSet[f] = struct{}{}
+	}
+
+	ignorePrefixSet := make(map[string]struct{})
+	for _, p := range ignorePrefixes {
+		ignorePrefixSet[p] = struct{}{}
+	}
+
+	return ignoreFunctionSet, ignorePrefixSet
+}
+
 func (cfg *Config) GetProfileFilters() map[int]float64 {
 	profileValues := map[int]float64{
 		0: cfg.AIConfig.UniversalProfileFilter.ProfileValues.Flat,
