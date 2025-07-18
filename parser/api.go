@@ -8,10 +8,15 @@ import (
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
-var (
-	funcNameRegexp = regexp.MustCompile(`\.([^.(]+)(?:\([^)]*\))?$`)
-	floatRegexp    = regexp.MustCompile(`\d+(?:\.\d+)?`)
+const (
+	funcNameRegexp = `\.([^.(]+)(?:\([^)]*\))?$`
+	floatRegexp    = `\d+(?:\.\d+)?`
 	header         = "flat  flat%   sum%        cum   cum%"
+)
+
+var (
+	funcNameRegexpCompiled = regexp.MustCompile(funcNameRegexp)
+	floatRegexpCompiled    = regexp.MustCompile(floatRegexp)
 )
 
 // ProfileFilter collects filters for extracting function names from a profile.

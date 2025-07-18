@@ -8,7 +8,7 @@ import (
 
 const (
 	TRACE                        = "trace"
-	Main_dir_output              = "bench"
+	MainDirOutput                = "bench"
 	Profile_text_files_directory = "text"
 	Profile_bin_files_directory  = "bin"
 	PermDir                      = 0o755

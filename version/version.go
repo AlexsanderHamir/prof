@@ -1,6 +1,7 @@
 package version
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,9 +11,9 @@ import (
 
 // CurrentVersion is the current version of the prof tool.
 const (
-	CurrentVersion = "1.0.30"
-	GitHubRepo     = "AlexsanderHamir/prof"
-	GitHubAPIURL   = "https://api.github.com/repos/AlexsanderHamir/prof/releases/latest"
+	currentVersion = "1.0.30"
+	gitHubAPIURL   = "https://api.github.com/repos/AlexsanderHamir/prof/releases/latest"
+	waitTime       = 10
 )
 
 // GitHubRelease represents the structure of a GitHub release response.
@@ -26,12 +27,17 @@ func normalizeVersion(version string) string {
 }
 
 // getLatestVersion fetches the latest release tag from GitHub.
-func getLatestVersion() (tagName string, err error) {
+func getLatestVersion(ctx context.Context) (tagName string, err error) {
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: waitTime * time.Second,
 	}
 
-	resp, err := client.Get(GitHubAPIURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", gitHubAPIURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch latest version: %w", err)
 	}
@@ -49,7 +55,7 @@ func getLatestVersion() (tagName string, err error) {
 	}
 
 	var release GitHubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+	if err = json.NewDecoder(resp.Body).Decode(&release); err != nil {
 		return "", fmt.Errorf("failed to decode GitHub release: %w", err)
 	}
 
@@ -58,11 +64,14 @@ func getLatestVersion() (tagName string, err error) {
 
 // Check returns the current and latest available version.
 func Check() (string, string) {
-	latest, err := getLatestVersion()
+	ctx, cancel := context.WithTimeout(context.Background(), waitTime*time.Second)
+	defer cancel()
+
+	latest, err := getLatestVersion(ctx)
 	if err != nil {
-		return CurrentVersion, ""
+		return currentVersion, ""
 	}
-	return CurrentVersion, latest
+	return currentVersion, latest
 }
 
 // FormatOutput formats the version information for display.

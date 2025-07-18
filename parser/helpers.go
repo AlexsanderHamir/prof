@@ -11,7 +11,7 @@ const (
 )
 
 // filterByNumber returns true if all profile measurement values exceed their configured thresholds.
-// It checks up to MeasurementFieldCount fields: flat, flat%, sum%, cum, cum%
+// It checks up to MeasurementFieldCount fields: flat, flat%, sum%, cum, cum%.
 func filterByNumber(thresholds map[int]float64, profileFields []string) bool {
 	maxFields := min(measurementFieldCount, len(profileFields))
 
@@ -78,7 +78,7 @@ func cleanFunctionName(s string) string {
 
 // extractFloat extracts the first float from a string.
 func extractFloat(s string) (float64, error) {
-	match := floatRegexp.FindString(s)
+	match := floatRegexpCompiled.FindString(s)
 	if match == "" {
 		return 0, fmt.Errorf("no float found in '%s'", s)
 	}
@@ -112,7 +112,7 @@ func extractFunctionName(line string, functionPrefixes []string, ignoreFunctionS
 		return ""
 	}
 
-	matches := funcNameRegexp.FindStringSubmatch(funcName)
+	matches := funcNameRegexpCompiled.FindStringSubmatch(funcName)
 	// TODO: need more info
 	if len(matches) < 2 {
 		return ""
