@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/AlexsanderHamir/prof/args"
 	"github.com/AlexsanderHamir/prof/cli"
 	"github.com/AlexsanderHamir/prof/config"
 	"github.com/AlexsanderHamir/prof/version"
@@ -23,20 +24,20 @@ func main() {
 
 // run parses arguments and dispatches to the appropriate handler.
 func run() error {
-	args, err := cli.ParseArguments()
+	cliArgs, err := cli.ParseArguments()
 	if err != nil {
 		return fmt.Errorf("failed to parse arguments: %w", err)
 	}
 
-	if args.Version {
+	if cliArgs.Version {
 		return handleVersion()
 	}
 
-	if args.Command == "setup" {
-		return handleSetup(args)
+	if cliArgs.Command == "setup" {
+		return handleSetup(cliArgs)
 	}
 
-	return handleBenchmarks(args)
+	return handleBenchmarks(cliArgs)
 }
 
 // handleVersion prints the current and latest version information.
@@ -47,17 +48,17 @@ func handleVersion() error {
 }
 
 // handleSetup processes the setup command and creates a template if requested.
-func handleSetup(args *cli.Arguments) error {
-	if args.CreateTemplate {
+func handleSetup(cliArgs *cli.Arguments) error {
+	if cliArgs.CreateTemplate {
 		logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-		return config.CreateTemplate(args.OutputPath, logger)
+		return config.CreateTemplate(cliArgs.OutputPath, logger)
 	}
 	return errors.New("setup command requires --create-template flag")
 }
 
 // handleBenchmarks runs the benchmark pipeline based on parsed arguments.
-func handleBenchmarks(args *cli.Arguments) error {
-	if !cli.ValidateRequiredArgs(args) {
+func handleBenchmarks(cliArgs *cli.Arguments) error {
+	if !cli.ValidateRequiredArgs(cliArgs) {
 		return errors.New("missing required arguments")
 	}
 
@@ -66,29 +67,35 @@ func handleBenchmarks(args *cli.Arguments) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	benchmarks, profiles, err := cli.ParseBenchmarkConfig(args.Benchmarks, args.Profiles)
+	benchmarks, profiles, err := cli.ParseBenchmarkConfig(cliArgs.Benchmarks, cliArgs.Profiles)
 	if err != nil {
 		return fmt.Errorf("failed to parse benchmark config: %w", err)
 	}
 
-	if err = cli.SetupDirectories(args.Tag, benchmarks, profiles); err != nil {
+	if err = cli.SetupDirectories(cliArgs.Tag, benchmarks, profiles); err != nil {
 		return fmt.Errorf("failed to setup directories: %w", err)
 	}
 
-	cli.PrintConfiguration(benchmarks, profiles, args.Tag, args.Count, cfg.FunctionCollectionFilter)
+	cli.PrintConfiguration(benchmarks, profiles, cliArgs.Tag, cliArgs.Count, cfg.FunctionCollectionFilter)
 
-	if err = cli.RunBenchmarksAndProcessProfiles(benchmarks, profiles, args.Count, args.Tag, cfg.FunctionCollectionFilter); err != nil {
+	benchArgs := &args.BenchArgs{
+		Benchmarks: benchmarks,
+		Profiles:   profiles,
+		Count:      cliArgs.Count,
+		Tag:        cliArgs.Tag,
+	}
+	if err = cli.RunBenchmarksAndProcessProfiles(benchArgs, cfg.FunctionCollectionFilter); err != nil {
 		return fmt.Errorf("failed to run benchmarks: %w", err)
 	}
 
-	if args.GeneralAnalyze {
-		if err = cli.AnalyzeProfiles(args.Tag, profiles, cfg, args.FlagProfiles); err != nil {
+	if cliArgs.GeneralAnalyze {
+		if err = cli.AnalyzeProfiles(cliArgs.Tag, profiles, cfg, cliArgs.FlagProfiles); err != nil {
 			return fmt.Errorf("failed to analyze profiles: %w", err)
 		}
 	}
 
-	if args.FlagProfiles {
-		if err = cli.AnalyzeProfiles(args.Tag, profiles, cfg, args.FlagProfiles); err != nil {
+	if cliArgs.FlagProfiles {
+		if err = cli.AnalyzeProfiles(cliArgs.Tag, profiles, cfg, cliArgs.FlagProfiles); err != nil {
 			return fmt.Errorf("failed to flag profiles: %w", err)
 		}
 	}

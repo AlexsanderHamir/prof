@@ -21,3 +21,10 @@ type CollectionArgs struct {
 	BenchmarkName   string
 	BenchmarkConfig config.FunctionCollectionFilter
 }
+
+type BenchArgs struct {
+	Benchmarks []string
+	Profiles   []string
+	Count      int
+	Tag        string
+}

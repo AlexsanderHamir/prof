@@ -24,7 +24,10 @@ func ParseArguments() (*Arguments, error) {
 	}
 
 	rootCmd.Flags().BoolVarP(&args.Version, "version", "v", false, "Show version information")
-	rootCmd.Flags().StringVar(&args.Benchmarks, "benchmarks", "", "Benchmarks to run (e.g., '[BenchmarkGenPool,BenchmarkSyncPool]')")
+
+	benchUsage := "Benchmarks to run (e.g., '[BenchmarkGenPool, BenchmarkSyncPool]')"
+	rootCmd.Flags().StringVar(&args.Benchmarks, "benchmarks", "", benchUsage)
+
 	rootCmd.Flags().StringVar(&args.Profiles, "profiles", "", "Profiles to use (e.g., '[cpu,memory,mutex]')")
 	rootCmd.Flags().StringVar(&args.Tag, "tag", "", "Tag for the run")
 	rootCmd.Flags().IntVar(&args.Count, "count", 0, "Number of runs")
@@ -40,7 +43,8 @@ func ParseArguments() (*Arguments, error) {
 		},
 	}
 
-	setupCmd.Flags().BoolVar(&args.CreateTemplate, "create-template", false, "Generate a new template configuration file")
+	setupUsage := "Generate a new template configuration file"
+	setupCmd.Flags().BoolVar(&args.CreateTemplate, "create-template", false, setupUsage)
 	setupCmd.Flags().StringVar(&args.OutputPath, "output-path", "./config_template.json", "Destination path for the template")
 
 	rootCmd.AddCommand(setupCmd)
@@ -96,25 +100,25 @@ func PrintConfiguration(benchmarks, profiles []string, tag string, count int, fu
 }
 
 // RunBenchmarksAndProcessProfiles runs the full benchmark pipeline for each benchmark.
-func RunBenchmarksAndProcessProfiles(benchmarks, profiles []string, count int, tag string, benchmarkConfigs map[string]config.FunctionCollectionFilter) error {
+func RunBenchmarksAndProcessProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[string]config.FunctionCollectionFilter) error {
 	slog.Info("Starting benchmark pipeline...")
 
-	for _, benchmarkName := range benchmarks {
+	for _, benchmarkName := range benchArgs.Benchmarks {
 		slog.Info("Running benchmark", "Benchmark", benchmarkName)
-		if err := benchmark.RunBenchmark(benchmarkName, profiles, count, tag); err != nil {
+		if err := benchmark.RunBenchmark(benchmarkName, benchArgs.Profiles, benchArgs.Count, benchArgs.Tag); err != nil {
 			return fmt.Errorf("failed to run benchmark %s: %w", benchmarkName, err)
 		}
 
 		slog.Info("Processing profiles", "Benchmark", benchmarkName)
-		if err := benchmark.ProcessProfiles(benchmarkName, profiles, tag); err != nil {
+		if err := benchmark.ProcessProfiles(benchmarkName, benchArgs.Profiles, benchArgs.Tag); err != nil {
 			return fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err)
 		}
 
 		slog.Info("Analyzing profile functions", "Benchmark", benchmarkName)
 
 		args := &args.CollectionArgs{
-			Tag:             tag,
-			Profiles:        profiles,
+			Tag:             benchArgs.Tag,
+			Profiles:        benchArgs.Profiles,
 			BenchmarkName:   benchmarkName,
 			BenchmarkConfig: benchmarkConfigs[benchmarkName],
 		}
