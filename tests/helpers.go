@@ -18,6 +18,12 @@ const (
 	envDirName   = "Enviroment"
 	templateFile = "config_template.json"
 	testDirName  = "tests"
+
+	tag        = "test_tag"
+	count      = "1"
+	cpuProfile = "cpu"
+	memProfile = "memory"
+	benchName  = "BenchmarkStringProcessor"
 )
 
 func createPackage(dir string) error {
@@ -325,5 +331,104 @@ func runProf(t *testing.T, projectRoot string, args []string) {
 	successMessage := shared.InfoCollectionSuccess
 	if !strings.Contains(stderr.String(), successMessage) {
 		t.Errorf("Expected success message not found")
+	}
+}
+
+func checkDirectory(t *testing.T, path, description string) {
+	t.Helper()
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		t.Errorf("%s does not exist: %s", description, path)
+	}
+}
+
+func checkOutput(t *testing.T, envPath string, profiles []string) {
+	t.Helper()
+
+	benchPath := filepath.Join(envPath, shared.MainDirOutput)
+
+	// 1. Check that the tag dir exists
+	tagPath := filepath.Join(benchPath, tag)
+	checkDirectory(t, tagPath, tag)
+
+	// 2. Check that the bin and text dir exists
+	binPath := filepath.Join(tagPath, shared.ProfileBinDir)
+	textPath := filepath.Join(tagPath, shared.ProfileTextDir)
+	binBenchPath := filepath.Join(binPath, benchName)
+	textBenchPath := filepath.Join(textPath, benchName)
+
+	// bin => cpu, mem, test
+	// txt => cpu, mem, bench
+	expectedNumberOfFiles := 3
+	checkDirectory(t, binPath, "bin directory")
+	checkDirectory(t, binBenchPath, "benchmark directory inside of bin")
+	checkDirectoryFiles(t, binBenchPath, "bin files inside of benchmark directory", expectedNumberOfFiles)
+
+	checkDirectory(t, textPath, "text directory")
+	checkDirectory(t, textBenchPath, "benchmark directory inside of text")
+	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles)
+
+	// 3. Check that profile function directories exist for each profile
+	for _, profile := range profiles {
+		profileFunctionsDir := fmt.Sprintf("%s%s", profile, shared.FunctionsDirSuffix)
+		profileFunctionsPath := filepath.Join(tagPath, profileFunctionsDir)
+		checkDirectory(t, profileFunctionsPath, fmt.Sprintf("%s functions directory", profile))
+	}
+}
+
+func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedFileNum int) {
+	t.Helper()
+
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		t.Errorf("Failed to read %s: %v", dirDescription, err)
+		return
+	}
+
+	var files []os.DirEntry
+	var dirNames []string
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			dirNames = append(dirNames, entry.Name())
+		} else {
+			files = append(files, entry)
+		}
+	}
+
+	// Ensure no directories exist
+	if len(dirNames) > 0 {
+		t.Errorf("%s contains unexpected directories: %v", dirDescription, dirNames)
+		return
+	}
+
+	// Ensure files exist and are not empty
+	if len(files) == 0 {
+		t.Errorf("%s contains no files", dirDescription)
+		return
+	}
+
+	foundFiles := len(files)
+	if foundFiles != expectedFileNum {
+		t.Errorf("expected %d, found %d files", expectedFileNum, foundFiles)
+	}
+
+	for _, file := range files {
+		filePath := filepath.Join(dirPath, file.Name())
+		checkFileNotEmpty(t, filePath, file.Name())
+	}
+}
+
+func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
+	t.Helper()
+
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		t.Errorf("Failed to stat file %s: %v", fileName, err)
+		return
+	}
+
+	if fileInfo.Size() == 0 {
+		t.Errorf("File %s is empty (0 bytes)", fileName)
 	}
 }

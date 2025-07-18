@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"os"
+	"fmt"
 	"path"
 	"testing"
 
@@ -27,17 +27,21 @@ func TestNoConfig(t *testing.T) {
 
 	// 4. Run ./prof inside the Enviroment
 	runProf(t, root, []string{
-		"--benchmarks", "[BenchmarkStringProcessor]",
-		"--profiles", "[cpu,memory]",
-		"--count", "1",
-		"--tag", "test",
+		"--benchmarks", fmt.Sprintf("[%s]", benchName),
+		"--profiles", fmt.Sprintf("[%s,%s]", cpuProfile, memProfile),
+		"--count", count,
+		"--tag", tag,
 	})
 
-	// 5. Clean up
-	fullPath := path.Join(root, testDirName, envDirName)
-	defer func() {
-		if err := os.RemoveAll(fullPath); err != nil {
-			t.Logf("Failed to clean up environment: %v", err)
-		}
-	}()
+	envPath := path.Join(root, testDirName, envDirName)
+
+	// 5. Check bench output
+	checkOutput(t, envPath, []string{cpuProfile, memProfile})
+
+	// 6. Clean up
+	// defer func() {
+	// 	if err := os.RemoveAll(envPath); err != nil {
+	// 		t.Logf("Failed to clean up environment: %v", err)
+	// 	}
+	// }()
 }

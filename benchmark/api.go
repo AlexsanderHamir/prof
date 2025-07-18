@@ -61,7 +61,7 @@ func ProcessProfiles(benchmarkName string, profiles []string, tag string) error 
 		}
 
 		outputFile := filepath.Join(textDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, textExtension))
-		profileFunctionsDir := filepath.Join(tagDir, profile+functionsDirSuffix, benchmarkName)
+		profileFunctionsDir := filepath.Join(tagDir, profile+shared.FunctionsDirSuffix, benchmarkName)
 
 		if err := generateTextProfile(profileFile, outputFile); err != nil {
 			return fmt.Errorf("failed to generate text profile for %s: %w", profile, err)

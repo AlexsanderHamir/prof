@@ -33,7 +33,6 @@ func getPprofTextParams() []string {
 }
 
 const (
-	functionsDirSuffix  = "_functions"
 	textExtension       = "txt"
 	binExtension        = "out"
 	descriptionFileName = "description.txt"
@@ -84,7 +83,7 @@ func createProfileFunctionDirectories(tag string, profiles, benchmarks []string)
 			continue
 		}
 
-		profileDir := filepath.Join(tagDir, profile+functionsDirSuffix)
+		profileDir := filepath.Join(tagDir, profile+shared.FunctionsDirSuffix)
 		if err := os.MkdirAll(profileDir, shared.PermDir); err != nil {
 			return fmt.Errorf("failed to create profile directory %s: %w", profileDir, err)
 		}
@@ -258,7 +257,7 @@ func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 	return ProfilePaths{
 		ProfileTextFile:   filepath.Join(tagDir, "text", benchmarkName, profileTextFile),
 		ProfileBinaryFile: filepath.Join(tagDir, "bin", benchmarkName, profileBinFile),
-		FunctionDirectory: filepath.Join(tagDir, profile+functionsDirSuffix, benchmarkName),
+		FunctionDirectory: filepath.Join(tagDir, profile+shared.FunctionsDirSuffix, benchmarkName),
 	}
 }
 

@@ -11,12 +11,13 @@ const (
 )
 
 const (
-	TRACE          = "trace"
-	MainDirOutput  = "bench"
-	ProfileTextDir = "text"
-	ProfileBinDir  = "bin"
-	PermDir        = 0o755
-	PermFile       = 0o644
+	TRACE              = "trace"
+	MainDirOutput      = "bench"
+	ProfileTextDir     = "text"
+	ProfileBinDir      = "bin"
+	PermDir            = 0o755
+	PermFile           = 0o644
+	FunctionsDirSuffix = "_functions"
 )
 
 func GetScanner(filePath string) (*bufio.Scanner, *os.File, error) {
