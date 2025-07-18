@@ -38,7 +38,7 @@ const (
 
 // createBenchDirectories creates the main structure of the library's output.
 func createBenchDirectories(tag string, benchmarks []string) error {
-	tagDir := filepath.Join(shared.Main_dir_output, tag)
+	tagDir := filepath.Join(shared.MainDirOutput, tag)
 	binDir := filepath.Join(tagDir, shared.Profile_bin_files_directory)
 	textDir := filepath.Join(tagDir, shared.Profile_text_files_directory)
 	descFile := filepath.Join(tagDir, descriptionFileName)
@@ -72,7 +72,7 @@ func createBenchDirectories(tag string, benchmarks []string) error {
 
 // createProfileFunctionDirectories creates the structure for the code line level data collection.
 func createProfileFunctionDirectories(tag string, profiles, benchmarks []string) error {
-	tagDir := filepath.Join(shared.Main_dir_output, tag)
+	tagDir := filepath.Join(shared.MainDirOutput, tag)
 
 	for _, profile := range profiles {
 		if profile == shared.TRACE {
@@ -116,7 +116,7 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) [
 
 // getOutputDirectories gets or creates the output directories.
 func getOrCreateOutputDirectories(benchmarkName, tag string) (textDir string, binDir string, err error) {
-	tagDir := filepath.Join(shared.Main_dir_output, tag)
+	tagDir := filepath.Join(shared.MainDirOutput, tag)
 	textDir = filepath.Join(tagDir, shared.Profile_text_files_directory, benchmarkName)
 	binDir = filepath.Join(tagDir, shared.Profile_bin_files_directory, benchmarkName)
 
@@ -134,6 +134,9 @@ func getOrCreateOutputDirectories(benchmarkName, tag string) (textDir string, bi
 }
 
 func runBenchmarkCommand(cmd []string, outputFile string) error {
+	// cmd[0] = executable program (e.g., "go")
+	// cmd[1:] = arguments to pass to the program (e.g., ["test", "-run=^$", "-bench=..."])
+	// #nosec G204 -- cmd is constructed internally by buildBenchmarkCommand(), not from user input
 	execCmd := exec.Command(cmd[0], cmd[1:]...)
 
 	output, err := execCmd.CombinedOutput()
@@ -192,6 +195,7 @@ func generateTextProfile(profileFile, outputFile string) error {
 	cmd := append([]string{"go", "tool", "pprof"}, pprofTextParams...)
 	cmd = append(cmd, profileFile)
 
+	// #nosec G204 -- cmd is constructed internally by generateTextProfile(), not from user input
 	execCmd := exec.Command(cmd[0], cmd[1:]...)
 	output, err := execCmd.Output()
 	if err != nil {

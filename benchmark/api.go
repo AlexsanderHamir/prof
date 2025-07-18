@@ -42,7 +42,7 @@ func RunBenchmark(benchmarkName string, profiles []string, count int, tag string
 
 // ProcessProfiles collects all pprof info for a specific benchmark and its specified profiles.
 func ProcessProfiles(benchmarkName string, profiles []string, tag string) error {
-	tagDir := filepath.Join(shared.Main_dir_output, tag)
+	tagDir := filepath.Join(shared.MainDirOutput, tag)
 	binDir := filepath.Join(tagDir, shared.Profile_bin_files_directory, benchmarkName)
 	textDir := filepath.Join(tagDir, shared.Profile_text_files_directory, benchmarkName)
 

@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -121,8 +121,8 @@ func CreateTemplate(outputPath string) error {
 		return fmt.Errorf("failed to write template file: %w", err)
 	}
 
-	log.Printf("Template configuration file created at: %s\n", outputPath)
-	log.Printf("\nPlease edit this file with your configuration.\n")
+	slog.Info("Template configuration file created", "path", outputPath)
+	slog.Info("Please edit this file with your configuration")
 
 	return nil
 }
