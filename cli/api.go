@@ -53,10 +53,13 @@ func ParseArguments() (*Arguments, error) {
 
 // ValidateRequiredArgs checks if the required arguments are present for running the main command.
 func ValidateRequiredArgs(args *Arguments) bool {
-	if args.Command != "" || args.Version {
+	hasCommandOrVersion := args.Command != "" || args.Version
+	if hasCommandOrVersion {
 		return true
 	}
-	return args.Benchmarks != "" && args.Profiles != "" && args.Tag != "" && args.Count > 0
+
+	hasBenchmarkArgs := args.Benchmarks != "" && args.Profiles != "" && args.Tag != "" && args.Count > 0
+	return hasBenchmarkArgs
 }
 
 // ParseBenchmarkConfig parses the benchmarks and profiles arguments into string slices.
@@ -84,13 +87,15 @@ func PrintConfiguration(benchmarks, profiles []string, tag string, count int, fu
 	log.Printf("Tag: %s\n", tag)
 	log.Printf("Count: %d\n", count)
 
-	if len(functionFilterPerBench) > 0 {
+	hasBenchFunctionFilters := len(functionFilterPerBench) > 0
+	if hasBenchFunctionFilters {
 		log.Printf("\nBenchmark Function Filter Configurations:\n")
 		for benchmark, cfg := range functionFilterPerBench {
 			log.Printf("  %s:\n", benchmark)
 			log.Printf("    Prefixes: %v\n", cfg.IncludePrefixes)
 
-			if len(cfg.IgnoreFunctions) > 0 {
+			hasBenchIgnoreFilters := len(cfg.IgnoreFunctions) > 0
+			if hasBenchIgnoreFilters {
 				log.Printf("    Ignore: %+v\n", cfg.IgnoreFunctions)
 			}
 
@@ -128,18 +133,22 @@ func RunBenchmarksAndProcessProfiles(benchmarks, profiles []string, count int, t
 }
 
 // AnalyzeProfiles runs AI analysis for the given tag and profiles using the provided config.
-func AnalyzeProfiles(tag string, profiles []string, cfg *config.Config, isFlag bool) error {
+func AnalyzeProfiles(tag string, profiles []string, cfg *config.Config, isFlagging bool) error {
 	var benchmarks []string
 	var profileTypes []string
 
 	if cfg.AIConfig.AllBenchmarks {
 		var err error
-		benchmarks, err = analyzer.ValidateBenchmarkDirectories(tag)
+		benchmarks, err = analyzer.ValidateBenchmarkDirectories(tag, nil)
 		if err != nil {
 			return err
 		}
 	} else {
-		benchmarks = cfg.AIConfig.SpecificBenchmarks
+		var err error
+		benchmarks, err = analyzer.ValidateBenchmarkDirectories(tag, cfg.AIConfig.SpecificBenchmarks)
+		if err != nil {
+			return err
+		}
 	}
 
 	if cfg.AIConfig.AllProfiles {
@@ -150,5 +159,5 @@ func AnalyzeProfiles(tag string, profiles []string, cfg *config.Config, isFlag b
 
 	log.Printf("Found %v benchmarks and %v profile types\n", benchmarks, profileTypes)
 
-	return analyzer.AnalyzeAllProfiles(tag, benchmarks, profileTypes, cfg, isFlag)
+	return analyzer.AnalyzeAllProfiles(tag, benchmarks, profileTypes, cfg, isFlagging)
 }

@@ -269,20 +269,3 @@ func getFunctionPprofContent(function string, paths ProfilePaths) error {
 	log.Printf("Collected function %s\n", function)
 	return nil
 }
-
-// parseIgnoreList receives a comma separated
-// string and turning it into a string slice.
-func parseIgnoreList(ignore string) []string {
-	if ignore == "" {
-		return nil
-	}
-
-	parts := strings.Split(ignore, ",")
-	var result []string
-	for _, part := range parts {
-		if trimmed := strings.TrimSpace(part); trimmed != "" {
-			result = append(result, trimmed)
-		}
-	}
-	return result
-}

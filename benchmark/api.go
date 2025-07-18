@@ -25,7 +25,7 @@ func RunBenchmark(benchmarkName string, profiles []string, count int, tag string
 	cmd := buildBenchmarkCommand(benchmarkName, profiles, count)
 	textDir, binDir := getOutputDirectories(benchmarkName, tag)
 
-	outputFile := filepath.Join(textDir, benchmarkName+"%s")
+	outputFile := filepath.Join(textDir, fmt.Sprintf("%s.%s", benchmarkName, textExtension))
 	if err := runBenchmarkCommand(cmd, outputFile); err != nil {
 		return err
 	}
