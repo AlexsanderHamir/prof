@@ -211,9 +211,9 @@ func saveAnalysis(tag, benchmarkName, profileType, analysis string, isFlag bool)
 
 func getFilePath(tag, benchmarkName, profileType string, isFlag bool) string {
 	if isFlag {
-		return filepath.Join(shared.Main_dir_output, tag, shared.Profile_text_files_directory, benchmarkName, fmt.Sprintf("%s_%s.txt", benchmarkName, profileType))
+		return filepath.Join(shared.MainDirOutput, tag, shared.Profile_text_files_directory, benchmarkName, fmt.Sprintf("%s_%s.txt", benchmarkName, profileType))
 	}
 
-	analysisDir := filepath.Join(shared.Main_dir_output, tag, "AI", "generalistic", benchmarkName)
+	analysisDir := filepath.Join(shared.MainDirOutput, tag, "AI", "generalistic", benchmarkName)
 	return filepath.Join(analysisDir, fmt.Sprintf("generalistic_analysis_%s.txt", profileType))
 }

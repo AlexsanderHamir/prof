@@ -3,7 +3,7 @@ package analyzer
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -14,7 +14,7 @@ import (
 // ValidateBenchmarkDirectories checks if the benchmark directories exist for a given tag and returns the benchmark names.
 // If specificBenchmarks is nil or empty, returns all valid benchmark directories. Otherwise, validates and returns only those that exist.
 func ValidateBenchmarkDirectories(tag string, specificBenchmarks []string) ([]string, error) {
-	baseDir := filepath.Join(shared.Main_dir_output, tag)
+	baseDir := filepath.Join(shared.MainDirOutput, tag)
 
 	if _, err := os.Stat(baseDir); errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("no benchmark data found for tag '%s'", tag)
@@ -69,10 +69,11 @@ func ValidateBenchmarkDirectories(tag string, specificBenchmarks []string) ([]st
 
 // AnalyzeAllProfiles runs analysis for all benchmarks and profile types for a given tag.
 func AnalyzeAllProfiles(tag string, benchmarkNames, profileTypes []string, cfg *config.Config, isFlagging bool) error {
-	log.Printf("\nStarting comprehensive analysis for tag: %s\n", tag)
-	log.Printf("Benchmarks: %v\n", benchmarkNames)
-	log.Printf("Profile types: %v\n", profileTypes)
-	log.Printf("================================================================================\n")
+	slog.Info("Starting comprehensive analysis",
+		"tag", tag,
+		"benchmarks", benchmarkNames,
+		"profile_types", profileTypes)
+	slog.Info("================================================================================")
 
 	for _, benchmarkName := range benchmarkNames {
 		for _, profileType := range profileTypes {
@@ -80,7 +81,10 @@ func AnalyzeAllProfiles(tag string, benchmarkNames, profileTypes []string, cfg *
 				continue
 			}
 
-			log.Printf("\nAnalyzing %s (%s)...\n", benchmarkName, profileType)
+			slog.Info("Analyzing profile",
+				"benchmark", benchmarkName,
+				"profile_type", profileType)
+
 			if err := sendToModel(tag, benchmarkName, profileType, cfg, isFlagging); err != nil {
 				return fmt.Errorf("failed to analyze %s (%s): %w", benchmarkName, profileType, err)
 			}
