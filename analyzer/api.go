@@ -11,8 +11,11 @@ import (
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
-// ValidateBenchmarkDirectories checks if the benchmark directories exist for a given tag and returns the benchmark names.
-// If specificBenchmarks is nil or empty, returns all valid benchmark directories. Otherwise, validates and returns only those that exist.
+// ValidateBenchmarkDirectories checks if the benchmark directories exist
+// for a given tag and returns the benchmark names.
+//
+// If specificBenchmarks is nil or empty, returns all valid benchmark,
+// directories. Otherwise, validates and returns only those that exist.
 func ValidateBenchmarkDirectories(tag string, specificBenchmarks []string) ([]string, error) {
 	baseDir := filepath.Join(shared.MainDirOutput, tag)
 
@@ -20,7 +23,7 @@ func ValidateBenchmarkDirectories(tag string, specificBenchmarks []string) ([]st
 		return nil, fmt.Errorf("no benchmark data found for tag '%s'", tag)
 	}
 
-	textDir := filepath.Join(baseDir, shared.Profile_text_files_directory)
+	textDir := filepath.Join(baseDir, shared.ProfileTextDir)
 	if _, err := os.Stat(textDir); errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("no text profiles found in %s", textDir)
 	}

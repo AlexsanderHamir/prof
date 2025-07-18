@@ -100,14 +100,13 @@ func matchPrefix(funcName string, functionPrefixes []string) bool {
 // extractFunctionName extracts a function name from a line, applying prefix and ignore filters.
 func extractFunctionName(line string, functionPrefixes []string, ignoreFunctionSet map[string]struct{}) string {
 	parts := strings.Fields(line)
-	missingFields := len(parts) < 6
+	missingFields := len(parts) < profileLinelength
 	if missingFields {
 		return ""
 	}
 
-	funcName := strings.Join(parts[5:], " ")
+	funcName := strings.Join(parts[functionNameIndex:], " ")
 	isPrefixConfigSet := len(functionPrefixes) > 0
-
 	if isPrefixConfigSet && !matchPrefix(funcName, functionPrefixes) {
 		return ""
 	}

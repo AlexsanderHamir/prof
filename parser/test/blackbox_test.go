@@ -1,12 +1,17 @@
-package parser
+package parser_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/AlexsanderHamir/prof/args"
+	"github.com/AlexsanderHamir/prof/parser"
+)
 
 func TestShouldKeepLine(t *testing.T) {
 	tests := []struct {
 		name           string
 		line           string
-		profileValues  map[int]float64
+		profileFilters map[int]float64
 		ignoreFuncs    []string
 		ignorePrefixes []string
 		want           bool
@@ -22,16 +27,16 @@ func TestShouldKeepLine(t *testing.T) {
 			want: false,
 		},
 		{
-			name:          "profile value below threshold",
-			line:          "2.0 0.0 0.0 0.0 0.0 mypackage.myFunc",
-			profileValues: map[int]float64{0: 2.5},
-			want:          false,
+			name:           "profile value below threshold",
+			line:           "2.0 0.0 0.0 0.0 0.0 mypackage.myFunc",
+			profileFilters: map[int]float64{0: 2.5},
+			want:           false,
 		},
 		{
-			name:          "profile value above threshold",
-			line:          "3.0 0.0 0.0 0.0 0.0 mypackage.myFunc",
-			profileValues: map[int]float64{0: 2.5},
-			want:          true,
+			name:           "profile value above threshold",
+			line:           "3.0 0.0 0.0 0.0 0.0 mypackage.myFunc",
+			profileFilters: map[int]float64{0: 2.5},
+			want:           true,
 		},
 		{
 			name:        "ignore function match",
@@ -48,7 +53,7 @@ func TestShouldKeepLine(t *testing.T) {
 		{
 			name:           "no ignore, passes all filters",
 			line:           "3.0 0.0 0.0 0.0 0.0 mypackage.myFunc",
-			profileValues:  map[int]float64{0: 2.5},
+			profileFilters: map[int]float64{0: 2.5},
 			ignoreFuncs:    []string{"otherFunc"},
 			ignorePrefixes: []string{"otherPrefix."},
 			want:           true,
@@ -66,7 +71,13 @@ func TestShouldKeepLine(t *testing.T) {
 				ignorePrefixesMap[p] = struct{}{}
 			}
 
-			got := ShouldKeepLine(tt.line, tt.profileValues, ignoreFuncsMap, ignorePrefixesMap)
+			options := &args.LineFilterArgs{
+				ProfileFilters:    tt.profileFilters,
+				IgnoreFunctionSet: ignoreFuncsMap,
+				IgnorePrefixSet:   ignorePrefixesMap,
+			}
+
+			got := parser.ShouldKeepLine(tt.line, options)
 			if got != tt.want {
 				t.Errorf("ShouldKeepLine() = %v, want %v (test: %s)", got, tt.want, tt.name)
 			}

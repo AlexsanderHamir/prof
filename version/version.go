@@ -32,7 +32,7 @@ func getLatestVersion(ctx context.Context) (tagName string, err error) {
 		Timeout: waitTime * time.Second,
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", gitHubAPIURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, gitHubAPIURL, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}

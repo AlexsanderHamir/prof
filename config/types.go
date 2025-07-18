@@ -68,7 +68,7 @@ type ProfileFilter struct {
 
 // ProfileValues holds threshold values for filtering profile data.
 // It will cap the profile data at the speicfied values.
-// TODO: Better explanation and examples must be provided
+// TODO: Better explanation and examples must be provided.
 type FilterValues struct {
 	Flat        float64 `json:"flat,omitempty"`
 	FlatPercent float64 `json:"flat%,omitempty"`

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"log/slog"
+	"os"
 
 	"github.com/AlexsanderHamir/prof/cli"
 	"github.com/AlexsanderHamir/prof/config"
@@ -46,15 +49,16 @@ func handleVersion() error {
 // handleSetup processes the setup command and creates a template if requested.
 func handleSetup(args *cli.Arguments) error {
 	if args.CreateTemplate {
-		return config.CreateTemplate(args.OutputPath)
+		logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+		return config.CreateTemplate(args.OutputPath, logger)
 	}
-	return fmt.Errorf("setup command requires --create-template flag")
+	return errors.New("setup command requires --create-template flag")
 }
 
 // handleBenchmarks runs the benchmark pipeline based on parsed arguments.
 func handleBenchmarks(args *cli.Arguments) error {
 	if !cli.ValidateRequiredArgs(args) {
-		return fmt.Errorf("missing required arguments")
+		return errors.New("missing required arguments")
 	}
 
 	cfg, err := config.LoadFromFile(configFilePath)
@@ -67,24 +71,24 @@ func handleBenchmarks(args *cli.Arguments) error {
 		return fmt.Errorf("failed to parse benchmark config: %w", err)
 	}
 
-	if err := cli.SetupDirectories(args.Tag, benchmarks, profiles); err != nil {
+	if err = cli.SetupDirectories(args.Tag, benchmarks, profiles); err != nil {
 		return fmt.Errorf("failed to setup directories: %w", err)
 	}
 
 	cli.PrintConfiguration(benchmarks, profiles, args.Tag, args.Count, cfg.FunctionCollectionFilter)
 
-	if err := cli.RunBenchmarksAndProcessProfiles(benchmarks, profiles, args.Count, args.Tag, cfg.FunctionCollectionFilter); err != nil {
+	if err = cli.RunBenchmarksAndProcessProfiles(benchmarks, profiles, args.Count, args.Tag, cfg.FunctionCollectionFilter); err != nil {
 		return fmt.Errorf("failed to run benchmarks: %w", err)
 	}
 
 	if args.GeneralAnalyze {
-		if err := cli.AnalyzeProfiles(args.Tag, profiles, cfg, args.FlagProfiles); err != nil {
+		if err = cli.AnalyzeProfiles(args.Tag, profiles, cfg, args.FlagProfiles); err != nil {
 			return fmt.Errorf("failed to analyze profiles: %w", err)
 		}
 	}
 
 	if args.FlagProfiles {
-		if err := cli.AnalyzeProfiles(args.Tag, profiles, cfg, args.FlagProfiles); err != nil {
+		if err = cli.AnalyzeProfiles(args.Tag, profiles, cfg, args.FlagProfiles); err != nil {
 			return fmt.Errorf("failed to flag profiles: %w", err)
 		}
 	}

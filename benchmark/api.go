@@ -3,11 +3,11 @@ package benchmark
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
-	"github.com/AlexsanderHamir/prof/config"
+	"github.com/AlexsanderHamir/prof/args"
 	"github.com/AlexsanderHamir/prof/parser"
 	"github.com/AlexsanderHamir/prof/shared"
 )
@@ -29,11 +29,11 @@ func RunBenchmark(benchmarkName string, profiles []string, count int, tag string
 	}
 
 	outputFile := filepath.Join(textDir, fmt.Sprintf("%s.%s", benchmarkName, textExtension))
-	if err := runBenchmarkCommand(cmd, outputFile); err != nil {
+	if err = runBenchmarkCommand(cmd, outputFile); err != nil {
 		return err
 	}
 
-	if err := moveProfileFiles(benchmarkName, profiles, binDir); err != nil {
+	if err = moveProfileFiles(benchmarkName, profiles, binDir); err != nil {
 		return err
 	}
 
@@ -43,8 +43,8 @@ func RunBenchmark(benchmarkName string, profiles []string, count int, tag string
 // ProcessProfiles collects all pprof info for a specific benchmark and its specified profiles.
 func ProcessProfiles(benchmarkName string, profiles []string, tag string) error {
 	tagDir := filepath.Join(shared.MainDirOutput, tag)
-	binDir := filepath.Join(tagDir, shared.Profile_bin_files_directory, benchmarkName)
-	textDir := filepath.Join(tagDir, shared.Profile_text_files_directory, benchmarkName)
+	binDir := filepath.Join(tagDir, shared.ProfileBinDir, benchmarkName)
+	textDir := filepath.Join(tagDir, shared.ProfileTextDir, benchmarkName)
 
 	for _, profile := range profiles {
 		if profile == shared.TRACE {
@@ -54,7 +54,7 @@ func ProcessProfiles(benchmarkName string, profiles []string, tag string) error 
 		profileFile := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
 		if _, err := os.Stat(profileFile); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
-				log.Printf("Warning: Profile file not found: %s\n", profileFile)
+				slog.Warn("Profile file not found", "file", profileFile)
 				continue
 			}
 			return fmt.Errorf("failed to stat profile file %s: %w", profileFile, err)
@@ -72,27 +72,27 @@ func ProcessProfiles(benchmarkName string, profiles []string, tag string) error 
 			return fmt.Errorf("failed to generate PNG visualization for %s: %w", profile, err)
 		}
 
-		log.Printf("Processed %s profile for %s\n", profile, benchmarkName)
+		slog.Info("Processed profile", "profile", profile, "benchmark", benchmarkName)
 	}
 
 	return nil
 }
 
 // CollectProfileFunctions collects all pprof information for each function, according to configurations.
-func CollectProfileFunctions(tag string, profiles []string, benchmarkName string, benchmarkConfig config.FunctionCollectionFilter) error {
-	for _, profile := range profiles {
+func CollectProfileFunctions(args *args.CollectionArgs) error {
+	for _, profile := range args.Profiles {
 		if profile == shared.TRACE {
 			continue
 		}
 
-		paths := getProfilePaths(tag, benchmarkName, profile)
+		paths := getProfilePaths(args.Tag, args.BenchmarkName, profile)
 		if err := os.MkdirAll(paths.FunctionDirectory, shared.PermDir); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
 
 		filter := parser.ProfileFilter{
-			FunctionPrefixes: benchmarkConfig.IncludePrefixes,
-			IgnoreFunctions:  benchmarkConfig.IgnoreFunctions,
+			FunctionPrefixes: args.BenchmarkConfig.IncludePrefixes,
+			IgnoreFunctions:  args.BenchmarkConfig.IgnoreFunctions,
 		}
 
 		functions, err := parser.GetAllFunctionNames(paths.ProfileTextFile, filter)
@@ -100,10 +100,9 @@ func CollectProfileFunctions(tag string, profiles []string, benchmarkName string
 			return fmt.Errorf("failed to extract function names: %w", err)
 		}
 
-		if err := saveAllFunctionsPprofContents(functions, paths); err != nil {
+		if err = saveAllFunctionsPprofContents(functions, paths); err != nil {
 			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", err)
 		}
-
 	}
 
 	return nil

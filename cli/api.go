@@ -2,9 +2,10 @@ package cli
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/AlexsanderHamir/prof/analyzer"
+	"github.com/AlexsanderHamir/prof/args"
 	"github.com/AlexsanderHamir/prof/benchmark"
 	"github.com/AlexsanderHamir/prof/config"
 	"github.com/spf13/cobra"
@@ -17,7 +18,7 @@ func ParseArguments() (*Arguments, error) {
 	var rootCmd = &cobra.Command{
 		Use:   "prof",
 		Short: "CLI tool for organizing and analyzing Go benchmarks with AI",
-		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return nil
 		},
 	}
@@ -33,7 +34,7 @@ func ParseArguments() (*Arguments, error) {
 	var setupCmd = &cobra.Command{
 		Use:   "setup",
 		Short: "Set up configuration for the benchmarking tool",
-		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			args.Command = "setup"
 			return nil
 		},
@@ -81,54 +82,51 @@ func SetupDirectories(tag string, benchmarks, profiles []string) error {
 
 // PrintConfiguration prints the parsed configuration and benchmark filter details.
 func PrintConfiguration(benchmarks, profiles []string, tag string, count int, functionFilterPerBench map[string]config.FunctionCollectionFilter) {
-	log.Printf("\nParsed arguments:\n")
-	log.Printf("Benchmarks: %v\n", benchmarks)
-	log.Printf("Profiles: %v\n", profiles)
-	log.Printf("Tag: %s\n", tag)
-	log.Printf("Count: %d\n", count)
+	slog.Info("Parsed arguments", "Benchmarks", benchmarks, "Profiles", profiles, "Tag", tag, "Count", count)
 
 	hasBenchFunctionFilters := len(functionFilterPerBench) > 0
 	if hasBenchFunctionFilters {
-		log.Printf("\nBenchmark Function Filter Configurations:\n")
+		slog.Info("Benchmark Function Filter Configurations:")
 		for benchmark, cfg := range functionFilterPerBench {
-			log.Printf("  %s:\n", benchmark)
-			log.Printf("    Prefixes: %v\n", cfg.IncludePrefixes)
-
-			hasBenchIgnoreFilters := len(cfg.IgnoreFunctions) > 0
-			if hasBenchIgnoreFilters {
-				log.Printf("    Ignore: %+v\n", cfg.IgnoreFunctions)
-			}
-
+			slog.Info("Benchmark Config", "Benchmark", benchmark, "Prefixes", cfg.IncludePrefixes, "Ignore", cfg.IgnoreFunctions)
 		}
 	} else {
-		log.Printf("\nNo benchmark configuration found in config file - analyzing all functions\n")
+		slog.Info("No benchmark configuration found in config file - analyzing all functions")
 	}
 }
 
 // RunBenchmarksAndProcessProfiles runs the full benchmark pipeline for each benchmark.
 func RunBenchmarksAndProcessProfiles(benchmarks, profiles []string, count int, tag string, benchmarkConfigs map[string]config.FunctionCollectionFilter) error {
-	log.Printf("\nStarting benchmark pipeline...\n")
+	slog.Info("Starting benchmark pipeline...")
 
 	for _, benchmarkName := range benchmarks {
-		log.Printf("\nRunning benchmark: %s\n", benchmarkName)
+		slog.Info("Running benchmark", "Benchmark", benchmarkName)
 		if err := benchmark.RunBenchmark(benchmarkName, profiles, count, tag); err != nil {
 			return fmt.Errorf("failed to run benchmark %s: %w", benchmarkName, err)
 		}
 
-		log.Printf("\nProcessing profiles for %s...\n", benchmarkName)
+		slog.Info("Processing profiles", "Benchmark", benchmarkName)
 		if err := benchmark.ProcessProfiles(benchmarkName, profiles, tag); err != nil {
 			return fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err)
 		}
 
-		log.Printf("\nAnalyzing profile functions for %s...\n", benchmarkName)
-		if err := benchmark.CollectProfileFunctions(tag, profiles, benchmarkName, benchmarkConfigs[benchmarkName]); err != nil {
+		slog.Info("Analyzing profile functions", "Benchmark", benchmarkName)
+
+		args := &args.CollectionArgs{
+			Tag:             tag,
+			Profiles:        profiles,
+			BenchmarkName:   benchmarkName,
+			BenchmarkConfig: benchmarkConfigs[benchmarkName],
+		}
+
+		if err := benchmark.CollectProfileFunctions(args); err != nil {
 			return fmt.Errorf("failed to analyze profile functions for %s: %w", benchmarkName, err)
 		}
 
-		log.Printf("Completed pipeline for benchmark: %s\n", benchmarkName)
+		slog.Info("Completed pipeline for benchmark", "Benchmark", benchmarkName)
 	}
 
-	log.Printf("\nAll benchmarks and profile processing completed successfully!\n")
+	slog.Info("All benchmarks and profile processing completed successfully!")
 	return nil
 }
 
@@ -157,7 +155,7 @@ func AnalyzeProfiles(tag string, profiles []string, cfg *config.Config, isFlaggi
 		profileTypes = cfg.AIConfig.SpecificProfiles
 	}
 
-	log.Printf("Found %v benchmarks and %v profile types\n", benchmarks, profileTypes)
+	slog.Info("Found benchmarks and profile types", "Benchmarks", benchmarks, "ProfileTypes", profileTypes)
 
 	return analyzer.AnalyzeAllProfiles(tag, benchmarks, profileTypes, cfg, isFlagging)
 }

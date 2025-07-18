@@ -47,11 +47,11 @@ func LoadFromFile(filename string) (*Config, error) {
 	}
 
 	var config Config
-	if err := json.Unmarshal(data, &config); err != nil {
+	if err = json.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	if err := validateConfig(&config); err != nil {
+	if err = validateConfig(&config); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 
@@ -60,7 +60,7 @@ func LoadFromFile(filename string) (*Config, error) {
 
 // CreateTemplate creates a template configuration file from the actual Config struct
 // with pre-built examples.
-func CreateTemplate(outputPath string) error {
+func CreateTemplate(outputPath string, logger *slog.Logger) error {
 	if outputPath == "" {
 		outputPath = "./config_template.json"
 	}
@@ -70,9 +70,9 @@ func CreateTemplate(outputPath string) error {
 		BaseURL: "https://api.openai.com/v1",
 		ModelConfig: ModelConfig{
 			Model:              "gpt-4-turbo-preview",
-			MaxTokens:          4096,
-			Temperature:        0.7,
-			TopP:               1.0,
+			MaxTokens:          0,
+			Temperature:        0.0,
+			TopP:               0.0,
 			PromptFileLocation: "path/to/your/system_prompt.txt",
 		},
 		FunctionCollectionFilter: map[string]FunctionCollectionFilter{
@@ -117,12 +117,12 @@ func CreateTemplate(outputPath string) error {
 		return fmt.Errorf("failed to marshal template: %w", err)
 	}
 
-	if err := os.WriteFile(outputPath, data, shared.PermFile); err != nil {
+	if err = os.WriteFile(outputPath, data, shared.PermFile); err != nil {
 		return fmt.Errorf("failed to write template file: %w", err)
 	}
 
-	slog.Info("Template configuration file created", "path", outputPath)
-	slog.Info("Please edit this file with your configuration")
+	logger.Info("Template configuration file created", "path", outputPath)
+	logger.Info("Please edit this file with your configuration")
 
 	return nil
 }

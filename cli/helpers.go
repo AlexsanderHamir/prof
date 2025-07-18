@@ -8,20 +8,20 @@ import (
 // validateListArguments checks if the benchmarks and profiles arguments are valid lists.
 func validateListArguments(benchmarks, profiles string) error {
 	if strings.TrimSpace(benchmarks) == "[]" {
-		return ErremptyBenchmarks
+		return ErrEmptyBenchmarks
 	}
 	if strings.TrimSpace(profiles) == "[]" {
-		return ErremptyProfiles
+		return ErrEmptyProfiles
 	}
 
 	benchmarks = strings.TrimSpace(benchmarks)
 	profiles = strings.TrimSpace(profiles)
 
 	if !strings.HasPrefix(benchmarks, "[") || !strings.HasSuffix(benchmarks, "]") {
-		return fmt.Errorf("benchmarks %w %s", Errbracket, benchmarks)
+		return fmt.Errorf("benchmarks %w %s", ErrBracket, benchmarks)
 	}
 	if !strings.HasPrefix(profiles, "[") || !strings.HasSuffix(profiles, "]") {
-		return fmt.Errorf("profiles %w %s", Errbracket, profiles)
+		return fmt.Errorf("profiles %w %s", ErrBracket, profiles)
 	}
 
 	return nil

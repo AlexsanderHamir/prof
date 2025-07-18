@@ -3,16 +3,22 @@ package analyzer
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/AlexsanderHamir/prof/args"
 	"github.com/AlexsanderHamir/prof/config"
 	"github.com/AlexsanderHamir/prof/parser"
 	"github.com/AlexsanderHamir/prof/shared"
 	"github.com/sashabaranov/go-openai"
+)
+
+const (
+	formatLineLength = 80
 )
 
 func sendToModel(tag, benchmarkName, profileType string, cfg *config.Config, isFlag bool) error {
@@ -30,16 +36,23 @@ func sendToModel(tag, benchmarkName, profileType string, cfg *config.Config, isF
 		return fmt.Errorf("failed to get user prompt: %w", err)
 	}
 
-	analysis, err := requestModelAnalysis(userPrompt, profileData, benchmarkName, profileType, cfg)
+	args := &args.ModelCallRequiredArgs{
+		SystemPrompt:   userPrompt,
+		ProfileContent: profileData,
+		BenchmarkName:  benchmarkName,
+		ProfileType:    profileType,
+	}
+
+	analysis, err := requestModelAnalysis(args, cfg)
 	if err != nil {
 		return fmt.Errorf("failed to request model analysis: %w", err)
 	}
 
-	if err := saveAnalysis(tag, benchmarkName, profileType, analysis, isFlag); err != nil {
+	if err = saveAnalysis(tag, benchmarkName, profileType, analysis, isFlag); err != nil {
 		return fmt.Errorf("failed to save analysis: %w", err)
 	}
 
-	log.Printf("Successfully analyzed and saved results for %s (%s)\n", benchmarkName, profileType)
+	slog.Info("Successfully analyzed and saved results", "benchmarkName", benchmarkName, "profileType", profileType)
 	return nil
 }
 
@@ -55,9 +68,16 @@ func filterProfileBody(cfg *config.Config, scanner *bufio.Scanner, lines *[]stri
 	profileFilters := cfg.GetProfileFilters()
 	ignoreFunctionSet, ignorePrefixSet := cfg.GetIgnoreSets()
 
+	options := &args.LineFilterArgs{
+		ProfileFilters:    profileFilters,
+		IgnoreFunctionSet: ignoreFunctionSet,
+		IgnorePrefixSet:   ignorePrefixSet,
+	}
+
 	for scanner.Scan() {
 		line := scanner.Text()
-		if parser.ShouldKeepLine(line, profileFilters, ignoreFunctionSet, ignorePrefixSet) {
+
+		if parser.ShouldKeepLine(line, options) {
 			*lines = append(*lines, line)
 		}
 	}
@@ -95,7 +115,7 @@ func readProfileTextFile(filePath, profileType string, cfg *config.Config) (file
 		getAllProfileLines(scanner, &lines)
 	}
 
-	if err := scanner.Err(); err != nil {
+	if err = scanner.Err(); err != nil {
 		return "", fmt.Errorf("error reading file: %w", err)
 	}
 
@@ -124,7 +144,7 @@ func collectHeader(scanner *bufio.Scanner, profileType string, lines *[]string) 
 
 func getUserPrompt(cfg *config.Config) (string, error) {
 	if cfg.ModelConfig.PromptFileLocation == "" {
-		return "", fmt.Errorf("prompt_location must be provided in config")
+		return "", errors.New("prompt_location must be provided in config")
 	}
 
 	data, err := os.ReadFile(cfg.ModelConfig.PromptFileLocation)
@@ -135,7 +155,7 @@ func getUserPrompt(cfg *config.Config) (string, error) {
 	return strings.TrimSpace(string(data)), nil
 }
 
-func requestModelAnalysis(systemPrompt, profileContent, benchmarkName, profileType string, cfg *config.Config) (string, error) {
+func requestModelAnalysis(args *args.ModelCallRequiredArgs, cfg *config.Config) (string, error) {
 	client := openai.NewClient(cfg.APIKey)
 	// TODO: ??
 	if cfg.BaseURL != "https://api.openai.com/v1" {
@@ -146,9 +166,9 @@ func requestModelAnalysis(systemPrompt, profileContent, benchmarkName, profileTy
 
 	// TODO: prompt redundancy
 	profileInfo := fmt.Sprintf("BenchmarkName: %s\nProfile Type: %s\n\nProfile Content: %s",
-		benchmarkName, profileType, profileContent)
+		args.BenchmarkName, args.ProfileType, args.ProfileContent)
 
-	log.Printf("\nSending request to model: %s\n", cfg.ModelConfig.Model)
+	slog.Info("Sending request to model", "model", cfg.ModelConfig.Model)
 
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
@@ -157,7 +177,7 @@ func requestModelAnalysis(systemPrompt, profileContent, benchmarkName, profileTy
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
-					Content: systemPrompt,
+					Content: args.SystemPrompt,
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
@@ -175,12 +195,12 @@ func requestModelAnalysis(systemPrompt, profileContent, benchmarkName, profileTy
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("no response choices received from model")
+		return "", errors.New("no response choices received from model")
 	}
 
 	content := resp.Choices[0].Message.Content
 	if content == "" {
-		return "", fmt.Errorf("no content received from model")
+		return "", errors.New("no content received from model")
 	}
 
 	return content, nil
@@ -198,20 +218,21 @@ func saveAnalysis(tag, benchmarkName, profileType, analysis string, isFlag bool)
 		content = analysis
 	} else {
 		content = fmt.Sprintf("Benchmark: %s\nProfile Type: %s\n%s\n\n%s",
-			benchmarkName, profileType, strings.Repeat("=", 80), analysis)
+			benchmarkName, profileType, strings.Repeat("=", formatLineLength), analysis)
 	}
 
 	if err := os.WriteFile(analysisFile, []byte(content), shared.PermFile); err != nil {
 		return fmt.Errorf("cannot save analysis to %s: %w", analysisFile, err)
 	}
 
-	log.Printf("Analysis saved to: %s\n", analysisFile)
+	slog.Info("Analysis saved", "file", analysisFile)
 	return nil
 }
 
 func getFilePath(tag, benchmarkName, profileType string, isFlag bool) string {
 	if isFlag {
-		return filepath.Join(shared.MainDirOutput, tag, shared.Profile_text_files_directory, benchmarkName, fmt.Sprintf("%s_%s.txt", benchmarkName, profileType))
+		fileName := fmt.Sprintf("%s_%s.txt", benchmarkName, profileType)
+		return filepath.Join(shared.MainDirOutput, tag, shared.ProfileTextDir, benchmarkName, fileName)
 	}
 
 	analysisDir := filepath.Join(shared.MainDirOutput, tag, "AI", "generalistic", benchmarkName)
