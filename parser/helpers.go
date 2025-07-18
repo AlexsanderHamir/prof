@@ -7,18 +7,13 @@ import (
 )
 
 const (
-	FlatIndex = iota
-	FlatPercentIndex
-	SumPercentIndex
-	CumIndex
-	CumPercentIndex
-	MeasurementFieldCount
+	measurementFieldCount = 5
 )
 
 // filterByNumber returns true if all profile measurement values exceed their configured thresholds.
 // It checks up to MeasurementFieldCount fields: flat, flat%, sum%, cum, cum%
 func filterByNumber(thresholds map[int]float64, profileFields []string) bool {
-	maxFields := min(MeasurementFieldCount, len(profileFields))
+	maxFields := min(measurementFieldCount, len(profileFields))
 
 	for fieldIndex := range maxFields {
 		threshold, hasThreshold := thresholds[fieldIndex]

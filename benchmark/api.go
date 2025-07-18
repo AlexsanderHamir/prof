@@ -23,7 +23,10 @@ func SetupDirectories(tag string, benchmarks, profiles []string) error {
 // RunBenchmark runs a specific benchmark and collects all of its information.
 func RunBenchmark(benchmarkName string, profiles []string, count int, tag string) error {
 	cmd := buildBenchmarkCommand(benchmarkName, profiles, count)
-	textDir, binDir := getOutputDirectories(benchmarkName, tag)
+	textDir, binDir, err := getOrCreateOutputDirectories(benchmarkName, tag)
+	if err != nil {
+		return fmt.Errorf("couldn't get output directories: %w", err)
+	}
 
 	outputFile := filepath.Join(textDir, fmt.Sprintf("%s.%s", benchmarkName, textExtension))
 	if err := runBenchmarkCommand(cmd, outputFile); err != nil {

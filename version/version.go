@@ -26,7 +26,7 @@ func normalizeVersion(version string) string {
 }
 
 // getLatestVersion fetches the latest release tag from GitHub.
-func getLatestVersion() (string, error) {
+func getLatestVersion() (tagName string, err error) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
@@ -35,7 +35,14 @@ func getLatestVersion() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch latest version: %w", err)
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			if err == nil {
+				err = fmt.Errorf("response body close failed: %w", closeErr)
+			}
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("GitHub API returned status %d", resp.StatusCode)

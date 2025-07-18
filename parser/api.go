@@ -24,18 +24,23 @@ type ProfileFilter struct {
 }
 
 // GetAllFunctionNames extracts all function names from a profile text file, applying the given filter.
-func GetAllFunctionNames(filePath string, filter ProfileFilter) ([]string, error) {
+func GetAllFunctionNames(filePath string, filter ProfileFilter) (names []string, err error) {
 	scanner, file, err := shared.GetScanner(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("GetAllFunctionNames Failed: %w", err)
 	}
-	defer file.Close()
+
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			if err == nil {
+				err = fmt.Errorf("file close failed: %w", closeErr)
+			}
+		}
+	}()
 
 	ignoreSet := getFilterSets(filter.IgnoreFunctions)
 
-	var functions []string
 	var foundHeader bool
-
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" {
@@ -53,7 +58,7 @@ func GetAllFunctionNames(filePath string, filter ProfileFilter) ([]string, error
 		}
 
 		if funcName := extractFunctionName(line, filter.FunctionPrefixes, ignoreSet); funcName != "" {
-			functions = append(functions, funcName)
+			names = append(names, funcName)
 		}
 	}
 
@@ -65,7 +70,7 @@ func GetAllFunctionNames(filePath string, filter ProfileFilter) ([]string, error
 		return nil, fmt.Errorf("profile file header not found")
 	}
 
-	return functions, nil
+	return names, nil
 }
 
 // ShouldKeepLine determines if a line from a profile should be kept based on profile values and ignore filters.

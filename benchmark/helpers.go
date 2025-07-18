@@ -115,16 +115,22 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) [
 }
 
 // getOutputDirectories gets or creates the output directories.
-func getOutputDirectories(benchmarkName, tag string) (string, string) {
+func getOrCreateOutputDirectories(benchmarkName, tag string) (textDir string, binDir string, err error) {
 	tagDir := filepath.Join(shared.Main_dir_output, tag)
-	textDir := filepath.Join(tagDir, shared.Profile_text_files_directory, benchmarkName)
-	binDir := filepath.Join(tagDir, shared.Profile_bin_files_directory, benchmarkName)
+	textDir = filepath.Join(tagDir, shared.Profile_text_files_directory, benchmarkName)
+	binDir = filepath.Join(tagDir, shared.Profile_bin_files_directory, benchmarkName)
 
-	// Only create if not exists
-	_ = os.MkdirAll(textDir, shared.PermDir)
-	_ = os.MkdirAll(binDir, shared.PermDir)
+	err = os.MkdirAll(textDir, shared.PermDir)
+	if err != nil {
+		return "", "", fmt.Errorf("creating %s directory failed: %w", textDir, err)
+	}
 
-	return textDir, binDir
+	err = os.MkdirAll(binDir, shared.PermDir)
+	if err != nil {
+		return "", "", fmt.Errorf("creating %s directory failed: %w", binDir, err)
+	}
+
+	return textDir, binDir, nil
 }
 
 func runBenchmarkCommand(cmd []string, outputFile string) error {

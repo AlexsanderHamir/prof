@@ -69,14 +69,21 @@ func getAllProfileLines(scanner *bufio.Scanner, lines *[]string) {
 	}
 }
 
-func readProfileTextFile(filePath, profileType string, cfg *config.Config) (string, error) {
+func readProfileTextFile(filePath, profileType string, cfg *config.Config) (fileContent string, err error) {
 	var lines []string
 
 	scanner, file, err := shared.GetScanner(filePath)
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			if err == nil {
+				err = fmt.Errorf("file close failed: %w", closeErr)
+			}
+		}
+	}()
 
 	collectHeader(scanner, profileType, &lines)
 
@@ -92,12 +99,12 @@ func readProfileTextFile(filePath, profileType string, cfg *config.Config) (stri
 		return "", fmt.Errorf("error reading file: %w", err)
 	}
 
-	content := strings.Join(lines, "\n")
-	if content == "" {
+	fileContent = strings.Join(lines, "\n")
+	if fileContent == "" {
 		return "", fmt.Errorf("profile file %s is empty", filePath)
 	}
 
-	return content, nil
+	return fileContent, nil
 }
 
 // POTENTIAL IMPROVEMENT: shouldn't this be part of the parser ?
@@ -204,9 +211,9 @@ func saveAnalysis(tag, benchmarkName, profileType, analysis string, isFlag bool)
 
 func getFilePath(tag, benchmarkName, profileType string, isFlag bool) string {
 	if isFlag {
-		return filepath.Join("bench", tag, "text", benchmarkName, fmt.Sprintf("%s_%s.txt", benchmarkName, profileType))
+		return filepath.Join(shared.Main_dir_output, tag, shared.Profile_text_files_directory, benchmarkName, fmt.Sprintf("%s_%s.txt", benchmarkName, profileType))
 	}
 
-	analysisDir := filepath.Join("bench", tag, "AI", "generalistic", benchmarkName)
+	analysisDir := filepath.Join(shared.Main_dir_output, tag, "AI", "generalistic", benchmarkName)
 	return filepath.Join(analysisDir, fmt.Sprintf("generalistic_analysis_%s.txt", profileType))
 }
