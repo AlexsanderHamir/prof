@@ -143,24 +143,24 @@ func collectHeader(scanner *bufio.Scanner, profileType string, lines *[]string) 
 }
 
 func getUserPrompt(cfg *config.Config) (string, error) {
-	if cfg.ModelConfig.PromptFileLocation == "" {
+	if cfg.AIConfig.ModelConfig.PromptFileLocation == "" {
 		return "", errors.New("prompt_location must be provided in config")
 	}
 
-	data, err := os.ReadFile(cfg.ModelConfig.PromptFileLocation)
+	data, err := os.ReadFile(cfg.AIConfig.ModelConfig.PromptFileLocation)
 	if err != nil {
-		return "", fmt.Errorf("failed to read prompt file %s: %w", cfg.ModelConfig.PromptFileLocation, err)
+		return "", fmt.Errorf("failed to read prompt file %s: %w", cfg.AIConfig.ModelConfig.PromptFileLocation, err)
 	}
 
 	return strings.TrimSpace(string(data)), nil
 }
 
 func requestModelAnalysis(args *args.ModelCallRequiredArgs, cfg *config.Config) (string, error) {
-	client := openai.NewClient(cfg.APIKey)
+	client := openai.NewClient(cfg.AIConfig.APIKey)
 	// TODO: ??
-	if cfg.BaseURL != "https://api.openai.com/v1" {
-		config := openai.DefaultConfig(cfg.APIKey)
-		config.BaseURL = cfg.BaseURL
+	if cfg.AIConfig.BaseURL != "https://api.openai.com/v1" {
+		config := openai.DefaultConfig(cfg.AIConfig.APIKey)
+		config.BaseURL = cfg.AIConfig.BaseURL
 		client = openai.NewClientWithConfig(config)
 	}
 
@@ -168,12 +168,12 @@ func requestModelAnalysis(args *args.ModelCallRequiredArgs, cfg *config.Config) 
 	profileInfo := fmt.Sprintf("BenchmarkName: %s\nProfile Type: %s\n\nProfile Content: %s",
 		args.BenchmarkName, args.ProfileType, args.ProfileContent)
 
-	slog.Info("Sending request to model", "model", cfg.ModelConfig.Model)
+	slog.Info("Sending request to model", "model", cfg.AIConfig.ModelConfig.Model)
 
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: cfg.ModelConfig.Model,
+			Model: cfg.AIConfig.ModelConfig.Model,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
@@ -184,9 +184,9 @@ func requestModelAnalysis(args *args.ModelCallRequiredArgs, cfg *config.Config) 
 					Content: profileInfo,
 				},
 			},
-			MaxTokens:   cfg.ModelConfig.MaxTokens,
-			Temperature: cfg.ModelConfig.Temperature,
-			TopP:        cfg.ModelConfig.TopP,
+			MaxTokens:   cfg.AIConfig.ModelConfig.MaxTokens,
+			Temperature: cfg.AIConfig.ModelConfig.Temperature,
+			TopP:        cfg.AIConfig.ModelConfig.TopP,
 		},
 	)
 

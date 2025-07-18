@@ -5,16 +5,16 @@ import (
 )
 
 func validateConfig(config *Config) error {
-	if config.APIKey == "" {
+	if config.AIConfig.APIKey == "" {
 		return errors.New("api_key is required")
 	}
-	if config.BaseURL == "" {
+	if config.AIConfig.BaseURL == "" {
 		return errors.New("base_url is required")
 	}
-	if config.ModelConfig.Model == "" {
+	if config.AIConfig.ModelConfig.Model == "" {
 		return errors.New("model is required")
 	}
-	if config.ModelConfig.PromptFileLocation == "" {
+	if config.AIConfig.ModelConfig.PromptFileLocation == "" {
 		return errors.New("prompt_location is required")
 	}
 

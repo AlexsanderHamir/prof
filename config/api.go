@@ -66,15 +66,6 @@ func CreateTemplate(outputPath string) error {
 	}
 
 	template := Config{
-		APIKey:  "your-api-key-here",
-		BaseURL: "https://api.openai.com/v1",
-		ModelConfig: ModelConfig{
-			Model:              "gpt-4-turbo-preview",
-			MaxTokens:          0,
-			Temperature:        0.0,
-			TopP:               0.0,
-			PromptFileLocation: "path/to/your/system_prompt.txt",
-		},
 		FunctionFilter: map[string]FunctionFilter{
 			"BenchmarkGenPool": {
 				IncludePrefixes: []string{
@@ -86,6 +77,15 @@ func CreateTemplate(outputPath string) error {
 			},
 		},
 		AIConfig: AIConfig{
+			APIKey:  "your-api-key-here",
+			BaseURL: "https://api.openai.com/v1",
+			ModelConfig: ModelConfig{
+				Model:              "gpt-4-turbo-preview",
+				MaxTokens:          0,
+				Temperature:        0.0,
+				TopP:               0.0,
+				PromptFileLocation: "path/to/your/system_prompt.txt",
+			},
 			AllBenchmarks:      true,
 			AllProfiles:        true,
 			SpecificBenchmarks: []string{},
@@ -125,4 +125,92 @@ func CreateTemplate(outputPath string) error {
 	slog.Info("Please edit this file with your configuration")
 
 	return nil
+}
+
+func NewConfigBuilder() *ConfigBuilder {
+	return &ConfigBuilder{
+		config: Config{
+			FunctionFilter: make(map[string]FunctionFilter),
+			AIConfig: AIConfig{
+				APIKey:  "your-api-key-here",
+				BaseURL: "https://api.openai.com/v1",
+			},
+		},
+	}
+}
+
+func (cb *ConfigBuilder) WithAPIConfig(apiKey, baseURL string) *ConfigBuilder {
+	cb.config.AIConfig.APIKey = apiKey
+	cb.config.AIConfig.BaseURL = baseURL
+	return cb
+}
+
+func (cb *ConfigBuilder) WithModelConfig(model string, maxTokens int, temp, topP float32, promptPath string) *ConfigBuilder {
+	cb.config.AIConfig.ModelConfig = ModelConfig{
+		Model:              model,
+		MaxTokens:          maxTokens,
+		Temperature:        temp,
+		TopP:               topP,
+		PromptFileLocation: promptPath,
+	}
+	return cb
+}
+
+func (cb *ConfigBuilder) WithFunctionFilter(benchmark string, prefixes, ignoreFunctions []string) *ConfigBuilder {
+	cb.config.FunctionFilter[benchmark] = FunctionFilter{
+		IncludePrefixes: prefixes,
+		IgnoreFunctions: ignoreFunctions,
+	}
+	return cb
+}
+
+func (cb *ConfigBuilder) WithAIBenchmarkConfig(allBench, allProf bool, specificBench, specificProf []string) *ConfigBuilder {
+	cb.config.AIConfig.AllBenchmarks = allBench
+	cb.config.AIConfig.AllProfiles = allProf
+	cb.config.AIConfig.SpecificBenchmarks = specificBench
+	cb.config.AIConfig.SpecificProfiles = specificProf
+	return cb
+}
+
+func (cb *ConfigBuilder) WithProfileFilter(thresholds FilterValues, ignoreFuncs, ignorePrefixes []string) *ConfigBuilder {
+	cb.config.AIConfig.ProfileFilter = &ProfileFilter{
+		Thresholds:      thresholds,
+		IgnoreFunctions: ignoreFuncs,
+		IgnorePrefixes:  ignorePrefixes,
+	}
+	return cb
+}
+
+func (cb *ConfigBuilder) Build() Config {
+	return cb.config
+}
+
+// Preset builders
+func CreateDefaultConfig() Config {
+	return NewConfigBuilder().
+		WithFunctionFilter("BenchmarkGenPool",
+			[]string{
+				"github.com/example/GenPool",
+				"github.com/example/GenPool/internal",
+				"github.com/example/GenPool/pkg",
+			},
+			[]string{"init", "TestMain", "BenchmarkMain"}).
+		WithAPIConfig("your-api-key-here", "https://api.openai.com/v1").
+		WithAIBenchmarkConfig(true, true, []string{}, []string{}).
+		WithModelConfig("gpt-4-turbo-preview", 0, 0.0, 0.0, "path/to/your/system_prompt.txt").
+		WithProfileFilter(
+			FilterValues{
+				Flat:        0.0,
+				FlatPercent: 0.0,
+				SumPercent:  0.0,
+				Cum:         0.0,
+				CumPercent:  0.0,
+			},
+			[]string{"init", "TestMain", "BenchmarkMain"},
+			[]string{
+				"github.com/example/BenchmarkName",
+				"github.com/example/BenchmarkName/internal",
+				"github.com/example/BenchmarkName/pkg",
+			}).
+		Build()
 }

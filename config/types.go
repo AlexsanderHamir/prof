@@ -2,9 +2,6 @@ package config
 
 // Config holds the main configuration for the prof tool.
 type Config struct {
-	APIKey         string                    `json:"api_key,omitempty"`
-	BaseURL        string                    `json:"base_url,omitempty"`
-	ModelConfig    ModelConfig               `json:"model_config"`
 	FunctionFilter map[string]FunctionFilter `json:"function_collection_filter"`
 	AIConfig       AIConfig                  `json:"ai_config"`
 }
@@ -33,6 +30,9 @@ type FunctionFilter struct {
 
 // AIConfig holds configuration for all AI-driven analyses.
 type AIConfig struct {
+	APIKey  string `json:"api_key,omitempty"`
+	BaseURL string `json:"base_url,omitempty"`
+	ModelConfig ModelConfig `json:"model_config"`
 	// AllBenchmarks decides wheter or not to analyze all benchmarks.
 	AllBenchmarks bool `json:"all_benchmarks,omitempty"`
 
@@ -75,4 +75,8 @@ type FilterValues struct {
 	SumPercent  float64 `json:"sum%,omitempty"`
 	Cum         float64 `json:"cum,omitempty"`
 	CumPercent  float64 `json:"cum%,omitempty"`
+}
+
+type ConfigBuilder struct {
+	config Config
 }
