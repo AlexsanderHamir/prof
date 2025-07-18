@@ -82,6 +82,7 @@ func handleBenchmarks(cliArgs *cli.Arguments) error {
 		Count:      cliArgs.Count,
 		Tag:        cliArgs.Tag,
 	}
+
 	cli.PrintConfiguration(benchArgs, cfg.FunctionFilter)
 
 	if err = cli.RunBencAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {

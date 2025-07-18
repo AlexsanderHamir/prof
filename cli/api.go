@@ -8,6 +8,7 @@ import (
 	"github.com/AlexsanderHamir/prof/args"
 	"github.com/AlexsanderHamir/prof/benchmark"
 	"github.com/AlexsanderHamir/prof/config"
+	"github.com/AlexsanderHamir/prof/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -136,7 +137,7 @@ func RunBencAndGetProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[strin
 		slog.Info("Completed pipeline for benchmark", "Benchmark", benchmarkName)
 	}
 
-	slog.Info("All benchmarks and profile processing completed successfully!")
+	slog.Info(shared.InfoCollectionSuccess)
 	return nil
 }
 

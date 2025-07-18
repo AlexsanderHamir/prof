@@ -7,6 +7,10 @@ import (
 )
 
 const (
+	InfoCollectionSuccess = "All benchmarks and profile processing completed successfully!"
+)
+
+const (
 	TRACE          = "trace"
 	MainDirOutput  = "bench"
 	ProfileTextDir = "text"

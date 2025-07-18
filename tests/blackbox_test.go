@@ -8,8 +8,8 @@ import (
 	"github.com/AlexsanderHamir/prof/config"
 )
 
-// TestProfNoConfig contains a config file, but an empty one.
-func TestProfNoConfig(t *testing.T) {
+// TestNoConfig contains a config file, but an empty one.
+func TestNoConfig(t *testing.T) {
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)
@@ -29,10 +29,11 @@ func TestProfNoConfig(t *testing.T) {
 	runProf(t, root, []string{
 		"--benchmarks", "[BenchmarkStringProcessor]",
 		"--profiles", "[cpu,memory]",
-		"--count", "3",
+		"--count", "1",
 		"--tag", "test",
 	})
 
+	// 5. Clean up
 	fullPath := path.Join(root, testDirName, envDirName)
 	defer func() {
 		if err := os.RemoveAll(fullPath); err != nil {

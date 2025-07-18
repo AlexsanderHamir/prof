@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-func validateConfig(config *Config) error {
+func validateAIConfig(config *Config) error {
 	if config.AIConfig.APIKey == "" {
 		return errors.New("api_key is required")
 	}

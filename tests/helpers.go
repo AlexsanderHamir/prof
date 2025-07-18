@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/config"
@@ -253,8 +254,6 @@ func createConfigFile(t *testing.T, cfgTemplate *config.Config) {
 	if err := os.WriteFile(configPath, data, shared.PermFile); err != nil {
 		t.Fatalf("failed to write config template file: %v", err)
 	}
-
-	t.Logf("Config template created at: %s", configPath)
 }
 
 func setupEnviroment(t *testing.T) {
@@ -297,37 +296,34 @@ func setUpProf(t *testing.T, projectRoot string) {
 	if err != nil {
 		t.Fatalf("failed to build prof binary: %v\nOutput: %s", err, buildOutput)
 	}
-
-	t.Logf("Prof binary built at: %s", profBinary)
 }
 
 func runProf(t *testing.T, projectRoot string, args []string) {
 	t.Helper()
 
-	profBinary := filepath.Join(projectRoot, testDirName, envDirName, "prof")
+	envFullPath := filepath.Join(projectRoot, testDirName, envDirName)
+	profBinary := filepath.Join(envFullPath, "prof")
 
-	// Verify binary exists
 	if _, err := os.Stat(profBinary); os.IsNotExist(err) {
-		t.Fatalf("prof binary not found at: %s", profBinary)
+		t.Errorf("prof binary not found at: %s", profBinary)
+		return
 	}
 
-	// Run the prof binary
 	cmd := exec.Command("./prof", args...)
-	cmd.Dir = envDirName
+	cmd.Dir = envFullPath
 
-	// Capture both stdout and stderr
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	err := cmd.Run()
 	if err != nil {
-		t.Fatalf("prof command failed: %v\nStdout: %s\nStderr: %s",
+		t.Errorf("prof command failed: %v\nStdout: %s\nStderr: %s",
 			err, stdout.String(), stderr.String())
 	}
 
-	t.Logf("Prof stdout: %s", stdout.String())
-	if stderr.Len() > 0 {
-		t.Logf("Prof stderr: %s", stderr.String())
+	successMessage := shared.InfoCollectionSuccess
+	if !strings.Contains(stderr.String(), successMessage) {
+		t.Errorf("Expected success message not found")
 	}
 }
