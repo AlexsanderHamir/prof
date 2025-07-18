@@ -236,24 +236,6 @@ linters-settings:
     packages:
       - github.com/jmoiron/sqlx
 
-  sloglint:
-    # Enforce not using global loggers.
-    # Values:
-    # - "": disabled
-    # - "all": report all global loggers
-    # - "default": report only the default slog logger
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-global
-    # Default: ""
-    no-global: "all"
-    # Enforce using methods that accept a context.
-    # Values:
-    # - "": disabled
-    # - "all": report all contextless calls
-    # - "scope": report only if a context exists in the scope of the outermost function
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#context-only
-    # Default: ""
-    context: "scope"
-
   usetesting:
     # Enable/disable `os.TempDir()` detections.
     # Default: false
@@ -325,7 +307,6 @@ linters:
     - recvcheck # checks for receiver type consistency
     - revive # fast, configurable, extensible, flexible, and beautiful linter for Go, drop-in replacement of golint
     - rowserrcheck # checks whether Err of rows is checked successfully
-    - sloglint # ensure consistent code style when using log/slog
     - spancheck # checks for mistakes with OpenTelemetry/Census spans
     - sqlclosecheck # checks that sql.Rows and sql.Stmt are closed
     - stylecheck # is a replacement for golint

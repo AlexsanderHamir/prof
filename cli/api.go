@@ -45,7 +45,9 @@ func ParseArguments() (*Arguments, error) {
 
 	setupUsage := "Generate a new template configuration file"
 	setupCmd.Flags().BoolVar(&args.CreateTemplate, "create-template", false, setupUsage)
-	setupCmd.Flags().StringVar(&args.OutputPath, "output-path", "./config_template.json", "Destination path for the template")
+
+	outputPathUsage := "Destination path for the template"
+	setupCmd.Flags().StringVar(&args.OutputPath, "output-path", "./config_template.json", outputPathUsage)
 
 	rootCmd.AddCommand(setupCmd)
 
@@ -85,8 +87,12 @@ func SetupDirectories(tag string, benchmarks, profiles []string) error {
 }
 
 // PrintConfiguration prints the parsed configuration and benchmark filter details.
-func PrintConfiguration(benchmarks, profiles []string, tag string, count int, functionFilterPerBench map[string]config.FunctionCollectionFilter) {
-	slog.Info("Parsed arguments", "Benchmarks", benchmarks, "Profiles", profiles, "Tag", tag, "Count", count)
+func PrintConfiguration(benchArgs *args.BenchArgs, functionFilterPerBench map[string]config.FunctionFilter) {
+	slog.Info("Parsed arguments",
+		"Benchmarks", benchArgs.Benchmarks,
+		"Profiles", benchArgs.Profiles,
+		"Tag", benchArgs.Tag,
+		"Count", benchArgs.Count)
 
 	hasBenchFunctionFilters := len(functionFilterPerBench) > 0
 	if hasBenchFunctionFilters {
@@ -100,7 +106,7 @@ func PrintConfiguration(benchmarks, profiles []string, tag string, count int, fu
 }
 
 // RunBenchmarksAndProcessProfiles runs the full benchmark pipeline for each benchmark.
-func RunBenchmarksAndProcessProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[string]config.FunctionCollectionFilter) error {
+func RunBencAndGetProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[string]config.FunctionFilter) error {
 	slog.Info("Starting benchmark pipeline...")
 
 	for _, benchmarkName := range benchArgs.Benchmarks {

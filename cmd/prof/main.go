@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
-	"os"
+	"strings"
 
 	"github.com/AlexsanderHamir/prof/args"
 	"github.com/AlexsanderHamir/prof/cli"
@@ -43,15 +43,15 @@ func run() error {
 // handleVersion prints the current and latest version information.
 func handleVersion() error {
 	current, latest := version.Check()
-	fmt.Print(version.FormatOutput(current, latest))
+	output := version.FormatOutput(current, latest)
+	slog.Info(strings.TrimSpace(output))
 	return nil
 }
 
 // handleSetup processes the setup command and creates a template if requested.
 func handleSetup(cliArgs *cli.Arguments) error {
 	if cliArgs.CreateTemplate {
-		logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-		return config.CreateTemplate(cliArgs.OutputPath, logger)
+		return config.CreateTemplate(cliArgs.OutputPath)
 	}
 	return errors.New("setup command requires --create-template flag")
 }
@@ -76,15 +76,15 @@ func handleBenchmarks(cliArgs *cli.Arguments) error {
 		return fmt.Errorf("failed to setup directories: %w", err)
 	}
 
-	cli.PrintConfiguration(benchmarks, profiles, cliArgs.Tag, cliArgs.Count, cfg.FunctionCollectionFilter)
-
 	benchArgs := &args.BenchArgs{
 		Benchmarks: benchmarks,
 		Profiles:   profiles,
 		Count:      cliArgs.Count,
 		Tag:        cliArgs.Tag,
 	}
-	if err = cli.RunBenchmarksAndProcessProfiles(benchArgs, cfg.FunctionCollectionFilter); err != nil {
+	cli.PrintConfiguration(benchArgs, cfg.FunctionFilter)
+
+	if err = cli.RunBencAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
 		return fmt.Errorf("failed to run benchmarks: %w", err)
 	}
 

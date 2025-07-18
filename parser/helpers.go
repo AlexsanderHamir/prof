@@ -8,6 +8,9 @@ import (
 
 const (
 	measurementFieldCount = 5
+	fullMatchIndex        = 0 // The entire matched string
+	funcNameIndex         = 1 // The captured function name group
+	minRequiredMatches    = 2 // Full match + at least one capture group
 )
 
 // filterByNumber returns true if all profile measurement values exceed their configured thresholds.
@@ -112,18 +115,16 @@ func extractFunctionName(line string, functionPrefixes []string, ignoreFunctionS
 	}
 
 	matches := funcNameRegexpCompiled.FindStringSubmatch(funcName)
-	// TODO: need more info
-	if len(matches) < 2 {
+
+	if len(matches) < minRequiredMatches {
 		return ""
 	}
 
-	// TODO: need more info
-	cleanName := strings.TrimSpace(strings.ReplaceAll(matches[1], " ", ""))
+	cleanName := strings.TrimSpace(strings.ReplaceAll(matches[funcNameIndex], " ", ""))
 	if cleanName == "" {
 		return ""
 	}
 
-	// TODO: need more info
 	if _, ignored := ignoreFunctionSet[cleanName]; ignored {
 		return ""
 	}

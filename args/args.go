@@ -19,7 +19,7 @@ type CollectionArgs struct {
 	Tag             string
 	Profiles        []string
 	BenchmarkName   string
-	BenchmarkConfig config.FunctionCollectionFilter
+	BenchmarkConfig config.FunctionFilter
 }
 
 type BenchArgs struct {

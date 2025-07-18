@@ -60,7 +60,7 @@ func LoadFromFile(filename string) (*Config, error) {
 
 // CreateTemplate creates a template configuration file from the actual Config struct
 // with pre-built examples.
-func CreateTemplate(outputPath string, logger *slog.Logger) error {
+func CreateTemplate(outputPath string) error {
 	if outputPath == "" {
 		outputPath = "./config_template.json"
 	}
@@ -75,7 +75,7 @@ func CreateTemplate(outputPath string, logger *slog.Logger) error {
 			TopP:               0.0,
 			PromptFileLocation: "path/to/your/system_prompt.txt",
 		},
-		FunctionCollectionFilter: map[string]FunctionCollectionFilter{
+		FunctionFilter: map[string]FunctionFilter{
 			"BenchmarkGenPool": {
 				IncludePrefixes: []string{
 					"github.com/example/GenPool",
@@ -121,8 +121,8 @@ func CreateTemplate(outputPath string, logger *slog.Logger) error {
 		return fmt.Errorf("failed to write template file: %w", err)
 	}
 
-	logger.Info("Template configuration file created", "path", outputPath)
-	logger.Info("Please edit this file with your configuration")
+	slog.Info("Template configuration file created", "path", outputPath)
+	slog.Info("Please edit this file with your configuration")
 
 	return nil
 }

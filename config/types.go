@@ -2,11 +2,11 @@ package config
 
 // Config holds the main configuration for the prof tool.
 type Config struct {
-	APIKey                   string                              `json:"api_key,omitempty"`
-	BaseURL                  string                              `json:"base_url,omitempty"`
-	ModelConfig              ModelConfig                         `json:"model_config"`
-	FunctionCollectionFilter map[string]FunctionCollectionFilter `json:"function_collection_filter"`
-	AIConfig                 AIConfig                            `json:"ai_config"`
+	APIKey         string                    `json:"api_key,omitempty"`
+	BaseURL        string                    `json:"base_url,omitempty"`
+	ModelConfig    ModelConfig               `json:"model_config"`
+	FunctionFilter map[string]FunctionFilter `json:"function_collection_filter"`
+	AIConfig       AIConfig                  `json:"ai_config"`
 }
 
 // ModelConfig holds the configuration for the AI model.
@@ -21,7 +21,7 @@ type ModelConfig struct {
 // FunctionCollectionFilter defines filters for a specific benchmark,
 // the filters are used when deciding which functions to collect
 // code line level information for.
-type FunctionCollectionFilter struct {
+type FunctionFilter struct {
 	// Prefixes: only collect functions starting with these prefixes
 	// Example: []string{"github.com/myorg", "main."}
 	IncludePrefixes []string `json:"include_prefixes,omitempty"`
