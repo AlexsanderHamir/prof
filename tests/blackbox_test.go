@@ -13,20 +13,22 @@ func TestConfig(t *testing.T) {
 	originalValue := envDirName
 	withCleanUp := true
 
-	label := "WithConfigFunctionFilter"
+	label := "WithFunctionFilter"
 	t.Run(label, func(t *testing.T) {
 		withconfig := true
-		testConfigScenario(t, withconfig, withCleanUp, label, originalValue)
+		testConfigScenario(t, withconfig, withCleanUp, label)
+		envDirName = originalValue
 	})
 
 	label = "WithoutAnyConfig"
 	t.Run(label, func(t *testing.T) {
 		withConfig := false
-		testConfigScenario(t, withConfig, withCleanUp, label, originalValue)
+		testConfigScenario(t, withConfig, withCleanUp, label)
+		envDirName = originalValue
 	})
 }
 
-func testConfigScenario(t *testing.T, withConfig, withCleanUp bool, label, originalValue string) {
+func testConfigScenario(t *testing.T, withConfig, withCleanUp bool, label string) {
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)
@@ -75,6 +77,4 @@ func testConfigScenario(t *testing.T, withConfig, withCleanUp bool, label, origi
 	// 5. Check bench output
 	expectedProfiles := []string{cpuProfile, memProfile}
 	checkOutput(t, envPath, expectedProfiles, withConfig)
-
-	envDirName = originalValue
 }

@@ -22,7 +22,7 @@ const (
 	templateFile = "config_template.json"
 	testDirName  = "tests"
 	tag          = "test_tag"
-	count        = "5"
+	count        = "10"
 	cpuProfile   = "cpu"
 	memProfile   = "memory"
 	benchName    = "BenchmarkStringProcessor"
