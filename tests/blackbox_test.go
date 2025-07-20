@@ -7,7 +7,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	withCleanUp := true
+	withCleanUp := false
 
 	label := "WithFunctionFilter"
 	t.Run(label, func(t *testing.T) {
@@ -32,9 +32,6 @@ func TestConfig(t *testing.T) {
 		withconfig := true
 		expectNonSpecifiedFiles := false
 		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withconfig, withCleanUp, label, specifiedFiles)
-		if !withCleanUp {
-			envDirName = envDirNameStatic
-		}
 	})
 
 	label = "WithFunctionIgnore"
@@ -58,9 +55,34 @@ func TestConfig(t *testing.T) {
 		withconfig := true
 		expectNonSpecifiedFiles := true
 		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withconfig, withCleanUp, label, speficiedFiles)
-		if !withCleanUp {
-			envDirName = envDirNameStatic
+	})
+
+	label = "WithFunctionFilterPlusIgnore"
+	t.Run(label, func(t *testing.T) {
+		isExpected := IsFileExpected(true)
+		isNotExpected := IsFileExpected(false)
+
+		specifiedFiles := map[fileFullName]IsFileExpected{
+			"BenchmarkStringProcessor_cpu.png":    isExpected,
+			"BenchmarkStringProcessor_memory.png": isExpected,
+			"GenerateStrings.txt":                 isExpected,
+			"BenchmarkStringProcessor.txt":        isNotExpected,
+			"ProcessStrings.txt":                  isNotExpected,
+			"AddString.txt":                       isNotExpected,
 		}
+
+		cfg := &config.Config{
+			FunctionFilter: map[string]config.FunctionFilter{
+				benchName: {
+					IncludePrefixes: []string{"test-environment"},
+					IgnoreFunctions: []string{"BenchmarkStringProcessor", "ProcessStrings", "AddString"},
+				},
+			},
+		}
+
+		withconfig := true
+		expectNonSpecifiedFiles := false
+		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withconfig, withCleanUp, label, specifiedFiles)
 	})
 
 	label = "WithoutAnyConfig"
@@ -71,8 +93,5 @@ func TestConfig(t *testing.T) {
 		withConfig := false
 		expectNonSpecifiedFiles := true
 		testConfigScenario(t, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, label, specifiedFiles)
-		if !withCleanUp {
-			envDirName = envDirNameStatic
-		}
 	})
 }

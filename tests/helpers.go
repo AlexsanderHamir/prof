@@ -457,7 +457,8 @@ func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedF
 		t.Fatalf("expected %d, found %d files", expectedFileNum, foundFiles)
 	}
 
-	// across all profile, all expected files must exist
+	// TODO: The logic here is confusing
+	// break it down, give it clear names.
 	for _, file := range files {
 		fileName := file.Name()
 		if withConfig {
@@ -465,12 +466,27 @@ func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedF
 			isExpected, ok := specifiedFiles[fileKey]
 			if ok {
 				if bool(isExpected) {
+					// TODO: this is not good enough
+					// min count and max count is necessary, min count
+					// for the minimum number of required files, and max
+					// count for the maximum number of required files across
+					// profiles, so if the minimum is 4 files, and we have 3 profiles
+					// than the maxium appereance of a file if 3x
+					//
+					// Edge Case: A function name file may appear in more than one profile
+					// so deleting from the specifiedFiles will cause the next profile to
+					// error "Unexpected File: filename".
 					delete(specifiedFiles, fileKey)
 					continue
 				} else {
 					if !expectNonSpecifiedFiles {
-						t.Fatalf("File should not be here: %s", fileKey)
+						t.Fatalf("File should had been filtered: %s", fileKey)
 					}
+				}
+			} else {
+				// ensure no unexpected file exists.
+				if !expectNonSpecifiedFiles {
+					t.Fatalf("Unexpected File: %s", fileKey)
 				}
 			}
 
@@ -494,6 +510,10 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 }
 
 func testConfigScenario(t *testing.T, cfg *config.Config, expectNonSpecifiedFiles, withConfig, withCleanUp bool, label string, specifiedFiles map[fileFullName]IsFileExpected) {
+	defer func() {
+		envDirName = envDirNameStatic
+	}()
+
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)
@@ -504,7 +524,6 @@ func testConfigScenario(t *testing.T, cfg *config.Config, expectNonSpecifiedFile
 
 	if withCleanUp {
 		t.Cleanup(func() {
-			envDirName = envDirNameStatic
 			if err := os.RemoveAll(envPath); err != nil {
 				t.Logf("Failed to clean up environment: %v", err)
 			}
