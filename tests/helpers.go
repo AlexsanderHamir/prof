@@ -14,16 +14,18 @@ import (
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
+var (
+	envDirName = "Enviroment"
+)
+
 const (
-	envDirName   = "Enviroment"
 	templateFile = "config_template.json"
 	testDirName  = "tests"
-
-	tag        = "test_tag"
-	count      = "1"
-	cpuProfile = "cpu"
-	memProfile = "memory"
-	benchName  = "BenchmarkStringProcessor"
+	tag          = "test_tag"
+	count        = "5"
+	cpuProfile   = "cpu"
+	memProfile   = "memory"
+	benchName    = "BenchmarkStringProcessor"
 )
 
 func createPackage(dir string) error {
@@ -341,7 +343,7 @@ func checkDirectory(t *testing.T, path, description string) {
 	}
 }
 
-func checkOutput(t *testing.T, envPath string, profiles []string) {
+func checkOutput(t *testing.T, envPath string, profiles []string, withConfig bool) {
 	t.Helper()
 
 	benchPath := filepath.Join(envPath, shared.MainDirOutput)
@@ -359,25 +361,44 @@ func checkOutput(t *testing.T, envPath string, profiles []string) {
 	// bin => cpu, mem, test
 	// txt => cpu, mem, bench
 	expectedNumberOfFiles := 3
+
+	var expectedFiles map[string]bool
+	var doesConfigApply bool
+
 	checkDirectory(t, binPath, "bin directory")
 	checkDirectory(t, binBenchPath, "benchmark directory inside of bin")
-	checkDirectoryFiles(t, binBenchPath, "bin files inside of benchmark directory", expectedNumberOfFiles)
+	checkDirectoryFiles(t, binBenchPath, "bin files inside of benchmark directory", expectedNumberOfFiles, doesConfigApply, expectedFiles)
 
 	checkDirectory(t, textPath, "text directory")
 	checkDirectory(t, textBenchPath, "benchmark directory inside of text")
-	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles)
+	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles, doesConfigApply, expectedFiles)
 
-	// 3. Check that profile function directories exist for each profile
+	expectedFiles = map[string]bool{
+		"BenchmarkStringProcessor.txt": false,
+		"ProcessStrings.txt":           false,
+		"GenerateStrings.txt":          false,
+		"AddString.txt":                false,
+	}
+
+	// 3. Check that profile function directories and files exist for each profile
 	for _, profile := range profiles {
 		profileFunctionsDir := fmt.Sprintf("%s%s", profile, shared.FunctionsDirSuffix)
 		profileFunctionsPath := filepath.Join(tagPath, profileFunctionsDir)
-		checkDirectory(t, profileFunctionsPath, fmt.Sprintf("%s functions directory", profile))
+		checkDirectory(t, profileFunctionsPath, "profile functions directory e.g cpu_functions")
 
-		benchProfileDir := filepath.Join(profileFunctionsPath, benchName)
-		checkDirectory(t, benchProfileDir, "profile directory inside functions directory")
+		benchDir := filepath.Join(profileFunctionsPath, benchName)
+		checkDirectory(t, benchDir, "benchmark directory inside profile functions directory e.g cpu_functions/BenchmarkName")
 
 		notSure := 0
-		checkDirectoryFiles(t, benchProfileDir, "function files inside bench directory", notSure)
+		doesConfigApply = withConfig
+		checkDirectoryFiles(t, benchDir, "individual function files inside benchmark directory", notSure, withConfig, expectedFiles)
+	}
+
+	if withConfig {
+		remainingFiles := len(expectedFiles)
+		if remainingFiles != 0 {
+			t.Fatalf("Expected all files to be found, %d files remaining", remainingFiles)
+		}
 	}
 }
 
@@ -401,7 +422,7 @@ func getFileOrDirs(t *testing.T, dirPath, dirDescription string) ([]os.DirEntry,
 	return files, dirNames
 }
 
-func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedFileNum int) {
+func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedFileNum int, withConfig bool, expectedFiles map[string]bool) {
 	t.Helper()
 
 	files, dirNames := getFileOrDirs(t, dirPath, dirDescription)
@@ -422,9 +443,18 @@ func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedF
 		t.Fatalf("expected %d, found %d files", expectedFileNum, foundFiles)
 	}
 
+	// across all profile, all expected files must exist
 	for _, file := range files {
-		filePath := filepath.Join(dirPath, file.Name())
-		checkFileNotEmpty(t, filePath, file.Name())
+		fileName := file.Name()
+		if withConfig {
+			_, ok := expectedFiles[fileName]
+			if ok {
+				delete(expectedFiles, fileName)
+			}
+		}
+
+		filePath := filepath.Join(dirPath, fileName)
+		checkFileNotEmpty(t, filePath, fileName)
 	}
 }
 

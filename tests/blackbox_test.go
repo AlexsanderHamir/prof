@@ -9,38 +9,72 @@ import (
 	"github.com/AlexsanderHamir/prof/config"
 )
 
-// TestNoConfig contains a config file, but an empty one.
-func TestNoConfig(t *testing.T) {
+func TestConfig(t *testing.T) {
+	originalValue := envDirName
+	withCleanUp := true
+
+	label := "WithConfigFunctionFilter"
+	t.Run(label, func(t *testing.T) {
+		withconfig := true
+		testConfigScenario(t, withconfig, withCleanUp, label, originalValue)
+	})
+
+	label = "WithoutAnyConfig"
+	t.Run(label, func(t *testing.T) {
+		withConfig := false
+		testConfigScenario(t, withConfig, withCleanUp, label, originalValue)
+	})
+}
+
+func testConfigScenario(t *testing.T, withConfig, withCleanUp bool, label, originalValue string) {
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)
 	}
 
+	envDirName = envDirName + " " + label
 	envPath := path.Join(root, testDirName, envDirName)
-	t.Cleanup(func() {
-		if err := os.RemoveAll(envPath); err != nil {
-			t.Logf("Failed to clean up environment: %v", err)
-		}
-	})
 
-	// 1. Set up Enviroment
+	if withCleanUp {
+		t.Cleanup(func() {
+			if err := os.RemoveAll(envPath); err != nil {
+				t.Logf("Failed to clean up environment: %v", err)
+			}
+		})
+	}
+
+	// 1. Set up Environment
 	setupEnviroment(t)
 
-	// 2. Create specific config inside the Enviroment directory
-	emptyConfigFile := &config.Config{}
-	createConfigFile(t, emptyConfigFile)
+	// 2. Create config conditionally
+	var cfg config.Config // empty config
+	if withConfig {
+		cfg = config.Config{
+			FunctionFilter: map[string]config.FunctionFilter{
+				benchName: {
+					IncludePrefixes: []string{"test-environment"},
+				},
+			},
+		}
+	}
 
-	// 3. Build prof and move to Enviroment
+	createConfigFile(t, &cfg)
+
+	// 3. Build prof and move to Environment
 	setUpProf(t, root)
 
-	// 4. Run ./prof inside the Enviroment
-	runProf(t, root, []string{
+	// 4. Run ./prof inside the Environment
+	args := []string{
 		"--benchmarks", fmt.Sprintf("[%s]", benchName),
 		"--profiles", fmt.Sprintf("[%s,%s]", cpuProfile, memProfile),
 		"--count", count,
 		"--tag", tag,
-	})
+	}
+	runProf(t, root, args)
 
 	// 5. Check bench output
-	checkOutput(t, envPath, []string{cpuProfile, memProfile})
+	expectedProfiles := []string{cpuProfile, memProfile}
+	checkOutput(t, envPath, expectedProfiles, withConfig)
+
+	envDirName = originalValue
 }
