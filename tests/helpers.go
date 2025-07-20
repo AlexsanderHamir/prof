@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	envDirName = "Enviroment"
+	envDirName = envDirNameStatic
 )
 
 type IsFileExpected bool
@@ -28,13 +28,14 @@ const (
 )
 
 const (
-	templateFile = "config_template.json"
-	testDirName  = "tests"
-	tag          = "test_tag"
-	count        = "2"
-	cpuProfile   = "cpu"
-	memProfile   = "memory"
-	benchName    = "BenchmarkStringProcessor"
+	envDirNameStatic = "Enviroment"
+	templateFile     = "config_template.json"
+	testDirName      = "tests"
+	tag              = "test_tag"
+	count            = "1"
+	cpuProfile       = "cpu"
+	memProfile       = "memory"
+	benchName        = "BenchmarkStringProcessor"
 )
 
 func createPackage(dir string) error {
@@ -352,7 +353,7 @@ func checkDirectory(t *testing.T, path, description string) {
 	}
 }
 
-func checkOutput(t *testing.T, envPath string, profiles []string, withConfig bool, expectedFiles map[fileFullName]IsFileExpected) {
+func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpecifiedFiles, withConfig bool, expectedFiles map[fileFullName]IsFileExpected) {
 	t.Helper()
 
 	benchPath := filepath.Join(envPath, shared.MainDirOutput)
@@ -375,11 +376,11 @@ func checkOutput(t *testing.T, envPath string, profiles []string, withConfig boo
 
 	checkDirectory(t, binPath, "bin directory")
 	checkDirectory(t, binBenchPath, "benchmark directory inside of bin")
-	checkDirectoryFiles(t, binBenchPath, "bin files inside of benchmark directory", expectedNumberOfFiles, doesConfigApply, expectedFiles)
+	checkDirectoryFiles(t, binBenchPath, "bin files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, doesConfigApply, expectedFiles)
 
 	checkDirectory(t, textPath, "text directory")
 	checkDirectory(t, textBenchPath, "benchmark directory inside of text")
-	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles, doesConfigApply, expectedFiles)
+	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, doesConfigApply, expectedFiles)
 
 	// 3. Check that profile function directories and files exist for each profile
 	for _, profile := range profiles {
@@ -392,17 +393,27 @@ func checkOutput(t *testing.T, envPath string, profiles []string, withConfig boo
 
 		notSure := 0
 		doesConfigApply = withConfig
-		checkDirectoryFiles(t, benchDir, "individual function files inside benchmark directory", notSure, withConfig, expectedFiles)
+		checkDirectoryFiles(t, benchDir, "individual function files inside benchmark directory", notSure, expectNonSpecifiedFiles, withConfig, expectedFiles)
 	}
 
 	if withConfig {
-		remainingFiles := len(expectedFiles)
+		remainingFiles := countExpectedFiles(expectedFiles)
 		allowedRemainingFiles := 1
 
 		if remainingFiles > allowedRemainingFiles {
 			t.Fatalf("Expected almost all files to be found, %d files remaining", remainingFiles)
 		}
 	}
+}
+
+func countExpectedFiles(files map[fileFullName]IsFileExpected) int {
+	count := 0
+	for _, isExpected := range files {
+		if bool(isExpected) {
+			count++
+		}
+	}
+	return count
 }
 
 func getFileOrDirs(t *testing.T, dirPath, dirDescription string) ([]os.DirEntry, []string) {
@@ -425,7 +436,7 @@ func getFileOrDirs(t *testing.T, dirPath, dirDescription string) ([]os.DirEntry,
 	return files, dirNames
 }
 
-func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedFileNum int, withConfig bool, expectedFiles map[fileFullName]IsFileExpected) {
+func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedFileNum int, expectNonSpecifiedFiles, withConfig bool, specifiedFiles map[fileFullName]IsFileExpected) {
 	t.Helper()
 
 	files, dirNames := getFileOrDirs(t, dirPath, dirDescription)
@@ -450,12 +461,20 @@ func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedF
 	for _, file := range files {
 		fileName := file.Name()
 		if withConfig {
-			isExpected, ok := expectedFiles[fileFullName(fileName)]
-			if ok && bool(isExpected) {
-				delete(expectedFiles, fileFullName(fileName))
+			fileKey := fileFullName(fileName)
+			isExpected, ok := specifiedFiles[fileKey]
+			if ok {
+				if bool(isExpected) {
+					delete(specifiedFiles, fileKey)
+					continue
+				} else {
+					if !expectNonSpecifiedFiles {
+						t.Fatalf("File should not be here: %s", fileKey)
+					}
+				}
 			}
-		}
 
+		}
 		filePath := filepath.Join(dirPath, fileName)
 		checkFileNotEmpty(t, filePath, fileName)
 	}
@@ -474,7 +493,7 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 	}
 }
 
-func testConfigScenario(t *testing.T, cfg *config.Config, withConfig, withCleanUp bool, label, originalValue string, expectedFiles map[fileFullName]IsFileExpected) {
+func testConfigScenario(t *testing.T, cfg *config.Config, expectNonSpecifiedFiles, withConfig, withCleanUp bool, label string, specifiedFiles map[fileFullName]IsFileExpected) {
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)
@@ -485,7 +504,7 @@ func testConfigScenario(t *testing.T, cfg *config.Config, withConfig, withCleanU
 
 	if withCleanUp {
 		t.Cleanup(func() {
-			envDirName = originalValue
+			envDirName = envDirNameStatic
 			if err := os.RemoveAll(envPath); err != nil {
 				t.Logf("Failed to clean up environment: %v", err)
 			}
@@ -506,9 +525,10 @@ func testConfigScenario(t *testing.T, cfg *config.Config, withConfig, withCleanU
 		"--count", count,
 		"--tag", tag,
 	}
+
 	runProf(t, root, args)
 
 	// 4. Check bench output
 	expectedProfiles := []string{cpuProfile, memProfile}
-	checkOutput(t, envPath, expectedProfiles, withConfig, expectedFiles)
+	checkOutput(t, envPath, expectedProfiles, expectNonSpecifiedFiles, withConfig, specifiedFiles)
 }
