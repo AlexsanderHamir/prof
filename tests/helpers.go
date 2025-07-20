@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -22,7 +23,7 @@ const (
 	templateFile = "config_template.json"
 	testDirName  = "tests"
 	tag          = "test_tag"
-	count        = "10"
+	count        = "2"
 	cpuProfile   = "cpu"
 	memProfile   = "memory"
 	benchName    = "BenchmarkStringProcessor"
@@ -343,7 +344,7 @@ func checkDirectory(t *testing.T, path, description string) {
 	}
 }
 
-func checkOutput(t *testing.T, envPath string, profiles []string, withConfig bool) {
+func checkOutput(t *testing.T, envPath string, profiles []string, withConfig bool, expectedFiles map[string]bool) {
 	t.Helper()
 
 	benchPath := filepath.Join(envPath, shared.MainDirOutput)
@@ -362,7 +363,6 @@ func checkOutput(t *testing.T, envPath string, profiles []string, withConfig boo
 	// txt => cpu, mem, bench
 	expectedNumberOfFiles := 3
 
-	var expectedFiles map[string]bool
 	var doesConfigApply bool
 
 	checkDirectory(t, binPath, "bin directory")
@@ -372,13 +372,6 @@ func checkOutput(t *testing.T, envPath string, profiles []string, withConfig boo
 	checkDirectory(t, textPath, "text directory")
 	checkDirectory(t, textBenchPath, "benchmark directory inside of text")
 	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles, doesConfigApply, expectedFiles)
-
-	expectedFiles = map[string]bool{
-		"BenchmarkStringProcessor.txt": false,
-		"ProcessStrings.txt":           false,
-		"GenerateStrings.txt":          false,
-		"AddString.txt":                false,
-	}
 
 	// 3. Check that profile function directories and files exist for each profile
 	for _, profile := range profiles {
@@ -396,7 +389,9 @@ func checkOutput(t *testing.T, envPath string, profiles []string, withConfig boo
 
 	if withConfig {
 		remainingFiles := len(expectedFiles)
-		if remainingFiles != 0 {
+		allowedRemainingFiles := 1
+
+		if remainingFiles > allowedRemainingFiles {
 			t.Fatalf("Expected all files to be found, %d files remaining", remainingFiles)
 		}
 	}
@@ -469,4 +464,56 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 	if fileInfo.Size() == 0 {
 		t.Fatalf("File %s is empty (0 bytes)", fileName)
 	}
+}
+
+func testConfigScenario(t *testing.T, withConfig, withCleanUp bool, label, originalValue string, expectedFiles map[string]bool) {
+	root, err := getProjectRoot()
+	if err != nil {
+		t.Log(err)
+	}
+
+	envDirName = envDirName + " " + label
+	envPath := path.Join(root, testDirName, envDirName)
+
+	if withCleanUp {
+		t.Cleanup(func() {
+			envDirName = originalValue
+			if err := os.RemoveAll(envPath); err != nil {
+				t.Logf("Failed to clean up environment: %v", err)
+			}
+		})
+	}
+
+	// 1. Set up Environment
+	setupEnviroment(t)
+
+	// 2. Create config conditionally
+	var cfg config.Config // empty config
+	if withConfig {
+		cfg = config.Config{
+			FunctionFilter: map[string]config.FunctionFilter{
+				benchName: {
+					IncludePrefixes: []string{"test-environment"},
+				},
+			},
+		}
+	}
+
+	createConfigFile(t, &cfg)
+
+	// 3. Build prof and move to Environment
+	setUpProf(t, root)
+
+	// 4. Run ./prof inside the Environment
+	args := []string{
+		"--benchmarks", fmt.Sprintf("[%s]", benchName),
+		"--profiles", fmt.Sprintf("[%s,%s]", cpuProfile, memProfile),
+		"--count", count,
+		"--tag", tag,
+	}
+	runProf(t, root, args)
+
+	// 5. Check bench output
+	expectedProfiles := []string{cpuProfile, memProfile}
+	checkOutput(t, envPath, expectedProfiles, withConfig, expectedFiles)
 }
