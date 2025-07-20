@@ -311,8 +311,7 @@ func runProf(t *testing.T, projectRoot string, args []string) {
 	profBinary := filepath.Join(envFullPath, "prof")
 
 	if _, err := os.Stat(profBinary); os.IsNotExist(err) {
-		t.Errorf("prof binary not found at: %s", profBinary)
-		return
+		t.Fatalf("prof binary not found at: %s", profBinary)
 	}
 
 	cmd := exec.Command("./prof", args...)
@@ -324,13 +323,13 @@ func runProf(t *testing.T, projectRoot string, args []string) {
 
 	err := cmd.Run()
 	if err != nil {
-		t.Errorf("prof command failed: %v\nStdout: %s\nStderr: %s",
+		t.Fatalf("prof command failed: %v\nStdout: %s\nStderr: %s",
 			err, stdout.String(), stderr.String())
 	}
 
 	successMessage := shared.InfoCollectionSuccess
 	if !strings.Contains(stderr.String(), successMessage) {
-		t.Errorf("Expected success message not found")
+		t.Fatalf("Expected success message not found")
 	}
 }
 
@@ -338,7 +337,7 @@ func checkDirectory(t *testing.T, path, description string) {
 	t.Helper()
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		t.Errorf("%s does not exist: %s", description, path)
+		t.Fatalf("%s does not exist: %s", description, path)
 	}
 }
 
@@ -373,16 +372,19 @@ func checkOutput(t *testing.T, envPath string, profiles []string) {
 		profileFunctionsDir := fmt.Sprintf("%s%s", profile, shared.FunctionsDirSuffix)
 		profileFunctionsPath := filepath.Join(tagPath, profileFunctionsDir)
 		checkDirectory(t, profileFunctionsPath, fmt.Sprintf("%s functions directory", profile))
+
+		benchProfileDir := filepath.Join(profileFunctionsPath, benchName)
+		checkDirectory(t, benchProfileDir, "profile directory inside functions directory")
+
+		notSure := 0
+		checkDirectoryFiles(t, benchProfileDir, "function files inside bench directory", notSure)
 	}
 }
 
-func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedFileNum int) {
-	t.Helper()
-
+func getFileOrDirs(t *testing.T, dirPath, dirDescription string) ([]os.DirEntry, []string) {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
-		t.Errorf("Failed to read %s: %v", dirDescription, err)
-		return
+		t.Fatalf("Failed to read %s: %v", dirDescription, err)
 	}
 
 	var files []os.DirEntry
@@ -396,21 +398,28 @@ func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedF
 		}
 	}
 
+	return files, dirNames
+}
+
+func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedFileNum int) {
+	t.Helper()
+
+	files, dirNames := getFileOrDirs(t, dirPath, dirDescription)
+
 	// Ensure no directories exist
-	if len(dirNames) > 0 {
-		t.Errorf("%s contains unexpected directories: %v", dirDescription, dirNames)
-		return
+	foundDirectories := len(dirNames)
+	if foundDirectories > 0 {
+		t.Fatalf("%s contains unexpected directories: %v", dirDescription, dirNames)
 	}
 
-	// Ensure files exist and are not empty
-	if len(files) == 0 {
-		t.Errorf("%s contains no files", dirDescription)
-		return
-	}
-
+	// Ensure files exist
 	foundFiles := len(files)
-	if foundFiles != expectedFileNum {
-		t.Errorf("expected %d, found %d files", expectedFileNum, foundFiles)
+	if foundFiles == 0 {
+		t.Fatalf("%s contains no files", dirDescription)
+	}
+
+	if expectedFileNum > 0 && foundFiles != expectedFileNum {
+		t.Fatalf("expected %d, found %d files", expectedFileNum, foundFiles)
 	}
 
 	for _, file := range files {
@@ -424,11 +433,10 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
-		t.Errorf("Failed to stat file %s: %v", fileName, err)
-		return
+		t.Fatalf("Failed to stat file %s: %v", fileName, err)
 	}
 
 	if fileInfo.Size() == 0 {
-		t.Errorf("File %s is empty (0 bytes)", fileName)
+		t.Fatalf("File %s is empty (0 bytes)", fileName)
 	}
 }

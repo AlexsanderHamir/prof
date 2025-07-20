@@ -30,8 +30,8 @@ type FunctionFilter struct {
 
 // AIConfig holds configuration for all AI-driven analyses.
 type AIConfig struct {
-	APIKey  string `json:"api_key,omitempty"`
-	BaseURL string `json:"base_url,omitempty"`
+	APIKey      string      `json:"api_key,omitempty"`
+	BaseURL     string      `json:"base_url,omitempty"`
 	ModelConfig ModelConfig `json:"model_config"`
 	// AllBenchmarks decides wheter or not to analyze all benchmarks.
 	AllBenchmarks bool `json:"all_benchmarks,omitempty"`
