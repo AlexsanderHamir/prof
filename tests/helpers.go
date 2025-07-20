@@ -19,6 +19,14 @@ var (
 	envDirName = "Enviroment"
 )
 
+type IsFileExpected bool
+type fileFullName string
+
+const (
+	Expected   IsFileExpected = true
+	Unexpected IsFileExpected = false
+)
+
 const (
 	templateFile = "config_template.json"
 	testDirName  = "tests"
@@ -344,7 +352,7 @@ func checkDirectory(t *testing.T, path, description string) {
 	}
 }
 
-func checkOutput(t *testing.T, envPath string, profiles []string, withConfig bool, expectedFiles map[string]bool) {
+func checkOutput(t *testing.T, envPath string, profiles []string, withConfig bool, expectedFiles map[fileFullName]IsFileExpected) {
 	t.Helper()
 
 	benchPath := filepath.Join(envPath, shared.MainDirOutput)
@@ -392,7 +400,7 @@ func checkOutput(t *testing.T, envPath string, profiles []string, withConfig boo
 		allowedRemainingFiles := 1
 
 		if remainingFiles > allowedRemainingFiles {
-			t.Fatalf("Expected all files to be found, %d files remaining", remainingFiles)
+			t.Fatalf("Expected almost all files to be found, %d files remaining", remainingFiles)
 		}
 	}
 }
@@ -417,7 +425,7 @@ func getFileOrDirs(t *testing.T, dirPath, dirDescription string) ([]os.DirEntry,
 	return files, dirNames
 }
 
-func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedFileNum int, withConfig bool, expectedFiles map[string]bool) {
+func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedFileNum int, withConfig bool, expectedFiles map[fileFullName]IsFileExpected) {
 	t.Helper()
 
 	files, dirNames := getFileOrDirs(t, dirPath, dirDescription)
@@ -442,9 +450,9 @@ func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedF
 	for _, file := range files {
 		fileName := file.Name()
 		if withConfig {
-			_, ok := expectedFiles[fileName]
-			if ok {
-				delete(expectedFiles, fileName)
+			isExpected, ok := expectedFiles[fileFullName(fileName)]
+			if ok && bool(isExpected) {
+				delete(expectedFiles, fileFullName(fileName))
 			}
 		}
 
@@ -466,7 +474,7 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 	}
 }
 
-func testConfigScenario(t *testing.T, cfg *config.Config, withConfig, withCleanUp bool, label, originalValue string, expectedFiles map[string]bool) {
+func testConfigScenario(t *testing.T, cfg *config.Config, withConfig, withCleanUp bool, label, originalValue string, expectedFiles map[fileFullName]IsFileExpected) {
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)

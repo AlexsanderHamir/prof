@@ -14,11 +14,11 @@ func TestConfig(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		withconfig := true
 
-		expectedFiles := map[string]bool{
-			"BenchmarkStringProcessor.txt": false,
-			"ProcessStrings.txt":           false,
-			"GenerateStrings.txt":          false,
-			"AddString.txt":                false,
+		expectedFiles := map[fileFullName]IsFileExpected{
+			"BenchmarkStringProcessor.txt": IsFileExpected(true),
+			"ProcessStrings.txt":           IsFileExpected(true),
+			"GenerateStrings.txt":          IsFileExpected(true),
+			"AddString.txt":                IsFileExpected(true),
 		}
 
 		cfg := &config.Config{
@@ -36,8 +36,8 @@ func TestConfig(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		withConfig := false
 
-		var expectedProfiles map[string]bool // empty
-		var cfg config.Config                // empty
+		var expectedProfiles map[fileFullName]IsFileExpected // empty
+		var cfg config.Config                                // empty
 
 		testConfigScenario(t, &cfg, withConfig, withCleanUp, label, originalValue, expectedProfiles)
 	})
