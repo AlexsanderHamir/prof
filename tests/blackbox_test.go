@@ -2,6 +2,8 @@ package tests
 
 import (
 	"testing"
+
+	"github.com/AlexsanderHamir/prof/config"
 )
 
 func TestConfig(t *testing.T) {
@@ -11,6 +13,7 @@ func TestConfig(t *testing.T) {
 	label := "WithFunctionFilter"
 	t.Run(label, func(t *testing.T) {
 		withconfig := true
+
 		expectedFiles := map[string]bool{
 			"BenchmarkStringProcessor.txt": false,
 			"ProcessStrings.txt":           false,
@@ -18,14 +21,24 @@ func TestConfig(t *testing.T) {
 			"AddString.txt":                false,
 		}
 
-		testConfigScenario(t, withconfig, withCleanUp, label, originalValue, expectedFiles)
+		cfg := &config.Config{
+			FunctionFilter: map[string]config.FunctionFilter{
+				benchName: {
+					IncludePrefixes: []string{"test-environment"},
+				},
+			},
+		}
+
+		testConfigScenario(t, cfg, withconfig, withCleanUp, label, originalValue, expectedFiles)
 	})
 
 	label = "WithoutAnyConfig"
 	t.Run(label, func(t *testing.T) {
 		withConfig := false
-		var expectedProfiles map[string]bool // nil
 
-		testConfigScenario(t, withConfig, withCleanUp, label, originalValue, expectedProfiles)
+		var expectedProfiles map[string]bool // empty
+		var cfg config.Config                // empty
+
+		testConfigScenario(t, &cfg, withConfig, withCleanUp, label, originalValue, expectedProfiles)
 	})
 }

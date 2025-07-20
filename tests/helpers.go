@@ -466,7 +466,7 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 	}
 }
 
-func testConfigScenario(t *testing.T, withConfig, withCleanUp bool, label, originalValue string, expectedFiles map[string]bool) {
+func testConfigScenario(t *testing.T, cfg *config.Config, withConfig, withCleanUp bool, label, originalValue string, expectedFiles map[string]bool) {
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)
@@ -487,24 +487,11 @@ func testConfigScenario(t *testing.T, withConfig, withCleanUp bool, label, origi
 	// 1. Set up Environment
 	setupEnviroment(t)
 
-	// 2. Create config conditionally
-	var cfg config.Config // empty config
-	if withConfig {
-		cfg = config.Config{
-			FunctionFilter: map[string]config.FunctionFilter{
-				benchName: {
-					IncludePrefixes: []string{"test-environment"},
-				},
-			},
-		}
-	}
-
-	createConfigFile(t, &cfg)
-
-	// 3. Build prof and move to Environment
+	// 2. Build prof and move to Environment
+	createConfigFile(t, cfg)
 	setUpProf(t, root)
 
-	// 4. Run ./prof inside the Environment
+	// 3. Run ./prof inside the Environment
 	args := []string{
 		"--benchmarks", fmt.Sprintf("[%s]", benchName),
 		"--profiles", fmt.Sprintf("[%s,%s]", cpuProfile, memProfile),
@@ -513,7 +500,7 @@ func testConfigScenario(t *testing.T, withConfig, withCleanUp bool, label, origi
 	}
 	runProf(t, root, args)
 
-	// 5. Check bench output
+	// 4. Check bench output
 	expectedProfiles := []string{cpuProfile, memProfile}
 	checkOutput(t, envPath, expectedProfiles, withConfig, expectedFiles)
 }
