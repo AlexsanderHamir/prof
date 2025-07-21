@@ -8,8 +8,6 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	withCleanUp := true
-
 	label := "WithFunctionFilter"
 	t.Run(label, func(t *testing.T) {
 		specifiedFiles := map[fileFullName]*FieldsCheck{
@@ -29,18 +27,25 @@ func TestConfig(t *testing.T) {
 			},
 		}
 
-		withConfig := true
-		expectNonSpecifiedFiles := false
-		noConfigFile := false
-		cmd := defaultCmd()
-		expectedErrorMessage := ""
-		expectedNumberOfFiles := 3
-		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
+		testArgs := &TestArgs{
+			specifiedFiles:          specifiedFiles,
+			cfg:                     cfg,
+			withConfig:              true,
+			expectNonSpecifiedFiles: false,
+			noConfigFile:            false,
+			cmd:                     defaultCmd(),
+			expectedErrorMessage:    "",
+			label:                   label,
+			expectedNumberOfFiles:   3,
+			withCleanUp:             true,
+			expectedProfiles:        nil,
+		}
+
+		testConfigScenario(t, testArgs)
 	})
 
 	label = "WithFunctionIgnore"
 	t.Run(label, func(t *testing.T) {
-
 		specifiedFiles := map[fileFullName]*FieldsCheck{
 			"GenerateStrings.txt":          newDefaultFieldsCheckExpected(),
 			"BenchmarkStringProcessor.txt": newDefaultFieldsCheckNotExpected(),
@@ -56,18 +61,25 @@ func TestConfig(t *testing.T) {
 			},
 		}
 
-		withConfig := true
-		expectNonSpecifiedFiles := true
-		noConfigFile := false
-		cmd := defaultCmd()
-		expectedErrorMessage := ""
-		expectedNumberOfFiles := 3
-		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
+		testArgs := &TestArgs{
+			specifiedFiles:          specifiedFiles,
+			cfg:                     cfg,
+			withConfig:              true,
+			expectNonSpecifiedFiles: true,
+			noConfigFile:            false,
+			cmd:                     defaultCmd(),
+			expectedErrorMessage:    "",
+			label:                   label,
+			expectedNumberOfFiles:   3,
+			withCleanUp:             true,
+			expectedProfiles:        nil,
+		}
+
+		testConfigScenario(t, testArgs)
 	})
 
 	label = "WithFunctionFilterPlusIgnore"
 	t.Run(label, func(t *testing.T) {
-
 		specifiedFiles := map[fileFullName]*FieldsCheck{
 			"BenchmarkStringProcessor_cpu.png":    newDefaultFieldsCheckExpected(),
 			"BenchmarkStringProcessor_memory.png": newDefaultFieldsCheckExpected(),
@@ -86,57 +98,65 @@ func TestConfig(t *testing.T) {
 			},
 		}
 
-		withConfig := true
-		expectNonSpecifiedFiles := false
+		testArgs := &TestArgs{
+			specifiedFiles:          specifiedFiles,
+			cfg:                     cfg,
+			withConfig:              true,
+			expectNonSpecifiedFiles: false,
+			noConfigFile:            false,
+			cmd:                     defaultCmd(),
+			expectedErrorMessage:    "",
+			label:                   label,
+			expectedNumberOfFiles:   3,
+			withCleanUp:             true,
+			expectedProfiles:        nil,
+		}
 
-		noConfigFile := false
-		cmd := defaultCmd()
-		expectedErrorMessage := ""
-		expectedNumberOfFiles := 3
-		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
+		testConfigScenario(t, testArgs)
 	})
 
 	label = "WithoutAnyConfig"
 	t.Run(label, func(t *testing.T) {
-		var specifiedFiles map[fileFullName]*FieldsCheck // empty
-		var cfg config.Config                            // empty
+		testArgs := &TestArgs{
+			specifiedFiles:          nil,
+			cfg:                     config.Config{},
+			withConfig:              false,
+			expectNonSpecifiedFiles: true,
+			noConfigFile:            false,
+			cmd:                     defaultCmd(),
+			expectedErrorMessage:    "",
+			label:                   label,
+			expectedNumberOfFiles:   3,
+			withCleanUp:             true,
+			expectedProfiles:        nil,
+		}
 
-		withConfig := false
-		expectNonSpecifiedFiles := true
-		noConfigFile := false
-		cmd := defaultCmd()
-		expectedErrorMessage := ""
-		expectedNumberOfFiles := 3
-		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
+		testConfigScenario(t, testArgs)
 	})
 
 	label = "WithoutConfigFile"
 	t.Run(label, func(t *testing.T) {
-		var specifiedFiles map[fileFullName]*FieldsCheck // empty
-		var cfg config.Config                            // empty
+		testArgs := &TestArgs{
+			specifiedFiles:          nil,
+			cfg:                     config.Config{},
+			withConfig:              false,
+			expectNonSpecifiedFiles: true,
+			noConfigFile:            true,
+			cmd:                     defaultCmd(),
+			expectedErrorMessage:    "",
+			label:                   label,
+			expectedNumberOfFiles:   3,
+			withCleanUp:             true,
+			expectedProfiles:        nil,
+		}
 
-		withConfig := false
-		expectNonSpecifiedFiles := true
-		noConfigFile := true
-		cmd := defaultCmd()
-		expectedErrorMessage := ""
-		expectedNumberOfFiles := 3
-		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
-
+		testConfigScenario(t, testArgs)
 	})
 }
 
 func TestProfileValidation(t *testing.T) {
-	withCleanUp := true
-
 	label := "RandomProfileName"
 	t.Run(label, func(t *testing.T) {
-		var specifiedFiles map[fileFullName]*FieldsCheck // empty
-		var cfg config.Config                            // empty
-
-		withConfig := false
-		expectNonSpecifiedFiles := true
-		noConfigFile := true
 		cmd := []string{
 			"--benchmarks", fmt.Sprintf("[%s]", benchName),
 			"--profiles", fmt.Sprintf("[%s,%s,%s]", cpuProfile, memProfile, "fakeProfileName"),
@@ -144,19 +164,52 @@ func TestProfileValidation(t *testing.T) {
 			"--tag", tag,
 		}
 
-		expectedErrorMessage := "failed to run BenchmarkStringProcessor: profile fakeProfileName is not supported"
-		expectedNumberOfFiles := 3
-		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
+		testArgs := &TestArgs{
+			specifiedFiles:          nil,
+			cfg:                     config.Config{},
+			withConfig:              false,
+			expectNonSpecifiedFiles: true,
+			noConfigFile:            true,
+			cmd:                     cmd,
+			expectedErrorMessage:    "failed to run BenchmarkStringProcessor: profile fakeProfileName is not supported",
+			label:                   label,
+			expectedNumberOfFiles:   3,
+			withCleanUp:             true,
+			expectedProfiles:        nil,
+		}
+
+		testConfigScenario(t, testArgs)
 	})
 
-	label = "CollectAllProfiles"
+	label = "NonCollectedProfile"
 	t.Run(label, func(t *testing.T) {
-		var specifiedFiles map[fileFullName]*FieldsCheck // empty
-		var cfg config.Config                            // empty
+		nonCollectedProfile := "goroutine"
+		cmd := []string{
+			"--benchmarks", fmt.Sprintf("[%s]", benchName),
+			"--profiles", fmt.Sprintf("[%s]", nonCollectedProfile),
+			"--count", count,
+			"--tag", tag,
+		}
 
-		withConfig := false
-		expectNonSpecifiedFiles := true
-		noConfigFile := true
+		testArgs := &TestArgs{
+			specifiedFiles:          nil,
+			cfg:                     config.Config{},
+			withConfig:              false,
+			expectNonSpecifiedFiles: true,
+			noConfigFile:            true,
+			cmd:                     cmd,
+			expectedErrorMessage:    fmt.Sprintf("failed to run %s: profile %s is not supported", benchName, nonCollectedProfile),
+			label:                   label,
+			expectedNumberOfFiles:   3,
+			withCleanUp:             true,
+			expectedProfiles:        nil,
+		}
+
+		testConfigScenario(t, testArgs)
+	})
+
+	label = "CollectedProfile"
+	t.Run(label, func(t *testing.T) {
 		cmd := []string{
 			"--benchmarks", fmt.Sprintf("[%s]", benchName),
 			"--profiles", fmt.Sprintf("[%s,%s,%s]", cpuProfile, memProfile, blockProfile),
@@ -164,8 +217,20 @@ func TestProfileValidation(t *testing.T) {
 			"--tag", tag,
 		}
 
-		expectedErrorMessage := ""
-		expectedNumberOfFiles := 4
-		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
+		testArgs := &TestArgs{
+			specifiedFiles:          nil,
+			cfg:                     config.Config{},
+			withConfig:              false,
+			expectNonSpecifiedFiles: true,
+			noConfigFile:            true,
+			cmd:                     cmd,
+			expectedErrorMessage:    "",
+			label:                   label,
+			expectedNumberOfFiles:   4, // cpu, mem, goroutine/trace, block
+			withCleanUp:             true,
+			expectedProfiles:        []string{cpuProfile, memProfile, blockProfile},
+		}
+
+		testConfigScenario(t, testArgs)
 	})
 }

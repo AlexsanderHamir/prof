@@ -19,7 +19,20 @@ var (
 	envDirName = envDirNameStatic
 )
 
-type IsFileExpected bool
+type TestArgs struct {
+	specifiedFiles          map[fileFullName]*FieldsCheck
+	cfg                     config.Config
+	withConfig              bool
+	expectNonSpecifiedFiles bool
+	noConfigFile            bool
+	cmd                     []string
+	expectedErrorMessage    string
+	label                   string
+	expectedNumberOfFiles   int
+	withCleanUp             bool
+	expectedProfiles        []string
+}
+
 type fileFullName string
 
 type FieldsCheck struct {
@@ -47,11 +60,6 @@ func newDefaultFieldsCheckNotExpected() *FieldsCheck {
 		isFileExpected: false,
 	}
 }
-
-const (
-	Expected   IsFileExpected = true
-	Unexpected IsFileExpected = false
-)
 
 const (
 	envDirNameStatic = "Enviroment"
@@ -262,100 +270,6 @@ func BenchmarkDataGeneration(b *testing.B) {
 	}
 }
 `
-
-	benchPath := filepath.Join(dir, "benchmark_test.go")
-	return os.WriteFile(benchPath, []byte(benchmarkContent), shared.PermFile)
-}
-
-func createBenchmarkFileWithExtra(dir string) error {
-	benchmarkContent := `package main
-
-import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
-	"runtime/pprof"
-	"testing"
-	"test-environment/utils"
-)
-
-func collectProfiles(name string) {
-	// Enable and write block profile
-	runtime.SetBlockProfileRate(1)
-	if f, err := os.Create(filepath.Join(".", fmt.Sprintf("%s_block.out", name))); err == nil {
-		defer f.Close()
-		pprof.Lookup("block").WriteTo(f, 0)
-	}
-
-	// Write goroutine profile
-	if f, err := os.Create(filepath.Join(".", fmt.Sprintf("%s_goroutine.out", name))); err == nil {
-		defer f.Close()
-		pprof.Lookup("goroutine").WriteTo(f, 0)
-	}
-}
-
-func BenchmarkStringProcessor(b *testing.B) {
-	defer collectProfiles("BenchmarkStringProcessor")
-
-	processor := utils.NewStringProcessor()
-	generator := utils.NewDataGenerator()
-
-	strings := generator.GenerateStrings(1000)
-	for _, s := range strings {
-		processor.AddString(s)
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		result := processor.ProcessStrings()
-		_ = result
-	}
-}
-
-func BenchmarkFibonacci(b *testing.B) {
-	defer collectProfiles("BenchmarkFibonacci")
-
-	calc := utils.NewCalculator()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		result := calc.Fibonacci(25)
-		_ = result
-	}
-}
-
-func BenchmarkMatrixMultiplication(b *testing.B) {
-	defer collectProfiles("BenchmarkMatrixMultiplication")
-
-	calc := utils.NewCalculator()
-	generator := utils.NewDataGenerator()
-
-	matrixA := generator.GenerateMatrix(50, 50)
-	matrixB := generator.GenerateMatrix(50, 50)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		result := calc.MatrixMultiply(matrixA, matrixB)
-		_ = result
-	}
-}
-
-func BenchmarkDataGeneration(b *testing.B) {
-	defer collectProfiles("BenchmarkDataGeneration")
-
-	generator := utils.NewDataGenerator()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		strings := generator.GenerateStrings(500)
-		matrix := generator.GenerateMatrix(20, 20)
-		_ = strings
-		_ = matrix
-	}
-}
-`
-
 	benchPath := filepath.Join(dir, "benchmark_test.go")
 	return os.WriteFile(benchPath, []byte(benchmarkContent), shared.PermFile)
 }
@@ -496,7 +410,7 @@ func checkDirectory(t *testing.T, path, description string) {
 	}
 }
 
-func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpecifiedFiles, withConfig bool, expectedFiles map[fileFullName]*FieldsCheck, expectedNumberOfFiles int) {
+func checkOutput(t *testing.T, envPath string, expectedProfiles []string, expectNonSpecifiedFiles, withConfig bool, expectedFiles map[fileFullName]*FieldsCheck, expectedNumberOfFiles int) {
 	t.Helper()
 
 	benchPath := filepath.Join(envPath, shared.MainDirOutput)
@@ -524,7 +438,7 @@ func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpeci
 	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, configDoesntApply, expectedFiles)
 
 	// 3. Check that profile function directories and files exist for each profile
-	for _, profile := range profiles {
+	for _, profile := range expectedProfiles {
 		profileFunctionsDir := fmt.Sprintf("%s%s", profile, shared.FunctionsDirSuffix)
 		profileFunctionsPath := filepath.Join(tagPath, profileFunctionsDir)
 		checkDirectory(t, profileFunctionsPath, "profile functions directory e.g cpu_functions")
@@ -644,7 +558,7 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 	}
 }
 
-func testConfigScenario(t *testing.T, expectedErrorMessage string, cfg *config.Config, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile bool, label string, specifiedFiles map[fileFullName]*FieldsCheck, args []string, expectedNumberOfFiles int) {
+func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 	defer func() {
 		envDirName = envDirNameStatic
 	}()
@@ -654,10 +568,10 @@ func testConfigScenario(t *testing.T, expectedErrorMessage string, cfg *config.C
 		t.Log(err)
 	}
 
-	envDirName = envDirName + " " + label
+	envDirName = envDirName + " " + testArgs.label
 	envPath := path.Join(root, testDirName, envDirName)
 
-	if withCleanUp {
+	if testArgs.withCleanUp {
 		t.Cleanup(func() {
 			if err := os.RemoveAll(envPath); err != nil {
 				t.Logf("Failed to clean up environment: %v", err)
@@ -669,20 +583,25 @@ func testConfigScenario(t *testing.T, expectedErrorMessage string, cfg *config.C
 	setupEnviroment(t)
 
 	// 2. Build prof and move to Environment
-	if !noConfigFile {
-		createConfigFile(t, cfg)
+	if !testArgs.noConfigFile {
+		createConfigFile(t, &testArgs.cfg)
 	}
 
 	setUpProf(t, root)
 
-	shouldContinue := runProf(t, root, args, expectedErrorMessage)
+	shouldContinue := runProf(t, root, testArgs.cmd, testArgs.expectedErrorMessage)
 	// Tested failure
 	if !shouldContinue {
 		return
 	}
 
 	// 4. Check bench output
-	expectedProfiles := []string{cpuProfile, memProfile}
+	expectedProfiles := testArgs.expectedProfiles
+	expectNonSpecifiedFiles := testArgs.expectNonSpecifiedFiles
+	withConfig := testArgs.withConfig
+	specifiedFiles := testArgs.specifiedFiles
+	expectedNumberOfFiles := testArgs.expectedNumberOfFiles
+
 	checkOutput(t, envPath, expectedProfiles, expectNonSpecifiedFiles, withConfig, specifiedFiles, expectedNumberOfFiles)
 }
 
