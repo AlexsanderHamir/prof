@@ -38,7 +38,7 @@ func TestConfig(t *testing.T) {
 			label:                   label,
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
-			expectedProfiles:        nil,
+			expectedProfiles:        []string{cpuProfile, memProfile},
 		}
 
 		testConfigScenario(t, testArgs)
@@ -72,7 +72,7 @@ func TestConfig(t *testing.T) {
 			label:                   label,
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
-			expectedProfiles:        nil,
+			expectedProfiles:        []string{cpuProfile, memProfile},
 		}
 
 		testConfigScenario(t, testArgs)
@@ -109,7 +109,7 @@ func TestConfig(t *testing.T) {
 			label:                   label,
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
-			expectedProfiles:        nil,
+			expectedProfiles:        []string{cpuProfile, memProfile},
 		}
 
 		testConfigScenario(t, testArgs)
@@ -128,7 +128,7 @@ func TestConfig(t *testing.T) {
 			label:                   label,
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
-			expectedProfiles:        nil,
+			expectedProfiles:        []string{cpuProfile, memProfile},
 		}
 
 		testConfigScenario(t, testArgs)
@@ -147,7 +147,7 @@ func TestConfig(t *testing.T) {
 			label:                   label,
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
-			expectedProfiles:        nil,
+			expectedProfiles:        []string{cpuProfile, memProfile},
 		}
 
 		testConfigScenario(t, testArgs)
