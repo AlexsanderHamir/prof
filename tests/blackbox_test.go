@@ -96,16 +96,15 @@ func TestConfig(t *testing.T) {
 		noConfigFile := false
 		testConfigScenario(t, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
 	})
-}
 
-func TestNoConfigFile(t *testing.T) {
-	var specifiedFiles map[fileFullName]*FieldsCheck // empty
-	var cfg config.Config                            // empty
+	label = "WithoutConfigFile"
+	t.Run(label, func(t *testing.T) {
+		var specifiedFiles map[fileFullName]*FieldsCheck // empty
+		var cfg config.Config                            // empty
 
-	withConfig := false
-	expectNonSpecifiedFiles := true
-	withCleanUp := true
-	noConfigFile := true
-	label := "WithoutConfigFile"
-	testConfigScenario(t, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
+		withConfig := false
+		expectNonSpecifiedFiles := true
+		noConfigFile := true
+		testConfigScenario(t, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
+	})
 }
