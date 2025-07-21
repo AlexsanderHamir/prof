@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/config"
@@ -20,7 +21,7 @@ func TestConfig(t *testing.T) {
 			"BenchmarkStringProcessor_memory.png": newDefaultFieldsCheckExpected(),
 		}
 
-		cfg := &config.Config{
+		cfg := config.Config{
 			FunctionFilter: map[string]config.FunctionFilter{
 				benchName: {
 					IncludePrefixes: []string{"test-environment"},
@@ -31,7 +32,8 @@ func TestConfig(t *testing.T) {
 		withConfig := true
 		expectNonSpecifiedFiles := false
 		noConfigFile := false
-		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
+		cmd := defaultCmd()
+		testConfigScenario(t, "", &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
 	})
 
 	label = "WithFunctionIgnore"
@@ -44,7 +46,7 @@ func TestConfig(t *testing.T) {
 			"AddString.txt":                newDefaultFieldsCheckNotExpected(),
 		}
 
-		cfg := &config.Config{
+		cfg := config.Config{
 			FunctionFilter: map[string]config.FunctionFilter{
 				benchName: {
 					IgnoreFunctions: []string{"BenchmarkStringProcessor", "ProcessStrings", "AddString"},
@@ -55,7 +57,8 @@ func TestConfig(t *testing.T) {
 		withConfig := true
 		expectNonSpecifiedFiles := true
 		noConfigFile := false
-		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
+		cmd := defaultCmd()
+		testConfigScenario(t, "", &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
 	})
 
 	label = "WithFunctionFilterPlusIgnore"
@@ -70,7 +73,7 @@ func TestConfig(t *testing.T) {
 			"AddString.txt":                       newDefaultFieldsCheckNotExpected(),
 		}
 
-		cfg := &config.Config{
+		cfg := config.Config{
 			FunctionFilter: map[string]config.FunctionFilter{
 				benchName: {
 					IncludePrefixes: []string{"test-environment"},
@@ -83,7 +86,8 @@ func TestConfig(t *testing.T) {
 		expectNonSpecifiedFiles := false
 
 		noConfigFile := false
-		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
+		cmd := defaultCmd()
+		testConfigScenario(t, "", &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
 	})
 
 	label = "WithoutAnyConfig"
@@ -94,7 +98,8 @@ func TestConfig(t *testing.T) {
 		withConfig := false
 		expectNonSpecifiedFiles := true
 		noConfigFile := false
-		testConfigScenario(t, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
+		cmd := defaultCmd()
+		testConfigScenario(t, "", &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
 	})
 
 	label = "WithoutConfigFile"
@@ -105,6 +110,29 @@ func TestConfig(t *testing.T) {
 		withConfig := false
 		expectNonSpecifiedFiles := true
 		noConfigFile := true
-		testConfigScenario(t, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
+		cmd := defaultCmd()
+		testConfigScenario(t, "", &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
+	})
+}
+
+func TestProfileValidation(t *testing.T) {
+	withCleanUp := true
+
+	label := "RandomProfileName"
+	t.Run(label, func(t *testing.T) {
+		var specifiedFiles map[fileFullName]*FieldsCheck // empty
+		var cfg config.Config                            // empty
+
+		withConfig := false
+		expectNonSpecifiedFiles := true
+		noConfigFile := true
+		cmd := []string{
+			"--benchmarks", fmt.Sprintf("[%s]", benchName),
+			"--profiles", fmt.Sprintf("[%s,%s,%s]", cpuProfile, memProfile, "fakeProfileName"),
+			"--count", count,
+			"--tag", tag,
+		}
+		expectedErrorMessage := "failed to run BenchmarkStringProcessor: profile fakeProfileName is not supported"
+		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
 	})
 }

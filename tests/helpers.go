@@ -342,7 +342,7 @@ func setUpProf(t *testing.T, projectRoot string) {
 	}
 }
 
-func runProf(t *testing.T, projectRoot string, args []string) {
+func runProf(t *testing.T, projectRoot string, args []string, expectedErrMessage string) (shouldContinue bool) {
 	t.Helper()
 
 	envFullPath := filepath.Join(projectRoot, testDirName, envDirName)
@@ -361,14 +361,38 @@ func runProf(t *testing.T, projectRoot string, args []string) {
 
 	err := cmd.Run()
 	if err != nil {
-		t.Fatalf("prof command failed: %v\nStdout: %s\nStderr: %s",
-			err, stdout.String(), stderr.String())
+		shouldContinue = handleCommandError(t, err, &stdout, &stderr, expectedErrMessage)
+		if !shouldContinue {
+			return
+		}
 	}
 
 	successMessage := shared.InfoCollectionSuccess
 	if !strings.Contains(stderr.String(), successMessage) {
-		t.Fatalf("Expected success message not found")
+		t.Fatal("Expected success message not found")
 	}
+
+	return true
+}
+
+func handleCommandError(t *testing.T, err error, stdout, stderr *bytes.Buffer, expectedErrMessage string) bool {
+	t.Helper()
+
+	if expectedErrMessage != "" {
+		stderrText := stderr.String()
+		if strings.Contains(stderrText, expectedErrMessage) {
+			t.Logf("Found expected error: %s", expectedErrMessage)
+			return false // Expected error found, caller should return
+		}
+
+		t.Fatalf("Expected error message '%s' not found.\nStderr: %s\nStdout: %s",
+			expectedErrMessage, stderrText, stdout.String())
+	}
+
+	t.Fatalf("prof command failed: %v\nStdout: %s\nStderr: %s",
+		err, stdout.String(), stderr.String())
+
+	return true // Never reached in case of t.Fatalf
 }
 
 func checkDirectory(t *testing.T, path, description string) {
@@ -528,7 +552,7 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 	}
 }
 
-func testConfigScenario(t *testing.T, cfg *config.Config, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile bool, label string, specifiedFiles map[fileFullName]*FieldsCheck) {
+func testConfigScenario(t *testing.T, expectedErrorMessage string, cfg *config.Config, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile bool, label string, specifiedFiles map[fileFullName]*FieldsCheck, args []string) {
 	defer func() {
 		envDirName = envDirNameStatic
 	}()
@@ -559,17 +583,22 @@ func testConfigScenario(t *testing.T, cfg *config.Config, expectNonSpecifiedFile
 
 	setUpProf(t, root)
 
-	// 3. Run ./prof inside the Environment
-	args := []string{
+	shouldContinue := runProf(t, root, args, expectedErrorMessage)
+	// Tested failure
+	if !shouldContinue {
+		return
+	}
+
+	// 4. Check bench output
+	expectedProfiles := []string{cpuProfile, memProfile}
+	checkOutput(t, envPath, expectedProfiles, expectNonSpecifiedFiles, withConfig, specifiedFiles)
+}
+
+func defaultCmd() []string {
+	return []string{
 		"--benchmarks", fmt.Sprintf("[%s]", benchName),
 		"--profiles", fmt.Sprintf("[%s,%s]", cpuProfile, memProfile),
 		"--count", count,
 		"--tag", tag,
 	}
-
-	runProf(t, root, args)
-
-	// 4. Check bench output
-	expectedProfiles := []string{cpuProfile, memProfile}
-	checkOutput(t, envPath, expectedProfiles, expectNonSpecifiedFiles, withConfig, specifiedFiles)
 }
