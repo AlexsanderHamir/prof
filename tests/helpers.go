@@ -397,16 +397,15 @@ func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpeci
 	// bin => cpu, mem, test
 	// txt => cpu, mem, bench
 	expectedNumberOfFiles := 3
-
-	var doesConfigApply bool
+	configDoesntApply := false
 
 	checkDirectory(t, binPath, "bin directory")
 	checkDirectory(t, binBenchPath, "benchmark directory inside of bin")
-	checkDirectoryFiles(t, binBenchPath, "bin files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, doesConfigApply, expectedFiles)
+	checkDirectoryFiles(t, binBenchPath, "bin files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, configDoesntApply, expectedFiles)
 
 	checkDirectory(t, textPath, "text directory")
 	checkDirectory(t, textBenchPath, "benchmark directory inside of text")
-	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, doesConfigApply, expectedFiles)
+	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, configDoesntApply, expectedFiles)
 
 	// 3. Check that profile function directories and files exist for each profile
 	for _, profile := range profiles {
@@ -418,15 +417,15 @@ func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpeci
 		checkDirectory(t, benchDir, "benchmark directory inside profile functions directory e.g cpu_functions/BenchmarkName")
 
 		notSure := 0
-		doesConfigApply = withConfig
 		checkDirectoryFiles(t, benchDir, "individual function files inside benchmark directory", notSure, expectNonSpecifiedFiles, withConfig, expectedFiles)
 	}
 
+	//
 	if withConfig {
 		remainingFiles := countRemainingFiles(expectedFiles)
-		allowedRemainingFiles := 1
+		maxAllowRemainingFiles := 1
 
-		if remainingFiles > allowedRemainingFiles {
+		if remainingFiles > maxAllowRemainingFiles {
 			t.Fatalf("Expected almost all files to be found, %d files remaining", remainingFiles)
 		}
 	}
@@ -434,11 +433,9 @@ func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpeci
 
 func countRemainingFiles(files map[fileFullName]*FieldsCheck) int {
 	count := 0
-	for name, fieldsCheck := range files {
+	for _, fieldsCheck := range files {
 		if fieldsCheck.isFileExpected {
 			if !fieldsCheck.IsWithinRange() {
-				fmt.Println("File remaining: ", name)
-				fmt.Printf("fieldsCheck: %+v \n", fieldsCheck)
 				count++
 			}
 		}
@@ -472,45 +469,49 @@ func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedF
 	files, dirNames := getFileOrDirs(t, dirPath, dirDescription)
 
 	// Ensure no directories exist
-	foundDirectories := len(dirNames)
-	if foundDirectories > 0 {
+	containsDirectories := len(dirNames) > 0
+	if containsDirectories {
 		t.Fatalf("%s contains unexpected directories: %v", dirDescription, dirNames)
 	}
 
 	// Ensure files exist
-	foundFiles := len(files)
-	if foundFiles == 0 {
+	missingFiles := len(files) == 0
+	if missingFiles {
 		t.Fatalf("%s contains no files", dirDescription)
 	}
 
-	if expectedFileNum > 0 && foundFiles != expectedFileNum {
-		t.Fatalf("expected %d, found %d files", expectedFileNum, foundFiles)
+	// Check expected file count
+	expectingSpecificNumber := expectedFileNum > 0
+	differentThanExpected := len(files) != expectedFileNum
+	if expectingSpecificNumber && differentThanExpected {
+		t.Fatalf("expected %d, found %d files", expectedFileNum, len(files))
 	}
 
-	// TODO: The logic here is confusing
-	// break it down, give it clear names.
+	// Check each file
 	for _, file := range files {
 		fileName := file.Name()
-		if withConfig {
-			fileKey := fileFullName(fileName)
-			fieldsCheck, ok := specifiedFiles[fileKey]
-			if ok {
-				if fieldsCheck.isFileExpected {
-					fieldsCheck.currentAppearances++
-					continue
-				} else {
-					t.Fatalf("File should had been filtered: %s", fileKey)
-				}
-			} else {
-				// ensure no unexpected file exists.
-				if !expectNonSpecifiedFiles {
-					t.Fatalf("Unexpected File: %s", fileKey)
-				}
-			}
 
+		if withConfig {
+			validateFileWithConfig(t, fileName, expectNonSpecifiedFiles, specifiedFiles)
 		}
+
 		filePath := filepath.Join(dirPath, fileName)
 		checkFileNotEmpty(t, filePath, fileName)
+	}
+}
+
+func validateFileWithConfig(t *testing.T, fileName string, expectNonSpecifiedFiles bool, specifiedFiles map[fileFullName]*FieldsCheck) {
+	fileKey := fileFullName(fileName)
+	fieldsCheck, exists := specifiedFiles[fileKey]
+
+	if exists {
+		if fieldsCheck.isFileExpected {
+			fieldsCheck.currentAppearances++
+		} else {
+			t.Fatalf("File should have been filtered: %s", fileKey)
+		}
+	} else if !expectNonSpecifiedFiles {
+		t.Fatalf("Unexpected file: %s", fileKey)
 	}
 }
 
