@@ -7,7 +7,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	withCleanUp := false
+	withCleanUp := true
 
 	label := "WithFunctionFilter"
 	t.Run(label, func(t *testing.T) {
@@ -28,15 +28,16 @@ func TestConfig(t *testing.T) {
 			},
 		}
 
-		withconfig := true
+		withConfig := true
 		expectNonSpecifiedFiles := false
-		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withconfig, withCleanUp, label, specifiedFiles)
+		noConfigFile := false
+		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
 	})
 
 	label = "WithFunctionIgnore"
 	t.Run(label, func(t *testing.T) {
 
-		speficiedFiles := map[fileFullName]*FieldsCheck{
+		specifiedFiles := map[fileFullName]*FieldsCheck{
 			"GenerateStrings.txt":          newDefaultFieldsCheckExpected(),
 			"BenchmarkStringProcessor.txt": newDefaultFieldsCheckNotExpected(),
 			"ProcessStrings.txt":           newDefaultFieldsCheckNotExpected(),
@@ -51,9 +52,10 @@ func TestConfig(t *testing.T) {
 			},
 		}
 
-		withconfig := true
+		withConfig := true
 		expectNonSpecifiedFiles := true
-		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withconfig, withCleanUp, label, speficiedFiles)
+		noConfigFile := false
+		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
 	})
 
 	label = "WithFunctionFilterPlusIgnore"
@@ -77,9 +79,11 @@ func TestConfig(t *testing.T) {
 			},
 		}
 
-		withconfig := true
+		withConfig := true
 		expectNonSpecifiedFiles := false
-		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withconfig, withCleanUp, label, specifiedFiles)
+
+		noConfigFile := false
+		testConfigScenario(t, cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
 	})
 
 	label = "WithoutAnyConfig"
@@ -89,6 +93,19 @@ func TestConfig(t *testing.T) {
 
 		withConfig := false
 		expectNonSpecifiedFiles := true
-		testConfigScenario(t, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, label, specifiedFiles)
+		noConfigFile := false
+		testConfigScenario(t, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
 	})
+}
+
+func TestNoConfigFile(t *testing.T) {
+	var specifiedFiles map[fileFullName]*FieldsCheck // empty
+	var cfg config.Config                            // empty
+
+	withConfig := false
+	expectNonSpecifiedFiles := true
+	withCleanUp := true
+	noConfigFile := true
+	label := "WithoutConfigFile"
+	testConfigScenario(t, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles)
 }

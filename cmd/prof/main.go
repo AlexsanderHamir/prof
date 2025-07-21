@@ -64,7 +64,7 @@ func handleBenchmarks(cliArgs *cli.Arguments) error {
 
 	cfg, err := config.LoadFromFile(configFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		cfg = &config.Config{} // default
 	}
 
 	benchmarks, profiles, err := cli.ParseBenchmarkConfig(cliArgs.Benchmarks, cliArgs.Profiles)

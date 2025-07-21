@@ -528,7 +528,7 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 	}
 }
 
-func testConfigScenario(t *testing.T, cfg *config.Config, expectNonSpecifiedFiles, withConfig, withCleanUp bool, label string, specifiedFiles map[fileFullName]*FieldsCheck) {
+func testConfigScenario(t *testing.T, cfg *config.Config, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile bool, label string, specifiedFiles map[fileFullName]*FieldsCheck) {
 	defer func() {
 		envDirName = envDirNameStatic
 	}()
@@ -553,7 +553,10 @@ func testConfigScenario(t *testing.T, cfg *config.Config, expectNonSpecifiedFile
 	setupEnviroment(t)
 
 	// 2. Build prof and move to Environment
-	createConfigFile(t, cfg)
+	if !noConfigFile {
+		createConfigFile(t, cfg)
+	}
+
 	setUpProf(t, root)
 
 	// 3. Run ./prof inside the Environment
