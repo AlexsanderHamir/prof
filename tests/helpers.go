@@ -61,6 +61,7 @@ const (
 	count            = "5"
 	cpuProfile       = "cpu"
 	memProfile       = "memory"
+	goroutineProfile = "goroutine"
 	benchName        = "BenchmarkStringProcessor"
 )
 

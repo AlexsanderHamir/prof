@@ -135,4 +135,22 @@ func TestProfileValidation(t *testing.T) {
 		expectedErrorMessage := "failed to run BenchmarkStringProcessor: profile fakeProfileName is not supported"
 		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
 	})
+
+	label = "NonCollectedProfile"
+	t.Run(label, func(t *testing.T) {
+		var specifiedFiles map[fileFullName]*FieldsCheck // empty
+		var cfg config.Config                            // empty
+
+		withConfig := false
+		expectNonSpecifiedFiles := true
+		noConfigFile := true
+		cmd := []string{
+			"--benchmarks", fmt.Sprintf("[%s]", benchName),
+			"--profiles", fmt.Sprintf("[%s,%s,%s]", cpuProfile, memProfile, goroutineProfile),
+			"--count", count,
+			"--tag", tag,
+		}
+		expectedErrorMessage := fmt.Sprintf("failed to run %s: flag provided but not defined: -%s", benchName, goroutineProfile)
+		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
+	})
 }
