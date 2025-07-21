@@ -309,6 +309,7 @@ func createConfigFile(t *testing.T, cfgTemplate *config.Config) {
 }
 
 func setupEnviroment(t *testing.T) {
+	t.Helper()
 	// 1. Create environment Directory.
 	if err := os.Mkdir(envDirName, shared.PermDir); err != nil && !os.IsExist(err) {
 		t.Fatalf("couldn't create environment dir: %v", err)
