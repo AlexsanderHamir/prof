@@ -33,7 +33,9 @@ func TestConfig(t *testing.T) {
 		expectNonSpecifiedFiles := false
 		noConfigFile := false
 		cmd := defaultCmd()
-		testConfigScenario(t, "", &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
+		expectedErrorMessage := ""
+		expectedNumberOfFiles := 3
+		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
 	})
 
 	label = "WithFunctionIgnore"
@@ -58,7 +60,9 @@ func TestConfig(t *testing.T) {
 		expectNonSpecifiedFiles := true
 		noConfigFile := false
 		cmd := defaultCmd()
-		testConfigScenario(t, "", &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
+		expectedErrorMessage := ""
+		expectedNumberOfFiles := 3
+		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
 	})
 
 	label = "WithFunctionFilterPlusIgnore"
@@ -87,7 +91,9 @@ func TestConfig(t *testing.T) {
 
 		noConfigFile := false
 		cmd := defaultCmd()
-		testConfigScenario(t, "", &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
+		expectedErrorMessage := ""
+		expectedNumberOfFiles := 3
+		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
 	})
 
 	label = "WithoutAnyConfig"
@@ -99,7 +105,9 @@ func TestConfig(t *testing.T) {
 		expectNonSpecifiedFiles := true
 		noConfigFile := false
 		cmd := defaultCmd()
-		testConfigScenario(t, "", &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
+		expectedErrorMessage := ""
+		expectedNumberOfFiles := 3
+		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
 	})
 
 	label = "WithoutConfigFile"
@@ -111,7 +119,10 @@ func TestConfig(t *testing.T) {
 		expectNonSpecifiedFiles := true
 		noConfigFile := true
 		cmd := defaultCmd()
-		testConfigScenario(t, "", &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
+		expectedErrorMessage := ""
+		expectedNumberOfFiles := 3
+		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
+
 	})
 }
 
@@ -132,11 +143,13 @@ func TestProfileValidation(t *testing.T) {
 			"--count", count,
 			"--tag", tag,
 		}
+
 		expectedErrorMessage := "failed to run BenchmarkStringProcessor: profile fakeProfileName is not supported"
-		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
+		expectedNumberOfFiles := 3
+		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
 	})
 
-	label = "NonCollectedProfile"
+	label = "CollectAllProfiles"
 	t.Run(label, func(t *testing.T) {
 		var specifiedFiles map[fileFullName]*FieldsCheck // empty
 		var cfg config.Config                            // empty
@@ -146,11 +159,13 @@ func TestProfileValidation(t *testing.T) {
 		noConfigFile := true
 		cmd := []string{
 			"--benchmarks", fmt.Sprintf("[%s]", benchName),
-			"--profiles", fmt.Sprintf("[%s,%s,%s]", cpuProfile, memProfile, goroutineProfile),
+			"--profiles", fmt.Sprintf("[%s,%s,%s]", cpuProfile, memProfile, blockProfile),
 			"--count", count,
 			"--tag", tag,
 		}
-		expectedErrorMessage := fmt.Sprintf("failed to run %s: flag provided but not defined: -%s", benchName, goroutineProfile)
-		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd)
+
+		expectedErrorMessage := ""
+		expectedNumberOfFiles := 4
+		testConfigScenario(t, expectedErrorMessage, &cfg, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile, label, specifiedFiles, cmd, expectedNumberOfFiles)
 	})
 }

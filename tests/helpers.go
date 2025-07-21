@@ -61,7 +61,7 @@ const (
 	count            = "5"
 	cpuProfile       = "cpu"
 	memProfile       = "memory"
-	goroutineProfile = "goroutine"
+	blockProfile     = "block"
 	benchName        = "BenchmarkStringProcessor"
 )
 
@@ -267,6 +267,99 @@ func BenchmarkDataGeneration(b *testing.B) {
 	return os.WriteFile(benchPath, []byte(benchmarkContent), shared.PermFile)
 }
 
+func createBenchmarkFileWithExtra(dir string) error {
+	benchmarkContent := `package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"runtime/pprof"
+	"testing"
+	"test-environment/utils"
+)
+
+func collectProfiles(name string) {
+	// Enable and write block profile
+	runtime.SetBlockProfileRate(1)
+	if f, err := os.Create(filepath.Join(".", fmt.Sprintf("%s_block.out", name))); err == nil {
+		defer f.Close()
+		pprof.Lookup("block").WriteTo(f, 0)
+	}
+
+	// Write goroutine profile
+	if f, err := os.Create(filepath.Join(".", fmt.Sprintf("%s_goroutine.out", name))); err == nil {
+		defer f.Close()
+		pprof.Lookup("goroutine").WriteTo(f, 0)
+	}
+}
+
+func BenchmarkStringProcessor(b *testing.B) {
+	defer collectProfiles("BenchmarkStringProcessor")
+
+	processor := utils.NewStringProcessor()
+	generator := utils.NewDataGenerator()
+
+	strings := generator.GenerateStrings(1000)
+	for _, s := range strings {
+		processor.AddString(s)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		result := processor.ProcessStrings()
+		_ = result
+	}
+}
+
+func BenchmarkFibonacci(b *testing.B) {
+	defer collectProfiles("BenchmarkFibonacci")
+
+	calc := utils.NewCalculator()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		result := calc.Fibonacci(25)
+		_ = result
+	}
+}
+
+func BenchmarkMatrixMultiplication(b *testing.B) {
+	defer collectProfiles("BenchmarkMatrixMultiplication")
+
+	calc := utils.NewCalculator()
+	generator := utils.NewDataGenerator()
+
+	matrixA := generator.GenerateMatrix(50, 50)
+	matrixB := generator.GenerateMatrix(50, 50)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		result := calc.MatrixMultiply(matrixA, matrixB)
+		_ = result
+	}
+}
+
+func BenchmarkDataGeneration(b *testing.B) {
+	defer collectProfiles("BenchmarkDataGeneration")
+
+	generator := utils.NewDataGenerator()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		strings := generator.GenerateStrings(500)
+		matrix := generator.GenerateMatrix(20, 20)
+		_ = strings
+		_ = matrix
+	}
+}
+`
+
+	benchPath := filepath.Join(dir, "benchmark_test.go")
+	return os.WriteFile(benchPath, []byte(benchmarkContent), shared.PermFile)
+}
+
 func getProjectRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -382,7 +475,6 @@ func handleCommandError(t *testing.T, err error, stdout, stderr *bytes.Buffer, e
 	if expectedErrMessage != "" {
 		stderrText := stderr.String()
 		if strings.Contains(stderrText, expectedErrMessage) {
-			t.Logf("Found expected error: %s", expectedErrMessage)
 			return false // Expected error found, caller should return
 		}
 
@@ -404,7 +496,7 @@ func checkDirectory(t *testing.T, path, description string) {
 	}
 }
 
-func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpecifiedFiles, withConfig bool, expectedFiles map[fileFullName]*FieldsCheck) {
+func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpecifiedFiles, withConfig bool, expectedFiles map[fileFullName]*FieldsCheck, expectedNumberOfFiles int) {
 	t.Helper()
 
 	benchPath := filepath.Join(envPath, shared.MainDirOutput)
@@ -421,7 +513,6 @@ func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpeci
 
 	// bin => cpu, mem, test
 	// txt => cpu, mem, bench
-	expectedNumberOfFiles := 3
 	configDoesntApply := false
 
 	checkDirectory(t, binPath, "bin directory")
@@ -553,7 +644,7 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 	}
 }
 
-func testConfigScenario(t *testing.T, expectedErrorMessage string, cfg *config.Config, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile bool, label string, specifiedFiles map[fileFullName]*FieldsCheck, args []string) {
+func testConfigScenario(t *testing.T, expectedErrorMessage string, cfg *config.Config, expectNonSpecifiedFiles, withConfig, withCleanUp, noConfigFile bool, label string, specifiedFiles map[fileFullName]*FieldsCheck, args []string, expectedNumberOfFiles int) {
 	defer func() {
 		envDirName = envDirNameStatic
 	}()
@@ -592,7 +683,7 @@ func testConfigScenario(t *testing.T, expectedErrorMessage string, cfg *config.C
 
 	// 4. Check bench output
 	expectedProfiles := []string{cpuProfile, memProfile}
-	checkOutput(t, envPath, expectedProfiles, expectNonSpecifiedFiles, withConfig, specifiedFiles)
+	checkOutput(t, envPath, expectedProfiles, expectNonSpecifiedFiles, withConfig, specifiedFiles, expectedNumberOfFiles)
 }
 
 func defaultCmd() []string {

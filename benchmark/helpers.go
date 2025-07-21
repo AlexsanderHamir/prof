@@ -15,12 +15,11 @@ import (
 
 func getProfileFlags() map[string]string {
 	return map[string]string{
-		"cpu":       "-cpuprofile=cpu.out",
-		"memory":    "-memprofile=memory.out",
-		"mutex":     "-mutexprofile=mutex.out",
-		"block":     "-blockprofile=block.out",
-		"goroutine": "-goroutineprofile=goroutine.out",
-		"trace":     "-trace=trace.out",
+		"cpu":    "-cpuprofile=cpu.out",
+		"memory": "-memprofile=memory.out",
+		"mutex":  "-mutexprofile=mutex.out",
+		"block":  "-blockprofile=block.out",
+		"trace":  "-trace=trace.out",
 	}
 }
 
