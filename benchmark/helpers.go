@@ -15,10 +15,12 @@ import (
 
 func getProfileFlags() map[string]string {
 	return map[string]string{
-		"cpu":    "-cpuprofile=cpu.out",
-		"memory": "-memprofile=memory.out",
-		"mutex":  "-mutexprofile=mutex.out",
-		"trace":  "-trace=trace.out",
+		"cpu":       "-cpuprofile=cpu.out",
+		"memory":    "-memprofile=memory.out",
+		"mutex":     "-mutexprofile=mutex.out",
+		"block":     "-blockprofile=block.out",
+		"goroutine": "-goroutineprofile=goroutine.out",
+		"trace":     "-trace=trace.out",
 	}
 }
 
@@ -101,7 +103,7 @@ func createProfileFunctionDirectories(tag string, profiles, benchmarks []string)
 }
 
 // buildBenchmarkCommand builds the command to run the benchmark.
-func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) []string {
+func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) ([]string, error) {
 	cmd := []string{
 		"go", "test", "-run=^$",
 		fmt.Sprintf("-bench=^%s$", benchmarkName),
@@ -111,12 +113,16 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) [
 
 	profileFlags := getProfileFlags()
 	for _, profile := range profiles {
-		if flag, exists := profileFlags[profile]; exists {
-			cmd = append(cmd, flag)
+		flag, exists := profileFlags[profile]
+
+		if !exists {
+			return nil, fmt.Errorf("profile %s is not supported", profile)
 		}
+
+		cmd = append(cmd, flag)
 	}
 
-	return cmd
+	return cmd, nil
 }
 
 // getOutputDirectories gets or creates the output directories.
@@ -149,7 +155,7 @@ func runBenchmarkCommand(cmd []string, outputFile string) error {
 		if strings.Contains(string(output), moduleNotFoundMsg) {
 			return fmt.Errorf("%s - ensure you're in a Go project directory", moduleNotFoundMsg)
 		}
-		return fmt.Errorf("benchmark failed: %s", string(output))
+		return errors.New(string(output))
 	}
 
 	return os.WriteFile(outputFile, output, shared.PermFile)

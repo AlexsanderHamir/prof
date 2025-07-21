@@ -113,7 +113,7 @@ func RunBencAndGetProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[strin
 	for _, benchmarkName := range benchArgs.Benchmarks {
 		slog.Info("Running benchmark", "Benchmark", benchmarkName)
 		if err := benchmark.RunBenchmark(benchmarkName, benchArgs.Profiles, benchArgs.Count, benchArgs.Tag); err != nil {
-			return fmt.Errorf("failed to run benchmark %s: %w", benchmarkName, err)
+			return fmt.Errorf("failed to run %s: %w", benchmarkName, err)
 		}
 
 		slog.Info("Processing profiles", "Benchmark", benchmarkName)

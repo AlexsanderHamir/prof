@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/AlexsanderHamir/prof/args"
@@ -15,10 +15,12 @@ import (
 
 const configFilePath = "config_template.json"
 
-// main is the entry point for the prof tool.
 func main() {
 	if err := run(); err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "\n🚨🚨🚨 FATAL ERROR 🚨🚨🚨\n")
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		fmt.Fprintf(os.Stderr, "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n\n")
+		os.Exit(1)
 	}
 }
 
@@ -86,7 +88,7 @@ func handleBenchmarks(cliArgs *cli.Arguments) error {
 	cli.PrintConfiguration(benchArgs, cfg.FunctionFilter)
 
 	if err = cli.RunBencAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
-		return fmt.Errorf("failed to run benchmarks: %w", err)
+		return err
 	}
 
 	if cliArgs.GeneralAnalyze {
