@@ -11,14 +11,13 @@ func TestConfig(t *testing.T) {
 
 	label := "WithFunctionFilter"
 	t.Run(label, func(t *testing.T) {
-		isExpected := IsFileExpected(true)
-		specifiedFiles := map[fileFullName]IsFileExpected{
-			"BenchmarkStringProcessor.txt":        isExpected,
-			"ProcessStrings.txt":                  isExpected,
-			"GenerateStrings.txt":                 isExpected,
-			"AddString.txt":                       isExpected,
-			"BenchmarkStringProcessor_cpu.png":    isExpected,
-			"BenchmarkStringProcessor_memory.png": isExpected,
+		specifiedFiles := map[fileFullName]*FieldsCheck{
+			"BenchmarkStringProcessor.txt":        newDefaultFieldsCheckExpected(),
+			"ProcessStrings.txt":                  newDefaultFieldsCheckExpected(),
+			"GenerateStrings.txt":                 newDefaultFieldsCheckExpected(),
+			"AddString.txt":                       newDefaultFieldsCheckExpected(),
+			"BenchmarkStringProcessor_cpu.png":    newDefaultFieldsCheckExpected(),
+			"BenchmarkStringProcessor_memory.png": newDefaultFieldsCheckExpected(),
 		}
 
 		cfg := &config.Config{
@@ -36,12 +35,12 @@ func TestConfig(t *testing.T) {
 
 	label = "WithFunctionIgnore"
 	t.Run(label, func(t *testing.T) {
-		isNotExpected := IsFileExpected(false)
-		speficiedFiles := map[fileFullName]IsFileExpected{
-			"GenerateStrings.txt":          IsFileExpected(true),
-			"BenchmarkStringProcessor.txt": isNotExpected,
-			"ProcessStrings.txt":           isNotExpected,
-			"AddString.txt":                isNotExpected,
+
+		speficiedFiles := map[fileFullName]*FieldsCheck{
+			"GenerateStrings.txt":          newDefaultFieldsCheckExpected(),
+			"BenchmarkStringProcessor.txt": newDefaultFieldsCheckNotExpected(),
+			"ProcessStrings.txt":           newDefaultFieldsCheckNotExpected(),
+			"AddString.txt":                newDefaultFieldsCheckNotExpected(),
 		}
 
 		cfg := &config.Config{
@@ -59,16 +58,14 @@ func TestConfig(t *testing.T) {
 
 	label = "WithFunctionFilterPlusIgnore"
 	t.Run(label, func(t *testing.T) {
-		isExpected := IsFileExpected(true)
-		isNotExpected := IsFileExpected(false)
 
-		specifiedFiles := map[fileFullName]IsFileExpected{
-			"BenchmarkStringProcessor_cpu.png":    isExpected,
-			"BenchmarkStringProcessor_memory.png": isExpected,
-			"GenerateStrings.txt":                 isExpected,
-			"BenchmarkStringProcessor.txt":        isNotExpected,
-			"ProcessStrings.txt":                  isNotExpected,
-			"AddString.txt":                       isNotExpected,
+		specifiedFiles := map[fileFullName]*FieldsCheck{
+			"BenchmarkStringProcessor_cpu.png":    newDefaultFieldsCheckExpected(),
+			"BenchmarkStringProcessor_memory.png": newDefaultFieldsCheckExpected(),
+			"GenerateStrings.txt":                 newDefaultFieldsCheckExpected(),
+			"BenchmarkStringProcessor.txt":        newDefaultFieldsCheckNotExpected(),
+			"ProcessStrings.txt":                  newDefaultFieldsCheckNotExpected(),
+			"AddString.txt":                       newDefaultFieldsCheckNotExpected(),
 		}
 
 		cfg := &config.Config{
@@ -87,8 +84,8 @@ func TestConfig(t *testing.T) {
 
 	label = "WithoutAnyConfig"
 	t.Run(label, func(t *testing.T) {
-		var specifiedFiles map[fileFullName]IsFileExpected // empty
-		var cfg config.Config                              // empty
+		var specifiedFiles map[fileFullName]*FieldsCheck // empty
+		var cfg config.Config                            // empty
 
 		withConfig := false
 		expectNonSpecifiedFiles := true

@@ -22,6 +22,32 @@ var (
 type IsFileExpected bool
 type fileFullName string
 
+type FieldsCheck struct {
+	isFileExpected     bool
+	minimumAppearances int
+	maximumAppearances int
+	currentAppearances int
+}
+
+func (fc *FieldsCheck) IsWithinRange() bool {
+	return fc.currentAppearances >= fc.minimumAppearances &&
+		fc.currentAppearances <= fc.maximumAppearances
+}
+
+func newDefaultFieldsCheckExpected() *FieldsCheck {
+	return &FieldsCheck{
+		isFileExpected:     true,
+		minimumAppearances: 1,
+		maximumAppearances: 2,
+	}
+}
+
+func newDefaultFieldsCheckNotExpected() *FieldsCheck {
+	return &FieldsCheck{
+		isFileExpected: false,
+	}
+}
+
 const (
 	Expected   IsFileExpected = true
 	Unexpected IsFileExpected = false
@@ -32,7 +58,7 @@ const (
 	templateFile     = "config_template.json"
 	testDirName      = "tests"
 	tag              = "test_tag"
-	count            = "1"
+	count            = "5"
 	cpuProfile       = "cpu"
 	memProfile       = "memory"
 	benchName        = "BenchmarkStringProcessor"
@@ -353,7 +379,7 @@ func checkDirectory(t *testing.T, path, description string) {
 	}
 }
 
-func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpecifiedFiles, withConfig bool, expectedFiles map[fileFullName]IsFileExpected) {
+func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpecifiedFiles, withConfig bool, expectedFiles map[fileFullName]*FieldsCheck) {
 	t.Helper()
 
 	benchPath := filepath.Join(envPath, shared.MainDirOutput)
@@ -397,7 +423,7 @@ func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpeci
 	}
 
 	if withConfig {
-		remainingFiles := countExpectedFiles(expectedFiles)
+		remainingFiles := countRemainingFiles(expectedFiles)
 		allowedRemainingFiles := 1
 
 		if remainingFiles > allowedRemainingFiles {
@@ -406,11 +432,15 @@ func checkOutput(t *testing.T, envPath string, profiles []string, expectNonSpeci
 	}
 }
 
-func countExpectedFiles(files map[fileFullName]IsFileExpected) int {
+func countRemainingFiles(files map[fileFullName]*FieldsCheck) int {
 	count := 0
-	for _, isExpected := range files {
-		if bool(isExpected) {
-			count++
+	for name, fieldsCheck := range files {
+		if fieldsCheck.isFileExpected {
+			if !fieldsCheck.IsWithinRange() {
+				fmt.Println("File remaining: ", name)
+				fmt.Printf("fieldsCheck: %+v \n", fieldsCheck)
+				count++
+			}
 		}
 	}
 	return count
@@ -436,7 +466,7 @@ func getFileOrDirs(t *testing.T, dirPath, dirDescription string) ([]os.DirEntry,
 	return files, dirNames
 }
 
-func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedFileNum int, expectNonSpecifiedFiles, withConfig bool, specifiedFiles map[fileFullName]IsFileExpected) {
+func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedFileNum int, expectNonSpecifiedFiles, withConfig bool, specifiedFiles map[fileFullName]*FieldsCheck) {
 	t.Helper()
 
 	files, dirNames := getFileOrDirs(t, dirPath, dirDescription)
@@ -463,25 +493,13 @@ func checkDirectoryFiles(t *testing.T, dirPath, dirDescription string, expectedF
 		fileName := file.Name()
 		if withConfig {
 			fileKey := fileFullName(fileName)
-			isExpected, ok := specifiedFiles[fileKey]
+			fieldsCheck, ok := specifiedFiles[fileKey]
 			if ok {
-				if bool(isExpected) {
-					// TODO: this is not good enough
-					// min count and max count is necessary, min count
-					// for the minimum number of required files, and max
-					// count for the maximum number of required files across
-					// profiles, so if the minimum is 4 files, and we have 3 profiles
-					// than the maxium appereance of a file if 3x
-					//
-					// Edge Case: A function name file may appear in more than one profile
-					// so deleting from the specifiedFiles will cause the next profile to
-					// error "Unexpected File: filename".
-					delete(specifiedFiles, fileKey)
+				if fieldsCheck.isFileExpected {
+					fieldsCheck.currentAppearances++
 					continue
 				} else {
-					if !expectNonSpecifiedFiles {
-						t.Fatalf("File should had been filtered: %s", fileKey)
-					}
+					t.Fatalf("File should had been filtered: %s", fileKey)
 				}
 			} else {
 				// ensure no unexpected file exists.
@@ -509,7 +527,7 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 	}
 }
 
-func testConfigScenario(t *testing.T, cfg *config.Config, expectNonSpecifiedFiles, withConfig, withCleanUp bool, label string, specifiedFiles map[fileFullName]IsFileExpected) {
+func testConfigScenario(t *testing.T, cfg *config.Config, expectNonSpecifiedFiles, withConfig, withCleanUp bool, label string, specifiedFiles map[fileFullName]*FieldsCheck) {
 	defer func() {
 		envDirName = envDirNameStatic
 	}()
