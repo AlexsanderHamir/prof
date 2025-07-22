@@ -11,14 +11,18 @@ func TestCoreBlock(t *testing.T) {
 	tagPath1 := filepath.Join("bench", "tag1")
 	tagPath2 := filepath.Join("bench", "tag2")
 	benchName := "BenchmarkGenPool"
-	profileType := "cpu"
+	profileTypes := []string{"memory", "cpu", "mutex", "block"}
 
-	profileResult, err := tracker.CheckPerformanceDifferences(tagPath1, tagPath2, benchName, profileType)
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, profileType := range profileTypes {
+		t.Run(profileType, func(t *testing.T) {
+			profileResult, err := tracker.CheckPerformanceDifferences(tagPath1, tagPath2, benchName, profileType)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	if profileResult == nil {
-		t.Fatal("nil result")
+			if profileResult == nil {
+				t.Fatal("nil result")
+			}
+		})
 	}
 }

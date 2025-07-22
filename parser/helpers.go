@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -140,10 +141,17 @@ func getFilterSets(ignoreFunctions []string) map[string]struct{} {
 	return ignoreSet
 }
 
+var floatRegex = regexp.MustCompile(`^([+-]?\d*\.?\d+)`)
+
 func convertToFloat(part string) (float64, error) {
-	trimmedVal := strings.TrimSuffix(part, "s")
-	trimmedVal = strings.TrimSuffix(trimmedVal, "%")
-	floatVal, err := strconv.ParseFloat(trimmedVal, 64)
+	part = strings.TrimSpace(part)
+	matches := floatRegex.FindStringSubmatch(part)
+
+	if len(matches) < 2 {
+		return 0, fmt.Errorf("failed to parse value '%s': no valid float found", part)
+	}
+
+	floatVal, err := strconv.ParseFloat(matches[1], 64)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse value '%s': %v", part, err)
 	}

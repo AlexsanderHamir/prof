@@ -15,12 +15,12 @@ func CheckPerformanceDifferences(tagPath1, tagPath2, benchName, profileType stri
 
 	lineObjs1, err := parser.TurnLinesIntoObjects(textFilePath1, profileType)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s", textFilePath1)
+		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePath1, err)
 	}
 
 	lineObjs2, err := parser.TurnLinesIntoObjects(textFilePath2, profileType)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s", textFilePath2)
+		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePath1, err)
 	}
 
 	matchingMap := createHashFromLineObjects(lineObjs1)
