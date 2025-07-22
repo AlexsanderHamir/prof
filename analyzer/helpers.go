@@ -1,7 +1,6 @@
 package analyzer
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -57,36 +56,11 @@ func sendToModel(tag, benchmarkName, profileType string, cfg *config.Config, isF
 }
 
 func getBenchmarkFile(tag, benchmarkName, profileType string, cfg *config.Config) (string, error) {
-	baseDir := filepath.Join("bench", tag)
-	textDir := filepath.Join(baseDir, "text", benchmarkName)
+	baseDir := filepath.Join(shared.MainDirOutput, tag)
+	textDir := filepath.Join(baseDir, shared.ProfileTextDir, benchmarkName)
 	profileFile := filepath.Join(textDir, fmt.Sprintf("%s_%s.txt", benchmarkName, profileType))
 
 	return readProfileTextFile(profileFile, profileType, cfg)
-}
-
-func filterProfileBody(cfg *config.Config, scanner *bufio.Scanner, lines *[]string) {
-	profileFilters := cfg.GetProfileFilters()
-	ignoreFunctionSet, ignorePrefixSet := cfg.GetIgnoreSets()
-
-	options := &args.LineFilterArgs{
-		ProfileFilters:    profileFilters,
-		IgnoreFunctionSet: ignoreFunctionSet,
-		IgnorePrefixSet:   ignorePrefixSet,
-	}
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if parser.ShouldKeepLine(line, options) {
-			*lines = append(*lines, line)
-		}
-	}
-}
-
-func getAllProfileLines(scanner *bufio.Scanner, lines *[]string) {
-	for scanner.Scan() {
-		*lines = append(*lines, scanner.Text())
-	}
 }
 
 func readProfileTextFile(filePath, profileType string, cfg *config.Config) (fileContent string, err error) {
@@ -105,14 +79,14 @@ func readProfileTextFile(filePath, profileType string, cfg *config.Config) (file
 		}
 	}()
 
-	collectHeader(scanner, profileType, &lines)
+	parser.CollectHeader(scanner, profileType, &lines)
 
 	isFilterAvailable := cfg.AIConfig.ProfileFilter != nil
 
 	if isFilterAvailable {
-		filterProfileBody(cfg, scanner, &lines)
+		parser.FilterProfileBody(cfg, scanner, &lines)
 	} else {
-		getAllProfileLines(scanner, &lines)
+		parser.GetAllProfileLines(scanner, &lines)
 	}
 
 	if err = scanner.Err(); err != nil {
@@ -125,21 +99,6 @@ func readProfileTextFile(filePath, profileType string, cfg *config.Config) (file
 	}
 
 	return fileContent, nil
-}
-
-// POTENTIAL IMPROVEMENT: shouldn't this be part of the parser ?
-func collectHeader(scanner *bufio.Scanner, profileType string, lines *[]string) {
-	lineCount := 0
-
-	headerIndex := 6
-	if profileType != "cpu" {
-		headerIndex = 5
-	}
-
-	for scanner.Scan() && lineCount < headerIndex {
-		*lines = append(*lines, scanner.Text())
-		lineCount++
-	}
 }
 
 func getUserPrompt(cfg *config.Config) (string, error) {

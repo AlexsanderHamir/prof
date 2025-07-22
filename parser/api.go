@@ -1,12 +1,14 @@
 package parser
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/AlexsanderHamir/prof/args"
+	"github.com/AlexsanderHamir/prof/config"
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
@@ -102,4 +104,43 @@ func ShouldKeepLine(line string, agrs *args.LineFilterArgs) bool {
 	}
 
 	return filterByIgnorePrefixes(agrs.IgnorePrefixSet, lineParts)
+}
+
+func GetAllProfileLines(scanner *bufio.Scanner, lines *[]string) {
+	for scanner.Scan() {
+		*lines = append(*lines, scanner.Text())
+	}
+}
+
+func FilterProfileBody(cfg *config.Config, scanner *bufio.Scanner, lines *[]string) {
+	profileFilters := cfg.GetProfileFilters()
+	ignoreFunctionSet, ignorePrefixSet := cfg.GetIgnoreSets()
+
+	options := &args.LineFilterArgs{
+		ProfileFilters:    profileFilters,
+		IgnoreFunctionSet: ignoreFunctionSet,
+		IgnorePrefixSet:   ignorePrefixSet,
+	}
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if ShouldKeepLine(line, options) {
+			*lines = append(*lines, line)
+		}
+	}
+}
+
+func CollectHeader(scanner *bufio.Scanner, profileType string, lines *[]string) {
+	lineCount := 0
+
+	headerIndex := 6
+	if profileType != "cpu" {
+		headerIndex = 5
+	}
+
+	for scanner.Scan() && lineCount < headerIndex {
+		*lines = append(*lines, scanner.Text())
+		lineCount++
+	}
 }
