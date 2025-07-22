@@ -19,6 +19,19 @@ func TestCoreBlock(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if profileResult == nil {
+				t.Fatal("profileResult should not be nil")
+			}
+
+			first := profileResult.FunctionChanges[0]
+			if first == nil {
+				t.Fatal("first report should not be nil")
+			}
+
+			report := first.Report()
+			if report == "" {
+				t.Fatalf("report is missing")
+			}
 
 			if profileResult == nil {
 				t.Fatal("nil result")

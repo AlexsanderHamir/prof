@@ -42,12 +42,3 @@ func CheckPerformanceDifferences(tagPath1, tagPath2, benchName, profileType stri
 
 	return pgp, nil
 }
-
-func createHashFromLineObjects(lineobjects []*parser.LineObj) map[string]*parser.LineObj {
-	matchingMap := make(map[string]*parser.LineObj)
-	for _, lineObj := range lineobjects {
-		matchingMap[lineObj.FnName] = lineObj
-	}
-
-	return matchingMap
-}
