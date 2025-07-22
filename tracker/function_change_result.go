@@ -18,8 +18,15 @@ func DetectChange(baseline, current *parser.LineObj) (*FunctionChangeResult, err
 		return nil, errors.New("baseLine obj is nil")
 	}
 
-	flatChange := ((current.Flat - baseline.Flat) / baseline.Flat) * 100
-	cumChange := ((current.Cum - baseline.Cum) / baseline.Cum) * 100
+	isFlatNotZero := current.Flat != 0 && baseline.Flat != 0
+	isCumNotZero := current.Cum != 0 && baseline.Cum != 0
+
+	var flatChange float64
+	var cumChange float64
+	if isFlatNotZero && isCumNotZero {
+		flatChange = ((current.Flat - baseline.Flat) / baseline.Flat) * 100
+		cumChange = ((current.Cum - baseline.Cum) / baseline.Cum) * 100
+	}
 
 	// TODO => Magic values
 	changeType := "STABLE"
