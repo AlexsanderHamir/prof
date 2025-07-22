@@ -44,12 +44,12 @@ type ProfileFilter struct {
 }
 
 type LineObj struct {
-	fnName         string
-	flat           float64
-	flatPercentage float64
-	sumPercentage  float64
-	cum            float64
-	cumPercentage  float64
+	FnName         string
+	Flat           float64
+	FlatPercentage float64
+	SumPercentage  float64
+	Cum            float64
+	CumPercentage  float64
 }
 
 func TurnLinesIntoObjects(profilePath, profileType string) ([]*LineObj, error) {
@@ -92,12 +92,12 @@ func createLineObjects(lines []string) ([]*LineObj, error) {
 
 		funcName := strings.Join(lineParts[functionNameIndex:], " ")
 		lineobj := &LineObj{
-			fnName:         funcName,
-			flat:           floats.Flat,
-			flatPercentage: floats.FlatPercentage,
-			sumPercentage:  floats.Sum,
-			cum:            floats.Cum,
-			cumPercentage:  floats.CumPercentage,
+			FnName:         funcName,
+			Flat:           floats.Flat,
+			FlatPercentage: floats.FlatPercentage,
+			SumPercentage:  floats.Sum,
+			Cum:            floats.Cum,
+			CumPercentage:  floats.CumPercentage,
 		}
 
 		lineObjs = append(lineObjs, lineobj)

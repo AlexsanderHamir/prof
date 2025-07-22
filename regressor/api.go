@@ -8,14 +8,6 @@ import (
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
-// Basic building block: comparing two tags
-// Create black box test for this
-
-// 1. Receive two tags
-// 2. Get all data
-// 3. Get full function name
-// 4. Compare
-
 func CheckPerformanceDifferences(tagPath1, tagPath2, benchName, profileType string) error {
 	fileName := fmt.Sprintf("%s_%s.txt", benchName, profileType)
 	textFilePath1 := filepath.Join(tagPath1, shared.ProfileTextDir, benchName, fileName)
@@ -31,8 +23,27 @@ func CheckPerformanceDifferences(tagPath1, tagPath2, benchName, profileType stri
 		return fmt.Errorf("couldn't get objs for path: %s", textFilePath2)
 	}
 
-	fmt.Println("one: ", lineObjs1)
-	fmt.Println("two: ", lineObjs2)
+	matchingMap := createHashFromLineObjects(lineObjs1)
+
+	for i, current := range lineObjs2 {
+		if i == 0 {
+			continue
+		}
+		baseLine := matchingMap[current.FnName]
+		changeResult := DetectChange(baseLine, current)
+		res := changeResult.Report()
+		fmt.Println(res)
+		panic("Stop")
+	}
 
 	return nil
+}
+
+func createHashFromLineObjects(lineobjects []*parser.LineObj) map[string]*parser.LineObj {
+	matchingMap := make(map[string]*parser.LineObj)
+	for _, lineObj := range lineobjects {
+		matchingMap[lineObj.FnName] = lineObj
+	}
+
+	return matchingMap
 }
