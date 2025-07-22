@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/regressor"
+	"github.com/AlexsanderHamir/prof/tracker"
 )
 
 func TestCoreBlock(t *testing.T) {
@@ -13,8 +13,12 @@ func TestCoreBlock(t *testing.T) {
 	benchName := "BenchmarkGenPool"
 	profileType := "cpu"
 
-	err := regressor.CheckPerformanceDifferences(tagPath1, tagPath2, benchName, profileType)
+	profileResult, err := tracker.CheckPerformanceDifferences(tagPath1, tagPath2, benchName, profileType)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if profileResult == nil {
+		t.Fatal("nil result")
 	}
 }

@@ -1,6 +1,7 @@
-package regressor
+package tracker
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -9,28 +10,18 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
-type ChangeResult struct {
-	FunctionName      string
-	ChangeType        string // "REGRESSION", "IMPROVEMENT", "STABLE"
-	FlatChangePercent float64
-	CumChangePercent  float64
-	FlatAbsolute      struct {
-		Before float64
-		After  float64
-		Delta  float64
+func DetectChange(baseline, current *parser.LineObj) (*FunctionChangeResult, error) {
+	if current == nil {
+		return nil, errors.New("current obj is nil")
 	}
-	CumAbsolute struct {
-		Before float64
-		After  float64
-		Delta  float64
+	if baseline == nil {
+		return nil, errors.New("baseLine obj is nil")
 	}
-	Timestamp time.Time
-}
 
-func DetectChange(baseline, current *parser.LineObj) *ChangeResult {
 	flatChange := ((current.Flat - baseline.Flat) / baseline.Flat) * 100
 	cumChange := ((current.Cum - baseline.Cum) / baseline.Cum) * 100
 
+	// TODO => Magic values
 	changeType := "STABLE"
 	if flatChange > 0 {
 		changeType = "REGRESSION"
@@ -38,7 +29,7 @@ func DetectChange(baseline, current *parser.LineObj) *ChangeResult {
 		changeType = "IMPROVEMENT"
 	}
 
-	return &ChangeResult{
+	return &FunctionChangeResult{
 		FunctionName:      current.FnName,
 		ChangeType:        changeType,
 		FlatChangePercent: flatChange,
@@ -62,11 +53,11 @@ func DetectChange(baseline, current *parser.LineObj) *ChangeResult {
 			Delta:  current.Cum - baseline.Cum,
 		},
 		Timestamp: time.Now(),
-	}
+	}, nil
 }
 
 // Helper method to get a summary
-func (cr *ChangeResult) Summary() string {
+func (cr *FunctionChangeResult) Summary() string {
 	sign := ""
 	if cr.FlatChangePercent > 0 {
 		sign = "+"
@@ -81,7 +72,7 @@ func (cr *ChangeResult) Summary() string {
 }
 
 // Full detailed report
-func (cr *ChangeResult) Report() string {
+func (cr *FunctionChangeResult) Report() string {
 	var report strings.Builder
 
 	// Header
@@ -193,7 +184,7 @@ func (cr *ChangeResult) Report() string {
 }
 
 // Helper method to calculate severity
-func (cr *ChangeResult) calculateSeverity() string {
+func (cr *FunctionChangeResult) calculateSeverity() string {
 	absChange := math.Abs(cr.FlatChangePercent)
 
 	if absChange == 0 {
