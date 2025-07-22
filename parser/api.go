@@ -13,11 +13,20 @@ import (
 )
 
 const (
-	funcNameRegexp    = `\.([^.(]+)(?:\([^)]*\))?$`
-	floatRegexp       = `\d+(?:\.\d+)?`
-	header            = "flat  flat%   sum%        cum   cum%"
-	profileLinelength = 6
-	functionNameIndex = 5
+	funcNameRegexp       = `\.([^.(]+)(?:\([^)]*\))?$`
+	floatRegexp          = `\d+(?:\.\d+)?`
+	header               = "flat  flat%   sum%        cum   cum%"
+	minProfileLinelength = 6
+)
+
+// Line Indexes
+const (
+	flatIndex           = 0
+	flatPercentageIndex = 1
+	sumPercentageIndex  = 2
+	cumIndex            = 3
+	cumPercentageIndex  = 4
+	functionNameIndex   = 5
 )
 
 var (
@@ -32,6 +41,69 @@ type ProfileFilter struct {
 
 	// Ignore all functions after the last dot even if includes the above prefix
 	IgnoreFunctions []string
+}
+
+type LineObj struct {
+	fnName         string
+	flat           float64
+	flatPercentage float64
+	sumPercentage  float64
+	cum            float64
+	cumPercentage  float64
+}
+
+func TurnLinesIntoObjects(profilePath, profileType string) ([]*LineObj, error) {
+	var lines []string
+
+	scanner, file, err := shared.GetScanner(profilePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	shouldRemove := true
+	CollectOrRemoveHeader(scanner, profileType, &lines, shouldRemove)
+
+	GetAllProfileLines(scanner, &lines)
+
+	lineObjs, err := createLineObjects(lines)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating line objects : %w", err)
+	}
+
+	return lineObjs, err
+}
+
+func createLineObjects(lines []string) ([]*LineObj, error) {
+	var lineObjs []*LineObj
+
+	for _, line := range lines {
+		lineParts := strings.Fields(line)
+		lineLength := len(lineParts)
+
+		if lineLength < minProfileLinelength {
+			return nil, fmt.Errorf("line(%d) is smaller than minimum(%d)", lineLength, minProfileLinelength)
+		}
+
+		floats, err := getFloatsFromLineParts(lineParts)
+		if err != nil {
+			return nil, fmt.Errorf("float extraction failed: %w", err)
+		}
+
+		funcName := strings.Join(lineParts[functionNameIndex:], " ")
+		lineobj := &LineObj{
+			fnName:         funcName,
+			flat:           floats.Flat,
+			flatPercentage: floats.FlatPercentage,
+			sumPercentage:  floats.Sum,
+			cum:            floats.Cum,
+			cumPercentage:  floats.CumPercentage,
+		}
+
+		lineObjs = append(lineObjs, lineobj)
+	}
+
+	return lineObjs, nil
 }
 
 // GetAllFunctionNames extracts all function names from a profile text file, applying the given filter.
@@ -91,7 +163,7 @@ func ShouldKeepLine(line string, agrs *args.LineFilterArgs) bool {
 	}
 
 	lineParts := strings.Fields(line)
-	if len(lineParts) < profileLinelength {
+	if len(lineParts) < minProfileLinelength {
 		return false
 	}
 
@@ -131,7 +203,7 @@ func FilterProfileBody(cfg *config.Config, scanner *bufio.Scanner, lines *[]stri
 	}
 }
 
-func CollectHeader(scanner *bufio.Scanner, profileType string, lines *[]string) {
+func CollectOrRemoveHeader(scanner *bufio.Scanner, profileType string, lines *[]string, shouldRemove bool) {
 	lineCount := 0
 
 	headerIndex := 6
@@ -139,8 +211,11 @@ func CollectHeader(scanner *bufio.Scanner, profileType string, lines *[]string) 
 		headerIndex = 5
 	}
 
-	for scanner.Scan() && lineCount < headerIndex {
-		*lines = append(*lines, scanner.Text())
+	for lineCount < headerIndex && scanner.Scan() {
+		if !shouldRemove {
+			*lines = append(*lines, scanner.Text())
+		}
 		lineCount++
 	}
+
 }

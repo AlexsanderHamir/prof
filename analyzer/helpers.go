@@ -79,7 +79,8 @@ func readProfileTextFile(filePath, profileType string, cfg *config.Config) (file
 		}
 	}()
 
-	parser.CollectHeader(scanner, profileType, &lines)
+	shouldRemove := false
+	parser.CollectOrRemoveHeader(scanner, profileType, &lines, shouldRemove)
 
 	isFilterAvailable := cfg.AIConfig.ProfileFilter != nil
 

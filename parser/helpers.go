@@ -7,8 +7,7 @@ import (
 )
 
 const (
-	measurementFieldCount = 5
-	fullMatchIndex        = 0 // The entire matched string
+	measurementFieldCount = 5 // total number of fields
 	funcNameIndex         = 1 // The captured function name group
 	minRequiredMatches    = 2 // Full match + at least one capture group
 )
@@ -103,7 +102,7 @@ func matchPrefix(funcName string, functionPrefixes []string) bool {
 // extractFunctionName extracts a function name from a line, applying prefix and ignore filters.
 func extractFunctionName(line string, functionPrefixes []string, ignoreFunctionSet map[string]struct{}) string {
 	parts := strings.Fields(line)
-	missingFields := len(parts) < profileLinelength
+	missingFields := len(parts) < minProfileLinelength
 	if missingFields {
 		return ""
 	}
@@ -139,4 +138,58 @@ func getFilterSets(ignoreFunctions []string) map[string]struct{} {
 	}
 
 	return ignoreSet
+}
+
+func convertToFloat(part string) (float64, error) {
+	trimmedVal := strings.TrimSuffix(part, "s")
+	trimmedVal = strings.TrimSuffix(trimmedVal, "%")
+	floatVal, err := strconv.ParseFloat(trimmedVal, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse value '%s': %v", part, err)
+	}
+
+	return floatVal, nil
+}
+
+type ProfileFloats struct {
+	Flat           float64
+	FlatPercentage float64
+	Sum            float64
+	Cum            float64
+	CumPercentage  float64
+}
+
+func getFloatsFromLineParts(lineParts []string) (*ProfileFloats, error) {
+	flat, err := convertToFloat(lineParts[flatIndex])
+	if err != nil {
+		return nil, fmt.Errorf("flat conversion failed: %w", err)
+	}
+
+	flatPercentage, err := convertToFloat(lineParts[flatPercentageIndex])
+	if err != nil {
+		return nil, fmt.Errorf("flatPercentage conversion failed: %w", err)
+	}
+
+	sum, err := convertToFloat(lineParts[sumPercentageIndex])
+	if err != nil {
+		return nil, fmt.Errorf("sum conversion failed: %w", err)
+	}
+
+	cum, err := convertToFloat(lineParts[cumIndex])
+	if err != nil {
+		return nil, fmt.Errorf("cum conversion failed: %w", err)
+	}
+
+	cumPercentage, err := convertToFloat(lineParts[cumPercentageIndex])
+	if err != nil {
+		return nil, fmt.Errorf("cumPercentage conversion failed: %w", err)
+	}
+
+	return &ProfileFloats{
+		Flat:           flat,
+		FlatPercentage: flatPercentage,
+		Sum:            sum,
+		Cum:            cum,
+		CumPercentage:  cumPercentage,
+	}, nil
 }
