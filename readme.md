@@ -305,3 +305,34 @@ prof track --base-tag baseline \
 4. **Empty or small profile files**
    - Increase benchmark iterations (`--count`)
    - Ensure benchmark has sufficient work to generate meaningful profiles
+
+## Contributing
+
+We welcome contributions! Before you start contributing, please ensure you have:
+
+- **Go 1.24.3 or later** installed
+- **Git** for version control
+- Basic understanding of Go testing and benchmarking
+
+### Quick Setup
+
+```bash
+# Fork and clone the repository
+git clone https://github.com/AlexsanderHamir/prof.git
+cd prof
+
+# Run tests to verify setup
+go test -v ./...
+
+# Check for linter errors
+ go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+ golangci-lint run
+
+ # For easier local testing
+
+ # Build
+ go build -o prof ./cmd/prof
+
+ # Set up alias
+ alias profDev="Full/Path/To/Binary"
+```
