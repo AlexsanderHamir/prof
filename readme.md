@@ -5,35 +5,26 @@ Prof is a CLI tool that automates Go performance profiling workflows by collecti
 ## Table of Contents
 
 - [Key Features](#key-features)
-
   - [Automated Data Collection](#automated-data-collection)
-  - [Why It Matters](#why-it-matters)
-
-- [Performance Change Tracking](#performance-change-tracking)
+    - [Why It Matters](#why-it-matters)
+  - [Performance Change Tracking](#performance-change-tracking)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
-
   - [Collecting Benchmark Data](#collecting-benchmark-data)
   - [Configuration Setup](#configuration-setup)
   - [Performance Tracking](#performance-tracking)
-
 - [What Prof Collects For You](#what-prof-collects-for-you)
 - [Supported Profile Types](#supported-profile-types)
 - [Commands Reference](#commands-reference)
-
-  - [Main Command (Data Collection)](#main-command-data-collection)
-  - [Subcommands](#subcommands)
-
+    - [Main Command (Data Collection)](#main-command-data-collection)
+    - [Subcommands](#subcommands)
 - [Requirements](#requirements)
 - [Examples](#examples)
-
   - [Basic Data Collection](#basic-data-collection)
   - [Collect Data for Multiple Benchmarks](#collect-data-for-multiple-benchmarks)
   - [Performance Comparison (Analysis Feature)](#performance-comparison-analysis-feature)
-
 - [Troubleshooting](#troubleshooting)
-
   - [Common Issues](#common-issues)
 
 ## Key Features
