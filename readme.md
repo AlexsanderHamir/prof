@@ -2,6 +2,18 @@
 
 Prof automates Go performance profiling by collecting all pprof data in one command and enabling easy performance comparisons between benchmark runs.
 
+## Summary View: High-Level Performance Overview
+
+This view highlights regressions, improvements, and stable functions in your benchmarks at a glance.
+
+![Summary of benchmark performance changes](./summary_example.png)
+
+## Detailed View: Function-Level Comparisons
+
+This view provides a breakdown of performance metrics per function across benchmark runs.
+
+![Function-level performance comparison](./detailed_example.png)
+
 ## Why Prof?
 
 **Before Prof:** Profiling a single benchmark with multiple profile types requires dozens of manual commands:
@@ -76,8 +88,6 @@ prof track --base-tag "baseline" \
 - `--bench`: Exact benchmark function name
 - `--profile-type`: `cpu`, `memory`, `mutex`, or `block`
 - `--format`: `summary` (quick overview) or `detailed` (comprehensive reports)
-
-![Performance comparison example](./summary_example.png)
 
 ## Configuration (Optional)
 
