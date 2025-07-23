@@ -138,13 +138,6 @@ bench/your-tag/
 └── [profile]_functions/    # Other profile types
 ```
 
-Each directory contains:
-
-- Raw benchmark output
-- Top functions reports (`go tool pprof -top`)
-- Function-level analysis (`go tool pprof -list=FunctionName`)
-- Profile visualizations (PNG graphs)
-
 ## Requirements
 
 - Go 1.24.3 or later
