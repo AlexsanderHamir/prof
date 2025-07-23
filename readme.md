@@ -179,6 +179,12 @@ prof track --base-tag baseline \
            --format detailed
 ```
 
+**Format Options:**
+
+- `detailed`: Shows comprehensive individual reports for each function with full performance analysis, including flat time analysis, cumulative time analysis, impact assessment, and severity classification. Each function gets its own formatted report with before/after comparisons, percentage changes, and detailed breakdowns.
+
+- `sumamry`: Shows a concise overview with total counts of regressions/improvements/stable functions, followed by simple bullet-point lists of the top regressions and improvements with just the function name, change type, percentage, and before/after timing.
+
 ## What Prof Collects For You
 
 Prof organizes all collected data in this structure:
