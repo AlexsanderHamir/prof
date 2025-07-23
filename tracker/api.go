@@ -8,31 +8,31 @@ import (
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
-func CheckPerformanceDifferences(tagPath1, tagPath2, benchName, profileType string) (*ProfileChangeReport, error) {
+func CheckPerformanceDifferences(baselineTag, currentTag, benchName, profileType string) (*ProfileChangeReport, error) {
 	fileName := fmt.Sprintf("%s_%s.txt", benchName, profileType)
-	textFilePath1 := filepath.Join(tagPath1, shared.ProfileTextDir, benchName, fileName)
-	textFilePath2 := filepath.Join(tagPath2, shared.ProfileTextDir, benchName, fileName)
+	textFilePath1 := filepath.Join(shared.MainDirOutput, baselineTag, shared.ProfileTextDir, benchName, fileName)
+	textFilePath2 := filepath.Join(shared.MainDirOutput, currentTag, shared.ProfileTextDir, benchName, fileName)
 
-	lineObjs1, err := parser.TurnLinesIntoObjects(textFilePath1, profileType)
+	lineObjsBaseline, err := parser.TurnLinesIntoObjects(textFilePath1, profileType)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePath1, err)
 	}
 
-	lineObjs2, err := parser.TurnLinesIntoObjects(textFilePath2, profileType)
+	lineObjsCurrent, err := parser.TurnLinesIntoObjects(textFilePath2, profileType)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePath1, err)
 	}
 
-	matchingMap := createHashFromLineObjects(lineObjs1)
+	matchingMap := createHashFromLineObjects(lineObjsBaseline)
 
 	pgp := &ProfileChangeReport{}
-	for _, current := range lineObjs2 {
-		baseLine, matchNotFound := matchingMap[current.FnName]
+	for _, currentObj := range lineObjsCurrent {
+		baseLineObj, matchNotFound := matchingMap[currentObj.FnName]
 		if !matchNotFound {
 			continue
 		}
 
-		changeResult, err := DetectChange(baseLine, current)
+		changeResult, err := DetectChange(baseLineObj, currentObj)
 		if err != nil {
 			return nil, fmt.Errorf("DetectChange failed: %w", err)
 		}

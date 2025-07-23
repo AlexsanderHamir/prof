@@ -10,6 +10,7 @@ import (
 	"github.com/AlexsanderHamir/prof/args"
 	"github.com/AlexsanderHamir/prof/cli"
 	"github.com/AlexsanderHamir/prof/config"
+	"github.com/AlexsanderHamir/prof/tracker"
 	"github.com/AlexsanderHamir/prof/version"
 )
 
@@ -39,7 +40,27 @@ func run() error {
 		return handleSetup(cliArgs)
 	}
 
+	if cliArgs.Command == "tracker" {
+		return handleTracker(cliArgs)
+	}
+
 	return handleBenchmarks(cliArgs)
+}
+
+func handleTracker(cliAgrs *cli.Arguments) error {
+	base := cliAgrs.BaseLineTagName
+	curr := cliAgrs.CurrentTagName
+	bench := cliAgrs.BenchmarkName
+	profileType := cliAgrs.ProfileType
+
+	res, err := tracker.CheckPerformanceDifferences(base, curr, bench, profileType)
+	if err != nil {
+		return fmt.Errorf("tracker failed: %w", err)
+	}
+
+	fmt.Println(res.FunctionChanges[0].Report())
+
+	return nil
 }
 
 // handleVersion prints the current and latest version information.

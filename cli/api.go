@@ -52,6 +52,28 @@ func ParseArguments() (*Arguments, error) {
 
 	rootCmd.AddCommand(setupCmd)
 
+	var trackCmd = &cobra.Command{
+		Use:   "tracker",
+		Short: "Compare performance between two benchmark runs to detect regressions and improvements.",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			args.Command = "tracker"
+			return nil
+		},
+	}
+
+	trackCmd.Flags().StringVar(&args.BaseLineTagName, "base-tag", "", "Name of the base tag")
+	trackCmd.Flags().StringVar(&args.CurrentTagName, "current-tag", "", "Name of the current tag")
+	trackCmd.Flags().StringVar(&args.BenchmarkName, "bench", "", "Name of the benchmark")
+	trackCmd.Flags().StringVar(&args.ProfileType, "profile-type", "", "Name of the profile (cpu, memory, mutex, block)")
+
+	// Mark required flags for track command
+	trackCmd.MarkFlagRequired("base-tag")
+	trackCmd.MarkFlagRequired("current-tag")
+	trackCmd.MarkFlagRequired("bench")
+	trackCmd.MarkFlagRequired("profile-type")
+
+	rootCmd.AddCommand(trackCmd)
+
 	if err := rootCmd.Execute(); err != nil {
 		return nil, err
 	}

@@ -18,4 +18,10 @@ type Arguments struct {
 	// Rewrites the profile file instead of saving an analysis in a different place,
 	// useful for flagging requests.
 	FlagProfiles bool
+
+	// Tracker
+	BaseLineTagName string
+	CurrentTagName  string
+	BenchmarkName   string
+	ProfileType     string
 }
