@@ -221,13 +221,7 @@ func runSetup(cmd *cobra.Command, args []string) error {
 
 // runTrack handles the track command execution
 func runTrack(_ *cobra.Command, _ []string) error {
-	// Validate profile type
-	validProfiles := map[string]bool{
-		"cpu":    true,
-		"memory": true,
-		"mutex":  true,
-		"block":  true,
-	}
+
 	if !validProfiles[profileType] {
 		return fmt.Errorf("invalid profile type '%s'. Valid types: cpu, memory, mutex, block", profileType)
 	}

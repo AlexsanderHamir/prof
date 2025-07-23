@@ -13,6 +13,13 @@ import (
 	"github.com/AlexsanderHamir/prof/tracker"
 )
 
+var validProfiles = map[string]bool{
+	"cpu":    true,
+	"memory": true,
+	"mutex":  true,
+	"block":  true,
+}
+
 // validateListArguments checks if the benchmarks and profiles arguments are valid lists.
 func validateListArguments(benchmarks, profiles string) error {
 	if strings.TrimSpace(benchmarks) == "[]" {
@@ -59,7 +66,20 @@ func parseBenchmarkConfig(benchmarks, profiles string) ([]string, []string, erro
 	benchmarkList := parseListArgument(benchmarks)
 	profileList := parseListArgument(profiles)
 
+	if err := validateAcceptedProfiles(profileList); err != nil {
+		return nil, nil, err
+	}
+
 	return benchmarkList, profileList, nil
+}
+
+func validateAcceptedProfiles(profiles []string) error {
+	for _, profile := range profiles {
+		if valid := validProfiles[profile]; !valid {
+			return fmt.Errorf("received unvalid profile :%s", profile)
+		}
+	}
+	return nil
 }
 
 func setupDirectories(tag string, benchmarks, profiles []string) error {
