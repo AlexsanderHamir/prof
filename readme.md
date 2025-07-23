@@ -23,7 +23,7 @@ Prof is a CLI tool that automates Go performance profiling workflows by collecti
 - [Examples](#examples)
   - [Basic Data Collection](#basic-data-collection)
   - [Collect Data for Multiple Benchmarks](#collect-data-for-multiple-benchmarks)
-  - [Performance Comparison (Analysis Feature)](#performance-comparison-analysis-feature)
+  - [Performance Comparison Output](#performance-comparison)
 - [Troubleshooting](#troubleshooting)
   - [Common Issues](#common-issues)
 
@@ -279,7 +279,7 @@ prof track --base-tag baseline \
            --current-tag v2.0 \
            --bench BenchmarkPool \
            --profile-type cpu \
-           --format summary
+           --format summary > summary.txt
 ```
 
 ## Troubleshooting
