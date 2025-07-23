@@ -33,13 +33,13 @@ go install github.com/AlexsanderHamir/prof/cmd/prof@latest
 1. **Collect profiling data:**
 
 ```bash
-prof --benchmarks "[BenchmarkMyFunction]" --profiles "[cpu,memory]" --count 5 --tag "tagName"
+prof --benchmarks "[BenchmarkMyFunction]" --profiles "[cpu,memory]" --count 5 --tag "v1.0"
 ```
 
-2. **Compare performance between tags:**
+2. **Compare performance between versions:**
 
 ```bash
-prof track --base-tag "tagName1" --current-tag "tagName2" --bench "BenchmarkMyFunction" --profile-type "cpu"
+prof track --base-tag "v1.0" --current-tag "v1.1" --bench "BenchmarkMyFunction" --profile-type "cpu"
 ```
 
 ## Usage
@@ -63,9 +63,9 @@ prof --benchmarks "[BenchmarkFunc1,BenchmarkFunc2]" \
 ### Performance Comparison
 
 ```bash
-prof track --base-tag "baselineTag" \
-           --current-tag "experimentTag" \
-           --bench "BenchmarkFunctionName" \
+prof track --base-tag "baseline" \
+           --current-tag "experiment" \
+           --bench "BenchmarkMyFunction" \
            --profile-type "cpu" \
            --format "summary"
 ```
@@ -78,6 +78,42 @@ prof track --base-tag "baselineTag" \
 - `--format`: `summary` (quick overview) or `detailed` (comprehensive reports)
 
 ![Performance comparison example](./summary_example.png)
+
+## Configuration (Optional)
+
+By default, Prof collects function-level profiling data for **every function** it finds in your profiles. This can generate hundreds of files for large codebases. Use configuration to focus on specific functions.
+
+### Setting Up Configuration
+
+```bash
+prof setup --create-template
+```
+
+This creates a `config_template.json` file in your current directory.
+
+### Configuration Options
+
+```json
+{
+  "function_collection_filter": {
+    "BenchmarkMyPool": {
+      "include_prefixes": [
+        "github.com/myorg/myproject",
+        "github.com/myorg/myproject/internal"
+      ],
+      "ignore_functions": ["init", "TestMain", "setupBenchmark"]
+    },
+    "BenchmarkCache": {
+      "include_prefixes": ["github.com/myorg/cache"]
+    }
+  }
+}
+```
+
+**Per-benchmark filtering:**
+
+- `include_prefixes`: Only collect detailed data for functions starting with these prefixes (typically your package paths)
+- `ignore_functions`: Skip these specific function names, even if they match the prefixes
 
 ## What Prof Collects
 
@@ -96,31 +132,8 @@ Each directory contains:
 
 - Raw benchmark output
 - Top functions reports (`go tool pprof -top`)
-- Function-level performance data (`go tool pprof -list=FunctionName`)
+- Function-level analysis (`go tool pprof -list=FunctionName`)
 - Profile visualizations (PNG graphs)
-
-## Configuration (Optional)
-
-Control which functions to collect detailed data for:
-
-```bash
-prof setup --create-template
-```
-
-Example config:
-
-```json
-{
-  "function_collection_filter": {
-    "BenchmarkMyPool": {
-      "include_prefixes": ["github.com/myorg/myproject"],
-      "ignore_functions": ["init", "TestMain"]
-    }
-  }
-}
-```
-
-Without configuration, Prof collects data for all functions (can generate many files).
 
 ## Requirements
 
@@ -144,7 +157,7 @@ prof --benchmarks "[BenchmarkPool,BenchmarkCache]" --profiles "[cpu,memory,mutex
 **Performance tracking:**
 
 ```bash
-prof track --base-tag "baseline" --current-tag "v2.0" --bench "BenchmarkPool" --profile-type "cpu" --format "summary"
+prof track --base-tag baseline --current-tag v2.0 --bench BenchmarkPool --profile-type cpu --format summary
 ```
 
 ## Troubleshooting

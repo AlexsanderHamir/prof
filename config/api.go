@@ -27,10 +27,8 @@ func LoadFromFile(filename string) (*Config, error) {
 
 // CreateTemplate creates a template configuration file from the actual Config struct
 // with pre-built examples.
-func CreateTemplate(outputPath string) error {
-	if outputPath == "" {
-		outputPath = "./config_template.json"
-	}
+func CreateTemplate() error {
+	outputPath := "./config_template.json"
 
 	template := Config{
 		FunctionFilter: map[string]FunctionFilter{

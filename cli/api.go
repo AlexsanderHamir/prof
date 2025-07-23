@@ -21,7 +21,6 @@ var (
 
 	// Setup command flags.
 	createTemplate bool
-	outputPath     string
 
 	// Track command flags.
 	baselineTag   string
@@ -85,11 +84,7 @@ func createSetupCmd() *cobra.Command {
 	}
 
 	createTemplateFlag := "create-template"
-	outputPathFlagh := "output-path"
-
 	cmd.Flags().BoolVar(&createTemplate, createTemplateFlag, false, "Generate a new template configuration file")
-	cmd.Flags().StringVar(&outputPath, outputPathFlagh, "./config_template.json", "Destination path for the template")
-
 	cmd.MarkFlagRequired(createTemplateFlag) //nolint:errcheck // won't fail — flags are created just above
 
 	return cmd
@@ -176,7 +171,7 @@ func runVersion(_ *cobra.Command, _ []string) error {
 // runSetup handles the setup command execution
 func runSetup(_ *cobra.Command, _ []string) error {
 	if createTemplate {
-		return config.CreateTemplate(outputPath)
+		return config.CreateTemplate()
 	}
 	return errors.New("setup command requires --create-template flag")
 }
