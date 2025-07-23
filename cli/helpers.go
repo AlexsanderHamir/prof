@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/AlexsanderHamir/prof/analyzer"
 	"github.com/AlexsanderHamir/prof/args"
 	"github.com/AlexsanderHamir/prof/benchmark"
 	"github.com/AlexsanderHamir/prof/config"
@@ -138,35 +137,6 @@ func runBencAndGetProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[strin
 
 	slog.Info(shared.InfoCollectionSuccess)
 	return nil
-}
-
-func analyzeProfiles(tag string, profiles []string, cfg *config.Config, isFlagging bool) error {
-	var benchmarks []string
-	var profileTypes []string
-
-	if cfg.AIConfig.AllBenchmarks {
-		var err error
-		benchmarks, err = analyzer.ValidateBenchmarkDirectories(tag, nil)
-		if err != nil {
-			return err
-		}
-	} else {
-		var err error
-		benchmarks, err = analyzer.ValidateBenchmarkDirectories(tag, cfg.AIConfig.SpecificBenchmarks)
-		if err != nil {
-			return err
-		}
-	}
-
-	if cfg.AIConfig.AllProfiles {
-		profileTypes = profiles
-	} else {
-		profileTypes = cfg.AIConfig.SpecificProfiles
-	}
-
-	slog.Info("Found benchmarks and profile types", "Benchmarks", benchmarks, "ProfileTypes", profileTypes)
-
-	return analyzer.AnalyzeAllProfiles(tag, benchmarks, profileTypes, cfg, isFlagging)
 }
 
 func printSummary(report *tracker.ProfileChangeReport) {

@@ -14,13 +14,11 @@ import (
 
 var (
 	// Root command flags.
-	showVersion    bool
-	benchmarks     string
-	profiles       string
-	tag            string
-	count          int
-	generalAnalyze bool
-	flagProfiles   bool
+	showVersion bool
+	benchmarks  string
+	profiles    string
+	tag         string
+	count       int
 
 	// Setup command flags.
 	createTemplate bool
@@ -59,9 +57,6 @@ and analyzing them with AI to identify performance bottlenecks and improvements.
 	rootCmd.MarkFlagRequired(tagFlag)     //nolint:errcheck // won't fail — flags are created just above
 	rootCmd.MarkFlagRequired(countFlag)   //nolint:errcheck // won't fail — flags are created just above
 
-	rootCmd.Flags().BoolVar(&generalAnalyze, "general-analyze", false, "Run general AI analysis")
-	rootCmd.Flags().BoolVar(&flagProfiles, "flag-profiles", false, "Flag profiles for review")
-
 	// Add subcommands.
 	rootCmd.AddCommand(createSetupCmd())
 	rootCmd.AddCommand(createTrackCmd())
@@ -97,7 +92,6 @@ func createSetupCmd() *cobra.Command {
 	cmd.Flags().StringVar(&outputPath, outputPathFlagh, "./config_template.json", "Destination path for the template")
 
 	cmd.MarkFlagRequired(createTemplateFlag) //nolint:errcheck // won't fail — flags are created just above
-	cmd.MarkFlagRequired(outputPathFlagh)    //nolint:errcheck // won't fail — flags are created just above
 
 	return cmd
 }
@@ -137,7 +131,6 @@ func Execute() error {
 	return CreateRootCmd().Execute()
 }
 
-// runBenchmarks handles the root command execution
 func runBenchmarks(_ *cobra.Command, _ []string) error {
 	if showVersion {
 		current, latest := version.Check()
@@ -146,24 +139,20 @@ func runBenchmarks(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	// Validate required arguments for benchmark run
 	if benchmarks == "" || profiles == "" || tag == "" || count == 0 {
 		return errors.New("missing required arguments. Use --help for usage information")
 	}
 
-	// Load config
 	cfg, err := config.LoadFromFile("config_template.json")
 	if err != nil {
-		cfg = &config.Config{} // use default
+		cfg = &config.Config{}
 	}
 
-	// Parse benchmark config
 	benchmarkList, profileList, err := parseBenchmarkConfig(benchmarks, profiles)
 	if err != nil {
 		return fmt.Errorf("failed to parse benchmark config: %w", err)
 	}
 
-	// Setup directories
 	if err = setupDirectories(tag, benchmarkList, profileList); err != nil {
 		return fmt.Errorf("failed to setup directories: %w", err)
 	}
@@ -177,23 +166,8 @@ func runBenchmarks(_ *cobra.Command, _ []string) error {
 
 	printConfiguration(benchArgs, cfg.FunctionFilter)
 
-	// Run benchmarks
 	if err = runBencAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
 		return err
-	}
-
-	// Run AI analysis if requested
-	if generalAnalyze {
-		if err = analyzeProfiles(tag, profileList, cfg, flagProfiles); err != nil {
-			return fmt.Errorf("failed to analyze profiles: %w", err)
-		}
-	}
-
-	// Flag profiles if requested
-	if flagProfiles {
-		if err = analyzeProfiles(tag, profileList, cfg, flagProfiles); err != nil {
-			return fmt.Errorf("failed to flag profiles: %w", err)
-		}
 	}
 
 	return nil

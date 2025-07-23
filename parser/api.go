@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/prof/args"
-	"github.com/AlexsanderHamir/prof/config"
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
@@ -149,25 +148,6 @@ func ShouldKeepLine(line string, agrs *args.LineFilterArgs) bool {
 func GetAllProfileLines(scanner *bufio.Scanner, lines *[]string) {
 	for scanner.Scan() {
 		*lines = append(*lines, scanner.Text())
-	}
-}
-
-func FilterProfileBody(cfg *config.Config, scanner *bufio.Scanner, lines *[]string) {
-	profileFilters := cfg.GetProfileFilters()
-	ignoreFunctionSet, ignorePrefixSet := cfg.GetIgnoreSets()
-
-	options := &args.LineFilterArgs{
-		ProfileFilters:    profileFilters,
-		IgnoreFunctionSet: ignoreFunctionSet,
-		IgnorePrefixSet:   ignorePrefixSet,
-	}
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if ShouldKeepLine(line, options) {
-			*lines = append(*lines, line)
-		}
 	}
 }
 
