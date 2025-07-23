@@ -178,9 +178,9 @@ func printSummary(report *tracker.ProfileChangeReport) {
 	// Separate changes by type
 	for _, change := range report.FunctionChanges {
 		switch change.ChangeType {
-		case "REGRESSION":
+		case shared.REGRESSION:
 			regressionList = append(regressionList, change)
-		case "IMPROVEMENT":
+		case shared.IMPROVEMENT:
 			improvementList = append(improvementList, change)
 		default:
 			stable++
@@ -217,6 +217,12 @@ func printSummary(report *tracker.ProfileChangeReport) {
 	}
 }
 
+const (
+	regressionPriority  = 1
+	improvementPriority = 2
+	stablePriority      = 3
+)
+
 func printDetailedReport(report *tracker.ProfileChangeReport) {
 	changes := report.FunctionChanges
 
@@ -224,9 +230,9 @@ func printDetailedReport(report *tracker.ProfileChangeReport) {
 	var regressions, improvements, stable int
 	for _, change := range changes {
 		switch change.ChangeType {
-		case "REGRESSION":
+		case shared.REGRESSION:
 			regressions++
-		case "IMPROVEMENT":
+		case shared.IMPROVEMENT:
 			improvements++
 		default:
 			stable++
@@ -247,9 +253,9 @@ func printDetailedReport(report *tracker.ProfileChangeReport) {
 	sort.Slice(changes, func(i, j int) bool {
 		// Primary sort: by change type priority
 		typePriority := map[string]int{
-			"REGRESSION":  1,
-			"IMPROVEMENT": 2,
-			"STABLE":      3,
+			shared.REGRESSION:  regressionPriority,
+			shared.IMPROVEMENT: improvementPriority,
+			shared.STABLE:      stablePriority,
 		}
 
 		if typePriority[changes[i].ChangeType] != typePriority[changes[j].ChangeType] {

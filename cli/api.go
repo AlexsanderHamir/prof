@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -12,7 +13,7 @@ import (
 )
 
 var (
-	// Root command flags
+	// Root command flags.
 	showVersion    bool
 	benchmarks     string
 	profiles       string
@@ -21,11 +22,11 @@ var (
 	generalAnalyze bool
 	flagProfiles   bool
 
-	// Setup command flags
+	// Setup command flags.
 	createTemplate bool
 	outputPath     string
 
-	// Track command flags
+	// Track command flags.
 	baselineTag   string
 	currentTag    string
 	benchmarkName string
@@ -33,7 +34,7 @@ var (
 	outputFormat  string
 )
 
-// CreateRootCmd creates and returns the root cobra command
+// CreateRootCmd creates and returns the root cobra command.
 func CreateRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "prof",
@@ -48,25 +49,20 @@ and analyzing them with AI to identify performance bottlenecks and improvements.
 	tagFlag := "tag"
 	countFlag := "count"
 
-	rootCmd.Flags().StringVar(&benchmarks, benchFlag, "", "Benchmarks to run (e.g., '[BenchmarkGenPool, BenchmarkSyncPool]')")
+	rootCmd.Flags().StringVar(&benchmarks, benchFlag, "", "Benchmarks to run (e.g., '[BenchmarkGenPool,...]')")
 	rootCmd.Flags().StringVar(&profiles, profileFlag, "", "Profiles to use (e.g., '[cpu,memory,mutex]')")
 	rootCmd.Flags().StringVar(&tag, tagFlag, "", "Tag for the run")
 	rootCmd.Flags().IntVar(&count, countFlag, 0, "Number of runs")
 
-	// MarkFlagRequired won't fail — flags are created just above.
-	//nolint:errcheck
-	rootCmd.MarkFlagRequired(benchFlag)
-	rootCmd.MarkFlagRequired(profileFlag)
-	rootCmd.MarkFlagRequired(tagFlag)
-	rootCmd.MarkFlagRequired(countFlag)
+	rootCmd.MarkFlagRequired(benchFlag)   //nolint:errcheck // won't fail — flags are created just above
+	rootCmd.MarkFlagRequired(profileFlag) //nolint:errcheck // won't fail — flags are created just above
+	rootCmd.MarkFlagRequired(tagFlag)     //nolint:errcheck // won't fail — flags are created just above
+	rootCmd.MarkFlagRequired(countFlag)   //nolint:errcheck // won't fail — flags are created just above
 
-	// TODO:
-	// There's no need for AI analysis to run together with the benchmarks,
-	// it can easily run afterwards as a seprate command.
 	rootCmd.Flags().BoolVar(&generalAnalyze, "general-analyze", false, "Run general AI analysis")
 	rootCmd.Flags().BoolVar(&flagProfiles, "flag-profiles", false, "Flag profiles for review")
 
-	// Add subcommands
+	// Add subcommands.
 	rootCmd.AddCommand(createSetupCmd())
 	rootCmd.AddCommand(createTrackCmd())
 	rootCmd.AddCommand(createVersionCmd())
@@ -100,8 +96,8 @@ func createSetupCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&createTemplate, createTemplateFlag, false, "Generate a new template configuration file")
 	cmd.Flags().StringVar(&outputPath, outputPathFlagh, "./config_template.json", "Destination path for the template")
 
-	cmd.MarkFlagRequired(createTemplateFlag)
-	cmd.MarkFlagRequired(outputPathFlagh)
+	cmd.MarkFlagRequired(createTemplateFlag) //nolint:errcheck // won't fail — flags are created just above
+	cmd.MarkFlagRequired(outputPathFlagh)    //nolint:errcheck // won't fail — flags are created just above
 
 	return cmd
 }
@@ -128,10 +124,10 @@ Example:
 	cmd.Flags().StringVar(&outputFormat, "format", "detailed", "Output format: 'summary' or 'detailed'")
 
 	// Mark required flags
-	cmd.MarkFlagRequired("base-tag")
-	cmd.MarkFlagRequired("current-tag")
-	cmd.MarkFlagRequired("bench")
-	cmd.MarkFlagRequired("profile-type")
+	cmd.MarkFlagRequired("base-tag")     //nolint:errcheck // won't fail — flags are created just above
+	cmd.MarkFlagRequired("current-tag")  //nolint:errcheck // won't fail — flags are created just above
+	cmd.MarkFlagRequired("bench")        //nolint:errcheck // won't fail — flags are created just above
+	cmd.MarkFlagRequired("profile-type") //nolint:errcheck // won't fail — flags are created just above
 
 	return cmd
 }
@@ -152,7 +148,7 @@ func runBenchmarks(_ *cobra.Command, _ []string) error {
 
 	// Validate required arguments for benchmark run
 	if benchmarks == "" || profiles == "" || tag == "" || count == 0 {
-		return fmt.Errorf("missing required arguments. Use --help for usage information")
+		return errors.New("missing required arguments. Use --help for usage information")
 	}
 
 	// Load config
@@ -168,7 +164,7 @@ func runBenchmarks(_ *cobra.Command, _ []string) error {
 	}
 
 	// Setup directories
-	if err := setupDirectories(tag, benchmarkList, profileList); err != nil {
+	if err = setupDirectories(tag, benchmarkList, profileList); err != nil {
 		return fmt.Errorf("failed to setup directories: %w", err)
 	}
 
@@ -182,20 +178,20 @@ func runBenchmarks(_ *cobra.Command, _ []string) error {
 	printConfiguration(benchArgs, cfg.FunctionFilter)
 
 	// Run benchmarks
-	if err := runBencAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
+	if err = runBencAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
 		return err
 	}
 
 	// Run AI analysis if requested
 	if generalAnalyze {
-		if err := analyzeProfiles(tag, profileList, cfg, flagProfiles); err != nil {
+		if err = analyzeProfiles(tag, profileList, cfg, flagProfiles); err != nil {
 			return fmt.Errorf("failed to analyze profiles: %w", err)
 		}
 	}
 
 	// Flag profiles if requested
 	if flagProfiles {
-		if err := analyzeProfiles(tag, profileList, cfg, flagProfiles); err != nil {
+		if err = analyzeProfiles(tag, profileList, cfg, flagProfiles); err != nil {
 			return fmt.Errorf("failed to flag profiles: %w", err)
 		}
 	}
@@ -212,11 +208,11 @@ func runVersion(_ *cobra.Command, _ []string) error {
 }
 
 // runSetup handles the setup command execution
-func runSetup(cmd *cobra.Command, args []string) error {
+func runSetup(_ *cobra.Command, _ []string) error {
 	if createTemplate {
 		return config.CreateTemplate(outputPath)
 	}
-	return fmt.Errorf("setup command requires --create-template flag")
+	return errors.New("setup command requires --create-template flag")
 }
 
 // runTrack handles the track command execution

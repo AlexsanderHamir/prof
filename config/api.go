@@ -123,8 +123,8 @@ func CreateTemplate(outputPath string) error {
 	return nil
 }
 
-func NewConfigBuilder() *ConfigBuilder {
-	return &ConfigBuilder{
+func NewConfigBuilder() *Builder {
+	return &Builder{
 		config: Config{
 			FunctionFilter: make(map[string]FunctionFilter),
 			AIConfig: AIConfig{
@@ -135,13 +135,13 @@ func NewConfigBuilder() *ConfigBuilder {
 	}
 }
 
-func (cb *ConfigBuilder) WithAPIConfig(apiKey, baseURL string) *ConfigBuilder {
+func (cb *Builder) WithAPIConfig(apiKey, baseURL string) *Builder {
 	cb.config.AIConfig.APIKey = apiKey
 	cb.config.AIConfig.BaseURL = baseURL
 	return cb
 }
 
-func (cb *ConfigBuilder) WithModelConfig(model string, maxTokens int, temp, topP float32, promptPath string) *ConfigBuilder {
+func (cb *Builder) WithModelConfig(model string, maxTokens int, temp, topP float32, promptPath string) *Builder {
 	cb.config.AIConfig.ModelConfig = ModelConfig{
 		Model:              model,
 		MaxTokens:          maxTokens,
@@ -152,7 +152,7 @@ func (cb *ConfigBuilder) WithModelConfig(model string, maxTokens int, temp, topP
 	return cb
 }
 
-func (cb *ConfigBuilder) WithFunctionFilter(benchmark string, prefixes, ignoreFunctions []string) *ConfigBuilder {
+func (cb *Builder) WithFunctionFilter(benchmark string, prefixes, ignoreFunctions []string) *Builder {
 	cb.config.FunctionFilter[benchmark] = FunctionFilter{
 		IncludePrefixes: prefixes,
 		IgnoreFunctions: ignoreFunctions,
@@ -160,7 +160,7 @@ func (cb *ConfigBuilder) WithFunctionFilter(benchmark string, prefixes, ignoreFu
 	return cb
 }
 
-func (cb *ConfigBuilder) WithAIBenchmarkConfig(allBench, allProf bool, specificBench, specificProf []string) *ConfigBuilder {
+func (cb *Builder) WithAIBenchmarkConfig(allBench, allProf bool, specificBench, specificProf []string) *Builder {
 	cb.config.AIConfig.AllBenchmarks = allBench
 	cb.config.AIConfig.AllProfiles = allProf
 	cb.config.AIConfig.SpecificBenchmarks = specificBench
@@ -168,7 +168,7 @@ func (cb *ConfigBuilder) WithAIBenchmarkConfig(allBench, allProf bool, specificB
 	return cb
 }
 
-func (cb *ConfigBuilder) WithProfileFilter(thresholds FilterValues, ignoreFuncs, ignorePrefixes []string) *ConfigBuilder {
+func (cb *Builder) WithProfileFilter(thresholds FilterValues, ignoreFuncs, ignorePrefixes []string) *Builder {
 	cb.config.AIConfig.ProfileFilter = &ProfileFilter{
 		Thresholds:      thresholds,
 		IgnoreFunctions: ignoreFuncs,
@@ -177,11 +177,11 @@ func (cb *ConfigBuilder) WithProfileFilter(thresholds FilterValues, ignoreFuncs,
 	return cb
 }
 
-func (cb *ConfigBuilder) Build() Config {
+func (cb *Builder) Build() Config {
 	return cb.config
 }
 
-// Preset builders
+// Preset builders.
 func CreateDefaultConfig() Config {
 	return NewConfigBuilder().
 		WithFunctionFilter("BenchmarkGenPool",

@@ -1,4 +1,4 @@
-package parser_test
+package test
 
 import (
 	"path/filepath"
@@ -8,7 +8,6 @@ import (
 )
 
 func TestLinesIntoObjs(t *testing.T) {
-	// TODO: File location has changed
 	profilePath := filepath.Join("testFiles", "BenchmarkGenPool_cpu.txt")
 	profileType := "cpu"
 

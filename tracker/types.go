@@ -29,7 +29,7 @@ type ChangeMetadata struct {
 
 type FunctionChangeResult struct {
 	FunctionName      string
-	ChangeType        string // "REGRESSION", "IMPROVEMENT", "STABLE"
+	ChangeType        string // shared.REGRESSION, shred.IMPROVEMENT, shared.STABLE
 	FlatChangePercent float64
 	CumChangePercent  float64
 	FlatAbsolute      struct {

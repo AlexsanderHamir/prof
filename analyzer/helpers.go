@@ -117,14 +117,12 @@ func getUserPrompt(cfg *config.Config) (string, error) {
 
 func requestModelAnalysis(args *args.ModelCallRequiredArgs, cfg *config.Config) (string, error) {
 	client := openai.NewClient(cfg.AIConfig.APIKey)
-	// TODO: ??
 	if cfg.AIConfig.BaseURL != "https://api.openai.com/v1" {
 		config := openai.DefaultConfig(cfg.AIConfig.APIKey)
 		config.BaseURL = cfg.AIConfig.BaseURL
 		client = openai.NewClientWithConfig(config)
 	}
 
-	// TODO: prompt redundancy
 	profileInfo := fmt.Sprintf("BenchmarkName: %s\nProfile Type: %s\n\nProfile Content: %s",
 		args.BenchmarkName, args.ProfileType, args.ProfileContent)
 

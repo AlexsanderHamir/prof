@@ -19,7 +19,7 @@ const (
 	minProfileLinelength = 6
 )
 
-// Line Indexes
+// Line Indexes.
 const (
 	flatIndex           = 0
 	flatPercentageIndex = 1
@@ -217,5 +217,4 @@ func CollectOrRemoveHeader(scanner *bufio.Scanner, profileType string, lines *[]
 		}
 		lineCount++
 	}
-
 }

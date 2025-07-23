@@ -32,7 +32,8 @@ func CheckPerformanceDifferences(baselineTag, currentTag, benchName, profileType
 			continue
 		}
 
-		changeResult, err := DetectChange(baseLineObj, currentObj)
+		var changeResult *FunctionChangeResult
+		changeResult, err = DetectChange(baseLineObj, currentObj)
 		if err != nil {
 			return nil, fmt.Errorf("DetectChange failed: %w", err)
 		}

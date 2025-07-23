@@ -143,17 +143,19 @@ func getFilterSets(ignoreFunctions []string) map[string]struct{} {
 
 var floatRegex = regexp.MustCompile(`^([+-]?\d*\.?\d+)`)
 
+const requiredMatchCount = 2
+
 func convertToFloat(part string) (float64, error) {
 	part = strings.TrimSpace(part)
 	matches := floatRegex.FindStringSubmatch(part)
 
-	if len(matches) < 2 {
+	if len(matches) < requiredMatchCount {
 		return 0, fmt.Errorf("failed to parse value '%s': no valid float found", part)
 	}
 
 	floatVal, err := strconv.ParseFloat(matches[1], 64)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse value '%s': %v", part, err)
+		return 0, fmt.Errorf("failed to parse value '%s': %w", part, err)
 	}
 
 	return floatVal, nil

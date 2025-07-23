@@ -8,6 +8,9 @@ import (
 
 const (
 	InfoCollectionSuccess = "All benchmarks and profile processing completed successfully!"
+	IMPROVEMENT           = "IMPROVEMENT"
+	REGRESSION            = "REGRESSION"
+	STABLE                = "STABLE"
 )
 
 const (

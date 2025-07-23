@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -102,13 +103,13 @@ func getProjectRoot() (string, error) {
 	}
 
 	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+		if _, err = os.Stat(filepath.Join(dir, "go.mod")); err == nil {
 			return dir, nil
 		}
 
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return "", fmt.Errorf("go.mod not found")
+			return "", errors.New("go.mod not found")
 		}
 		dir = parent
 	}
@@ -124,7 +125,7 @@ func createConfigFile(t *testing.T, cfgTemplate *config.Config) {
 		t.Fatalf("failed to marshal config template: %v", err)
 	}
 
-	if err := os.WriteFile(configPath, data, shared.PermFile); err != nil {
+	if err = os.WriteFile(configPath, data, shared.PermFile); err != nil {
 		t.Fatalf("failed to write config template file: %v", err)
 	}
 }
@@ -146,11 +147,11 @@ func setupEnviroment(t *testing.T) {
 	}
 
 	// 3. Create package and benchmark files.
-	if err := createPackage(envDirName); err != nil {
+	if err = createPackage(envDirName); err != nil {
 		t.Fatalf("failed to create package: %v", err)
 	}
 
-	if err := createBenchmarkFile(envDirName); err != nil {
+	if err = createBenchmarkFile(envDirName); err != nil {
 		t.Fatalf("failed to create benchmark file: %v", err)
 	}
 }
@@ -193,7 +194,7 @@ func runProf(t *testing.T, projectRoot string, args []string, expectedErrMessage
 	if err != nil {
 		shouldContinue = handleCommandError(t, err, &stdout, &stderr, expectedErrMessage)
 		if !shouldContinue {
-			return
+			return false
 		}
 	}
 
@@ -232,8 +233,14 @@ func checkDirectory(t *testing.T, path, description string) {
 	}
 }
 
-func checkOutput(t *testing.T, envPath string, expectedProfiles []string, expectNonSpecifiedFiles, withConfig bool, expectedFiles map[fileFullName]*FieldsCheck, expectedNumberOfFiles int) {
+func checkOutput(t *testing.T, envPath string, testArgs *TestArgs) {
 	t.Helper()
+
+	expectedProfiles := testArgs.expectedProfiles
+	expectNonSpecifiedFiles := testArgs.expectNonSpecifiedFiles
+	withConfig := testArgs.withConfig
+	specifiedFiles := testArgs.specifiedFiles
+	expectedNumberOfFiles := testArgs.expectedNumberOfFiles
 
 	benchPath := filepath.Join(envPath, shared.MainDirOutput)
 
@@ -253,11 +260,11 @@ func checkOutput(t *testing.T, envPath string, expectedProfiles []string, expect
 
 	checkDirectory(t, binPath, "bin directory")
 	checkDirectory(t, binBenchPath, "benchmark directory inside of bin")
-	checkDirectoryFiles(t, binBenchPath, "bin files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, configDoesntApply, expectedFiles)
+	checkDirectoryFiles(t, binBenchPath, "bin files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, configDoesntApply, specifiedFiles)
 
 	checkDirectory(t, textPath, "text directory")
 	checkDirectory(t, textBenchPath, "benchmark directory inside of text")
-	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, configDoesntApply, expectedFiles)
+	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, configDoesntApply, specifiedFiles)
 
 	// 3. Check that profile function directories and files exist for each profile
 	for _, profile := range expectedProfiles {
@@ -269,12 +276,11 @@ func checkOutput(t *testing.T, envPath string, expectedProfiles []string, expect
 		checkDirectory(t, benchDir, "benchmark directory inside profile functions directory e.g cpu_functions/BenchmarkName")
 
 		notSure := 0
-		checkDirectoryFiles(t, benchDir, "individual function files inside benchmark directory", notSure, expectNonSpecifiedFiles, withConfig, expectedFiles)
+		checkDirectoryFiles(t, benchDir, "individual function files inside benchmark directory", notSure, expectNonSpecifiedFiles, withConfig, specifiedFiles)
 	}
 
-	//
 	if withConfig {
-		remainingFiles := countRemainingFiles(expectedFiles)
+		remainingFiles := countRemainingFiles(specifiedFiles)
 		maxAllowRemainingFiles := 1
 
 		if remainingFiles > maxAllowRemainingFiles {
@@ -395,7 +401,7 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 
 	if testArgs.withCleanUp {
 		t.Cleanup(func() {
-			if err := os.RemoveAll(envPath); err != nil {
+			if err = os.RemoveAll(envPath); err != nil {
 				t.Logf("Failed to clean up environment: %v", err)
 			}
 		})
@@ -418,13 +424,7 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 	}
 
 	// 4. Check bench output
-	expectedProfiles := testArgs.expectedProfiles
-	expectNonSpecifiedFiles := testArgs.expectNonSpecifiedFiles
-	withConfig := testArgs.withConfig
-	specifiedFiles := testArgs.specifiedFiles
-	expectedNumberOfFiles := testArgs.expectedNumberOfFiles
-
-	checkOutput(t, envPath, expectedProfiles, expectNonSpecifiedFiles, withConfig, specifiedFiles, expectedNumberOfFiles)
+	checkOutput(t, envPath, testArgs)
 }
 
 func defaultCmd() []string {
