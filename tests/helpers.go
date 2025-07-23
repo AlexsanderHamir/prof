@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -73,205 +74,25 @@ const (
 	benchName        = "BenchmarkStringProcessor"
 )
 
+//go:embed assets/utils.go.txt
+var utilsTemplate string
+
 func createPackage(dir string) error {
-	// Create utils package directory
 	utilsDir := filepath.Join(dir, "utils")
 	if err := os.MkdirAll(utilsDir, shared.PermDir); err != nil {
 		return fmt.Errorf("failed to create utils directory: %w", err)
 	}
 
-	// Create the utils package
-	packageContent := `package utils
-
-import (
-	"crypto/sha256"
-	"fmt"
-	"sort"
-	"strings"
-)
-
-// StringProcessor provides string manipulation utilities
-type StringProcessor struct {
-	data []string
-}
-
-// NewStringProcessor creates a new string processor
-func NewStringProcessor() *StringProcessor {
-	return &StringProcessor{
-		data: make([]string, 0),
-	}
-}
-
-// AddString adds a string to the processor
-func (sp *StringProcessor) AddString(s string) {
-	sp.data = append(sp.data, s)
-}
-
-// ProcessStrings performs various operations on stored strings
-func (sp *StringProcessor) ProcessStrings() map[string]interface{} {
-	result := make(map[string]interface{})
-	
-	// Sort strings
-	sorted := make([]string, len(sp.data))
-	copy(sorted, sp.data)
-	sort.Strings(sorted)
-	result["sorted"] = sorted
-	
-	// Calculate total length
-	totalLen := 0
-	for _, s := range sp.data {
-		totalLen += len(s)
-	}
-	result["total_length"] = totalLen
-	
-	// Generate hashes
-	hashes := make([]string, len(sp.data))
-	for i, s := range sp.data {
-		hash := sha256.Sum256([]byte(s))
-		hashes[i] = fmt.Sprintf("%x", hash)
-	}
-	result["hashes"] = hashes
-	
-	return result
-}
-
-// Calculator provides mathematical operations
-type Calculator struct{}
-
-// NewCalculator creates a new calculator
-func NewCalculator() *Calculator {
-	return &Calculator{}
-}
-
-// Fibonacci calculates fibonacci number (CPU intensive)
-func (c *Calculator) Fibonacci(n int) int {
-	if n <= 1 {
-		return n
-	}
-	return c.Fibonacci(n-1) + c.Fibonacci(n-2)
-}
-
-// MatrixMultiply performs matrix multiplication
-func (c *Calculator) MatrixMultiply(a, b [][]int) [][]int {
-	if len(a) == 0 || len(b) == 0 || len(a[0]) != len(b) {
-		return nil
-	}
-	
-	rows, cols := len(a), len(b[0])
-	result := make([][]int, rows)
-	for i := range result {
-		result[i] = make([]int, cols)
-	}
-	
-	for i := 0; i < rows; i++ {
-		for j := 0; j < cols; j++ {
-			for k := 0; k < len(b); k++ {
-				result[i][j] += a[i][k] * b[k][j]
-			}
-		}
-	}
-	
-	return result
-}
-
-// DataGenerator generates test data
-type DataGenerator struct{}
-
-// NewDataGenerator creates a new data generator
-func NewDataGenerator() *DataGenerator {
-	return &DataGenerator{}
-}
-
-// GenerateStrings creates a slice of strings
-func (dg *DataGenerator) GenerateStrings(count int) []string {
-	result := make([]string, count)
-	for i := 0; i < count; i++ {
-		result[i] = fmt.Sprintf("generated_string_%d_%s", i, strings.Repeat("x", i%100))
-	}
-	return result
-}
-
-// GenerateMatrix creates a matrix of given size
-func (dg *DataGenerator) GenerateMatrix(rows, cols int) [][]int {
-	matrix := make([][]int, rows)
-	for i := range matrix {
-		matrix[i] = make([]int, cols)
-		for j := range matrix[i] {
-			matrix[i][j] = (i + j) % 100
-		}
-	}
-	return matrix
-}
-`
-
 	utilsPath := filepath.Join(utilsDir, "utils.go")
-	return os.WriteFile(utilsPath, []byte(packageContent), shared.PermFile)
+	return os.WriteFile(utilsPath, []byte(utilsTemplate), shared.PermFile)
 }
+
+//go:embed assets/benchmark_test.go.txt
+var BenchmarkContent string
 
 func createBenchmarkFile(dir string) error {
-	benchmarkContent := `package main
-
-import (
-	"testing"
-	"test-environment/utils"
-)
-
-func BenchmarkStringProcessor(b *testing.B) {
-	processor := utils.NewStringProcessor()
-	generator := utils.NewDataGenerator()
-	
-	// Generate test data
-	strings := generator.GenerateStrings(1000)
-	for _, s := range strings {
-		processor.AddString(s)
-	}
-	
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		result := processor.ProcessStrings()
-		_ = result
-	}
-}
-
-func BenchmarkFibonacci(b *testing.B) {
-	calc := utils.NewCalculator()
-	
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		result := calc.Fibonacci(25)
-		_ = result
-	}
-}
-
-func BenchmarkMatrixMultiplication(b *testing.B) {
-	calc := utils.NewCalculator()
-	generator := utils.NewDataGenerator()
-	
-	// Generate test matrices
-	matrixA := generator.GenerateMatrix(50, 50)
-	matrixB := generator.GenerateMatrix(50, 50)
-	
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		result := calc.MatrixMultiply(matrixA, matrixB)
-		_ = result
-	}
-}
-
-func BenchmarkDataGeneration(b *testing.B) {
-	generator := utils.NewDataGenerator()
-	
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		strings := generator.GenerateStrings(500)
-		matrix := generator.GenerateMatrix(20, 20)
-		_ = strings
-		_ = matrix
-	}
-}
-`
 	benchPath := filepath.Join(dir, "benchmark_test.go")
-	return os.WriteFile(benchPath, []byte(benchmarkContent), shared.PermFile)
+	return os.WriteFile(benchPath, []byte(BenchmarkContent), shared.PermFile)
 }
 
 func getProjectRoot() (string, error) {
