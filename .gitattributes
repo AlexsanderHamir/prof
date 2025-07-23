@@ -4,8 +4,10 @@
 .gitattributes export-ignore
 
 *.md export-ignore
+*.png export-ignore
 LICENSE export-ignore
 
 *_test.go export-ignore
 *test*/ export-ignore
 
+prof export-ignore
