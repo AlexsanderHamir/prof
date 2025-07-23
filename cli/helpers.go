@@ -216,10 +216,54 @@ func printSummary(report *tracker.ProfileChangeReport) {
 		}
 	}
 }
+
 func printDetailedReport(report *tracker.ProfileChangeReport) {
-	for i, change := range report.FunctionChanges {
+	changes := report.FunctionChanges
+
+	// Count each type
+	var regressions, improvements, stable int
+	for _, change := range changes {
+		switch change.ChangeType {
+		case "REGRESSION":
+			regressions++
+		case "IMPROVEMENT":
+			improvements++
+		default:
+			stable++
+		}
+	}
+
+	// Print header with statistics and sorting info
+	fmt.Println("╔══════════════════════════════════════════════════════════════════╗")
+	fmt.Println("║                     Detailed Performance Report                 ║")
+	fmt.Println("╚══════════════════════════════════════════════════════════════════╝")
+	fmt.Printf("\n📊 Summary: %d total functions | 🔴 %d regressions | 🟢 %d improvements | ⚪ %d stable\n",
+		len(changes), regressions, improvements, stable)
+	fmt.Println("\n📋 Report Order: Regressions first (worst → best), then Improvements (best → worst), then Stable")
+	fmt.Println("═══════════════════════════════════════════════════════════════════════════════════════════════════")
+
+	// Sort by change type first (REGRESSION, IMPROVEMENT, STABLE),
+	// then by absolute percentage change (biggest changes first)
+	sort.Slice(changes, func(i, j int) bool {
+		// Primary sort: by change type priority
+		typePriority := map[string]int{
+			"REGRESSION":  1,
+			"IMPROVEMENT": 2,
+			"STABLE":      3,
+		}
+
+		if typePriority[changes[i].ChangeType] != typePriority[changes[j].ChangeType] {
+			return typePriority[changes[i].ChangeType] < typePriority[changes[j].ChangeType]
+		}
+
+		return math.Abs(changes[i].FlatChangePercent) > math.Abs(changes[j].FlatChangePercent)
+	})
+
+	for i, change := range changes {
 		if i > 0 {
-			fmt.Println() // Add spacing between reports
+			fmt.Println()
+			fmt.Println()
+			fmt.Println()
 		}
 		fmt.Print(change.Report())
 	}
