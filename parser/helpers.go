@@ -203,3 +203,35 @@ func getFloatsFromLineParts(lineParts []string) (*ProfileFloats, error) {
 		CumPercentage:  cumPercentage,
 	}, nil
 }
+
+func createLineObjects(lines []string) ([]*LineObj, error) {
+	var lineObjs []*LineObj
+
+	for _, line := range lines {
+		lineParts := strings.Fields(line)
+		lineLength := len(lineParts)
+
+		if lineLength < minProfileLinelength {
+			return nil, fmt.Errorf("line(%d) is smaller than minimum(%d)", lineLength, minProfileLinelength)
+		}
+
+		floats, err := getFloatsFromLineParts(lineParts)
+		if err != nil {
+			return nil, fmt.Errorf("float extraction failed: %w", err)
+		}
+
+		funcName := strings.Join(lineParts[functionNameIndex:], " ")
+		lineobj := &LineObj{
+			FnName:         funcName,
+			Flat:           floats.Flat,
+			FlatPercentage: floats.FlatPercentage,
+			SumPercentage:  floats.Sum,
+			Cum:            floats.Cum,
+			CumPercentage:  floats.CumPercentage,
+		}
+
+		lineObjs = append(lineObjs, lineobj)
+	}
+
+	return lineObjs, nil
+}
