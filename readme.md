@@ -167,7 +167,7 @@ prof --benchmarks "[BenchmarkPool,BenchmarkCache]" --profiles "[cpu,memory,mutex
 **Performance tracking:**
 
 ```bash
-prof track --base-tag baseline --current-tag v2.0 --bench BenchmarkPool --profile-type cpu --format summary
+prof track --base-tag "baseline" --current-tag "v2.0" --bench "BenchmarkPool" --profile-type "cpu" --format "summary"
 ```
 
 ## Troubleshooting
