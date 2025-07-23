@@ -24,7 +24,6 @@ func getProfileFlags() map[string]string {
 
 func getPprofTextParams() []string {
 	return []string{
-		"-nodecount=100000000",
 		"-cum",
 		"-edgefraction=0",
 		"-nodefraction=0",
