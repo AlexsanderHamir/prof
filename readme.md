@@ -172,11 +172,11 @@ Example configuration (controls which functions to collect detailed data for):
 Compare two benchmark runs:
 
 ```bash
-prof track --base-tag baseline \
-           --current-tag experiment \
-           --bench BenchmarkMyFunction \
-           --profile-type cpu \
-           --format detailed
+prof track --base-tag "baseline" \
+           --current-tag "experiment" \
+           --bench "BenchmarkMyFunction" \
+           --profile-type "cpu" \
+           --format "detailed"
 ```
 
 **Format Options:**
