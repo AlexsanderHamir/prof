@@ -14,11 +14,10 @@ import (
 
 var (
 	// Root command flags.
-	showVersion bool
-	benchmarks  string
-	profiles    string
-	tag         string
-	count       int
+	benchmarks string
+	profiles   string
+	tag        string
+	count      int
 
 	// Setup command flags.
 	createTemplate bool
@@ -132,13 +131,6 @@ func Execute() error {
 }
 
 func runBenchmarks(_ *cobra.Command, _ []string) error {
-	if showVersion {
-		current, latest := version.Check()
-		output := version.FormatOutput(current, latest)
-		fmt.Print(output)
-		return nil
-	}
-
 	if benchmarks == "" || profiles == "" || tag == "" || count == 0 {
 		return errors.New("missing required arguments. Use --help for usage information")
 	}
