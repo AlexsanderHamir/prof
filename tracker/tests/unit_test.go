@@ -1,15 +1,14 @@
 package tests_test
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/tracker"
 )
 
 func TestCoreBlock(t *testing.T) {
-	tagPath1 := filepath.Join("bench", "tag1")
-	tagPath2 := filepath.Join("bench", "tag2")
+	tagPath1 := "tag1"
+	tagPath2 := "tag2"
 	benchName := "BenchmarkGenPool"
 	profileTypes := []string{"memory", "cpu", "mutex", "block"}
 

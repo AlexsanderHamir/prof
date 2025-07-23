@@ -226,7 +226,7 @@ func TestProfileValidation(t *testing.T) {
 			cmd:                     cmd,
 			expectedErrorMessage:    "",
 			label:                   label,
-			expectedNumberOfFiles:   4, // cpu, mem, goroutine/trace, block
+			expectedNumberOfFiles:   4, // cpu, mem, goroutine, block
 			withCleanUp:             true,
 			expectedProfiles:        []string{cpuProfile, memProfile, blockProfile},
 		}
