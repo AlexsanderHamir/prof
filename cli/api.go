@@ -53,6 +53,8 @@ and analyzing them with AI to identify performance bottlenecks and improvements.
 	rootCmd.Flags().StringVar(&tag, tagFlag, "", "Tag for the run")
 	rootCmd.Flags().IntVar(&count, countFlag, 0, "Number of runs")
 
+	// MarkFlagRequired won't fail — flags are created just above.
+	//nolint:errcheck
 	rootCmd.MarkFlagRequired(benchFlag)
 	rootCmd.MarkFlagRequired(profileFlag)
 	rootCmd.MarkFlagRequired(tagFlag)
