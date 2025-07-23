@@ -75,7 +75,6 @@ func createBenchDirectories(tagDir string, benchmarks []string) error {
 
 // createProfileFunctionDirectories creates the structure for the code line level data collection.
 func createProfileFunctionDirectories(tagDir string, profiles, benchmarks []string) error {
-
 	for _, profile := range profiles {
 		profileDir := filepath.Join(tagDir, profile+shared.FunctionsDirSuffix)
 		if err := os.MkdirAll(profileDir, shared.PermDir); err != nil {
@@ -137,7 +136,7 @@ func deleteContents(dir string) error {
 
 	for _, entry := range entries {
 		path := filepath.Join(dir, entry.Name())
-		if err := os.RemoveAll(path); err != nil {
+		if err = os.RemoveAll(path); err != nil {
 			return fmt.Errorf("failed to remove %s: %w", path, err)
 		}
 	}

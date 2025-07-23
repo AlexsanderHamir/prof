@@ -25,7 +25,7 @@ func SetupDirectories(tag string, benchmarks, profiles []string) error {
 		return fmt.Errorf("deleteContents failed: %w", err)
 	}
 
-	if err := createBenchDirectories(tagDir, benchmarks); err != nil {
+	if err = createBenchDirectories(tagDir, benchmarks); err != nil {
 		return err
 	}
 
