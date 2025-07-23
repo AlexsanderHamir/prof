@@ -179,6 +179,14 @@ prof track --base-tag "baseline" \
            --format "detailed"
 ```
 
+**Parameters:**
+
+- `--base-tag`: Reference benchmark tag to compare against (e.g., "v1.0", "main")
+- `--current-tag`: New benchmark tag to evaluate (e.g., "v1.1", "experiment")
+- `--bench`: Exact benchmark function name (e.g., "BenchmarkMyFunction")
+- `--profile-type`: Profile data type - `cpu`, `memory`, `mutex`, or `block`
+- `--format`: Output format - `detailed` (full reports) or `summary` (quick overview)
+
 **Format Options:**
 
 - `detailed`: Shows comprehensive individual reports for each function with full performance analysis, including flat time analysis, cumulative time analysis, impact assessment, and severity classification. Each function gets its own formatted report with before/after comparisons, percentage changes, and detailed breakdowns.
