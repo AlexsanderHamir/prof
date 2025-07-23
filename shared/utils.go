@@ -14,7 +14,6 @@ const (
 )
 
 const (
-	TRACE              = "trace"
 	MainDirOutput      = "bench"
 	ProfileTextDir     = "text"
 	ProfileBinDir      = "bin"

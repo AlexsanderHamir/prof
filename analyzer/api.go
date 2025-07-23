@@ -80,10 +80,6 @@ func AnalyzeAllProfiles(tag string, benchmarkNames, profileTypes []string, cfg *
 
 	for _, benchmarkName := range benchmarkNames {
 		for _, profileType := range profileTypes {
-			if profileType == shared.TRACE {
-				continue
-			}
-
 			slog.Info("Analyzing profile",
 				"benchmark", benchmarkName,
 				"profile_type", profileType)
