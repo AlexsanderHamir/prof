@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 	"log/slog"
+	"math"
+	"sort"
 	"strings"
 
 	"github.com/AlexsanderHamir/prof/analyzer"
@@ -76,7 +78,7 @@ func parseBenchmarkConfig(benchmarks, profiles string) ([]string, []string, erro
 func validateAcceptedProfiles(profiles []string) error {
 	for _, profile := range profiles {
 		if valid := validProfiles[profile]; !valid {
-			return fmt.Errorf("received unvalid profile :%s", profile)
+			return fmt.Errorf("received unvalid profile: %s", profile)
 		}
 	}
 	return nil
@@ -170,43 +172,50 @@ func analyzeProfiles(tag string, profiles []string, cfg *config.Config, isFlaggi
 func printSummary(report *tracker.ProfileChangeReport) {
 	fmt.Println("\n=== Performance Tracking Summary ===")
 
-	var regressions, improvements, stable int
+	var regressionList, improvementList []*tracker.FunctionChangeResult
+	var stable int
 
+	// Separate changes by type
 	for _, change := range report.FunctionChanges {
 		switch change.ChangeType {
 		case "REGRESSION":
-			regressions++
+			regressionList = append(regressionList, change)
 		case "IMPROVEMENT":
-			improvements++
+			improvementList = append(improvementList, change)
 		default:
 			stable++
 		}
 	}
 
+	// Sort regressions by percentage (biggest regression first)
+	sort.Slice(regressionList, func(i, j int) bool {
+		return regressionList[i].FlatChangePercent > regressionList[j].FlatChangePercent
+	})
+
+	// Sort improvements by absolute percentage (biggest improvement first)
+	sort.Slice(improvementList, func(i, j int) bool {
+		return math.Abs(improvementList[i].FlatChangePercent) > math.Abs(improvementList[j].FlatChangePercent)
+	})
+
 	fmt.Printf("Total Functions Analyzed: %d\n", len(report.FunctionChanges))
-	fmt.Printf("Regressions: %d\n", regressions)
-	fmt.Printf("Improvements: %d\n", improvements)
+	fmt.Printf("Regressions: %d\n", len(regressionList))
+	fmt.Printf("Improvements: %d\n", len(improvementList))
 	fmt.Printf("Stable: %d\n", stable)
 
-	if regressions > 0 {
-		fmt.Println("\n⚠️  Top Regressions:")
-		for _, change := range report.FunctionChanges {
-			if change.ChangeType == "REGRESSION" {
-				fmt.Printf("  • %s\n", change.Summary())
-			}
+	if len(regressionList) > 0 {
+		fmt.Println("\n⚠️  Top Regressions (worst first):")
+		for _, change := range regressionList {
+			fmt.Printf("  • %s\n", change.Summary())
 		}
 	}
 
-	if improvements > 0 {
-		fmt.Println("\n✅ Top Improvements:")
-		for _, change := range report.FunctionChanges {
-			if change.ChangeType == "IMPROVEMENT" {
-				fmt.Printf("  • %s\n", change.Summary())
-			}
+	if len(improvementList) > 0 {
+		fmt.Println("\n✅ Top Improvements (best first):")
+		for _, change := range improvementList {
+			fmt.Printf("  • %s\n", change.Summary())
 		}
 	}
 }
-
 func printDetailedReport(report *tracker.ProfileChangeReport) {
 	for i, change := range report.FunctionChanges {
 		if i > 0 {

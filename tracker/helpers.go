@@ -25,18 +25,15 @@ func DetectChange(baseline, current *parser.LineObj) (*FunctionChangeResult, err
 	}
 
 	var flatChange float64
-	isFlatNotZero := current.Flat != 0 || baseline.Flat != 0
-	if isFlatNotZero {
+	if baseline.Flat != 0 {
 		flatChange = ((current.Flat - baseline.Flat) / baseline.Flat) * 100
 	}
 
 	var cumChange float64
-	isCumNotZero := current.Cum != 0 || baseline.Cum != 0
-	if isCumNotZero {
+	if baseline.Cum != 0 {
 		cumChange = ((current.Cum - baseline.Cum) / baseline.Cum) * 100
 	}
 
-	// TODO => Magic values
 	changeType := "STABLE"
 	if flatChange > 0 {
 		changeType = "REGRESSION"
@@ -44,6 +41,7 @@ func DetectChange(baseline, current *parser.LineObj) (*FunctionChangeResult, err
 		changeType = "IMPROVEMENT"
 	}
 
+	// TODO: Maybe we should indicate no the name that it is a new function
 	return &FunctionChangeResult{
 		FunctionName:      current.FnName,
 		ChangeType:        changeType,

@@ -3,11 +3,9 @@ package cli
 import (
 	"fmt"
 	"log/slog"
-	"path/filepath"
 
 	"github.com/AlexsanderHamir/prof/args"
 	"github.com/AlexsanderHamir/prof/config"
-	"github.com/AlexsanderHamir/prof/shared"
 	"github.com/AlexsanderHamir/prof/tracker"
 	"github.com/AlexsanderHamir/prof/version"
 	"github.com/spf13/cobra"
@@ -221,34 +219,23 @@ func runSetup(cmd *cobra.Command, args []string) error {
 
 // runTrack handles the track command execution
 func runTrack(_ *cobra.Command, _ []string) error {
-
 	if !validProfiles[profileType] {
 		return fmt.Errorf("invalid profile type '%s'. Valid types: cpu, memory, mutex, block", profileType)
 	}
 
-	// Validate output format
 	validFormats := map[string]bool{
 		"summary":  true,
 		"detailed": true,
 	}
+
 	if !validFormats[outputFormat] {
 		return fmt.Errorf("invalid output format '%s'. Valid formats: summary, detailed", outputFormat)
 	}
 
-	slog.Info("Starting performance tracking",
-		"baseline", baselineTag,
-		"current", currentTag,
-		"benchmark", benchmarkName,
-		"profile", profileType)
-
-	// Construct tag paths
-	baselineTagPath := filepath.Join(shared.MainDirOutput, baselineTag)
-	currentTagPath := filepath.Join(shared.MainDirOutput, currentTag)
-
 	// Call the tracker API
 	report, err := tracker.CheckPerformanceDifferences(
-		baselineTagPath,
-		currentTagPath,
+		baselineTag,
+		currentTag,
 		benchmarkName,
 		profileType,
 	)

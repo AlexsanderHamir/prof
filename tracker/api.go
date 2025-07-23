@@ -10,17 +10,17 @@ import (
 
 func CheckPerformanceDifferences(baselineTag, currentTag, benchName, profileType string) (*ProfileChangeReport, error) {
 	fileName := fmt.Sprintf("%s_%s.txt", benchName, profileType)
-	textFilePath1 := filepath.Join(shared.MainDirOutput, baselineTag, shared.ProfileTextDir, benchName, fileName)
-	textFilePath2 := filepath.Join(shared.MainDirOutput, currentTag, shared.ProfileTextDir, benchName, fileName)
+	textFilePath1BaseLine := filepath.Join(shared.MainDirOutput, baselineTag, shared.ProfileTextDir, benchName, fileName)
+	textFilePath2Current := filepath.Join(shared.MainDirOutput, currentTag, shared.ProfileTextDir, benchName, fileName)
 
-	lineObjsBaseline, err := parser.TurnLinesIntoObjects(textFilePath1, profileType)
+	lineObjsBaseline, err := parser.TurnLinesIntoObjects(textFilePath1BaseLine, profileType)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePath1, err)
+		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePath1BaseLine, err)
 	}
 
-	lineObjsCurrent, err := parser.TurnLinesIntoObjects(textFilePath2, profileType)
+	lineObjsCurrent, err := parser.TurnLinesIntoObjects(textFilePath2Current, profileType)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePath1, err)
+		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePath2Current, err)
 	}
 
 	matchingMap := createHashFromLineObjects(lineObjsBaseline)
