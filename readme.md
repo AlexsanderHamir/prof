@@ -115,7 +115,7 @@ prof --benchmarks "[BenchmarkMyFunction]" --profiles "[cpu,memory]" --count 5 --
 3. **Compare performance between runs**:
 
 ```bash
-prof track --base-tag v1.0 --current-tag v1.1 --bench BenchmarkMyFunction --profile-type cpu
+prof track --base-tag "v1.0" --current-tag "v1.1" --bench "BenchmarkMyFunction" --profile-type "cpu"
 ```
 
 ## Usage
@@ -271,7 +271,7 @@ prof --benchmarks "[BenchmarkPool,BenchmarkCache,BenchmarkQueue]" \
      --tag "v2.0"
 ```
 
-### Performance Comparison (Analysis Feature)
+### Performance Comparison
 
 ```bash
 # Compare collected data between two runs
@@ -293,9 +293,9 @@ prof track --base-tag baseline \
 
 2. **"Profile file not found"**
 
-   - Verify benchmark names are correct (must start with `Benchmark`)
-   - Ensure benchmarks actually run and complete successfully
+   - Verify benchmark names are correct
    - Run the command from where the benchmark is located
+   - Ensure benchmarks actually run and complete successfully
 
 3. **Too many function files generated**
 
