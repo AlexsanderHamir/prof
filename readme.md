@@ -2,15 +2,15 @@
 
 Prof automates Go performance profiling by collecting all pprof data in one command and enabling easy performance comparisons between benchmark runs.
 
-## Summary View: High-Level Performance Overview
+## Benchmark Comparison Summary View:
 
-This view highlights regressions, improvements, and stable functions in your benchmarks at a glance.
+This view highlights regressions, improvements, and stable functions.
 
 ![Summary of benchmark performance changes](./summary_example.png)
 
-## Detailed View: Function-Level Comparisons
+## Benchmark Comparison Detailed View:
 
-This view provides a breakdown of performance metrics per function across benchmark runs.
+This view provides a breakdown of performance metrics per function.
 
 ![Function-level performance comparison](./detailed_example.png)
 
