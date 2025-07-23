@@ -13,9 +13,8 @@ func (cr *FunctionChangeResult) Summary() string {
 		sign = "+"
 	}
 
-	return fmt.Sprintf("%s: %s %s%.1f%% (%.3fs → %.3fs)",
+	return fmt.Sprintf("%s: %s%.1f%% (%.3fs → %.3fs)",
 		cr.FunctionName,
-		cr.ChangeType,
 		sign,
 		cr.FlatChangePercent,
 		cr.FlatAbsolute.Before,
