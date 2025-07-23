@@ -3,192 +3,278 @@ package cli
 import (
 	"fmt"
 	"log/slog"
+	"path/filepath"
 
-	"github.com/AlexsanderHamir/prof/analyzer"
 	"github.com/AlexsanderHamir/prof/args"
-	"github.com/AlexsanderHamir/prof/benchmark"
 	"github.com/AlexsanderHamir/prof/config"
 	"github.com/AlexsanderHamir/prof/shared"
+	"github.com/AlexsanderHamir/prof/tracker"
+	"github.com/AlexsanderHamir/prof/version"
 	"github.com/spf13/cobra"
 )
 
-// ParseArguments parses CLI arguments using cobra and returns an Arguments struct.
-func ParseArguments() (*Arguments, error) {
-	var args Arguments
+var (
+	// Root command flags
+	showVersion    bool
+	benchmarks     string
+	profiles       string
+	tag            string
+	count          int
+	generalAnalyze bool
+	flagProfiles   bool
 
-	var rootCmd = &cobra.Command{
+	// Setup command flags
+	createTemplate bool
+	outputPath     string
+
+	// Track command flags
+	baselineTag   string
+	currentTag    string
+	benchmarkName string
+	profileType   string
+	outputFormat  string
+)
+
+// CreateRootCmd creates and returns the root cobra command
+func CreateRootCmd() *cobra.Command {
+	rootCmd := &cobra.Command{
 		Use:   "prof",
 		Short: "CLI tool for organizing and analyzing Go benchmarks with AI",
-		RunE: func(_ *cobra.Command, _ []string) error {
-			return nil
-		},
+		Long: `Prof is a comprehensive tool for running Go benchmarks, collecting performance profiles,
+and analyzing them with AI to identify performance bottlenecks and improvements.`,
+		RunE: runBenchmarks,
 	}
 
-	rootCmd.Flags().BoolVarP(&args.Version, "version", "v", false, "Show version information")
+	benchFlag := "benchmarks"
+	profileFlag := "profiles"
+	tagFlag := "tag"
+	countFlag := "count"
 
-	benchUsage := "Benchmarks to run (e.g., '[BenchmarkGenPool, BenchmarkSyncPool]')"
-	rootCmd.Flags().StringVar(&args.Benchmarks, "benchmarks", "", benchUsage)
+	rootCmd.Flags().StringVar(&benchmarks, benchFlag, "", "Benchmarks to run (e.g., '[BenchmarkGenPool, BenchmarkSyncPool]')")
+	rootCmd.Flags().StringVar(&profiles, profileFlag, "", "Profiles to use (e.g., '[cpu,memory,mutex]')")
+	rootCmd.Flags().StringVar(&tag, tagFlag, "", "Tag for the run")
+	rootCmd.Flags().IntVar(&count, countFlag, 0, "Number of runs")
 
-	rootCmd.Flags().StringVar(&args.Profiles, "profiles", "", "Profiles to use (e.g., '[cpu,memory,mutex]')")
-	rootCmd.Flags().StringVar(&args.Tag, "tag", "", "Tag for the run")
-	rootCmd.Flags().IntVar(&args.Count, "count", 0, "Number of runs")
-	rootCmd.Flags().BoolVar(&args.GeneralAnalyze, "general_analyze", false, "Run general AI analysis")
-	rootCmd.Flags().BoolVar(&args.FlagProfiles, "flag_profiles", false, "Flag profiles for review")
+	rootCmd.MarkFlagRequired(benchFlag)
+	rootCmd.MarkFlagRequired(profileFlag)
+	rootCmd.MarkFlagRequired(tagFlag)
+	rootCmd.MarkFlagRequired(countFlag)
 
-	var setupCmd = &cobra.Command{
+	// TODO:
+	// There's no need for AI analysis to run together with the benchmarks,
+	// it can easily run afterwards as a seprate command.
+	rootCmd.Flags().BoolVar(&generalAnalyze, "general-analyze", false, "Run general AI analysis")
+	rootCmd.Flags().BoolVar(&flagProfiles, "flag-profiles", false, "Flag profiles for review")
+
+	// Add subcommands
+	rootCmd.AddCommand(createSetupCmd())
+	rootCmd.AddCommand(createTrackCmd())
+	rootCmd.AddCommand(createVersionCmd())
+
+	return rootCmd
+}
+
+func createVersionCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "version",
+		Short: "Show version information",
+		Long:  `Display the current version of prof and check for available updates.`,
+		RunE:  runVersion,
+	}
+
+	return cmd
+}
+
+// createSetupCmd creates the setup subcommand
+func createSetupCmd() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "setup",
 		Short: "Set up configuration for the benchmarking tool",
-		RunE: func(_ *cobra.Command, _ []string) error {
-			args.Command = "setup"
-			return nil
-		},
+		Long:  `Generate template configuration files and set up the benchmarking environment.`,
+		RunE:  runSetup,
 	}
 
-	setupUsage := "Generate a new template configuration file"
-	setupCmd.Flags().BoolVar(&args.CreateTemplate, "create-template", false, setupUsage)
+	createTemplateFlag := "create-template"
+	outputPathFlagh := "output-path"
 
-	outputPathUsage := "Destination path for the template"
-	setupCmd.Flags().StringVar(&args.OutputPath, "output-path", "./config_template.json", outputPathUsage)
+	cmd.Flags().BoolVar(&createTemplate, createTemplateFlag, false, "Generate a new template configuration file")
+	cmd.Flags().StringVar(&outputPath, outputPathFlagh, "./config_template.json", "Destination path for the template")
 
-	rootCmd.AddCommand(setupCmd)
+	cmd.MarkFlagRequired(createTemplateFlag)
+	cmd.MarkFlagRequired(outputPathFlagh)
 
-	var trackCmd = &cobra.Command{
-		Use:   "tracker",
-		Short: "Compare performance between two benchmark runs to detect regressions and improvements.",
-		RunE: func(_ *cobra.Command, _ []string) error {
-			args.Command = "tracker"
-			return nil
-		},
-	}
-
-	trackCmd.Flags().StringVar(&args.BaseLineTagName, "base-tag", "", "Name of the base tag")
-	trackCmd.Flags().StringVar(&args.CurrentTagName, "current-tag", "", "Name of the current tag")
-	trackCmd.Flags().StringVar(&args.BenchmarkName, "bench", "", "Name of the benchmark")
-	trackCmd.Flags().StringVar(&args.ProfileType, "profile-type", "", "Name of the profile (cpu, memory, mutex, block)")
-
-	// Mark required flags for track command
-	trackCmd.MarkFlagRequired("base-tag")
-	trackCmd.MarkFlagRequired("current-tag")
-	trackCmd.MarkFlagRequired("bench")
-	trackCmd.MarkFlagRequired("profile-type")
-
-	rootCmd.AddCommand(trackCmd)
-
-	if err := rootCmd.Execute(); err != nil {
-		return nil, err
-	}
-
-	return &args, nil
+	return cmd
 }
 
-// ValidateRequiredArgs checks if the required arguments are present for running the main command.
-func ValidateRequiredArgs(args *Arguments) bool {
-	hasCommandOrVersion := args.Command != "" || args.Version
-	if hasCommandOrVersion {
-		return true
+// createTrackCmd creates the track subcommand
+func createTrackCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "track",
+		Short: "Compare performance between two benchmark runs to detect regressions and improvements",
+		Long: `Compare performance differences between two benchmark runs identified by their tags.
+This command analyzes profile data to detect regressions and improvements, providing
+detailed reports on function-level performance changes including execution time deltas
+and percentage changes.
+
+Example:
+  prof track --base-tag v1.0 --current-tag v1.1 --bench BenchmarkPool --profile-type cpu`,
+		RunE: runTrack,
 	}
 
-	hasBenchmarkArgs := args.Benchmarks != "" && args.Profiles != "" && args.Tag != "" && args.Count > 0
-	return hasBenchmarkArgs
+	cmd.Flags().StringVar(&baselineTag, "base-tag", "", "Name of the baseline tag")
+	cmd.Flags().StringVar(&currentTag, "current-tag", "", "Name of the current tag")
+	cmd.Flags().StringVar(&benchmarkName, "bench", "", "Name of the benchmark")
+	cmd.Flags().StringVar(&profileType, "profile-type", "", "Profile type (cpu, memory, mutex, block)")
+	cmd.Flags().StringVar(&outputFormat, "format", "detailed", "Output format: 'summary' or 'detailed'")
+
+	// Mark required flags
+	cmd.MarkFlagRequired("base-tag")
+	cmd.MarkFlagRequired("current-tag")
+	cmd.MarkFlagRequired("bench")
+	cmd.MarkFlagRequired("profile-type")
+
+	return cmd
 }
 
-// ParseBenchmarkConfig parses the benchmarks and profiles arguments into string slices.
-func ParseBenchmarkConfig(benchmarks, profiles string) ([]string, []string, error) {
-	if err := validateListArguments(benchmarks, profiles); err != nil {
-		return nil, nil, err
+// Execute runs the CLI application
+func Execute() error {
+	return CreateRootCmd().Execute()
+}
+
+// runBenchmarks handles the root command execution
+func runBenchmarks(_ *cobra.Command, _ []string) error {
+	if showVersion {
+		current, latest := version.Check()
+		output := version.FormatOutput(current, latest)
+		fmt.Print(output)
+		return nil
 	}
 
-	benchmarkList := parseListArgument(benchmarks)
-	profileList := parseListArgument(profiles)
-
-	return benchmarkList, profileList, nil
-}
-
-// SetupDirectories delegates directory setup to the benchmark package.
-func SetupDirectories(tag string, benchmarks, profiles []string) error {
-	return benchmark.SetupDirectories(tag, benchmarks, profiles)
-}
-
-// PrintConfiguration prints the parsed configuration and benchmark filter details.
-func PrintConfiguration(benchArgs *args.BenchArgs, functionFilterPerBench map[string]config.FunctionFilter) {
-	slog.Info("Parsed arguments",
-		"Benchmarks", benchArgs.Benchmarks,
-		"Profiles", benchArgs.Profiles,
-		"Tag", benchArgs.Tag,
-		"Count", benchArgs.Count)
-
-	hasBenchFunctionFilters := len(functionFilterPerBench) > 0
-	if hasBenchFunctionFilters {
-		slog.Info("Benchmark Function Filter Configurations:")
-		for benchmark, cfg := range functionFilterPerBench {
-			slog.Info("Benchmark Config", "Benchmark", benchmark, "Prefixes", cfg.IncludePrefixes, "Ignore", cfg.IgnoreFunctions)
-		}
-	} else {
-		slog.Info("No benchmark configuration found in config file - analyzing all functions")
-	}
-}
-
-// RunBenchmarksAndProcessProfiles runs the full benchmark pipeline for each benchmark.
-func RunBencAndGetProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[string]config.FunctionFilter) error {
-	slog.Info("Starting benchmark pipeline...")
-
-	for _, benchmarkName := range benchArgs.Benchmarks {
-		slog.Info("Running benchmark", "Benchmark", benchmarkName)
-		if err := benchmark.RunBenchmark(benchmarkName, benchArgs.Profiles, benchArgs.Count, benchArgs.Tag); err != nil {
-			return fmt.Errorf("failed to run %s: %w", benchmarkName, err)
-		}
-
-		slog.Info("Processing profiles", "Benchmark", benchmarkName)
-		if err := benchmark.ProcessProfiles(benchmarkName, benchArgs.Profiles, benchArgs.Tag); err != nil {
-			return fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err)
-		}
-
-		slog.Info("Analyzing profile functions", "Benchmark", benchmarkName)
-
-		args := &args.CollectionArgs{
-			Tag:             benchArgs.Tag,
-			Profiles:        benchArgs.Profiles,
-			BenchmarkName:   benchmarkName,
-			BenchmarkConfig: benchmarkConfigs[benchmarkName],
-		}
-
-		if err := benchmark.CollectProfileFunctions(args); err != nil {
-			return fmt.Errorf("failed to analyze profile functions for %s: %w", benchmarkName, err)
-		}
-
-		slog.Info("Completed pipeline for benchmark", "Benchmark", benchmarkName)
+	// Validate required arguments for benchmark run
+	if benchmarks == "" || profiles == "" || tag == "" || count == 0 {
+		return fmt.Errorf("missing required arguments. Use --help for usage information")
 	}
 
-	slog.Info(shared.InfoCollectionSuccess)
+	// Load config
+	cfg, err := config.LoadFromFile("config_template.json")
+	if err != nil {
+		cfg = &config.Config{} // use default
+	}
+
+	// Parse benchmark config
+	benchmarkList, profileList, err := parseBenchmarkConfig(benchmarks, profiles)
+	if err != nil {
+		return fmt.Errorf("failed to parse benchmark config: %w", err)
+	}
+
+	// Setup directories
+	if err := setupDirectories(tag, benchmarkList, profileList); err != nil {
+		return fmt.Errorf("failed to setup directories: %w", err)
+	}
+
+	benchArgs := &args.BenchArgs{
+		Benchmarks: benchmarkList,
+		Profiles:   profileList,
+		Count:      count,
+		Tag:        tag,
+	}
+
+	printConfiguration(benchArgs, cfg.FunctionFilter)
+
+	// Run benchmarks
+	if err := runBencAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
+		return err
+	}
+
+	// Run AI analysis if requested
+	if generalAnalyze {
+		if err := analyzeProfiles(tag, profileList, cfg, flagProfiles); err != nil {
+			return fmt.Errorf("failed to analyze profiles: %w", err)
+		}
+	}
+
+	// Flag profiles if requested
+	if flagProfiles {
+		if err := analyzeProfiles(tag, profileList, cfg, flagProfiles); err != nil {
+			return fmt.Errorf("failed to flag profiles: %w", err)
+		}
+	}
+
 	return nil
 }
 
-// AnalyzeProfiles runs AI analysis for the given tag and profiles using the provided config.
-func AnalyzeProfiles(tag string, profiles []string, cfg *config.Config, isFlagging bool) error {
-	var benchmarks []string
-	var profileTypes []string
+// runVersion handles the version command execution
+func runVersion(_ *cobra.Command, _ []string) error {
+	current, latest := version.Check()
+	output := version.FormatOutput(current, latest)
+	fmt.Print(output)
+	return nil
+}
 
-	if cfg.AIConfig.AllBenchmarks {
-		var err error
-		benchmarks, err = analyzer.ValidateBenchmarkDirectories(tag, nil)
-		if err != nil {
-			return err
-		}
-	} else {
-		var err error
-		benchmarks, err = analyzer.ValidateBenchmarkDirectories(tag, cfg.AIConfig.SpecificBenchmarks)
-		if err != nil {
-			return err
-		}
+// runSetup handles the setup command execution
+func runSetup(cmd *cobra.Command, args []string) error {
+	if createTemplate {
+		return config.CreateTemplate(outputPath)
+	}
+	return fmt.Errorf("setup command requires --create-template flag")
+}
+
+// runTrack handles the track command execution
+func runTrack(_ *cobra.Command, _ []string) error {
+	// Validate profile type
+	validProfiles := map[string]bool{
+		"cpu":    true,
+		"memory": true,
+		"mutex":  true,
+		"block":  true,
+	}
+	if !validProfiles[profileType] {
+		return fmt.Errorf("invalid profile type '%s'. Valid types: cpu, memory, mutex, block", profileType)
 	}
 
-	if cfg.AIConfig.AllProfiles {
-		profileTypes = profiles
-	} else {
-		profileTypes = cfg.AIConfig.SpecificProfiles
+	// Validate output format
+	validFormats := map[string]bool{
+		"summary":  true,
+		"detailed": true,
+	}
+	if !validFormats[outputFormat] {
+		return fmt.Errorf("invalid output format '%s'. Valid formats: summary, detailed", outputFormat)
 	}
 
-	slog.Info("Found benchmarks and profile types", "Benchmarks", benchmarks, "ProfileTypes", profileTypes)
+	slog.Info("Starting performance tracking",
+		"baseline", baselineTag,
+		"current", currentTag,
+		"benchmark", benchmarkName,
+		"profile", profileType)
 
-	return analyzer.AnalyzeAllProfiles(tag, benchmarks, profileTypes, cfg, isFlagging)
+	// Construct tag paths
+	baselineTagPath := filepath.Join(shared.MainDirOutput, baselineTag)
+	currentTagPath := filepath.Join(shared.MainDirOutput, currentTag)
+
+	// Call the tracker API
+	report, err := tracker.CheckPerformanceDifferences(
+		baselineTagPath,
+		currentTagPath,
+		benchmarkName,
+		profileType,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to track performance differences: %w", err)
+	}
+
+	// Display results based on output format
+	if len(report.FunctionChanges) == 0 {
+		slog.Info("No function changes detected between the two runs")
+		return nil
+	}
+
+	switch outputFormat {
+	case "summary":
+		printSummary(report)
+	case "detailed":
+		printDetailedReport(report)
+	}
+
+	return nil
 }
