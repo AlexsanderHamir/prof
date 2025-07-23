@@ -1,88 +1,26 @@
-# Prof - Go Benchmark Data Collection Tool
+# Prof - Go Benchmark Profiling Made Simple
 
-Prof is a CLI tool that automates Go performance profiling workflows by collecting and organizing all pprof-generated data, including detailed function-level performance information with configurable filtering, and provides function-by-function performance comparison between benchmark runs.
+Prof automates Go performance profiling by collecting all pprof data in one command and enabling easy performance comparisons between benchmark runs.
 
-## Table of Contents
+## Why Prof?
 
-- [Key Features](#key-features)
-  - [Automated Data Collection](#automated-data-collection)
-    - [Why It Matters](#why-it-matters)
-  - [Performance Change Tracking](#performance-change-tracking)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
-  - [Collecting Benchmark Data](#collecting-benchmark-data)
-  - [Configuration Setup](#configuration-setup)
-  - [Performance Tracking](#performance-tracking)
-- [What Prof Collects For You](#what-prof-collects-for-you)
-- [Supported Profile Types](#supported-profile-types)
-- [Commands Reference](#commands-reference)
-  - [Main Command (Data Collection)](#main-command-data-collection)
-  - [Subcommands](#subcommands)
-- [Requirements](#requirements)
-- [Examples](#examples)
-  - [Basic Data Collection](#basic-data-collection)
-  - [Collect Data for Multiple Benchmarks](#collect-data-for-multiple-benchmarks)
-  - [Performance Comparison Output](#performance-comparison)
-- [Troubleshooting](#troubleshooting)
-  - [Common Issues](#common-issues)
+**Before Prof:** Profiling a single benchmark with multiple profile types requires dozens of manual commands:
 
-## Key Features
+```bash
+# Run benchmark
+go test -bench=BenchmarkName -cpuprofile=cpu.out -memprofile=memory.out ...
 
-### Automated Data Collection
+# Generate reports for each profile type
+go tool pprof -cum -top cpu.out
+go tool pprof -cum -top memory.out
 
-**Prof automates collection and organization of data from these standard `pprof` workflows:**
+# Extract function-level data for each function of interest
+go tool pprof -list=Function1 cpu.out > function1.txt
+go tool pprof -list=Function2 cpu.out > function2.txt
+# ... repeat for every function × every profile type
+```
 
-1. **Benchmark execution with profiling:**
-
-   ```bash
-   go test -bench=BenchmarkName -cpuprofile=cpu.out -memprofile=memory.out -mutexprofile=mutex.out -blockprofile=block.out -count=N
-   ```
-
-2. **Text reports for top functions (per profile):**
-
-   ```bash
-   go tool pprof -cum -edgefraction=0 -nodefraction=0 -top cpu.out
-   # (repeated for each profile type)
-   ```
-
-3. **Graphical visualizations (PNG):**
-
-   ```bash
-   go tool pprof -png cpu.out > cpu_graph.png
-   # (repeated for each profile type)
-   ```
-
-4. **Function-level profiling data:**
-
-   ```bash
-   go tool pprof -list=FunctionName1 cpu.out > function1.txt
-   go tool pprof -list=FunctionName2 cpu.out > function2.txt
-   # ... repeated across all specified functions and profile types
-   # (Prof will auto-collect all functions if no configuration is provided)
-   ```
-
-### Why It Matters
-
-Without Prof, a typical profiling session might require dozens of manual steps.
-
-**Example: 1 benchmark, 2 profile types, 10 functions of interest**
-
-| Task                        | Commands Required |
-| --------------------------- | ----------------- |
-| Benchmark execution         | 1                 |
-| Top functions (per profile) | 2                 |
-| Function-level reports      | 20                |
-| **Total**                   | **23 commands**   |
-
-**With Prof: ✅ Just one command to collect and structure everything — no manual repetition. Easily search any function or profile by name.**
-
-## Performance Change Tracking
-
-- Compare performance between different benchmark runs at the profile level.
-- Detect regressions and improvements with detailed reporting.
-
-![image example](./summary_example.png)
+**With Prof:** One command collects everything and organizes it automatically.
 
 ## Installation
 
@@ -90,37 +28,23 @@ Without Prof, a typical profiling session might require dozens of manual steps.
 go install github.com/AlexsanderHamir/prof/cmd/prof@latest
 ```
 
-Or clone and build from source:
-
-```bash
-git clone https://github.com/AlexsanderHamir/prof.git
-cd prof
-go build -o prof cmd/prof/main.go
-```
-
 ## Quick Start
 
-1. **Set up configuration** (optional - controls which functions to collect data for):
+1. **Collect profiling data:**
 
 ```bash
-prof setup --create-template
+prof --benchmarks "[BenchmarkMyFunction]" --profiles "[cpu,memory]" --count 5 --tag "tagName"
 ```
 
-2. **Run benchmarks and collect all profiling data**:
+2. **Compare performance between tags:**
 
 ```bash
-prof --benchmarks "[BenchmarkMyFunction]" --profiles "[cpu,memory]" --count 5 --tag "v1.0"
-```
-
-3. **Compare performance between runs**:
-
-```bash
-prof track --base-tag "v1.0" --current-tag "v1.1" --bench "BenchmarkMyFunction" --profile-type "cpu"
+prof track --base-tag "tagName1" --current-tag "tagName2" --bench "BenchmarkMyFunction" --profile-type "cpu"
 ```
 
 ## Usage
 
-### Collecting Benchmark Data
+### Data Collection
 
 ```bash
 prof --benchmarks "[BenchmarkFunc1,BenchmarkFunc2]" \
@@ -129,210 +53,129 @@ prof --benchmarks "[BenchmarkFunc1,BenchmarkFunc2]" \
      --tag "experiment-1"
 ```
 
-**Parameters:**
+**Options:**
 
-- `--benchmarks`: List of benchmark functions to run (in brackets)
-- `--profiles`: Types of profiles to collect (`cpu`, `memory`, `mutex`, `block`)
+- `--benchmarks`: Benchmark functions to run (comma-separated in brackets)
+- `--profiles`: Profile types: `cpu`, `memory`, `mutex`, `block`
 - `--count`: Number of benchmark iterations
-- `--tag`: Identifier for this benchmark run
+- `--tag`: Identifier for this run
 
-### Configuration Setup
+### Performance Comparison
 
-Generate a configuration template file:
+```bash
+prof track --base-tag "baselineTag" \
+           --current-tag "experimentTag" \
+           --bench "BenchmarkFunctionName" \
+           --profile-type "cpu" \
+           --format "summary"
+```
+
+**Options:**
+
+- `--base-tag`/`--current-tag`: Tags to compare
+- `--bench`: Exact benchmark function name
+- `--profile-type`: `cpu`, `memory`, `mutex`, or `block`
+- `--format`: `summary` (quick overview) or `detailed` (comprehensive reports)
+
+![Performance comparison example](./summary_example.png)
+
+## What Prof Collects
+
+Prof organizes all data automatically:
+
+```
+bench/your-tag/
+├── bin/                    # Binary profile files (.out files)
+├── text/                   # Benchmark output and pprof text reports
+├── cpu_functions/          # Function-level CPU profiling data
+├── memory_functions/       # Function-level memory profiling data
+└── [profile]_functions/    # Other profile types
+```
+
+Each directory contains:
+
+- Raw benchmark output
+- Top functions reports (`go tool pprof -top`)
+- Function-level performance data (`go tool pprof -list=FunctionName`)
+- Profile visualizations (PNG graphs)
+
+## Configuration (Optional)
+
+Control which functions to collect detailed data for:
 
 ```bash
 prof setup --create-template
 ```
 
-Example configuration (controls which functions to collect detailed data for):
+Example config:
 
 ```json
 {
   "function_collection_filter": {
     "BenchmarkMyPool": {
-      "include_prefixes": [
-        "github.com/myorg/myproject",
-        "github.com/myorg/myproject/internal"
-      ],
+      "include_prefixes": ["github.com/myorg/myproject"],
       "ignore_functions": ["init", "TestMain"]
     }
   }
 }
 ```
 
-**Options:**
-
-- `include_prefixes`: Only collect detailed data for functions with these prefixes.
-- `ignore_functions`: Skip these specific function names even if includes a specified prefix.
-
-**Without configuration**: Prof collects data for all functions (which can be a lot of files).
-
-### Performance Tracking
-
-Compare two benchmark runs:
-
-```bash
-prof track --base-tag "baseline" \
-           --current-tag "experiment" \
-           --bench "BenchmarkMyFunction" \
-           --profile-type "cpu" \
-           --format "detailed"
-```
-
-**Parameters:**
-
-- `--base-tag`: Reference benchmark tag to compare against (e.g., "v1.0", "main")
-- `--current-tag`: New benchmark tag to evaluate (e.g., "v1.1", "experiment")
-- `--bench`: Exact benchmark function name (e.g., "BenchmarkMyFunction")
-- `--profile-type`: Profile data type - `cpu`, `memory`, `mutex`, or `block`
-- `--format`: Output format - `detailed` (full reports) or `summary` (quick overview)
-
-**Format Options:**
-
-- `detailed`: Shows comprehensive individual reports for each function with full performance analysis, including flat time analysis, cumulative time analysis, impact assessment, and severity classification. Each function gets its own formatted report with before/after comparisons, percentage changes, and detailed breakdowns.
-
-- `sumamry`: Shows a concise overview with total counts of regressions/improvements/stable functions, followed by simple bullet-point lists of the top regressions and improvements with just the function name, change type, percentage, and before/after timing.
-
-## What Prof Collects For You
-
-Prof organizes all collected data in this structure:
-
-```
-bench/
-└── your-tag/
-    ├── bin/                          # Binary profile files (for further analysis)
-    │   └── BenchmarkName/
-    │       ├── BenchmarkName_cpu.out
-    │       ├── BenchmarkName_memory.out
-    │       └── BenchmarkName.test
-    ├── text/                         # Text profile outputs
-    │   └── BenchmarkName/
-    │       ├── BenchmarkName.txt     # Raw benchmark output
-    │       ├── BenchmarkName_cpu.txt # pprof text output
-    │       └── BenchmarkName_memory.txt
-    ├── cpu_functions/                # Function-level profiling data
-    │   └── BenchmarkName/
-    │       ├── function1.txt         # pprof -list=function1 output
-    │       ├── function2.txt         # pprof -list=function2 output
-    │       └── BenchmarkName_cpu.png # Profile visualization
-    └── memory_functions/
-        └── BenchmarkName/
-            ├── function1.txt
-            └── BenchmarkName_memory.png
-```
-
-## Supported Profile Types
-
-Prof accepts these profile types:
-
-- **cpu**: CPU profiling (execution time)
-- **memory**: Memory allocation profiling
-- **mutex**: Mutex contention profiling
-- **block**: Blocking operations profiling
-
-## Commands Reference
-
-### Main Command (Data Collection)
-
-```bash
-prof --benchmarks "[list]" --profiles "[list]" --count N --tag "name"
-```
-
-### Subcommands
-
-- `prof setup --create-template`: Generate configuration template
-- `prof track`: Compare performance between runs
-- `prof version`: Show version information
+Without configuration, Prof collects data for all functions (can generate many files).
 
 ## Requirements
 
 - Go 1.24.3 or later
-- Access to `go test` and `go tool pprof` commands
-- Must be run from where the desired benchmarks are located.
+- Run from within your Go project directory (where benchmarks are located)
 
 ## Examples
 
-### Basic Data Collection
+**Single benchmark:**
 
 ```bash
-# Collect CPU and memory profiling data
-prof --benchmarks "[BenchmarkStringProcessor]" \
-     --profiles "[cpu,memory]" \
-     --count 5 \
-     --tag "baseline"
+prof --benchmarks "[BenchmarkStringProcessor]" --profiles "[cpu,memory]" --count 5 --tag "baseline"
 ```
 
-### Collect Data for Multiple Benchmarks
+**Multiple benchmarks:**
 
 ```bash
-prof --benchmarks "[BenchmarkPool,BenchmarkCache,BenchmarkQueue]" \
-     --profiles "[cpu,memory,mutex]" \
-     --count 10 \
-     --tag "v2.0"
+prof --benchmarks "[BenchmarkPool,BenchmarkCache]" --profiles "[cpu,memory,mutex]" --count 10 --tag "v2.0"
 ```
 
-### Performance Comparison
+**Performance tracking:**
 
 ```bash
-# Compare collected data between two runs
-prof track --base-tag baseline \
-           --current-tag v2.0 \
-           --bench BenchmarkPool \
-           --profile-type cpu \
-           --format summary > summary.txt
+prof track --base-tag "baseline" --current-tag "v2.0" --bench "BenchmarkPool" --profile-type "cpu" --format "summary"
 ```
 
 ## Troubleshooting
 
-### Common Issues
+**"go: cannot find main module"**
 
-1. **"go: cannot find main module"**
+- Run prof from within a Go project directory with `go.mod`
 
-   - Ensure you're running prof from within a Go project directory
-   - Check that `go.mod` exists in your project
+**"Profile file not found"**
 
-2. **"Profile file not found"**
+- Verify benchmark names are correct
+- Ensure benchmarks run successfully and generate profiles
 
-   - Verify benchmark names are correct
-   - Run the command from where the benchmark is located
-   - Ensure benchmarks actually run and complete successfully
+**Too many function files**
 
-3. **Too many function files generated**
+- Use configuration to filter functions with `include_prefixes`
 
-   - Use configuration to filter which functions to collect data for
-   - Add `include_prefixes` to focus on your project's functions only
+**Empty profiles**
 
-4. **Empty or small profile files**
-   - Increase benchmark iterations (`--count`)
-   - Ensure benchmark has sufficient work to generate meaningful profiles
+- Increase `--count` for more benchmark iterations
+- Ensure benchmark does enough work to generate meaningful data
 
 ## Contributing
 
-We welcome contributions! Before you start contributing, please ensure you have:
-
-- **Go 1.24.3 or later** installed
-- **Git** for version control
-- Basic understanding of Go testing and benchmarking
-
-### Quick Setup
+Requirements: Go 1.24.3+, Git
 
 ```bash
-# Fork and clone the repository
 git clone https://github.com/AlexsanderHamir/prof.git
 cd prof
-
-# Run tests to verify setup
 go test -v ./...
 
-# Check for linter errors
- go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
- golangci-lint run
-
- # For easier local testing
-
- # Build
- go build -o prof ./cmd/prof
-
- # Set up alias
- alias profDev="Full/Path/To/Binary"
+# Build for local testing
+go build -o prof ./cmd/prof
 ```
