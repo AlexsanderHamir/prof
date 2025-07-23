@@ -1,6 +1,6 @@
 # Prof - Go Benchmark Data Collection Tool
 
-Prof is a CLI tool that automates Go performance profiling workflows by collecting and organizing all pprof-generated data, including detailed function-level performance information, guided by custom configuration.
+Prof is a CLI tool that automates Go performance profiling workflows by collecting and organizing all pprof-generated data, including detailed function-level performance information with configurable filtering, and provides function-by-function performance comparison between benchmark runs.
 
 ## Table of Contents
 
@@ -17,8 +17,8 @@ Prof is a CLI tool that automates Go performance profiling workflows by collecti
 - [What Prof Collects For You](#what-prof-collects-for-you)
 - [Supported Profile Types](#supported-profile-types)
 - [Commands Reference](#commands-reference)
-    - [Main Command (Data Collection)](#main-command-data-collection)
-    - [Subcommands](#subcommands)
+  - [Main Command (Data Collection)](#main-command-data-collection)
+  - [Subcommands](#subcommands)
 - [Requirements](#requirements)
 - [Examples](#examples)
   - [Basic Data Collection](#basic-data-collection)
@@ -82,7 +82,7 @@ Without Prof, a typical profiling session might require dozens of manual steps.
 - Compare performance between different benchmark runs at the profile level.
 - Detect regressions and improvements with detailed reporting.
 
-[image example](./summary_example.png)
+![image example](./summary_example.png)
 
 ## Installation
 
