@@ -33,11 +33,10 @@ var (
 // CreateRootCmd creates and returns the root cobra command.
 func CreateRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "prof",
-		Short: "CLI tool for organizing and analyzing Go benchmarks with AI",
-		Long: `Prof is a comprehensive tool for running Go benchmarks, collecting performance profiles,
-and analyzing them with AI to identify performance bottlenecks and improvements.`,
-		RunE: runBenchmarks,
+		Use:     "prof",
+		Short:   "CLI tool for organizing pprof generated data, and analyzing performance differences at the function level.",
+		RunE:    runBenchmarks,
+		Example: `prof --benchmarks "[BenchmarkGenPool]" --profiles "[cpu,memory,mutex,block]"  --count 10 --tag "tag1"`,
 	}
 
 	benchFlag := "benchmarks"
@@ -45,17 +44,16 @@ and analyzing them with AI to identify performance bottlenecks and improvements.
 	tagFlag := "tag"
 	countFlag := "count"
 
-	rootCmd.Flags().StringVar(&benchmarks, benchFlag, "", "Benchmarks to run (e.g., '[BenchmarkGenPool,...]')")
-	rootCmd.Flags().StringVar(&profiles, profileFlag, "", "Profiles to use (e.g., '[cpu,memory,mutex]')")
+	rootCmd.Flags().StringVar(&benchmarks, benchFlag, "", `Benchmarks to run (e.g., "[BenchmarkGenPool,BenchmarkSyncPool]")"`)
+	rootCmd.Flags().StringVar(&profiles, profileFlag, "", `Profiles to use (e.g., "[cpu,memory,mutex]")`)
 	rootCmd.Flags().StringVar(&tag, tagFlag, "", "Tag for the run")
 	rootCmd.Flags().IntVar(&count, countFlag, 0, "Number of runs")
 
-	rootCmd.MarkFlagRequired(benchFlag)   //nolint:errcheck // won't fail — flags are created just above
-	rootCmd.MarkFlagRequired(profileFlag) //nolint:errcheck // won't fail — flags are created just above
-	rootCmd.MarkFlagRequired(tagFlag)     //nolint:errcheck // won't fail — flags are created just above
-	rootCmd.MarkFlagRequired(countFlag)   //nolint:errcheck // won't fail — flags are created just above
+	_ = rootCmd.MarkFlagRequired(benchFlag)
+	_ = rootCmd.MarkFlagRequired(profileFlag)
+	_ = rootCmd.MarkFlagRequired(tagFlag)
+	_ = rootCmd.MarkFlagRequired(countFlag)
 
-	// Add subcommands.
 	rootCmd.AddCommand(createSetupCmd())
 	rootCmd.AddCommand(createTrackCmd())
 	rootCmd.AddCommand(createVersionCmd())
@@ -65,10 +63,10 @@ and analyzing them with AI to identify performance bottlenecks and improvements.
 
 func createVersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "version",
-		Short: "Show version information",
-		Long:  `Display the current version of prof and check for available updates.`,
-		RunE:  runVersion,
+		Use:                   "version",
+		Short:                 "Display the current version of prof and check for available updates.",
+		RunE:                  runVersion,
+		DisableFlagsInUseLine: true,
 	}
 
 	return cmd
@@ -78,15 +76,13 @@ func createVersionCmd() *cobra.Command {
 func createSetupCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "setup",
-		Short: "Set up configuration for the benchmarking tool",
-		Long:  `Generate template configuration files and set up the benchmarking environment.`,
+		Short: "Generate template configuration file",
 		RunE:  runSetup,
 	}
 
 	createTemplateFlag := "create-template"
 	cmd.Flags().BoolVar(&createTemplate, createTemplateFlag, false, "Generate a new template configuration file")
-	cmd.MarkFlagRequired(createTemplateFlag) //nolint:errcheck // won't fail — flags are created just above
-
+	_ = cmd.MarkFlagRequired(createTemplateFlag)
 	return cmd
 }
 
@@ -95,27 +91,29 @@ func createTrackCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "track",
 		Short: "Compare performance between two benchmark runs to detect regressions and improvements",
-		Long: `Compare performance differences between two benchmark runs identified by their tags.
-This command analyzes profile data to detect regressions and improvements, providing
-detailed reports on function-level performance changes including execution time deltas
-and percentage changes.
-
-Example:
-  prof track --base-tag v1.0 --current-tag v1.1 --bench BenchmarkPool --profile-type cpu`,
-		RunE: runTrack,
+		RunE:  runTrack,
+		Example: `
+# Compare CPU profiles between two tags
+prof track --base-tag "tag1" --current-tag "tag2" --profile-type "cpu" --bench "BenchmarkGenPool" --format "summary"
+`,
 	}
 
-	cmd.Flags().StringVar(&baselineTag, "base-tag", "", "Name of the baseline tag")
-	cmd.Flags().StringVar(&currentTag, "current-tag", "", "Name of the current tag")
-	cmd.Flags().StringVar(&benchmarkName, "bench", "", "Name of the benchmark")
-	cmd.Flags().StringVar(&profileType, "profile-type", "", "Profile type (cpu, memory, mutex, block)")
-	cmd.Flags().StringVar(&outputFormat, "format", "detailed", "Output format: 'summary' or 'detailed'")
+	baseTagFlag := "base-tag"
+	currentTagFlag := "current-tag"
+	benchNameFlag := "bench-name"
+	profileTypeFlag := "profile-type"
+	outputFormatFlag := "output-format"
 
-	// Mark required flags
-	cmd.MarkFlagRequired("base-tag")     //nolint:errcheck // won't fail — flags are created just above
-	cmd.MarkFlagRequired("current-tag")  //nolint:errcheck // won't fail — flags are created just above
-	cmd.MarkFlagRequired("bench")        //nolint:errcheck // won't fail — flags are created just above
-	cmd.MarkFlagRequired("profile-type") //nolint:errcheck // won't fail — flags are created just above
+	cmd.Flags().StringVar(&baselineTag, baseTagFlag, "", "Name of the baseline tag")
+	cmd.Flags().StringVar(&currentTag, currentTagFlag, "", "Name of the current tag")
+	cmd.Flags().StringVar(&benchmarkName, benchNameFlag, "", "Name of the benchmark")
+	cmd.Flags().StringVar(&profileType, profileTypeFlag, "", "Profile type (cpu, memory, mutex, block)")
+	cmd.Flags().StringVar(&outputFormat, outputFormatFlag, "detailed", "Output format: 'summary' or 'detailed'")
+
+	_ = cmd.MarkFlagRequired(baseTagFlag)
+	_ = cmd.MarkFlagRequired(currentTagFlag)
+	_ = cmd.MarkFlagRequired(benchNameFlag)
+	_ = cmd.MarkFlagRequired(profileTypeFlag)
 
 	return cmd
 }
