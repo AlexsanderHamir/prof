@@ -14,10 +14,22 @@ import (
 
 // SetupDirectories creates the structure of the library's output.
 func SetupDirectories(tag string, benchmarks, profiles []string) error {
-	if err := createBenchDirectories(tag, benchmarks); err != nil {
+	currentDir, err := os.Getwd()
+	if err != nil {
 		return err
 	}
-	return createProfileFunctionDirectories(tag, profiles, benchmarks)
+	tagDir := filepath.Join(currentDir, shared.MainDirOutput, tag)
+
+	err = deleteContents(tagDir)
+	if err != nil {
+		return fmt.Errorf("deleteContents failed: %w", err)
+	}
+
+	if err := createBenchDirectories(tagDir, benchmarks); err != nil {
+		return err
+	}
+
+	return createProfileFunctionDirectories(tagDir, profiles, benchmarks)
 }
 
 // RunBenchmark runs a specific benchmark and collects all of its information.
@@ -26,10 +38,8 @@ func RunBenchmark(benchmarkName string, profiles []string, count int, tag string
 	if err != nil {
 		return err
 	}
-	textDir, binDir, err := getOrCreateOutputDirectories(benchmarkName, tag)
-	if err != nil {
-		return fmt.Errorf("couldn't get output directories: %w", err)
-	}
+
+	textDir, binDir := getOrCreateOutputDirectories(benchmarkName, tag)
 
 	outputFile := filepath.Join(textDir, fmt.Sprintf("%s.%s", benchmarkName, textExtension))
 	if err = runBenchmarkCommand(cmd, outputFile); err != nil {
@@ -50,10 +60,6 @@ func ProcessProfiles(benchmarkName string, profiles []string, tag string) error 
 	textDir := filepath.Join(tagDir, shared.ProfileTextDir, benchmarkName)
 
 	for _, profile := range profiles {
-		if profile == shared.TRACE {
-			continue
-		}
-
 		profileFile := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
 		if _, err := os.Stat(profileFile); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
@@ -84,10 +90,6 @@ func ProcessProfiles(benchmarkName string, profiles []string, tag string) error 
 // CollectProfileFunctions collects all pprof information for each function, according to configurations.
 func CollectProfileFunctions(args *args.CollectionArgs) error {
 	for _, profile := range args.Profiles {
-		if profile == shared.TRACE {
-			continue
-		}
-
 		paths := getProfilePaths(args.Tag, args.BenchmarkName, profile)
 		if err := os.MkdirAll(paths.FunctionDirectory, shared.PermDir); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)

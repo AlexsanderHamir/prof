@@ -19,7 +19,6 @@ func getProfileFlags() map[string]string {
 		"memory": "-memprofile=memory.out",
 		"mutex":  "-mutexprofile=mutex.out",
 		"block":  "-blockprofile=block.out",
-		"trace":  "-trace=trace.out",
 	}
 }
 
@@ -42,8 +41,7 @@ const (
 )
 
 // createBenchDirectories creates the main structure of the library's output.
-func createBenchDirectories(tag string, benchmarks []string) error {
-	tagDir := filepath.Join(shared.MainDirOutput, tag)
+func createBenchDirectories(tagDir string, benchmarks []string) error {
 	binDir := filepath.Join(tagDir, shared.ProfileBinDir)
 	textDir := filepath.Join(tagDir, shared.ProfileTextDir)
 	descFile := filepath.Join(tagDir, descriptionFileName)
@@ -76,14 +74,9 @@ func createBenchDirectories(tag string, benchmarks []string) error {
 }
 
 // createProfileFunctionDirectories creates the structure for the code line level data collection.
-func createProfileFunctionDirectories(tag string, profiles, benchmarks []string) error {
-	tagDir := filepath.Join(shared.MainDirOutput, tag)
+func createProfileFunctionDirectories(tagDir string, profiles, benchmarks []string) error {
 
 	for _, profile := range profiles {
-		if profile == shared.TRACE {
-			continue
-		}
-
 		profileDir := filepath.Join(tagDir, profile+shared.FunctionsDirSuffix)
 		if err := os.MkdirAll(profileDir, shared.PermDir); err != nil {
 			return fmt.Errorf("failed to create profile directory %s: %w", profileDir, err)
@@ -124,23 +117,41 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) (
 	return cmd, nil
 }
 
+func deleteContents(dir string) error {
+	info, err := os.Stat(dir)
+
+	if os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	if !info.IsDir() {
+		return fmt.Errorf("path is not a directory: %s", dir)
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		path := filepath.Join(dir, entry.Name())
+		if err := os.RemoveAll(path); err != nil {
+			return fmt.Errorf("failed to remove %s: %w", path, err)
+		}
+	}
+
+	return nil
+}
+
 // getOutputDirectories gets or creates the output directories.
-func getOrCreateOutputDirectories(benchmarkName, tag string) (textDir string, binDir string, err error) {
+func getOrCreateOutputDirectories(benchmarkName, tag string) (textDir string, binDir string) {
 	tagDir := filepath.Join(shared.MainDirOutput, tag)
 	textDir = filepath.Join(tagDir, shared.ProfileTextDir, benchmarkName)
 	binDir = filepath.Join(tagDir, shared.ProfileBinDir, benchmarkName)
 
-	err = os.MkdirAll(textDir, shared.PermDir)
-	if err != nil {
-		return "", "", fmt.Errorf("creating %s directory failed: %w", textDir, err)
-	}
-
-	err = os.MkdirAll(binDir, shared.PermDir)
-	if err != nil {
-		return "", "", fmt.Errorf("creating %s directory failed: %w", binDir, err)
-	}
-
-	return textDir, binDir, nil
+	return textDir, binDir
 }
 
 func runBenchmarkCommand(cmd []string, outputFile string) error {
