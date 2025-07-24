@@ -51,7 +51,7 @@ prof --benchmarks "[BenchmarkMyFunction]" --profiles "[cpu,memory]" --count 5 --
 2. **Compare performance between versions:**
 
 ```bash
-prof track --base-tag "v1.0" --current-tag "v1.1" --bench "BenchmarkMyFunction" --profile-type "cpu"
+prof track --base-tag "v1.0" --current-tag "v1.1" --bench-name "BenchmarkMyFunction" --profile-type "cpu" --output-format "summary"
 ```
 
 ## Usage
@@ -77,17 +77,17 @@ prof --benchmarks "[BenchmarkFunc1,BenchmarkFunc2]" \
 ```bash
 prof track --base-tag "baseline" \
            --current-tag "experiment" \
-           --bench "BenchmarkMyFunction" \
+           --bench-name "BenchmarkMyFunction" \
            --profile-type "cpu" \
-           --format "summary"
+           --output-format "summary"
 ```
 
 **Options:**
 
 - `--base-tag`/`--current-tag`: Tags to compare
-- `--bench`: Exact benchmark function name
+- `--bench-name`: Exact benchmark function name
 - `--profile-type`: `cpu`, `memory`, `mutex`, or `block`
-- `--format`: `summary` (quick overview) or `detailed` (comprehensive reports)
+- `--output-format`: `summary` (quick overview) or `detailed` (comprehensive reports)
 
 ## Configuration (Optional)
 
@@ -156,11 +156,11 @@ prof --benchmarks "[BenchmarkStringProcessor]" --profiles "[cpu,memory]" --count
 ```bash
 prof --benchmarks "[BenchmarkPool,BenchmarkCache]" --profiles "[cpu,memory,mutex]" --count 10 --tag "v2.0"
 ```
-
+"
 **Performance tracking:**
 
 ```bash
-prof track --base-tag "baseline" --current-tag "v2.0" --bench "BenchmarkPool" --profile-type "cpu" --format "summary"
+prof track --base-tag "baseline" --current-tag "v2.0" --bench-name "BenchmarkPool" --profile-type "cpu" --output-format "summary"
 ```
 
 ## Troubleshooting

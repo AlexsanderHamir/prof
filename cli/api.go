@@ -19,9 +19,6 @@ var (
 	tag        string
 	count      int
 
-	// Setup command flags.
-	createTemplate bool
-
 	// Track command flags.
 	baselineTag   string
 	currentTag    string
@@ -32,17 +29,18 @@ var (
 
 // CreateRootCmd creates and returns the root cobra command.
 func CreateRootCmd() *cobra.Command {
-	rootCmd := &cobra.Command{
-		Use:     "prof",
-		Short:   "CLI tool for organizing pprof generated data, and analyzing performance differences at the function level.",
-		RunE:    runBenchmarks,
-		Example: `prof --benchmarks "[BenchmarkGenPool]" --profiles "[cpu,memory,mutex,block]"  --count 10 --tag "tag1"`,
-	}
-
 	benchFlag := "benchmarks"
 	profileFlag := "profiles"
 	tagFlag := "tag"
 	countFlag := "count"
+	example := fmt.Sprintf(`prof --%s "[BenchmarkGenPool]" --%s "[cpu,memory,mutex,block]" --%s 10 --%s "tag1"`, benchFlag, profileFlag, countFlag, tagFlag)
+
+	rootCmd := &cobra.Command{
+		Use:     "prof",
+		Short:   "CLI tool for organizing pprof generated data, and analyzing performance differences at the function level.",
+		RunE:    runBenchmarks,
+		Example: example,
+	}
 
 	rootCmd.Flags().StringVar(&benchmarks, benchFlag, "", `Benchmarks to run (e.g., "[BenchmarkGenPool,BenchmarkSyncPool]")"`)
 	rootCmd.Flags().StringVar(&profiles, profileFlag, "", `Profiles to use (e.g., "[cpu,memory,mutex]")`)
@@ -61,10 +59,40 @@ func CreateRootCmd() *cobra.Command {
 	return rootCmd
 }
 
+// createTrackCmd creates the track subcommand
+func createTrackCmd() *cobra.Command {
+	baseTagFlag := "base-tag"
+	currentTagFlag := "current-tag"
+	benchNameFlag := "bench-name"
+	profileTypeFlag := "profile-type"
+	outputFormatFlag := "output-format"
+	example := fmt.Sprintf(`prof track --%s "tag1" --%s "tag2" --%s "cpu" --%s "BenchmarkGenPool" --%s "summary"`, baseTagFlag, currentTagFlag, profileTypeFlag, benchNameFlag, outputFormatFlag)
+
+	cmd := &cobra.Command{
+		Use:     "track",
+		Short:   "Compare performance between two benchmark runs to detect regressions and improvements",
+		RunE:    runTrack,
+		Example: example,
+	}
+
+	cmd.Flags().StringVar(&baselineTag, baseTagFlag, "", "Name of the baseline tag")
+	cmd.Flags().StringVar(&currentTag, currentTagFlag, "", "Name of the current tag")
+	cmd.Flags().StringVar(&benchmarkName, benchNameFlag, "", "Name of the benchmark")
+	cmd.Flags().StringVar(&profileType, profileTypeFlag, "", "Profile type (cpu, memory, mutex, block)")
+	cmd.Flags().StringVar(&outputFormat, outputFormatFlag, "detailed", `Output format: "summary" or "detailed"`)
+
+	_ = cmd.MarkFlagRequired(baseTagFlag)
+	_ = cmd.MarkFlagRequired(currentTagFlag)
+	_ = cmd.MarkFlagRequired(benchNameFlag)
+	_ = cmd.MarkFlagRequired(profileTypeFlag)
+
+	return cmd
+}
+
 func createVersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "version",
-		Short:                 "Display the current version of prof and check for available updates.",
+		Short:                 "Shows the current version of prof and checks for updates.",
 		RunE:                  runVersion,
 		DisableFlagsInUseLine: true,
 	}
@@ -75,45 +103,11 @@ func createVersionCmd() *cobra.Command {
 // createSetupCmd creates the setup subcommand
 func createSetupCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "setup",
-		Short: "Generate template configuration file",
-		RunE:  runSetup,
+		Use:                   "setup",
+		Short:                 "Generates the template configuration file.",
+		RunE:                  runSetup,
+		DisableFlagsInUseLine: true,
 	}
-
-	createTemplateFlag := "create-template"
-	cmd.Flags().BoolVar(&createTemplate, createTemplateFlag, false, "Generate a new template configuration file")
-	_ = cmd.MarkFlagRequired(createTemplateFlag)
-	return cmd
-}
-
-// createTrackCmd creates the track subcommand
-func createTrackCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "track",
-		Short: "Compare performance between two benchmark runs to detect regressions and improvements",
-		RunE:  runTrack,
-		Example: `
-# Compare CPU profiles between two tags
-prof track --base-tag "tag1" --current-tag "tag2" --profile-type "cpu" --bench "BenchmarkGenPool" --format "summary"
-`,
-	}
-
-	baseTagFlag := "base-tag"
-	currentTagFlag := "current-tag"
-	benchNameFlag := "bench-name"
-	profileTypeFlag := "profile-type"
-	outputFormatFlag := "output-format"
-
-	cmd.Flags().StringVar(&baselineTag, baseTagFlag, "", "Name of the baseline tag")
-	cmd.Flags().StringVar(&currentTag, currentTagFlag, "", "Name of the current tag")
-	cmd.Flags().StringVar(&benchmarkName, benchNameFlag, "", "Name of the benchmark")
-	cmd.Flags().StringVar(&profileType, profileTypeFlag, "", "Profile type (cpu, memory, mutex, block)")
-	cmd.Flags().StringVar(&outputFormat, outputFormatFlag, "detailed", "Output format: 'summary' or 'detailed'")
-
-	_ = cmd.MarkFlagRequired(baseTagFlag)
-	_ = cmd.MarkFlagRequired(currentTagFlag)
-	_ = cmd.MarkFlagRequired(benchNameFlag)
-	_ = cmd.MarkFlagRequired(profileTypeFlag)
 
 	return cmd
 }
@@ -168,10 +162,7 @@ func runVersion(_ *cobra.Command, _ []string) error {
 
 // runSetup handles the setup command execution
 func runSetup(_ *cobra.Command, _ []string) error {
-	if createTemplate {
-		return config.CreateTemplate()
-	}
-	return errors.New("setup command requires --create-template flag")
+	return config.CreateTemplate()
 }
 
 // runTrack handles the track command execution
