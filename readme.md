@@ -11,6 +11,8 @@ Prof automates Go performance profiling by collecting all pprof data in one comm
 ![Version](https://img.shields.io/github/v/tag/AlexsanderHamir/prof?sort=semver)
 ![Go Version](https://img.shields.io/badge/Go-1.24.3%2B-blue)
 
+▶️ [Watch Demo Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/output.mp4)
+
 ## Benchmark Comparison Summary View:
 
 This view highlights regressions, improvements, and stable functions.
