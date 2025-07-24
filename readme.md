@@ -48,10 +48,10 @@ go install github.com/AlexsanderHamir/prof/cmd/prof@latest
 prof --benchmarks "[BenchmarkMyFunction]" --profiles "[cpu,memory]" --count 5 --tag "v1.0"
 ```
 
-2. **Compare performance between versions:**
+2. **Compare performance between tags:**
 
 ```bash
-prof track --base-tag "v1.0" --current-tag "v1.1" --bench-name "BenchmarkMyFunction" --profile-type "cpu" --output-format "summary"
+prof track --base-tag "TagNamev1.0" --current-tag "TagNamev1.1" --bench-name "BenchmarkFunctionName" --profile-type "cpu" --output-format "summary"
 ```
 
 ## Usage
@@ -87,7 +87,7 @@ prof track --base-tag "baseline" \
 - `--base-tag`/`--current-tag`: Tags to compare
 - `--bench-name`: Exact benchmark function name
 - `--profile-type`: `cpu`, `memory`, `mutex`, or `block`
-- `--output-format`: `summary` (quick overview) or `detailed` (comprehensive reports)
+- `--output-format`: `"summary"` (quick overview) or `"detailed"` (comprehensive reports)
 
 ## Configuration (Optional)
 
@@ -96,7 +96,7 @@ By default, Prof collects function-level profiling data for **every function** i
 ### Setting Up Configuration
 
 ```bash
-prof setup --create-template
+prof setup
 ```
 
 This creates a `config_template.json` file in your current directory.
@@ -156,6 +156,7 @@ prof --benchmarks "[BenchmarkStringProcessor]" --profiles "[cpu,memory]" --count
 ```bash
 prof --benchmarks "[BenchmarkPool,BenchmarkCache]" --profiles "[cpu,memory,mutex]" --count 10 --tag "v2.0"
 ```
+
 "
 **Performance tracking:**
 
