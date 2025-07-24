@@ -11,7 +11,7 @@ import (
 
 // CurrentVersion is the current version of the prof tool.
 const (
-	currentVersion = "1.0.0"
+	currentVersion = "1.0.3"
 	gitHubAPIURL   = "https://api.github.com/repos/AlexsanderHamir/prof/releases/latest"
 	waitTime       = 10
 )
