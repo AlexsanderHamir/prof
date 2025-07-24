@@ -201,7 +201,7 @@ prof track --base-tag "baseline" --current-tag "v2.0" --bench-name "BenchmarkPoo
 
 ## Contributing
 
-We welcome contributions of all kinds—bug fixes, new features, tests, and documentation improvements. Before getting started, make sure to review the [issues](https://github.com/AlexsanderHamir/prof/issues) and [discussions](https://github.com/AlexsanderHamir/prof/discussions) to avoid duplicated effort.
+We welcome contributions of all kinds—bug fixes, new features, tests, and documentation improvements. Before getting started, make sure to review the [issues](https://github.com/AlexsanderHamir/prof/issues) to avoid duplicated effort.
 
 ### Quick Start
 
