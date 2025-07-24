@@ -1,0 +1,52 @@
+File: test.test
+Type: alloc_space
+Time: 2025-07-22 09:47:00 PDT
+Showing nodes accounting for 43927.65kB, 100% of 43927.65kB total
+      flat  flat%   sum%        cum   cum%
+         0     0%     0% 14848.69kB 33.80%  github.com/AlexsanderHamir/GenPool/test.BenchmarkGenPool
+         0     0%     0% 14848.69kB 33.80%  testing.(*B).runN
+14336.44kB 32.64% 32.64% 14848.49kB 33.80%  testing.(*B).RunParallel.func1
+14336.66kB 32.64% 65.27% 14336.66kB 32.64%  testing.(*B).RunParallel
+         0     0% 65.27% 10752.50kB 24.48%  testing.(*B).launch
+         0     0% 65.27%  5222.15kB 11.89%  main.main
+         0     0% 65.27%  5222.15kB 11.89%  runtime.main
+         0     0% 65.27%  5222.15kB 11.89%  testing.(*M).Run
+         0     0% 65.27%  4710.15kB 10.72%  testing.(*M).before
+         0     0% 65.27%  4142.79kB  9.43%  runtime.newproc.func1
+         0     0% 65.27%  4142.79kB  9.43%  runtime.newproc1
+         0     0% 65.27%  4142.79kB  9.43%  runtime.systemstack
+         0     0% 65.27%  4096.19kB  9.32%  testing.(*B).run1.func1
+ 3585.53kB  8.16% 73.44%  3585.53kB  8.16%  runtime.malg
+ 2947.21kB  6.71% 80.15%  2947.21kB  6.71%  runtime/trace.Start
+         0     0% 80.15%  2301.48kB  5.24%  runtime.(*traceAdvancerState).start.func1
+         0     0% 80.15%  2301.48kB  5.24%  runtime.traceAdvance
+    2052kB  4.67% 84.82%     2052kB  4.67%  runtime.allocm
+         0     0% 84.82%     2052kB  4.67%  runtime.newm
+         0     0% 84.82%     2052kB  4.67%  runtime.resetspinning
+         0     0% 84.82%     2052kB  4.67%  runtime.schedule
+         0     0% 84.82%     2052kB  4.67%  runtime.startm
+         0     0% 84.82%     2052kB  4.67%  runtime.wakep
+         0     0% 84.82%  1789.36kB  4.07%  runtime.forEachGRace
+ 1789.36kB  4.07% 88.89%  1789.36kB  4.07%  runtime.traceAdvance.func1
+ 1762.94kB  4.01% 92.90%  1762.94kB  4.01%  runtime/pprof.StartCPUProfile
+         0     0% 92.90%  1762.94kB  4.01%  testing/internal/testdeps.TestDeps.StartCPUProfile
+         0     0% 92.90%     1026kB  2.34%  runtime.mstart
+         0     0% 92.90%     1026kB  2.34%  runtime.mstart0
+         0     0% 92.90%     1026kB  2.34%  runtime.mstart1
+         0     0% 92.90%     1026kB  2.34%  runtime.mcall
+  557.26kB  1.27% 94.17%   557.26kB  1.27%  runtime.allgadd
+         0     0% 94.17%      513kB  1.17%  runtime.goexit0
+         0     0% 94.17%      513kB  1.17%  runtime.park_m
+         0     0% 94.17%   512.12kB  1.17%  runtime.(*traceStackTable).dump
+  512.12kB  1.17% 95.34%   512.12kB  1.17%  runtime.CallersFrames (inline)
+         0     0% 95.34%   512.12kB  1.17%  runtime.dumpStacksRec
+         0     0% 95.34%   512.12kB  1.17%  runtime.makeTraceFrames
+         0     0% 95.34%   512.05kB  1.17%  github.com/AlexsanderHamir/GenPool/test.BenchmarkGenPool.func1
+  512.05kB  1.17% 96.50%   512.05kB  1.17%  github.com/AlexsanderHamir/GenPool/test.cpuIntensiveWorkload (inline)
+         0     0% 96.50%   512.05kB  1.17%  runtime/pprof.(*profileBuilder).appendLocsForStack
+         0     0% 96.50%   512.05kB  1.17%  runtime/pprof.(*profileBuilder).build
+  512.05kB  1.17% 97.67%   512.05kB  1.17%  runtime/pprof.(*profileBuilder).emitLocation
+         0     0% 97.67%   512.05kB  1.17%  runtime/pprof.profileWriter
+         0     0% 97.67%   512.03kB  1.17%  github.com/AlexsanderHamir/GenPool/pool.NewPoolWithConfig[go.shape.struct { Name string; Data []uint8; Result int64; github.com/AlexsanderHamir/GenPool/test._ [16]uint8; Fields = github.com/AlexsanderHamir/GenPool/pool.Fields[github.com/AlexsanderHamir/GenPool/test.BenchmarkObject] },go.shape.*github.com/AlexsanderHamir/GenPool/test.BenchmarkObject]
+  512.03kB  1.17% 98.83%   512.03kB  1.17%  github.com/AlexsanderHamir/GenPool/pool.initShards[go.shape.struct { Name string; Data []uint8; Result int64; github.com/AlexsanderHamir/GenPool/test._ [16]uint8; Fields = github.com/AlexsanderHamir/GenPool/pool.Fields[github.com/AlexsanderHamir/GenPool/test.BenchmarkObject] },go.shape.*github.com/AlexsanderHamir/GenPool/test.BenchmarkObject]
+  512.01kB  1.17%   100%   512.01kB  1.17%  testing.(*M).startAlarm

@@ -1,0 +1,6 @@
+File: test.test
+Type: delay
+Time: 2025-07-22 09:47:00 PDT
+Showing nodes accounting for 172.22ms, 100% of 172.22ms total
+      flat  flat%   sum%        cum   cum%
+  172.22ms   100%   100%   172.22ms   100%  runtime._LostContendedRuntimeLock

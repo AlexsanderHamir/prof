@@ -1,0 +1,71 @@
+File: test.test
+Type: alloc_space
+Time: 2025-07-22 09:46:41 PDT
+Showing nodes accounting for 45401.03kB, 100% of 45401.03kB total
+      flat  flat%   sum%        cum   cum%
+         0     0%     0% 16896.77kB 37.22%  github.com/AlexsanderHamir/GenPool/test.BenchmarkGenPool
+16896.77kB 37.22% 37.22% 16896.77kB 37.22%  testing.(*B).RunParallel
+         0     0% 37.22% 16896.77kB 37.22%  testing.(*B).runN
+         0     0% 37.22% 12288.56kB 27.07%  testing.(*B).launch
+10752.33kB 23.68% 60.90% 11264.37kB 24.81%  testing.(*B).RunParallel.func1
+         0     0% 60.90%  5679.45kB 12.51%  runtime.newproc.func1
+         0     0% 60.90%  5679.45kB 12.51%  runtime.newproc1
+         0     0% 60.90%  5679.45kB 12.51%  runtime.systemstack
+ 5122.19kB 11.28% 72.18%  5122.19kB 11.28%  runtime.malg
+         0     0% 72.18%  4643.55kB 10.23%  main.main
+         0     0% 72.18%  4643.55kB 10.23%  runtime.main
+         0     0% 72.18%  4643.55kB 10.23%  testing.(*M).Run
+         0     0% 72.18%  4608.21kB 10.15%  testing.(*B).run1.func1
+         0     0% 72.18%  4131.48kB  9.10%  testing.(*M).before
+ 2947.21kB  6.49% 78.67%  2947.21kB  6.49%  runtime/trace.Start
+         0     0% 78.67%  2864.50kB  6.31%  runtime.(*traceAdvancerState).start.func1
+         0     0% 78.67%  2864.50kB  6.31%  runtime.traceAdvance
+         0     0% 78.67%  1997.71kB  4.40%  runtime/pprof.(*profileBuilder).appendLocsForStack
+         0     0% 78.67%  1997.71kB  4.40%  runtime/pprof.(*profileBuilder).build
+         0     0% 78.67%  1997.71kB  4.40%  runtime/pprof.profileWriter
+         0     0% 78.67%  1840.27kB  4.05%  runtime.forEachGRace
+ 1840.27kB  4.05% 82.73%  1840.27kB  4.05%  runtime.traceAdvance.func1
+  902.59kB  1.99% 84.71%  1485.59kB  3.27%  compress/flate.NewWriter (inline)
+         0     0% 84.71%  1485.59kB  3.27%  compress/gzip.(*Writer).Write
+         0     0% 84.71%  1485.59kB  3.27%  runtime/pprof.(*profileBuilder).emitLocation
+         0     0% 84.71%  1485.59kB  3.27%  runtime/pprof.(*profileBuilder).flush
+ 1184.27kB  2.61% 87.32%  1184.27kB  2.61%  runtime/pprof.StartCPUProfile
+         0     0% 87.32%  1184.27kB  2.61%  testing/internal/testdeps.TestDeps.StartCPUProfile
+    1026kB  2.26% 89.58%     1026kB  2.26%  runtime.allocm
+         0     0% 89.58%     1026kB  2.26%  runtime.newm
+         0     0% 89.58%     1026kB  2.26%  runtime.resetspinning
+         0     0% 89.58%     1026kB  2.26%  runtime.schedule
+         0     0% 89.58%     1026kB  2.26%  runtime.startm
+         0     0% 89.58%     1026kB  2.26%  runtime.wakep
+         0     0% 89.58%  1024.23kB  2.26%  runtime.(*traceStackTable).dump
+ 1024.23kB  2.26% 91.84%  1024.23kB  2.26%  runtime.CallersFrames (inline)
+         0     0% 91.84%  1024.23kB  2.26%  runtime.dumpStacksRec
+         0     0% 91.84%  1024.23kB  2.26%  runtime.makeTraceFrames
+         0     0% 91.84%   583.01kB  1.28%  compress/flate.(*compressor).init
+  583.01kB  1.28% 93.12%   583.01kB  1.28%  compress/flate.newDeflateFast (inline)
+  557.26kB  1.23% 94.35%   557.26kB  1.23%  runtime.allgadd
+  516.64kB  1.14% 95.49%   516.64kB  1.14%  runtime.procresize
+         0     0% 95.49%   516.64kB  1.14%  runtime.rt0_go
+         0     0% 95.49%   516.64kB  1.14%  runtime.schedinit
+         0     0% 95.49%      513kB  1.13%  runtime.mcall
+         0     0% 95.49%      513kB  1.13%  runtime.mstart
+         0     0% 95.49%      513kB  1.13%  runtime.mstart0
+         0     0% 95.49%      513kB  1.13%  runtime.mstart1
+         0     0% 95.49%      513kB  1.13%  runtime.park_m
+  512.12kB  1.13% 96.62%   512.12kB  1.13%  runtime/pprof.allFrames
+         0     0% 96.62%   512.06kB  1.13%  regexp.Compile (inline)
+         0     0% 96.62%   512.06kB  1.13%  regexp.compile
+         0     0% 96.62%   512.06kB  1.13%  regexp/syntax.Parse (inline)
+  512.06kB  1.13% 97.74%   512.06kB  1.13%  regexp/syntax.parse
+         0     0% 97.74%   512.06kB  1.13%  testing.newMatcher
+         0     0% 97.74%   512.06kB  1.13%  testing.runTests
+         0     0% 97.74%   512.06kB  1.13%  testing.simpleMatch.verify
+         0     0% 97.74%   512.06kB  1.13%  testing/internal/testdeps.TestDeps.MatchString
+  512.05kB  1.13% 98.87%   512.05kB  1.13%  runtime.acquireSudog
+         0     0% 98.87%   512.05kB  1.13%  runtime.gcBgMarkWorker
+         0     0% 98.87%   512.05kB  1.13%  runtime.gcMarkDone
+         0     0% 98.87%   512.05kB  1.13%  runtime.semacquire (inline)
+         0     0% 98.87%   512.05kB  1.13%  runtime.semacquire1
+         0     0% 98.87%   512.04kB  1.13%  github.com/AlexsanderHamir/GenPool/pool.(*ShardedPool[go.shape.struct { Name string; Data []uint8; Result int64; github.com/AlexsanderHamir/GenPool/test._ [16]uint8; Fields = github.com/AlexsanderHamir/GenPool/pool.Fields[github.com/AlexsanderHamir/GenPool/test.BenchmarkObject] },go.shape.*github.com/AlexsanderHamir/GenPool/test.BenchmarkObject]).Get
+         0     0% 98.87%   512.04kB  1.13%  github.com/AlexsanderHamir/GenPool/test.BenchmarkGenPool.func1
+  512.04kB  1.13%   100%   512.04kB  1.13%  github.com/AlexsanderHamir/GenPool/test.allocator

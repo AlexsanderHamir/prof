@@ -1,0 +1,166 @@
+File: test.test
+Type: cpu
+Time: 2025-07-22 09:46:48 PDT
+Duration: 12.41s, Total samples = 69.02s (556.34%)
+Showing nodes accounting for 69.02s, 100% of 69.02s total
+      flat  flat%   sum%        cum   cum%
+     0.02s 0.029% 0.029%     67.87s 98.33%  testing.(*B).RunParallel.func1
+     0.01s 0.014% 0.043%     67.82s 98.26%  github.com/AlexsanderHamir/GenPool/test.BenchmarkGenPool.func1
+    63.59s 92.13% 92.18%     67.65s 98.02%  github.com/AlexsanderHamir/GenPool/test.cpuIntensiveWorkload (inline)
+     4.06s  5.88% 98.06%      4.06s  5.88%  runtime.asyncPreempt
+     0.03s 0.043% 98.10%      0.70s  1.01%  runtime.schedule
+         0     0% 98.10%      0.61s  0.88%  runtime.mcall
+     0.01s 0.014% 98.12%      0.60s  0.87%  runtime.findRunnable
+         0     0% 98.12%      0.50s  0.72%  runtime.goexit0
+     0.36s  0.52% 98.64%      0.36s  0.52%  runtime.usleep
+         0     0% 98.64%      0.34s  0.49%  runtime.lock (inline)
+         0     0% 98.64%      0.34s  0.49%  runtime.lock2
+         0     0% 98.64%      0.34s  0.49%  runtime.lockWithRank (inline)
+         0     0% 98.64%      0.34s  0.49%  runtime.osyield (inline)
+     0.02s 0.029% 98.67%      0.33s  0.48%  runtime.newstack
+         0     0% 98.67%      0.31s  0.45%  runtime.gopreempt_m (inline)
+         0     0% 98.67%      0.31s  0.45%  runtime.goschedImpl
+         0     0% 98.67%      0.25s  0.36%  runtime.morestack
+         0     0% 98.67%      0.20s  0.29%  runtime.stopm
+         0     0% 98.67%      0.19s  0.28%  runtime.mPark (inline)
+         0     0% 98.67%      0.19s  0.28%  runtime.notesleep
+     0.19s  0.28% 98.94%      0.19s  0.28%  runtime.pthread_cond_wait
+         0     0% 98.94%      0.19s  0.28%  runtime.semasleep
+         0     0% 98.94%      0.17s  0.25%  runtime.systemstack
+         0     0% 98.94%      0.11s  0.16%  runtime.park_m
+     0.03s 0.043% 98.99%      0.10s  0.14%  github.com/AlexsanderHamir/GenPool/pool.(*ShardedPool[go.shape.struct { Name string; Data []uint8; Result int64; github.com/AlexsanderHamir/GenPool/test._ [16]uint8; Fields = github.com/AlexsanderHamir/GenPool/pool.Fields[github.com/AlexsanderHamir/GenPool/test.BenchmarkObject] },go.shape.*github.com/AlexsanderHamir/GenPool/test.BenchmarkObject]).Put
+     0.05s 0.072% 99.06%      0.10s  0.14%  runtime.(*traceMap).put
+     0.01s 0.014% 99.07%      0.09s  0.13%  runtime.wakep
+         0     0% 99.07%      0.08s  0.12%  runtime.gcBgMarkWorker.func2
+         0     0% 99.07%      0.08s  0.12%  runtime.gcDrain
+     0.08s  0.12% 99.19%      0.08s  0.12%  runtime.pthread_cond_signal
+         0     0% 99.19%      0.08s  0.12%  runtime.semawakeup
+         0     0% 99.19%      0.07s   0.1%  runtime.gcDrainMarkWorkerIdle (inline)
+         0     0% 99.19%      0.06s 0.087%  runtime.(*traceStackTable).put
+         0     0% 99.19%      0.06s 0.087%  runtime.execute
+         0     0% 99.19%      0.05s 0.072%  github.com/AlexsanderHamir/GenPool/pool.(*ShardedPool[go.shape.struct { Name string; Data []uint8; Result int64; github.com/AlexsanderHamir/GenPool/test._ [16]uint8; Fields = github.com/AlexsanderHamir/GenPool/pool.Fields[github.com/AlexsanderHamir/GenPool/test.BenchmarkObject] },go.shape.*github.com/AlexsanderHamir/GenPool/test.BenchmarkObject]).Get
+         0     0% 99.19%      0.05s 0.072%  runtime.(*gcControllerState).enlistWorker
+         0     0% 99.19%      0.05s 0.072%  runtime.(*gcWork).balance
+         0     0% 99.19%      0.05s 0.072%  runtime.newproc.func1
+         0     0% 99.19%      0.05s 0.072%  runtime.preemptM
+         0     0% 99.19%      0.05s 0.072%  runtime.preemptone
+     0.05s 0.072% 99.26%      0.05s 0.072%  runtime.pthread_kill
+         0     0% 99.26%      0.05s 0.072%  runtime.signalM (inline)
+     0.01s 0.014% 99.28%      0.05s 0.072%  runtime.traceLocker.GoPreempt (inline)
+         0     0% 99.28%      0.05s 0.072%  runtime.unlock (inline)
+     0.01s 0.014% 99.29%      0.05s 0.072%  runtime.unlock2
+         0     0% 99.29%      0.05s 0.072%  runtime.unlockWithRank (inline)
+         0     0% 99.29%      0.04s 0.058%  runtime.(*mheap).allocSpan
+     0.01s 0.014% 99.30%      0.04s 0.058%  runtime.(*timers).check
+         0     0% 99.30%      0.04s 0.058%  runtime.(*traceAdvancerState).start.func1
+         0     0% 99.30%      0.04s 0.058%  runtime.(*traceStringTable).put
+         0     0% 99.30%      0.04s 0.058%  runtime.gcBgMarkWorker
+     0.04s 0.058% 99.36%      0.04s 0.058%  runtime.madvise
+         0     0% 99.36%      0.04s 0.058%  runtime.nanotime (inline)
+     0.03s 0.043% 99.41%      0.04s 0.058%  runtime.nanotime1
+         0     0% 99.41%      0.04s 0.058%  runtime.notewakeup
+         0     0% 99.41%      0.04s 0.058%  runtime.startm
+         0     0% 99.41%      0.04s 0.058%  runtime.sysUsed (inline)
+         0     0% 99.41%      0.04s 0.058%  runtime.sysUsedOS (inline)
+         0     0% 99.41%      0.04s 0.058%  runtime.traceAdvance
+         0     0% 99.41%      0.04s 0.058%  runtime.traceLocker.GoStop
+         0     0% 99.41%      0.04s 0.058%  runtime.traceLocker.stack (inline)
+     0.01s 0.014% 99.42%      0.04s 0.058%  runtime.traceStack
+     0.02s 0.029% 99.45%      0.04s 0.058%  runtime.traceWriter.event
+         0     0% 99.45%      0.04s 0.058%  runtime.unlock2Wake
+         0     0% 99.45%      0.03s 0.043%  runtime.(*timers).run
+     0.01s 0.014% 99.46%      0.03s 0.043%  runtime.(*traceMap).newTraceMapNode
+         0     0% 99.46%      0.03s 0.043%  runtime.casgstatus
+         0     0% 99.46%      0.03s 0.043%  runtime.gdestroy
+         0     0% 99.46%      0.03s 0.043%  runtime.mallocgc
+         0     0% 99.46%      0.03s 0.043%  runtime.mallocgcSmallScanNoHeader
+         0     0% 99.46%      0.03s 0.043%  runtime.newobject
+         0     0% 99.46%      0.03s 0.043%  runtime.newproc1
+     0.03s 0.043% 99.51%      0.03s 0.043%  runtime.pidleget
+         0     0% 99.51%      0.03s 0.043%  runtime.pidlegetSpinning
+     0.01s 0.014% 99.52%      0.03s 0.043%  runtime.runqgrab
+         0     0% 99.52%      0.03s 0.043%  runtime.runqsteal
+         0     0% 99.52%      0.03s 0.043%  runtime.stealWork
+         0     0% 99.52%      0.03s 0.043%  runtime.traceEventWriter.event
+     0.01s 0.014% 99.54%      0.03s 0.043%  runtime.traceLocker.GoStart
+         0     0% 99.54%      0.03s 0.043%  runtime.traceReadCPU
+     0.01s 0.014% 99.55%      0.03s 0.043%  runtime.traceReader
+         0     0% 99.55%      0.03s 0.043%  runtime.traceStartReadCPU.func1
+     0.02s 0.029% 99.58%      0.02s 0.029%  github.com/AlexsanderHamir/GenPool/pool.(*ShardedPool[go.shape.struct { Name string; Data []uint8; Result int64; github.com/AlexsanderHamir/GenPool/test._ [16]uint8; Fields = github.com/AlexsanderHamir/GenPool/pool.Fields[github.com/AlexsanderHamir/GenPool/test.BenchmarkObject] },go.shape.*github.com/AlexsanderHamir/GenPool/test.BenchmarkObject]).getShard
+         0     0% 99.58%      0.02s 0.029%  github.com/AlexsanderHamir/GenPool/test.allocator
+         0     0% 99.58%      0.02s 0.029%  internal/runtime/atomic.(*Bool).Load (inline)
+     0.02s 0.029% 99.61%      0.02s 0.029%  internal/runtime/atomic.(*Uint8).Load (inline)
+         0     0% 99.61%      0.02s 0.029%  runtime.(*mheap).alloc.func1
+         0     0% 99.61%      0.02s 0.029%  runtime.(*mheap).allocManual
+         0     0% 99.61%      0.02s 0.029%  runtime.(*timer).unlockAndRun
+         0     0% 99.61%      0.02s 0.029%  runtime.(*traceRegionAlloc).alloc
+         0     0% 99.61%      0.02s 0.029%  runtime.(*traceStackTable).dump
+     0.01s 0.014% 99.62%      0.02s 0.029%  runtime.(*wakeableSleep).wake
+         0     0% 99.62%      0.02s 0.029%  runtime.dumpStacksRec
+         0     0% 99.62%      0.02s 0.029%  runtime.gfget
+         0     0% 99.62%      0.02s 0.029%  runtime.gfget.func2
+         0     0% 99.62%      0.02s 0.029%  runtime.gfput
+     0.01s 0.014% 99.64%      0.02s 0.029%  runtime.globrunqget
+         0     0% 99.64%      0.02s 0.029%  runtime.makeTraceFrame
+         0     0% 99.64%      0.02s 0.029%  runtime.makeTraceFrames
+     0.02s 0.029% 99.67%      0.02s 0.029%  runtime.mmap
+         0     0% 99.67%      0.02s 0.029%  runtime.ready
+         0     0% 99.67%      0.02s 0.029%  runtime.readyWithTime.goready.func1
+         0     0% 99.67%      0.02s 0.029%  runtime.scanobject
+         0     0% 99.67%      0.02s 0.029%  runtime.stackalloc
+         0     0% 99.67%      0.02s 0.029%  runtime.stackcacherefill
+         0     0% 99.67%      0.02s 0.029%  runtime.stackpoolalloc
+         0     0% 99.67%      0.02s 0.029%  runtime.sysAlloc
+         0     0% 99.67%      0.02s 0.029%  runtime.sysAllocOS (inline)
+         0     0% 99.67%      0.02s 0.029%  runtime.traceReaderAvailable (inline)
+         0     0% 99.67%      0.02s 0.029%  runtime.traceRegisterLabelsAndReasons
+         0     0% 99.67%      0.02s 0.029%  runtime.traceStartReadCPU.newWakeableSleep.func2
+     0.01s 0.014% 99.68%      0.02s 0.029%  runtime/pprof.(*profileBuilder).addCPUData
+         0     0% 99.68%      0.02s 0.029%  runtime/pprof.profileWriter
+     0.01s 0.014% 99.70%      0.01s 0.014%  aeshashbody
+         0     0% 99.70%      0.01s 0.014%  github.com/AlexsanderHamir/GenPool/pool.(*ShardedPool[go.shape.struct { Name string; Data []uint8; Result int64; github.com/AlexsanderHamir/GenPool/test._ [16]uint8; Fields = github.com/AlexsanderHamir/GenPool/pool.Fields[github.com/AlexsanderHamir/GenPool/test.BenchmarkObject] },go.shape.*github.com/AlexsanderHamir/GenPool/test.BenchmarkObject]).retrieveFromShard
+         0     0% 99.70%      0.01s 0.014%  github.com/AlexsanderHamir/GenPool/test.BenchmarkGenPool
+     0.01s 0.014% 99.71%      0.01s 0.014%  gogo
+         0     0% 99.71%      0.01s 0.014%  internal/poll.(*FD).Write
+         0     0% 99.71%      0.01s 0.014%  internal/poll.ignoringEINTRIO (inline)
+     0.01s 0.014% 99.72%      0.01s 0.014%  internal/runtime/atomic.(*Int64).Add (inline)
+         0     0% 99.72%      0.01s 0.014%  os.(*File).Write
+         0     0% 99.72%      0.01s 0.014%  os.(*File).write (inline)
+     0.01s 0.014% 99.74%      0.01s 0.014%  runtime.(*gcControllerState).addScannableStack (inline)
+         0     0% 99.74%      0.01s 0.014%  runtime.(*mspan).writeHeapBitsSmall
+     0.01s 0.014% 99.75%      0.01s 0.014%  runtime.(*timeHistogram).record
+     0.01s 0.014% 99.77%      0.01s 0.014%  runtime.(*timer).updateHeap
+     0.01s 0.014% 99.78%      0.01s 0.014%  runtime.(*traceBuf).byte (inline)
+     0.01s 0.014% 99.80%      0.01s 0.014%  runtime.acquirem (inline)
+         0     0% 99.80%      0.01s 0.014%  runtime.gcDrainMarkWorkerDedicated (inline)
+         0     0% 99.80%      0.01s 0.014%  runtime.gcFlushBgCredit
+     0.01s 0.014% 99.81%      0.01s 0.014%  runtime.getGCMask (inline)
+         0     0% 99.81%      0.01s 0.014%  runtime.heapSetTypeNoHeader (inline)
+     0.01s 0.014% 99.83%      0.01s 0.014%  runtime.kevent
+     0.01s 0.014% 99.84%      0.01s 0.014%  runtime.libcCall
+     0.01s 0.014% 99.86%      0.01s 0.014%  runtime.memclrNoHeapPointers
+     0.01s 0.014% 99.87%      0.01s 0.014%  runtime.memequal
+         0     0% 99.87%      0.01s 0.014%  runtime.netpoll
+         0     0% 99.87%      0.01s 0.014%  runtime.newproc
+         0     0% 99.87%      0.01s 0.014%  runtime.resetspinning
+     0.01s 0.014% 99.88%      0.01s 0.014%  runtime.runqput
+     0.01s 0.014% 99.90%      0.01s 0.014%  runtime.save_g
+     0.01s 0.014% 99.91%      0.01s 0.014%  runtime.selectnbsend
+         0     0% 99.91%      0.01s 0.014%  runtime.traceClockNow (inline)
+         0     0% 99.91%      0.01s 0.014%  runtime.traceLocker.GoCreate
+         0     0% 99.91%      0.01s 0.014%  runtime.traceLocker.GoPark
+         0     0% 99.91%      0.01s 0.014%  runtime.traceLocker.eventWriter
+         0     0% 99.91%      0.01s 0.014%  runtime.traceWriter.writeGoStatus
+     0.01s 0.014% 99.93%      0.01s 0.014%  runtime.typePointers.next
+     0.01s 0.014% 99.94%      0.01s 0.014%  runtime.typePointers.nextFast (inline)
+     0.01s 0.014%   100%      0.01s 0.014%  runtime/pprof.(*profMap).lookup
+         0     0%   100%      0.01s 0.014%  runtime/trace.Start.func1
+         0     0%   100%      0.01s 0.014%  sync/atomic.(*Pointer[go.shape.struct { Name string; Data []uint8; Result int64; github.com/AlexsanderHamir/GenPool/test._ [16]uint8; Fields = github.com/AlexsanderHamir/GenPool/pool.Fields[github.com/AlexsanderHamir/GenPool/test.BenchmarkObject] }]).CompareAndSwap (inline)
+     0.01s 0.014%   100%      0.01s 0.014%  sync/atomic.CompareAndSwapPointer
+         0     0%   100%      0.01s 0.014%  syscall.Write (inline)
+     0.01s 0.014%   100%      0.01s 0.014%  syscall.syscall
+         0     0%   100%      0.01s 0.014%  syscall.write
+         0     0%   100%      0.01s 0.014%  testing.(*B).RunParallel
+         0     0%   100%      0.01s 0.014%  testing.(*B).launch
+         0     0%   100%      0.01s 0.014%  testing.(*B).runN
+     0.01s 0.014%   100%      0.01s 0.014%  testing.(*PB).Next (inline)

@@ -1,0 +1,60 @@
+File: test.test
+Type: alloc_space
+Time: 2025-07-21 11:14:46 PDT
+Showing nodes accounting for 37513.62kB, 100% of 37513.62kB total
+      flat  flat%   sum%        cum   cum%
+         0     0%     0% 15872.73kB 42.31%  github.com/AlexsanderHamir/GenPool/test.BenchmarkGenPool
+15872.73kB 42.31% 42.31% 15872.73kB 42.31%  testing.(*B).RunParallel
+         0     0% 42.31% 15872.73kB 42.31%  testing.(*B).runN
+         0     0% 42.31% 12288.56kB 32.76%  testing.(*B).launch
+ 7168.22kB 19.11% 61.42%  8192.31kB 21.84%  testing.(*B).RunParallel.func1
+         0     0% 61.42%  5669.22kB 15.11%  runtime.main
+         0     0% 61.42%  4643.53kB 12.38%  main.main
+         0     0% 61.42%  4643.53kB 12.38%  testing.(*M).Run
+         0     0% 61.42%  4643.53kB 12.38%  testing.(*M).before
+         0     0% 61.42%  3584.16kB  9.55%  testing.(*B).run1.func1
+ 3073.31kB  8.19% 69.61%  3073.31kB  8.19%  runtime.malg
+         0     0% 69.61%  3073.31kB  8.19%  runtime.newproc.func1
+         0     0% 69.61%  3073.31kB  8.19%  runtime.newproc1
+         0     0% 69.61%  3073.31kB  8.19%  runtime.systemstack
+ 2880.59kB  7.68% 77.29%  2880.59kB  7.68%  runtime/trace.Start
+         0     0% 77.29%  2264.46kB  6.04%  runtime.(*traceAdvancerState).start.func1
+         0     0% 77.29%  2264.46kB  6.04%  runtime.traceAdvance
+ 1762.94kB  4.70% 81.99%  1762.94kB  4.70%  runtime/pprof.StartCPUProfile
+         0     0% 81.99%  1762.94kB  4.70%  testing/internal/testdeps.TestDeps.StartCPUProfile
+    1539kB  4.10% 86.09%     1539kB  4.10%  runtime.allocm
+         0     0% 86.09%     1539kB  4.10%  runtime.mstart
+         0     0% 86.09%     1539kB  4.10%  runtime.mstart0
+         0     0% 86.09%     1539kB  4.10%  runtime.mstart1
+         0     0% 86.09%     1539kB  4.10%  runtime.newm
+         0     0% 86.09%     1539kB  4.10%  runtime.resetspinning
+         0     0% 86.09%     1539kB  4.10%  runtime.schedule
+         0     0% 86.09%     1539kB  4.10%  runtime.startm
+         0     0% 86.09%     1539kB  4.10%  runtime.wakep
+         0     0% 86.09%  1240.27kB  3.31%  runtime.forEachGRace
+ 1240.27kB  3.31% 89.40%  1240.27kB  3.31%  runtime.traceAdvance.func1
+         0     0% 89.40%  1025.69kB  2.73%  runtime.doInit (inline)
+         0     0% 89.40%  1025.69kB  2.73%  runtime.doInit1
+         0     0% 89.40%  1024.20kB  2.73%  runtime.(*traceStackTable).dump
+         0     0% 89.40%  1024.20kB  2.73%  runtime.dumpStacksRec
+  512.08kB  1.37% 90.76%  1024.20kB  2.73%  runtime.makeTraceFrames
+         0     0% 90.76%  1024.09kB  2.73%  github.com/AlexsanderHamir/GenPool/test.BenchmarkGenPool.func1
+  902.59kB  2.41% 93.17%   902.59kB  2.41%  compress/flate.NewWriter (inline)
+         0     0% 93.17%   902.59kB  2.41%  compress/gzip.(*Writer).Write
+         0     0% 93.17%   902.59kB  2.41%  runtime/pprof.(*profileBuilder).appendLocsForStack
+         0     0% 93.17%   902.59kB  2.41%  runtime/pprof.(*profileBuilder).build
+         0     0% 93.17%   902.59kB  2.41%  runtime/pprof.(*profileBuilder).emitLocation
+         0     0% 93.17%   902.59kB  2.41%  runtime/pprof.(*profileBuilder).flush
+         0     0% 93.17%   902.59kB  2.41%  runtime/pprof.profileWriter
+         0     0% 93.17%   513.69kB  1.37%  os.Getenv
+         0     0% 93.17%   513.69kB  1.37%  os.Getwd
+         0     0% 93.17%   513.69kB  1.37%  os.init
+         0     0% 93.17%   513.69kB  1.37%  sync.(*Once).Do (inline)
+         0     0% 93.17%   513.69kB  1.37%  sync.(*Once).doSlow
+         0     0% 93.17%   513.69kB  1.37%  syscall.Getenv
+  513.69kB  1.37% 94.54%   513.69kB  1.37%  syscall.copyenv
+  512.12kB  1.37% 95.91%   512.12kB  1.37%  runtime.CallersFrames (inline)
+  512.05kB  1.36% 97.27%   512.05kB  1.36%  github.com/AlexsanderHamir/GenPool/test.cpuIntensiveWorkload (inline)
+         0     0% 97.27%   512.04kB  1.36%  github.com/AlexsanderHamir/GenPool/pool.(*ShardedPool[go.shape.struct { Name string; Data []uint8; Result int64; github.com/AlexsanderHamir/GenPool/test._ [16]uint8; Fields = github.com/AlexsanderHamir/GenPool/pool.Fields[github.com/AlexsanderHamir/GenPool/test.BenchmarkObject] },go.shape.*github.com/AlexsanderHamir/GenPool/test.BenchmarkObject]).Get
+  512.04kB  1.36% 98.64%   512.04kB  1.36%  github.com/AlexsanderHamir/GenPool/test.allocator
+     512kB  1.36%   100%      512kB  1.36%  internal/sysinfo.init
