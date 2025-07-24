@@ -195,6 +195,10 @@ prof track --base-tag "baseline" --current-tag "v2.0" --bench-name "BenchmarkPoo
 - Increase `--count` for more benchmark iterations
 - Ensure benchmark does enough work to generate meaningful data
 
+**Configuration Not Taking Effect**
+
+- Make sure the config file is located in the current working directory, the one you're running the command from.
+
 ## Contributing
 
 Requirements: Go 1.24.3+, Git
