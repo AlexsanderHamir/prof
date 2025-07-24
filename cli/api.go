@@ -33,7 +33,8 @@ func CreateRootCmd() *cobra.Command {
 	profileFlag := "profiles"
 	tagFlag := "tag"
 	countFlag := "count"
-	example := fmt.Sprintf(`prof --%s "[BenchmarkGenPool]" --%s "[cpu,memory,mutex,block]" --%s 10 --%s "tag1"`, benchFlag, profileFlag, countFlag, tagFlag)
+	example := fmt.Sprintf(`prof --%s "[BenchmarkGenPool]" --%s "[cpu,memory]" --%s 10 --%s "tag1"`,
+		benchFlag, profileFlag, countFlag, tagFlag)
 
 	rootCmd := &cobra.Command{
 		Use:     "prof",
@@ -42,7 +43,7 @@ func CreateRootCmd() *cobra.Command {
 		Example: example,
 	}
 
-	rootCmd.Flags().StringVar(&benchmarks, benchFlag, "", `Benchmarks to run (e.g., "[BenchmarkGenPool,BenchmarkSyncPool]")"`)
+	rootCmd.Flags().StringVar(&benchmarks, benchFlag, "", `Benchmarks to run (e.g., "[BenchmarkGenPool]")"`)
 	rootCmd.Flags().StringVar(&profiles, profileFlag, "", `Profiles to use (e.g., "[cpu,memory,mutex]")`)
 	rootCmd.Flags().StringVar(&tag, tagFlag, "", "Tag for the run")
 	rootCmd.Flags().IntVar(&count, countFlag, 0, "Number of runs")
@@ -66,7 +67,8 @@ func createTrackCmd() *cobra.Command {
 	benchNameFlag := "bench-name"
 	profileTypeFlag := "profile-type"
 	outputFormatFlag := "output-format"
-	example := fmt.Sprintf(`prof track --%s "tag1" --%s "tag2" --%s "cpu" --%s "BenchmarkGenPool" --%s "summary"`, baseTagFlag, currentTagFlag, profileTypeFlag, benchNameFlag, outputFormatFlag)
+	example := fmt.Sprintf(`prof track --%s "tag1" --%s "tag2" --%s "cpu" --%s "BenchmarkGenPool" --%s "summary"`,
+		baseTagFlag, currentTagFlag, profileTypeFlag, benchNameFlag, outputFormatFlag)
 
 	cmd := &cobra.Command{
 		Use:     "track",
