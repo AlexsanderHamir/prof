@@ -2,6 +2,16 @@
 
 Prof automates Go performance profiling by collecting all pprof data in one command and enabling easy performance comparisons between benchmark runs.
 
+[![GoDoc](https://godoc.org/github.com/AlexsanderHamir/prof?status.svg)](https://godoc.org/github.com/AlexsanderHamir/prof)
+![Build](https://github.com/AlexsanderHamir/prof/actions/workflows/test.yml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/AlexsanderHamir/prof)](https://goreportcard.com/report/github.com/AlexsanderHamir/prof)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Issues](https://img.shields.io/github/issues/AlexsanderHamir/prof)
+![Last Commit](https://img.shields.io/github/last-commit/AlexsanderHamir/prof)
+![Code Size](https://img.shields.io/github/languages/code-size/AlexsanderHamir/prof)
+![Version](https://img.shields.io/github/v/tag/AlexsanderHamir/prof?sort=semver)
+![Go Version](https://img.shields.io/badge/Go-1.24.3%2B-blue)
+
 ## Benchmark Comparison Summary View:
 
 This view highlights regressions, improvements, and stable functions.
