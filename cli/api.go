@@ -6,8 +6,10 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/prof/args"
+	"github.com/AlexsanderHamir/prof/benchmark"
 	"github.com/AlexsanderHamir/prof/collector"
 	"github.com/AlexsanderHamir/prof/config"
+	"github.com/AlexsanderHamir/prof/shared"
 	"github.com/AlexsanderHamir/prof/tracker"
 	"github.com/AlexsanderHamir/prof/version"
 	"github.com/spf13/cobra"
@@ -15,8 +17,8 @@ import (
 
 var (
 	// Root command flags.
-	benchmarks string
-	profiles   string
+	benchmarks []string
+	profiles   []string
 	tag        string
 	count      int
 
@@ -48,16 +50,16 @@ func CreateRootCmd() *cobra.Command {
 func createManualCmd() *cobra.Command {
 	manualCmd := &cobra.Command{
 		Use:     "manual",
-		Short:   "Receives profile files and performs data collection and organization.",
+		Short:   "Receives profile files and performs data collection and organization. (doesn't wrap go test)",
 		Args:    cobra.MinimumNArgs(1),
-		Example: "prof manual cpu.prof memory.prof block.prof",
+		Example: "prof manual --tag tagName cpu.prof memory.prof block.prof mutex.prof",
 		RunE: func(_ *cobra.Command, args []string) error {
 			return collector.RunCollector(args, tag)
 		},
 	}
 
 	tagFlag := "tag"
-	manualCmd.Flags().StringVar(&tag, tagFlag, "", "Tag for organization")
+	manualCmd.Flags().StringVar(&tag, tagFlag, "", "The tag is used to organize the results")
 	_ = manualCmd.MarkFlagRequired(tagFlag)
 
 	return manualCmd
@@ -68,8 +70,7 @@ func createRunCmd() *cobra.Command {
 	profileFlag := "profiles"
 	tagFlag := "tag"
 	countFlag := "count"
-	example := fmt.Sprintf(`prof run --%s "[BenchmarkGenPool]" --%s "[cpu,memory]" --%s 10 --%s "tag1"`,
-		benchFlag, profileFlag, countFlag, tagFlag)
+	example := fmt.Sprintf(`prof run --%s BenchmarkGenPool --%s cpu,memory --%s 10 --%s "tag1"`, benchFlag, profileFlag, countFlag, tagFlag)
 
 	runCmd := &cobra.Command{
 		Use:     "run",
@@ -78,9 +79,9 @@ func createRunCmd() *cobra.Command {
 		Example: example,
 	}
 
-	runCmd.Flags().StringVar(&benchmarks, benchFlag, "", `Benchmarks to run (e.g., "[BenchmarkGenPool]")"`)
-	runCmd.Flags().StringVar(&profiles, profileFlag, "", `Profiles to use (e.g., "[cpu,memory,mutex]")`)
-	runCmd.Flags().StringVar(&tag, tagFlag, "", "Tag for the run")
+	runCmd.Flags().StringSliceVar(&benchmarks, benchFlag, []string{}, `Benchmarks to run (e.g., "[BenchmarkGenPool]")"`)
+	runCmd.Flags().StringSliceVar(&profiles, profileFlag, []string{}, `Profiles to use (e.g., "[cpu,memory,mutex]")`)
+	runCmd.Flags().StringVar(&tag, tagFlag, "", "The tag is used to organize the results")
 	runCmd.Flags().IntVar(&count, countFlag, 0, "Number of runs")
 
 	_ = runCmd.MarkFlagRequired(benchFlag)
@@ -153,34 +154,33 @@ func Execute() error {
 }
 
 func runBenchmarks(_ *cobra.Command, _ []string) error {
-	if benchmarks == "" || profiles == "" || tag == "" || count == 0 {
-		return errors.New("missing required arguments. Use --help for usage information")
+	if len(benchmarks) == 0 {
+		return errors.New("benchmarks flag is empty")
 	}
 
-	cfg, err := config.LoadFromFile("config_template.json")
+	if len(profiles) == 0 {
+		return errors.New("profiles flag is empty")
+	}
+
+	cfg, err := config.LoadFromFile(shared.ConfigFilename)
 	if err != nil {
 		cfg = &config.Config{}
 	}
 
-	benchmarkList, profileList, err := parseAndValidateBenchmarkParams(benchmarks, profiles)
-	if err != nil {
-		return fmt.Errorf("failed to parse benchmark config: %w", err)
-	}
-
-	if err = setupDirectories(tag, benchmarkList, profileList); err != nil {
+	if err = benchmark.SetupDirectories(tag, benchmarks, profiles); err != nil {
 		return fmt.Errorf("failed to setup directories: %w", err)
 	}
 
 	benchArgs := &args.BenchArgs{
-		Benchmarks: benchmarkList,
-		Profiles:   profileList,
+		Benchmarks: benchmarks,
+		Profiles:   profiles,
 		Count:      count,
 		Tag:        tag,
 	}
 
 	printConfiguration(benchArgs, cfg.FunctionFilter)
 
-	if err = runBencAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
+	if err = runBenchAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
 		return err
 	}
 
@@ -202,10 +202,6 @@ func runSetup(_ *cobra.Command, _ []string) error {
 
 // runTrack handles the track command execution
 func runTrack(_ *cobra.Command, _ []string) error {
-	if !validProfiles[profileType] {
-		return fmt.Errorf("invalid profile type '%s'. Valid types: cpu, memory, mutex, block", profileType)
-	}
-
 	validFormats := map[string]bool{
 		"summary":  true,
 		"detailed": true,
@@ -215,20 +211,13 @@ func runTrack(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("invalid output format '%s'. Valid formats: summary, detailed", outputFormat)
 	}
 
-	// Call the tracker API
-	report, err := tracker.CheckPerformanceDifferences(
-		baselineTag,
-		currentTag,
-		benchmarkName,
-		profileType,
-	)
-
+	report, err := tracker.CheckPerformanceDifferences(baselineTag, currentTag, benchmarkName, profileType)
 	if err != nil {
 		return fmt.Errorf("failed to track performance differences: %w", err)
 	}
 
-	// Display results based on output format
-	if len(report.FunctionChanges) == 0 {
+	noFunctionChanges := len(report.FunctionChanges) == 0
+	if noFunctionChanges {
 		slog.Info("No function changes detected between the two runs")
 		return nil
 	}

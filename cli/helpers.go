@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"math"
 	"sort"
-	"strings"
 
 	"github.com/AlexsanderHamir/prof/args"
 	"github.com/AlexsanderHamir/prof/benchmark"
@@ -14,85 +13,14 @@ import (
 	"github.com/AlexsanderHamir/prof/tracker"
 )
 
-var validProfiles = map[string]bool{
-	"cpu":    true,
-	"memory": true,
-	"mutex":  true,
-	"block":  true,
-}
-
-// validateListArguments checks if the benchmarks and profiles arguments are valid lists.
-func validateListArguments(benchmarks, profiles string) error {
-	if strings.TrimSpace(benchmarks) == "[]" {
-		return ErrEmptyBenchmarks
-	}
-	if strings.TrimSpace(profiles) == "[]" {
-		return ErrEmptyProfiles
-	}
-
-	benchmarks = strings.TrimSpace(benchmarks)
-	profiles = strings.TrimSpace(profiles)
-
-	if !strings.HasPrefix(benchmarks, "[") || !strings.HasSuffix(benchmarks, "]") {
-		return fmt.Errorf("benchmarks %w %s", ErrBracket, benchmarks)
-	}
-	if !strings.HasPrefix(profiles, "[") || !strings.HasSuffix(profiles, "]") {
-		return fmt.Errorf("profiles %w %s", ErrBracket, profiles)
-	}
-
-	return nil
-}
-
-// parseListArgument parses a bracketed, comma-separated string into a slice of strings.
-func parseListArgument(arg string) []string {
-	arg = strings.Trim(arg, "[]")
-	if arg == "" {
-		return []string{}
-	}
-
-	parts := strings.Split(arg, ",")
-	var result []string
-	for _, part := range parts {
-		result = append(result, strings.TrimSpace(part))
-	}
-	return result
-}
-
-// Rest of the functions remain the same...
-func parseAndValidateBenchmarkParams(benchmarks, profiles string) ([]string, []string, error) {
-	if err := validateListArguments(benchmarks, profiles); err != nil {
-		return nil, nil, err
-	}
-
-	benchmarkList := parseListArgument(benchmarks)
-	profileList := parseListArgument(profiles)
-
-	if err := validateAcceptedProfiles(profileList); err != nil {
-		return nil, nil, err
-	}
-
-	return benchmarkList, profileList, nil
-}
-
-func validateAcceptedProfiles(profiles []string) error {
-	for _, profile := range profiles {
-		if valid := validProfiles[profile]; !valid {
-			return fmt.Errorf("received unvalid profile: %s", profile)
-		}
-	}
-	return nil
-}
-
-func setupDirectories(tag string, benchmarks, profiles []string) error {
-	return benchmark.SetupDirectories(tag, benchmarks, profiles)
-}
-
 func printConfiguration(benchArgs *args.BenchArgs, functionFilterPerBench map[string]config.FunctionFilter) {
-	slog.Info("Parsed arguments",
+	slog.Info(
+		"Parsed arguments",
 		"Benchmarks", benchArgs.Benchmarks,
 		"Profiles", benchArgs.Profiles,
 		"Tag", benchArgs.Tag,
-		"Count", benchArgs.Count)
+		"Count", benchArgs.Count,
+	)
 
 	hasBenchFunctionFilters := len(functionFilterPerBench) > 0
 	if hasBenchFunctionFilters {
@@ -105,7 +33,7 @@ func printConfiguration(benchArgs *args.BenchArgs, functionFilterPerBench map[st
 	}
 }
 
-func runBencAndGetProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[string]config.FunctionFilter) error {
+func runBenchAndGetProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[string]config.FunctionFilter) error {
 	slog.Info("Starting benchmark pipeline...")
 
 	for _, benchmarkName := range benchArgs.Benchmarks {
@@ -120,7 +48,6 @@ func runBencAndGetProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[strin
 		}
 
 		slog.Info("Analyzing profile functions", "Benchmark", benchmarkName)
-
 		args := &args.CollectionArgs{
 			Tag:             benchArgs.Tag,
 			Profiles:        benchArgs.Profiles,

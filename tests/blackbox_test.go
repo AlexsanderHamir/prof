@@ -27,6 +27,8 @@ func TestConfig(t *testing.T) {
 			},
 		}
 
+		fmt.Println(defaultRunCmd())
+
 		testArgs := &TestArgs{
 			specifiedFiles:          specifiedFiles,
 			cfg:                     cfg,
@@ -157,10 +159,11 @@ func TestConfig(t *testing.T) {
 func TestProfileValidation(t *testing.T) {
 	label := "RandomProfileName"
 	t.Run(label, func(t *testing.T) {
+		profileName := "fakeProfileName"
 		cmd := []string{
 			"run",
-			"--benchmarks", fmt.Sprintf("[%s]", benchName),
-			"--profiles", fmt.Sprintf("[%s,%s,%s]", cpuProfile, memProfile, "fakeProfileName"),
+			"--benchmarks", benchName,
+			"--profiles", fmt.Sprintf("%s,%s,%s", cpuProfile, memProfile, profileName),
 			"--count", count,
 			"--tag", tag,
 		}
@@ -172,7 +175,7 @@ func TestProfileValidation(t *testing.T) {
 			expectNonSpecifiedFiles: true,
 			noConfigFile:            true,
 			cmd:                     cmd,
-			expectedErrorMessage:    "failed to parse benchmark config: received unvalid profile",
+			expectedErrorMessage:    fmt.Sprintf("failed to run %s: profile %s is not supported", benchName, profileName),
 			label:                   label,
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
@@ -184,11 +187,11 @@ func TestProfileValidation(t *testing.T) {
 
 	label = "NonCollectedProfile"
 	t.Run(label, func(t *testing.T) {
-		nonCollectedProfile := "goroutine"
+		profileName := "goroutine"
 		cmd := []string{
 			"run",
-			"--benchmarks", fmt.Sprintf("[%s]", benchName),
-			"--profiles", fmt.Sprintf("[%s]", nonCollectedProfile),
+			"--benchmarks", benchName,
+			"--profiles", profileName,
 			"--count", count,
 			"--tag", tag,
 		}
@@ -200,7 +203,7 @@ func TestProfileValidation(t *testing.T) {
 			expectNonSpecifiedFiles: true,
 			noConfigFile:            true,
 			cmd:                     cmd,
-			expectedErrorMessage:    "failed to parse benchmark config: received unvalid profile: goroutine",
+			expectedErrorMessage:    fmt.Sprintf("failed to run %s: profile %s is not supported", benchName, profileName),
 			label:                   label,
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
@@ -214,8 +217,8 @@ func TestProfileValidation(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		cmd := []string{
 			"run",
-			"--benchmarks", fmt.Sprintf("[%s]", benchName),
-			"--profiles", fmt.Sprintf("[%s,%s,%s]", cpuProfile, memProfile, blockProfile),
+			"--benchmarks", benchName,
+			"--profiles", fmt.Sprintf("%s,%s,%s", cpuProfile, memProfile, blockProfile),
 			"--count", count,
 			"--tag", tag,
 		}
@@ -243,8 +246,8 @@ func TestCommandValidation(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		cmd := []string{
 			"run",
-			"--benchmarks", "[]",
-			"--profiles", fmt.Sprintf("[%s,%s]", cpuProfile, memProfile),
+			"--benchmarks", "",
+			"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
 			"--count", count,
 			"--tag", tag,
 		}
@@ -256,7 +259,7 @@ func TestCommandValidation(t *testing.T) {
 			expectNonSpecifiedFiles: true,
 			noConfigFile:            true,
 			cmd:                     cmd,
-			expectedErrorMessage:    "failed to parse benchmark config: benchmarks argument cannot be an empty list",
+			expectedErrorMessage:    "benchmarks flag is empty",
 			label:                   label,
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
@@ -266,12 +269,12 @@ func TestCommandValidation(t *testing.T) {
 		testConfigScenario(t, testArgs)
 	})
 
-	label = "NoBracketBenchmarkSlice"
+	label = "EmptyProfileSlice"
 	t.Run(label, func(t *testing.T) {
 		cmd := []string{
 			"run",
 			"--benchmarks", benchName,
-			"--profiles", fmt.Sprintf("[%s,%s]", cpuProfile, memProfile),
+			"--profiles", "",
 			"--count", count,
 			"--tag", tag,
 		}
@@ -283,61 +286,7 @@ func TestCommandValidation(t *testing.T) {
 			expectNonSpecifiedFiles: true,
 			noConfigFile:            true,
 			cmd:                     cmd,
-			expectedErrorMessage:    "failed to parse benchmark config: benchmarks argument must be wrapped in brackets",
-			label:                   label,
-			expectedNumberOfFiles:   3,
-			withCleanUp:             true,
-			expectedProfiles:        nil,
-		}
-
-		testConfigScenario(t, testArgs)
-	})
-
-	label = "NoBracketProfileSlice"
-	t.Run(label, func(t *testing.T) {
-		cmd := []string{
-			"run",
-			"--benchmarks", fmt.Sprintf("[%s]", benchName),
-			"--profiles", cpuProfile, memProfile,
-			"--count", count,
-			"--tag", tag,
-		}
-
-		testArgs := &TestArgs{
-			specifiedFiles:          nil,
-			cfg:                     config.Config{},
-			withConfig:              false,
-			expectNonSpecifiedFiles: true,
-			noConfigFile:            true,
-			cmd:                     cmd,
-			expectedErrorMessage:    "profiles argument must be wrapped in brackets",
-			label:                   label,
-			expectedNumberOfFiles:   3,
-			withCleanUp:             true,
-			expectedProfiles:        nil,
-		}
-
-		testConfigScenario(t, testArgs)
-	})
-
-	label = "EmptyBracketProfileSlice"
-	t.Run(label, func(t *testing.T) {
-		cmd := []string{
-			"run",
-			"--benchmarks", fmt.Sprintf("[%s]", benchName),
-			"--profiles", "[]",
-			"--count", count,
-			"--tag", tag,
-		}
-
-		testArgs := &TestArgs{
-			specifiedFiles:          nil,
-			cfg:                     config.Config{},
-			withConfig:              false,
-			expectNonSpecifiedFiles: true,
-			noConfigFile:            true,
-			cmd:                     cmd,
-			expectedErrorMessage:    "profiles argument cannot be an empty list",
+			expectedErrorMessage:    "profiles flag is empty",
 			label:                   label,
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
