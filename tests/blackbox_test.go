@@ -1,10 +1,15 @@
 package tests
 
 import (
+	"bytes"
 	"fmt"
+	"os"
+	"os/exec"
+	"path"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/config"
+	"github.com/AlexsanderHamir/prof/shared"
 )
 
 func TestConfig(t *testing.T) {
@@ -26,8 +31,6 @@ func TestConfig(t *testing.T) {
 				},
 			},
 		}
-
-		fmt.Println(defaultRunCmd())
 
 		testArgs := &TestArgs{
 			specifiedFiles:          specifiedFiles,
@@ -294,5 +297,54 @@ func TestCommandValidation(t *testing.T) {
 		}
 
 		testConfigScenario(t, testArgs)
+	})
+}
+
+func TestManualCommand(t *testing.T) {
+	root, err := getProjectRoot()
+	if err != nil {
+		t.Log(err)
+	}
+	binaryPath := path.Join(root, testDirName, "prof")
+
+	buildProf(t, binaryPath, root)
+
+	t.Cleanup(func() {
+		benchPath := path.Join(root, testDirName, shared.MainDirOutput)
+		if err = os.RemoveAll(benchPath); err != nil {
+			t.Logf("Failed to clean up bench: %v", err)
+		}
+
+		if err = os.Remove("prof"); err != nil {
+			t.Logf("failed to clean prof binary: %s", err)
+		}
+	})
+
+	label := "BasicRun"
+	t.Run(label, func(t *testing.T) {
+		args := []string{
+			"manual",
+			"--tag", tag,
+			"assets/cpu.out",
+			"assets/memory.out",
+			"assets/block.out",
+			"assets/mutex.out",
+		}
+
+		cmd := exec.Command("./prof", args...)
+		cmd.Dir = path.Join(root, testDirName)
+
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+
+		err = cmd.Run()
+		if err != nil {
+			t.Error(err)
+		}
+
+		if stdout.Len() > 0 {
+			fmt.Println(stdout.String())
+		}
 	})
 }

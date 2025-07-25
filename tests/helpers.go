@@ -436,3 +436,14 @@ func defaultRunCmd() []string {
 		"--tag", tag,
 	}
 }
+
+func buildProf(t *testing.T, outputPath, root string) {
+	cmdProfDir := filepath.Join(root, "cmd", "prof")
+	buildCmd := exec.Command("go", "build", "-o", outputPath, ".")
+	buildCmd.Dir = cmdProfDir
+
+	buildOutput, err := buildCmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("failed to build prof binary: %v\nOutput: %s", err, buildOutput)
+	}
+}

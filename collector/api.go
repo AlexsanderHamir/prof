@@ -41,9 +41,10 @@ func RunCollector(files []string, tag string) error {
 	}
 
 	for _, binaryFilePath := range files {
-		fileName := strings.TrimSuffix(binaryFilePath, filepath.Ext(binaryFilePath))
-		profilepath := path.Join(tagDir, fileName)
-		if err = ensureDirExists(profilepath); err != nil {
+		binaryDirName := filepath.Base(binaryFilePath)
+		fileName := strings.TrimSuffix(binaryDirName, filepath.Ext(binaryDirName))
+		profileDirPath := path.Join(tagDir, fileName)
+		if err = ensureDirExists(profileDirPath); err != nil {
 			return err
 		}
 
@@ -54,7 +55,7 @@ func RunCollector(files []string, tag string) error {
 			}
 		}
 
-		outputTextFilePath := path.Join(profilepath, fileName+"."+shared.TextExtension)
+		outputTextFilePath := path.Join(profileDirPath, fileName+"."+shared.TextExtension)
 		if err = GenerateProfileTextOutput(binaryFilePath, outputTextFilePath); err != nil {
 			return err
 		}
@@ -65,7 +66,7 @@ func RunCollector(files []string, tag string) error {
 			return fmt.Errorf("failed to extract function names: %w", err)
 		}
 
-		functionDir := path.Join(profilepath, "functions")
+		functionDir := path.Join(profileDirPath, "functions")
 		if err = ensureDirExists(functionDir); err != nil {
 			return err
 		}
