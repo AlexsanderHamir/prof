@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/AlexsanderHamir/prof/args"
+	"github.com/AlexsanderHamir/prof/collector"
 	"github.com/AlexsanderHamir/prof/parser"
 	"github.com/AlexsanderHamir/prof/shared"
 )
@@ -18,11 +19,11 @@ func SetupDirectories(tag string, benchmarks, profiles []string) error {
 	if err != nil {
 		return err
 	}
-	tagDir := filepath.Join(currentDir, shared.MainDirOutput, tag)
 
-	err = deleteContents(tagDir)
+	tagDir := filepath.Join(currentDir, shared.MainDirOutput, tag)
+	err = shared.CleanOrCreateDir(tagDir)
 	if err != nil {
-		return fmt.Errorf("deleteContents failed: %w", err)
+		return fmt.Errorf("CleanOrCreateDir failed: %w", err)
 	}
 
 	if err = createBenchDirectories(tagDir, benchmarks); err != nil {
@@ -39,9 +40,9 @@ func RunBenchmark(benchmarkName string, profiles []string, count int, tag string
 		return err
 	}
 
-	textDir, binDir := getOrCreateOutputDirectories(benchmarkName, tag)
+	textDir, binDir := getOutputDirectories(benchmarkName, tag)
 
-	outputFile := filepath.Join(textDir, fmt.Sprintf("%s.%s", benchmarkName, textExtension))
+	outputFile := filepath.Join(textDir, fmt.Sprintf("%s.%s", benchmarkName, shared.TextExtension))
 	if err = runBenchmarkCommand(cmd, outputFile); err != nil {
 		return err
 	}
@@ -69,15 +70,15 @@ func ProcessProfiles(benchmarkName string, profiles []string, tag string) error 
 			return fmt.Errorf("failed to stat profile file %s: %w", profileFile, err)
 		}
 
-		outputFile := filepath.Join(textDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, textExtension))
+		outputFile := filepath.Join(textDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, shared.TextExtension))
 		profileFunctionsDir := filepath.Join(tagDir, profile+shared.FunctionsDirSuffix, benchmarkName)
 
-		if err := generateTextProfile(profileFile, outputFile); err != nil {
+		if err := collector.GenerateProfileTextOutput(profileFile, outputFile); err != nil {
 			return fmt.Errorf("failed to generate text profile for %s: %w", profile, err)
 		}
 
-		pngFile := filepath.Join(profileFunctionsDir, fmt.Sprintf("%s_%s.png", benchmarkName, profile))
-		if err := generatePNGVisualization(profileFile, pngFile); err != nil {
+		pngDesiredFilePath := filepath.Join(profileFunctionsDir, fmt.Sprintf("%s_%s.png", benchmarkName, profile))
+		if err := collector.GeneratePNGVisualization(profileFile, pngDesiredFilePath); err != nil {
 			return fmt.Errorf("failed to generate PNG visualization for %s: %w", profile, err)
 		}
 

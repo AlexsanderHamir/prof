@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/prof/collector"
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
@@ -22,17 +23,7 @@ func getProfileFlags() map[string]string {
 	}
 }
 
-func getPprofTextParams() []string {
-	return []string{
-		"-cum",
-		"-edgefraction=0",
-		"-nodefraction=0",
-		"-top",
-	}
-}
-
 const (
-	textExtension       = "txt"
 	binExtension        = "out"
 	descriptionFileName = "description.txt"
 	moduleNotFoundMsg   = "go: cannot find main module"
@@ -115,36 +106,8 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) (
 	return cmd, nil
 }
 
-func deleteContents(dir string) error {
-	info, err := os.Stat(dir)
-
-	if os.IsNotExist(err) {
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	if !info.IsDir() {
-		return fmt.Errorf("path is not a directory: %s", dir)
-	}
-
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return fmt.Errorf("failed to read directory: %w", err)
-	}
-
-	for _, entry := range entries {
-		path := filepath.Join(dir, entry.Name())
-		if err = os.RemoveAll(path); err != nil {
-			return fmt.Errorf("failed to remove %s: %w", path, err)
-		}
-	}
-
-	return nil
-}
-
 // getOutputDirectories gets or creates the output directories.
-func getOrCreateOutputDirectories(benchmarkName, tag string) (textDir string, binDir string) {
+func getOutputDirectories(benchmarkName, tag string) (textDir string, binDir string) {
 	tagDir := filepath.Join(shared.MainDirOutput, tag)
 	textDir = filepath.Join(tagDir, shared.ProfileTextDir, benchmarkName)
 	binDir = filepath.Join(tagDir, shared.ProfileBinDir, benchmarkName)
@@ -212,34 +175,6 @@ func moveTestFiles(benchmarkName, binDir string) error {
 	return nil
 }
 
-func generateTextProfile(profileFile, outputFile string) error {
-	pprofTextParams := getPprofTextParams()
-	cmd := append([]string{"go", "tool", "pprof"}, pprofTextParams...)
-	cmd = append(cmd, profileFile)
-
-	// #nosec G204 -- cmd is constructed internally by generateTextProfile(), not from user input
-	execCmd := exec.Command(cmd[0], cmd[1:]...)
-	output, err := execCmd.Output()
-	if err != nil {
-		return fmt.Errorf("pprof command failed: %w", err)
-	}
-
-	return os.WriteFile(outputFile, output, shared.PermFile)
-}
-
-func generatePNGVisualization(profileFile, outputFile string) error {
-	cmd := []string{"go", "tool", "pprof", "-png", profileFile}
-
-	// #nosec G204 -- cmd is constructed internally by generatePNGVisualization(), not from user input
-	execCmd := exec.Command(cmd[0], cmd[1:]...)
-	output, err := execCmd.Output()
-	if err != nil {
-		return fmt.Errorf("pprof PNG generation failed: %w", err)
-	}
-
-	return os.WriteFile(outputFile, output, shared.PermFile)
-}
-
 // ProfilePaths holds paths for profile text, binary, and output directories.
 type ProfilePaths struct {
 	// Desired file path for specified profile
@@ -265,7 +200,7 @@ type ProfilePaths struct {
 //   - bench/v1.0/cpu_functions/BenchmarkPool/function1.txt
 func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 	tagDir := filepath.Join("bench", tag)
-	profileTextFile := fmt.Sprintf("%s_%s.%s", benchmarkName, profile, textExtension)
+	profileTextFile := fmt.Sprintf("%s_%s.%s", benchmarkName, profile, shared.TextExtension)
 	profileBinFile := fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension)
 
 	return ProfilePaths{
@@ -278,31 +213,11 @@ func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 // saveAllFunctionsPprofContents calls [getFunctionPprofContent] sequentially.
 func saveAllFunctionsPprofContents(functions []string, paths ProfilePaths) error {
 	for _, function := range functions {
-		if err := getFunctionPprofContent(function, paths); err != nil {
+		outputFile := filepath.Join(paths.FunctionDirectory, function+"."+shared.TextExtension)
+		if err := collector.GetFunctionPprofContent(function, paths.ProfileBinaryFile, outputFile); err != nil {
 			return fmt.Errorf("failed to extract function content for %s: %w", function, err)
 		}
 	}
 
-	return nil
-}
-
-// getFunctionPprofContent gets code line level mapping of specified function
-// and writes the data to a file named after the function.
-func getFunctionPprofContent(function string, paths ProfilePaths) error {
-	outputFile := filepath.Join(paths.FunctionDirectory, function+"."+textExtension)
-	cmd := []string{"go", "tool", "pprof", fmt.Sprintf("-list=%s", function), paths.ProfileBinaryFile}
-
-	// #nosec ProfileTextDir04 -- cmd is constructed internally by getFunctionPprofContent(), not from user input
-	execCmd := exec.Command(cmd[0], cmd[1:]...)
-	output, err := execCmd.Output()
-	if err != nil {
-		return fmt.Errorf("pprof list command failed: %w", err)
-	}
-
-	if err = os.WriteFile(outputFile, output, shared.PermFile); err != nil {
-		return fmt.Errorf("failed to write function content: %w", err)
-	}
-
-	slog.Info("Collected function", "function", function)
 	return nil
 }

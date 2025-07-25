@@ -59,7 +59,7 @@ func parseListArgument(arg string) []string {
 }
 
 // Rest of the functions remain the same...
-func parseBenchmarkConfig(benchmarks, profiles string) ([]string, []string, error) {
+func parseAndValidateBenchmarkParams(benchmarks, profiles string) ([]string, []string, error) {
 	if err := validateListArguments(benchmarks, profiles); err != nil {
 		return nil, nil, err
 	}
