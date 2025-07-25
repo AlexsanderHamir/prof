@@ -1,1 +1,4 @@
 tasks.md
+*.out
+*.prof
+*prof

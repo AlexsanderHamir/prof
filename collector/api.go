@@ -12,24 +12,7 @@ import (
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
-// Random Thoughts
-
-// ## Actions
-// 1. CLI
-// Don't specify profiles
-
-// 2. How are we going to organize it?
-// branch/Tag
-// 	profile_name/
-//	profile_name.txt
-// 		profile_functions/
-//			Get.txt
-//			Put.txt
-
-// 3. Collect
-// use config
-
-// runCollecor handles data organization without wrapping go test.
+// RunCollector handles data organization without wrapping go test.
 func RunCollector(files []string, tag string) error {
 	if err := ensureDirExists(shared.MainDirOutput); err != nil {
 		return err
@@ -41,15 +24,23 @@ func RunCollector(files []string, tag string) error {
 		return fmt.Errorf("CleanOrCreateDir failed: %w", err)
 	}
 
-	for _, file := range files {
-		fileName := strings.TrimSuffix(file, filepath.Ext(file))
+	for _, binaryFilePath := range files {
+		// 3. create a dir for each profile file
+		fileName := strings.TrimSuffix(binaryFilePath, filepath.Ext(binaryFilePath))
 		profilepath := path.Join(tagDir, fileName)
 		if err := ensureDirExists(profilepath); err != nil {
 			return err
 		}
-		// 3. create a dir for each profile file
-		// 4. Organize the results.
-		fmt.Println("profile: ", file)
+
+		// 4. Collect results.
+		// 1. generate txt files
+		outputFilePath := path.Join(profilepath, fileName+"."+shared.TextExtension)
+		if err := GenerateProfileTextOutput(binaryFilePath, outputFilePath); err != nil {
+			return err
+		}
+
+		// 2. collect functions according to config
+
 	}
 	return nil
 }
