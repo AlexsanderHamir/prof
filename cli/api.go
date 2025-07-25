@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/prof/args"
+	"github.com/AlexsanderHamir/prof/collector"
 	"github.com/AlexsanderHamir/prof/config"
 	"github.com/AlexsanderHamir/prof/tracker"
 	"github.com/AlexsanderHamir/prof/version"
@@ -35,12 +36,31 @@ func CreateRootCmd() *cobra.Command {
 		RunE:  runBenchmarks,
 	}
 
+	rootCmd.AddCommand(createManualCmd())
 	rootCmd.AddCommand(createRunCmd())
 	rootCmd.AddCommand(createSetupCmd())
 	rootCmd.AddCommand(createTrackCmd())
 	rootCmd.AddCommand(createVersionCmd())
 
 	return rootCmd
+}
+
+func createManualCmd() *cobra.Command {
+	manualCmd := &cobra.Command{
+		Use:     "manual",
+		Short:   "Receives profile files and performs data collection and organization.",
+		Args:    cobra.MinimumNArgs(1),
+		Example: "prof manual cpu.prof memory.prof block.prof",
+		RunE: func(_ *cobra.Command, args []string) error {
+			return collector.RunCollector(args, tag)
+		},
+	}
+
+	tagFlag := "tag"
+	manualCmd.Flags().StringVar(&tag, tagFlag, "", "Tag for organization")
+	_ = manualCmd.MarkFlagRequired(tagFlag)
+
+	return manualCmd
 }
 
 func createRunCmd() *cobra.Command {
@@ -142,7 +162,7 @@ func runBenchmarks(_ *cobra.Command, _ []string) error {
 		cfg = &config.Config{}
 	}
 
-	benchmarkList, profileList, err := parseBenchmarkConfig(benchmarks, profiles)
+	benchmarkList, profileList, err := parseAndValidateBenchmarkParams(benchmarks, profiles)
 	if err != nil {
 		return fmt.Errorf("failed to parse benchmark config: %w", err)
 	}

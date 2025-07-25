@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/prof/args"
+	"github.com/AlexsanderHamir/prof/config"
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
@@ -74,7 +75,7 @@ func TurnLinesIntoObjects(profilePath, profileType string) ([]*LineObj, error) {
 }
 
 // GetAllFunctionNames extracts all function names from a profile text file, applying the given filter.
-func GetAllFunctionNames(filePath string, filter ProfileFilter) (names []string, err error) {
+func GetAllFunctionNames(filePath string, filter config.FunctionFilter) (names []string, err error) {
 	scanner, file, err := shared.GetScanner(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("GetAllFunctionNames Failed: %w", err)
@@ -107,7 +108,7 @@ func GetAllFunctionNames(filePath string, filter ProfileFilter) (names []string,
 			continue
 		}
 
-		if funcName := extractFunctionName(line, filter.FunctionPrefixes, ignoreSet); funcName != "" {
+		if funcName := extractFunctionName(line, filter.IncludePrefixes, ignoreSet); funcName != "" {
 			names = append(names, funcName)
 		}
 	}
