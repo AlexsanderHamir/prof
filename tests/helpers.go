@@ -430,8 +430,8 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 func defaultRunCmd() []string {
 	return []string{
 		"run",
-		"--benchmarks", fmt.Sprintf("[%s]", benchName),
-		"--profiles", fmt.Sprintf("[%s,%s]", cpuProfile, memProfile),
+		"--benchmarks", benchName,
+		"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
 		"--count", count,
 		"--tag", tag,
 	}
