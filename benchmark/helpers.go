@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/prof/collector"
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
@@ -208,16 +207,4 @@ func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 		ProfileBinaryFile: filepath.Join(tagDir, "bin", benchmarkName, profileBinFile),
 		FunctionDirectory: filepath.Join(tagDir, profile+shared.FunctionsDirSuffix, benchmarkName),
 	}
-}
-
-// saveAllFunctionsPprofContents calls [getFunctionPprofContent] sequentially.
-func saveAllFunctionsPprofContents(functions []string, paths ProfilePaths) error {
-	for _, function := range functions {
-		outputFile := filepath.Join(paths.FunctionDirectory, function+"."+shared.TextExtension)
-		if err := collector.GetFunctionPprofContent(function, paths.ProfileBinaryFile, outputFile); err != nil {
-			return fmt.Errorf("failed to extract function content for %s: %w", function, err)
-		}
-	}
-
-	return nil
 }

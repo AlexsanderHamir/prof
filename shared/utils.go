@@ -22,6 +22,7 @@ const (
 	PermFile           = 0o644
 	FunctionsDirSuffix = "_functions"
 	TextExtension      = "txt"
+	ConfigFilename     = "config_template.json"
 )
 
 func GetScanner(filePath string) (*bufio.Scanner, *os.File, error) {
@@ -40,7 +41,7 @@ func CleanOrCreateDir(dir string) error {
 	info, err := os.Stat(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			if err := os.MkdirAll(dir, PermDir); err != nil {
+			if err = os.MkdirAll(dir, PermDir); err != nil {
 				return fmt.Errorf("failed to create %s directory: %w", dir, err)
 			}
 			return nil

@@ -17,4 +17,3 @@ func ensureDirExists(basePath string) error {
 
 	return nil
 }
-

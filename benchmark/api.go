@@ -96,17 +96,12 @@ func CollectProfileFunctions(args *args.CollectionArgs) error {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
 
-		filter := parser.ProfileFilter{
-			FunctionPrefixes: args.BenchmarkConfig.IncludePrefixes,
-			IgnoreFunctions:  args.BenchmarkConfig.IgnoreFunctions,
-		}
-
-		functions, err := parser.GetAllFunctionNames(paths.ProfileTextFile, filter)
+		functions, err := parser.GetAllFunctionNames(paths.ProfileTextFile, args.BenchmarkConfig)
 		if err != nil {
 			return fmt.Errorf("failed to extract function names: %w", err)
 		}
 
-		if err = saveAllFunctionsPprofContents(functions, paths); err != nil {
+		if err = collector.SaveAllFunctionsPprofContents(functions, paths.ProfileBinaryFile, paths.FunctionDirectory); err != nil {
 			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", err)
 		}
 	}

@@ -9,8 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/AlexsanderHamir/prof/config"
+	"github.com/AlexsanderHamir/prof/parser"
 	"github.com/AlexsanderHamir/prof/shared"
 )
+
+const globalSign = "*"
 
 // RunCollector handles data organization without wrapping go test.
 func RunCollector(files []string, tag string) error {
@@ -24,23 +28,51 @@ func RunCollector(files []string, tag string) error {
 		return fmt.Errorf("CleanOrCreateDir failed: %w", err)
 	}
 
+	cfg, err := config.LoadFromFile(shared.ConfigFilename)
+	if err != nil {
+		cfg = &config.Config{}
+	}
+
+	var functionFilter config.FunctionFilter
+
+	globalFilter, hasGlobalFilter := cfg.FunctionFilter[globalSign]
+	if hasGlobalFilter {
+		functionFilter = globalFilter
+	}
+
 	for _, binaryFilePath := range files {
-		// 3. create a dir for each profile file
 		fileName := strings.TrimSuffix(binaryFilePath, filepath.Ext(binaryFilePath))
 		profilepath := path.Join(tagDir, fileName)
-		if err := ensureDirExists(profilepath); err != nil {
+		if err = ensureDirExists(profilepath); err != nil {
 			return err
 		}
 
-		// 4. Collect results.
-		// 1. generate txt files
-		outputFilePath := path.Join(profilepath, fileName+"."+shared.TextExtension)
-		if err := GenerateProfileTextOutput(binaryFilePath, outputFilePath); err != nil {
+		if !hasGlobalFilter {
+			localFilter, hasLocalFilter := cfg.FunctionFilter[fileName]
+			if hasLocalFilter {
+				functionFilter = localFilter
+			}
+		}
+
+		outputTextFilePath := path.Join(profilepath, fileName+"."+shared.TextExtension)
+		if err = GenerateProfileTextOutput(binaryFilePath, outputTextFilePath); err != nil {
 			return err
 		}
 
-		// 2. collect functions according to config
+		var functions []string
+		functions, err = parser.GetAllFunctionNames(outputTextFilePath, functionFilter)
+		if err != nil {
+			return fmt.Errorf("failed to extract function names: %w", err)
+		}
 
+		functionDir := path.Join(profilepath, "functions")
+		if err = ensureDirExists(functionDir); err != nil {
+			return err
+		}
+
+		if err = SaveAllFunctionsPprofContents(functions, binaryFilePath, functionDir); err != nil {
+			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", err)
+		}
 	}
 	return nil
 }
@@ -90,5 +122,17 @@ func GetFunctionPprofContent(function, binaryFile, outputFile string) error {
 	}
 
 	slog.Info("Collected function", "function", function)
+	return nil
+}
+
+// SaveAllFunctionsPprofContents calls [GetFunctionPprofContent] sequentially.
+func SaveAllFunctionsPprofContents(functions []string, binaryPath, basePath string) error {
+	for _, functionName := range functions {
+		outputFile := filepath.Join(basePath, functionName+"."+shared.TextExtension)
+		if err := GetFunctionPprofContent(functionName, binaryPath, outputFile); err != nil {
+			return fmt.Errorf("failed to extract function content for %s: %w", functionName, err)
+		}
+	}
+
 	return nil
 }
