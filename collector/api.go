@@ -2,15 +2,12 @@ package collector
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/AlexsanderHamir/prof/config"
-	"github.com/AlexsanderHamir/prof/parser"
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
@@ -34,18 +31,17 @@ func RunCollector(files []string, tag string) error {
 	}
 
 	var functionFilter config.FunctionFilter
-
 	globalFilter, hasGlobalFilter := cfg.FunctionFilter[globalSign]
 	if hasGlobalFilter {
 		functionFilter = globalFilter
 	}
 
-	for _, binaryFilePath := range files {
-		binaryDirName := filepath.Base(binaryFilePath)
-		fileName := strings.TrimSuffix(binaryDirName, filepath.Ext(binaryDirName))
-		profileDirPath := path.Join(tagDir, fileName)
-		if err = ensureDirExists(profileDirPath); err != nil {
-			return err
+	var profileDirPath string
+	for _, fullBinaryPath := range files {
+		fileName := getFileName(fullBinaryPath)
+		profileDirPath, err = createProfileDirectory(tagDir, fileName)
+		if err != nil {
+			return fmt.Errorf("createProfileDirectory failed: %w", err)
 		}
 
 		if !hasGlobalFilter {
@@ -56,23 +52,12 @@ func RunCollector(files []string, tag string) error {
 		}
 
 		outputTextFilePath := path.Join(profileDirPath, fileName+"."+shared.TextExtension)
-		if err = GenerateProfileTextOutput(binaryFilePath, outputTextFilePath); err != nil {
+		if err = GenerateProfileTextOutput(fullBinaryPath, outputTextFilePath); err != nil {
 			return err
 		}
 
-		var functions []string
-		functions, err = parser.GetAllFunctionNames(outputTextFilePath, functionFilter)
-		if err != nil {
-			return fmt.Errorf("failed to extract function names: %w", err)
-		}
-
-		functionDir := path.Join(profileDirPath, "functions")
-		if err = ensureDirExists(functionDir); err != nil {
-			return err
-		}
-
-		if err = SaveAllFunctionsPprofContents(functions, binaryFilePath, functionDir); err != nil {
-			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", err)
+		if err = collectFunctions(outputTextFilePath, profileDirPath, fullBinaryPath, functionFilter); err != nil {
+			return fmt.Errorf("collectFunctions failed: %w", err)
 		}
 	}
 	return nil
@@ -106,31 +91,11 @@ func GeneratePNGVisualization(binaryFile, outputFile string) error {
 	return os.WriteFile(outputFile, output, shared.PermFile)
 }
 
-// GetFunctionPprofContent gets code line level mapping of specified function
-// and writes the data to a file named after the function.
-func GetFunctionPprofContent(function, binaryFile, outputFile string) error {
-	cmd := []string{"go", "tool", "pprof", fmt.Sprintf("-list=%s", function), binaryFile}
-
-	// #nosec ProfileTextDir04 -- cmd is constructed internally by getFunctionPprofContent(), not from user input
-	execCmd := exec.Command(cmd[0], cmd[1:]...)
-	output, err := execCmd.Output()
-	if err != nil {
-		return fmt.Errorf("pprof list command failed: %w", err)
-	}
-
-	if err = os.WriteFile(outputFile, output, shared.PermFile); err != nil {
-		return fmt.Errorf("failed to write function content: %w", err)
-	}
-
-	slog.Info("Collected function", "function", function)
-	return nil
-}
-
 // SaveAllFunctionsPprofContents calls [GetFunctionPprofContent] sequentially.
 func SaveAllFunctionsPprofContents(functions []string, binaryPath, basePath string) error {
 	for _, functionName := range functions {
 		outputFile := filepath.Join(basePath, functionName+"."+shared.TextExtension)
-		if err := GetFunctionPprofContent(functionName, binaryPath, outputFile); err != nil {
+		if err := getFunctionPprofContent(functionName, binaryPath, outputFile); err != nil {
 			return fmt.Errorf("failed to extract function content for %s: %w", functionName, err)
 		}
 	}
