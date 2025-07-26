@@ -10,9 +10,8 @@ import (
 
 func TestLinesIntoObjs(t *testing.T) {
 	profilePath := filepath.Join("testFiles", "BenchmarkGenPool_cpu.txt")
-	profileType := "cpu"
 
-	lineObjs, err := parser.TurnLinesIntoObjects(profilePath, profileType)
+	lineObjs, err := parser.TurnLinesIntoObjects(profilePath)
 	if err != nil {
 		t.Error(err)
 	}

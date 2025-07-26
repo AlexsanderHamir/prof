@@ -52,7 +52,7 @@ type LineObj struct {
 	CumPercentage  float64
 }
 
-func TurnLinesIntoObjects(profilePath, profileType string) ([]*LineObj, error) {
+func TurnLinesIntoObjects(profilePath string) ([]*LineObj, error) {
 	var lines []string
 
 	scanner, file, err := shared.GetScanner(profilePath)
@@ -61,7 +61,7 @@ func TurnLinesIntoObjects(profilePath, profileType string) ([]*LineObj, error) {
 	}
 	defer file.Close()
 
-	CollectOrRemoveHeader(scanner, profileType)
+	CollectOrRemoveHeader(scanner)
 
 	GetAllProfileLines(scanner, &lines)
 
@@ -151,7 +151,7 @@ func GetAllProfileLines(scanner *bufio.Scanner, lines *[]string) {
 	}
 }
 
-func CollectOrRemoveHeader(scanner *bufio.Scanner, profileType string) {
+func CollectOrRemoveHeader(scanner *bufio.Scanner) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, header) {
