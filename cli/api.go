@@ -49,10 +49,10 @@ func CreateRootCmd() *cobra.Command {
 
 func createManualCmd() *cobra.Command {
 	manualCmd := &cobra.Command{
-		Use:     "manual",
+		Use:     shared.MANUALCMD,
 		Short:   "Receives profile files and performs data collection and organization. (doesn't wrap go test)",
 		Args:    cobra.MinimumNArgs(1),
-		Example: "prof manual --tag tagName cpu.prof memory.prof block.prof mutex.prof",
+		Example: fmt.Sprintf("prof %s --tag tagName cpu.prof memory.prof block.prof mutex.prof", shared.MANUALCMD),
 		RunE: func(_ *cobra.Command, args []string) error {
 			return collector.RunCollector(args, tag)
 		},
@@ -70,26 +70,26 @@ func createRunCmd() *cobra.Command {
 	profileFlag := "profiles"
 	tagFlag := "tag"
 	countFlag := "count"
-	example := fmt.Sprintf(`prof run --%s BenchmarkGenPool --%s cpu,memory --%s 10 --%s "tag1"`, benchFlag, profileFlag, countFlag, tagFlag)
+	example := fmt.Sprintf(`prof %s --%s BenchmarkGenPool --%s cpu,memory --%s 10 --%s "tag1"`, shared.AUTOCMD, benchFlag, profileFlag, countFlag, tagFlag)
 
-	runCmd := &cobra.Command{
-		Use:     "run",
+	cmd := &cobra.Command{
+		Use:     shared.AUTOCMD,
 		Short:   "Wraps `go test` and `pprof` to benchmark code and gather profiling data for performance investigations.",
 		RunE:    runBenchmarks,
 		Example: example,
 	}
 
-	runCmd.Flags().StringSliceVar(&benchmarks, benchFlag, []string{}, `Benchmarks to run (e.g., "[BenchmarkGenPool]")"`)
-	runCmd.Flags().StringSliceVar(&profiles, profileFlag, []string{}, `Profiles to use (e.g., "[cpu,memory,mutex]")`)
-	runCmd.Flags().StringVar(&tag, tagFlag, "", "The tag is used to organize the results")
-	runCmd.Flags().IntVar(&count, countFlag, 0, "Number of runs")
+	cmd.Flags().StringSliceVar(&benchmarks, benchFlag, []string{}, `Benchmarks to run (e.g., "[BenchmarkGenPool]")"`)
+	cmd.Flags().StringSliceVar(&profiles, profileFlag, []string{}, `Profiles to use (e.g., "[cpu,memory,mutex]")`)
+	cmd.Flags().StringVar(&tag, tagFlag, "", "The tag is used to organize the results")
+	cmd.Flags().IntVar(&count, countFlag, 0, "Number of runs")
 
-	_ = runCmd.MarkFlagRequired(benchFlag)
-	_ = runCmd.MarkFlagRequired(profileFlag)
-	_ = runCmd.MarkFlagRequired(tagFlag)
-	_ = runCmd.MarkFlagRequired(countFlag)
+	_ = cmd.MarkFlagRequired(benchFlag)
+	_ = cmd.MarkFlagRequired(profileFlag)
+	_ = cmd.MarkFlagRequired(tagFlag)
+	_ = cmd.MarkFlagRequired(countFlag)
 
-	return runCmd
+	return cmd
 }
 
 // createTrackCmd creates the track subcommand

@@ -7,6 +7,12 @@ import (
 	"path/filepath"
 )
 
+// CLI Commands
+const (
+	AUTOCMD   = "auto"
+	MANUALCMD = "manual"
+)
+
 const (
 	InfoCollectionSuccess = "All benchmarks and profile processing completed successfully!"
 	IMPROVEMENT           = "IMPROVEMENT"
