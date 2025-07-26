@@ -8,6 +8,7 @@ import (
 	"github.com/AlexsanderHamir/prof/shared"
 )
 
+// CheckPerformanceDifferences creates the profile report by comparing data from  prof's auto run.
 func CheckPerformanceDifferences(baselineTag, currentTag, benchName, profileType string) (*ProfileChangeReport, error) {
 	fileName := fmt.Sprintf("%s_%s.txt", benchName, profileType)
 	textFilePath1BaseLine := filepath.Join(shared.MainDirOutput, baselineTag, shared.ProfileTextDir, benchName, fileName)

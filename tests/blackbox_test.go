@@ -164,7 +164,7 @@ func TestProfileValidation(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		profileName := "fakeProfileName"
 		cmd := []string{
-			"run",
+			shared.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", fmt.Sprintf("%s,%s,%s", cpuProfile, memProfile, profileName),
 			"--count", count,
@@ -192,7 +192,7 @@ func TestProfileValidation(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		profileName := "goroutine"
 		cmd := []string{
-			"run",
+			shared.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", profileName,
 			"--count", count,
@@ -219,7 +219,7 @@ func TestProfileValidation(t *testing.T) {
 	label = "CollectedProfile"
 	t.Run(label, func(t *testing.T) {
 		cmd := []string{
-			"run",
+			shared.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", fmt.Sprintf("%s,%s,%s", cpuProfile, memProfile, blockProfile),
 			"--count", count,
@@ -248,7 +248,7 @@ func TestCommandValidation(t *testing.T) {
 	label := "EmptyBenchmarkSlice"
 	t.Run(label, func(t *testing.T) {
 		cmd := []string{
-			"run",
+			shared.AUTOCMD,
 			"--benchmarks", "",
 			"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
 			"--count", count,
@@ -275,7 +275,7 @@ func TestCommandValidation(t *testing.T) {
 	label = "EmptyProfileSlice"
 	t.Run(label, func(t *testing.T) {
 		cmd := []string{
-			"run",
+			shared.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", "",
 			"--count", count,
@@ -323,7 +323,7 @@ func TestManualCommand(t *testing.T) {
 	label := "BasicRun"
 	t.Run(label, func(t *testing.T) {
 		args := []string{
-			"manual",
+			shared.MANUALCMD,
 			"--tag", tag,
 			"assets/cpu.out",
 			"assets/memory.out",
