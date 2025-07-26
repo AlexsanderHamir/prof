@@ -9,8 +9,10 @@ import (
 
 // CLI Commands
 const (
-	AUTOCMD   = "auto"
-	MANUALCMD = "manual"
+	AUTOCMD        = "auto"
+	MANUALCMD      = "manual"
+	TrackAutoCMD   = AUTOCMD
+	TrackManualCMD = MANUALCMD
 )
 
 const (
