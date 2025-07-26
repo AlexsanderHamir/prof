@@ -61,8 +61,7 @@ func TurnLinesIntoObjects(profilePath, profileType string) ([]*LineObj, error) {
 	}
 	defer file.Close()
 
-	shouldRemove := true
-	CollectOrRemoveHeader(scanner, profileType, &lines, shouldRemove)
+	CollectOrRemoveHeader(scanner, profileType)
 
 	GetAllProfileLines(scanner, &lines)
 
@@ -152,18 +151,11 @@ func GetAllProfileLines(scanner *bufio.Scanner, lines *[]string) {
 	}
 }
 
-func CollectOrRemoveHeader(scanner *bufio.Scanner, profileType string, lines *[]string, shouldRemove bool) {
-	lineCount := 0
-
-	headerIndex := 6
-	if profileType != "cpu" {
-		headerIndex = 5
-	}
-
-	for lineCount < headerIndex && scanner.Scan() {
-		if !shouldRemove {
-			*lines = append(*lines, scanner.Text())
+func CollectOrRemoveHeader(scanner *bufio.Scanner, profileType string) {
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, header) {
+			break
 		}
-		lineCount++
 	}
 }
