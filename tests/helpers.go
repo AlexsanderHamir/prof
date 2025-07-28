@@ -33,6 +33,9 @@ type TestArgs struct {
 	expectedNumberOfFiles   int
 	withCleanUp             bool
 	expectedProfiles        []string
+	blockOutputCheck        bool
+	isEnvironmentSet        bool
+	checkSuccessMessage     bool
 }
 
 type fileFullName string
@@ -173,10 +176,9 @@ func setUpProf(t *testing.T, projectRoot string) {
 	}
 }
 
-func runProf(t *testing.T, projectRoot string, args []string, expectedErrMessage string) (shouldContinue bool) {
+func runProf(t *testing.T, envFullPath string, args []string, expectedErrMessage string, checkSuccessMessage bool) (shouldContinue bool) {
 	t.Helper()
 
-	envFullPath := filepath.Join(projectRoot, testDirName, envDirName)
 	profBinary := filepath.Join(envFullPath, "prof")
 
 	if _, err := os.Stat(profBinary); os.IsNotExist(err) {
@@ -199,7 +201,7 @@ func runProf(t *testing.T, projectRoot string, args []string, expectedErrMessage
 	}
 
 	successMessage := shared.InfoCollectionSuccess
-	if !strings.Contains(stderr.String(), successMessage) {
+	if checkSuccessMessage && !strings.Contains(stderr.String(), successMessage) {
 		t.Fatal("Expected success message not found")
 	}
 
@@ -397,34 +399,38 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 	}
 
 	envDirName = envDirName + " " + testArgs.label
-	envPath := path.Join(root, testDirName, envDirName)
+	envFullPath := path.Join(root, testDirName, envDirName)
 
 	if testArgs.withCleanUp {
 		t.Cleanup(func() {
-			if err = os.RemoveAll(envPath); err != nil {
+			if err = os.RemoveAll(envFullPath); err != nil {
 				t.Logf("Failed to clean up environment: %v", err)
 			}
 		})
 	}
 
-	// 1. Set up Environment
-	setupEnviroment(t)
+	if !testArgs.isEnvironmentSet {
+		// 1. Set up Environment
+		setupEnviroment(t)
 
-	// 2. Build prof and move to Environment
-	if !testArgs.noConfigFile {
-		createConfigFile(t, &testArgs.cfg)
+		// 2. Build prof and move to Environment
+		if !testArgs.noConfigFile {
+			createConfigFile(t, &testArgs.cfg)
+		}
+
+		setUpProf(t, root)
 	}
 
-	setUpProf(t, root)
-
-	shouldContinue := runProf(t, root, testArgs.cmd, testArgs.expectedErrorMessage)
+	shouldContinue := runProf(t, envFullPath, testArgs.cmd, testArgs.expectedErrorMessage, testArgs.checkSuccessMessage)
 	// Tested failure
 	if !shouldContinue {
 		return
 	}
 
 	// 4. Check bench output
-	checkOutput(t, envPath, testArgs)
+	if !testArgs.blockOutputCheck {
+		checkOutput(t, envFullPath, testArgs)
+	}
 }
 
 func defaultRunCmd() []string {
@@ -446,4 +452,32 @@ func buildProf(t *testing.T, outputPath, root string) {
 	if err != nil {
 		t.Fatalf("failed to build prof binary: %v\nOutput: %s", err, buildOutput)
 	}
+}
+
+func createBenchForTracker(t *testing.T, label, iterations, tagName string, blockOutputCheck, isEnvironmentSet bool) {
+	cmd := []string{
+		shared.AUTOCMD,
+		"--benchmarks", benchName,
+		"--profiles", "cpu",
+		"--count", iterations,
+		"--tag", tagName,
+	}
+
+	testArgs := &TestArgs{
+		specifiedFiles:          nil,
+		cfg:                     config.Config{},
+		withConfig:              false,
+		expectNonSpecifiedFiles: true,
+		noConfigFile:            true,
+		cmd:                     cmd,
+		expectedErrorMessage:    "",
+		label:                   label,
+		expectedNumberOfFiles:   3,
+		withCleanUp:             false,
+		expectedProfiles:        nil,
+		blockOutputCheck:        blockOutputCheck,
+		isEnvironmentSet:        isEnvironmentSet,
+	}
+
+	testConfigScenario(t, testArgs)
 }

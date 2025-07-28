@@ -61,8 +61,7 @@ func TurnLinesIntoObjects(profilePath string) ([]*LineObj, error) {
 	}
 	defer file.Close()
 
-	CollectOrRemoveHeader(scanner)
-
+	removeHeader(scanner)
 	GetAllProfileLines(scanner, &lines)
 
 	lineObjs, err := createLineObjects(lines)
@@ -151,7 +150,7 @@ func GetAllProfileLines(scanner *bufio.Scanner, lines *[]string) {
 	}
 }
 
-func CollectOrRemoveHeader(scanner *bufio.Scanner) {
+func removeHeader(scanner *bufio.Scanner) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, header) {

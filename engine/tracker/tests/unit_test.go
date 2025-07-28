@@ -6,7 +6,7 @@ import (
 	"github.com/AlexsanderHamir/prof/engine/tracker"
 )
 
-func TestCoreBlock(t *testing.T) {
+func TestTrackAuto(t *testing.T) {
 	tagPath1 := "tag1"
 	tagPath2 := "tag2"
 	benchName := "BenchmarkGenPool"
@@ -18,6 +18,7 @@ func TestCoreBlock(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if profileResult == nil {
 				t.Fatal("profileResult should not be nil")
 			}
@@ -36,5 +37,33 @@ func TestCoreBlock(t *testing.T) {
 				t.Fatal("nil result")
 			}
 		})
+	}
+}
+
+func TestTrackManual(t *testing.T) {
+	filePath1 := "bench/tag1/text/BenchmarkGenPool/BenchmarkGenPool_cpu.txt"
+	filePath2 := "bench/tag2/text/BenchmarkGenPool/BenchmarkGenPool_cpu.txt"
+
+	profileResult, err := tracker.CheckPerformanceDifferencesManual(filePath1, filePath2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if profileResult == nil {
+		t.Fatal("profileResult should not be nil")
+	}
+
+	first := profileResult.FunctionChanges[0]
+	if first == nil {
+		t.Fatal("first report should not be nil")
+	}
+
+	report := first.Report()
+	if report == "" {
+		t.Fatalf("report is missing")
+	}
+
+	if profileResult == nil {
+		t.Fatal("nil result")
 	}
 }
