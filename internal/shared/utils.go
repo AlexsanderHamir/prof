@@ -31,6 +31,7 @@ const (
 	FunctionsDirSuffix = "_functions"
 	TextExtension      = "txt"
 	ConfigFilename     = "config_template.json"
+	GlobalSign         = "*"
 )
 
 func GetScanner(filePath string) (*bufio.Scanner, *os.File, error) {

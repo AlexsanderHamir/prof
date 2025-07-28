@@ -36,6 +36,12 @@ func printConfiguration(benchArgs *args.BenchArgs, functionFilterPerBench map[st
 func runBenchAndGetProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[string]config.FunctionFilter) error {
 	slog.Info("Starting benchmark pipeline...")
 
+	var functionFilter config.FunctionFilter
+	globalFilter, hasGlobalFilter := benchmarkConfigs[shared.GlobalSign]
+	if hasGlobalFilter {
+		functionFilter = globalFilter
+	}
+
 	for _, benchmarkName := range benchArgs.Benchmarks {
 		slog.Info("Running benchmark", "Benchmark", benchmarkName)
 		if err := benchmark.RunBenchmark(benchmarkName, benchArgs.Profiles, benchArgs.Count, benchArgs.Tag); err != nil {
@@ -48,11 +54,16 @@ func runBenchAndGetProfiles(benchArgs *args.BenchArgs, benchmarkConfigs map[stri
 		}
 
 		slog.Info("Analyzing profile functions", "Benchmark", benchmarkName)
+
+		if !hasGlobalFilter {
+			functionFilter = benchmarkConfigs[benchmarkName]
+		}
+
 		args := &args.CollectionArgs{
 			Tag:             benchArgs.Tag,
 			Profiles:        benchArgs.Profiles,
 			BenchmarkName:   benchmarkName,
-			BenchmarkConfig: benchmarkConfigs[benchmarkName],
+			BenchmarkConfig: functionFilter,
 		}
 
 		if err := benchmark.CollectProfileFunctions(args); err != nil {

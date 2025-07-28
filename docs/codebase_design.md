@@ -1,10 +1,8 @@
-# Prof Tool Architecture Documentation
-
-## Overview
+# Codebase
 
 Prof is a Go benchmark profiling tool designed to automate performance analysis and comparison. It wraps Go's built-in benchmarking and pprof tools to provide comprehensive profiling data collection, organization, and performance regression detection.
 
-**🔗 [Interactive Architecture Graph](https://claude.ai/public/artifacts/3582cc33-8d87-447a-8cac-7e94c2b67f5b)** - Explore the component relationships visually
+**[Interactive Architecture Graph](https://claude.ai/public/artifacts/3582cc33-8d87-447a-8cac-7e94c2b67f5b)** - Explore the component relationships visually
 
 ## Core Functionality
 
@@ -16,7 +14,7 @@ Prof provides three main capabilities:
 
 ## Package Architecture
 
-### 📁 Package Structure
+### Package Structure
 
 ```
 prof/
@@ -37,7 +35,7 @@ prof/
 
 ## Package Details
 
-### 🚀 `cmd/prof` - Entry Point
+### `cmd/prof` - Entry Point
 
 **Location**: `cmd/prof/main.go`
 
@@ -49,7 +47,7 @@ The application entry point that initializes and starts the CLI. This is the min
 - Error handling and exit codes
 - CLI delegation
 
-### 🎮 `cli` - Command Interface
+### `cli` - Command Interface
 
 **Location**: `cli/`
 
@@ -75,7 +73,7 @@ Handles all user interaction through a Cobra-based command-line interface. Acts 
 - Workflow orchestration
 - Output formatting and reporting
 
-### ⚡ `engine` - Core Business Logic
+### `engine` - Core Business Logic
 
 The engine package contains all the core operational components of Prof.
 
@@ -126,7 +124,7 @@ The engine package contains all the core operational components of Prof.
 - `CheckPerformanceDifferencesManual()` - Manual profile comparison
 - `DetectChange()` - Analyzes performance changes between runs
 
-### 🔍 `parser` - Profile Data Processing
+### `parser` - Profile Data Processing
 
 **Location**: `parser/`
 
@@ -145,7 +143,7 @@ Handles parsing and processing of pprof text output into structured data that ca
 - `TurnLinesIntoObjects()` - Converts profile lines to structured data
 - `ShouldKeepLine()` - Applies filtering rules to profile lines
 
-### 🔒 `internal` - Protected Utilities
+### `internal` - Protected Utilities
 
 The internal package contains utilities that are protected from external imports by Go's internal package convention.
 
