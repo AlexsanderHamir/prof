@@ -24,15 +24,15 @@ var (
 type TestArgs struct {
 	specifiedFiles          map[fileFullName]*FieldsCheck
 	cfg                     config.Config
+	expectedNumberOfFiles   int
+	expectedErrorMessage    string
+	label                   string
+	cmd                     []string
+	expectedProfiles        []string
 	withConfig              bool
 	expectNonSpecifiedFiles bool
 	noConfigFile            bool
-	cmd                     []string
-	expectedErrorMessage    string
-	label                   string
-	expectedNumberOfFiles   int
 	withCleanUp             bool
-	expectedProfiles        []string
 	blockOutputCheck        bool
 	isEnvironmentSet        bool
 	checkSuccessMessage     bool
