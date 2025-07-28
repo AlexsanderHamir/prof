@@ -7,9 +7,9 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/AlexsanderHamir/prof/config"
+	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/shared"
 	"github.com/AlexsanderHamir/prof/parser"
-	"github.com/AlexsanderHamir/prof/shared"
 )
 
 func ensureDirExists(basePath string) error {
@@ -56,7 +56,7 @@ func collectFunctions(outputTextFilePath, profileDirPath, fullBinaryPath string,
 		return err
 	}
 
-	if err = SaveAllFunctionsPprofContents(functions, fullBinaryPath, functionDir); err != nil {
+	if err = GetFunctionsOutput(functions, fullBinaryPath, functionDir); err != nil {
 		return fmt.Errorf("getAllFunctionsPprofContents failed: %w", err)
 	}
 

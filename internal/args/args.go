@@ -1,6 +1,6 @@
 package args
 
-import "github.com/AlexsanderHamir/prof/config"
+import "github.com/AlexsanderHamir/prof/internal/config"
 
 type ModelCallRequiredArgs struct {
 	SystemPrompt   string

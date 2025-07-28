@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/prof/shared"
+	"github.com/AlexsanderHamir/prof/internal/shared"
 )
 
 func getProfileFlags() map[string]string {

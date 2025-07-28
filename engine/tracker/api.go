@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/AlexsanderHamir/prof/internal/shared"
 	"github.com/AlexsanderHamir/prof/parser"
-	"github.com/AlexsanderHamir/prof/shared"
 )
 
 // CheckPerformanceDifferences creates the profile report by comparing data from  prof's auto run.

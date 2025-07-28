@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/prof/internal/shared"
 	"github.com/AlexsanderHamir/prof/parser"
-	"github.com/AlexsanderHamir/prof/shared"
 )
 
 func createHashFromLineObjects(lineobjects []*parser.LineObj) map[string]*parser.LineObj {

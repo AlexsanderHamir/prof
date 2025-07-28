@@ -3,7 +3,7 @@ package tracker
 import (
 	"math"
 
-	"github.com/AlexsanderHamir/prof/shared"
+	"github.com/AlexsanderHamir/prof/internal/shared"
 )
 
 const (
