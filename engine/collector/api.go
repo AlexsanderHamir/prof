@@ -11,8 +11,6 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/shared"
 )
 
-const globalSign = "*"
-
 // RunCollector handles data organization without wrapping go test.
 func RunCollector(files []string, tag string) error {
 	if err := ensureDirExists(shared.MainDirOutput); err != nil {
@@ -31,7 +29,7 @@ func RunCollector(files []string, tag string) error {
 	}
 
 	var functionFilter config.FunctionFilter
-	globalFilter, hasGlobalFilter := cfg.FunctionFilter[globalSign]
+	globalFilter, hasGlobalFilter := cfg.FunctionFilter[shared.GlobalSign]
 	if hasGlobalFilter {
 		functionFilter = globalFilter
 	}
