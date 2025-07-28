@@ -45,6 +45,7 @@ func RunCollector(files []string, tag string) error {
 		}
 
 		if !hasGlobalFilter {
+			functionFilter = config.FunctionFilter{} // clean previous one
 			localFilter, hasLocalFilter := cfg.FunctionFilter[fileName]
 			if hasLocalFilter {
 				functionFilter = localFilter
