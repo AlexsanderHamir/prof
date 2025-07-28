@@ -3,7 +3,7 @@ package tests_test
 import (
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/tracker"
+	"github.com/AlexsanderHamir/prof/engine/tracker"
 )
 
 func TestCoreBlock(t *testing.T) {

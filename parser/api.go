@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlexsanderHamir/prof/args"
-	"github.com/AlexsanderHamir/prof/config"
-	"github.com/AlexsanderHamir/prof/shared"
+	"github.com/AlexsanderHamir/prof/internal/args"
+	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/shared"
 )
 
 const (

@@ -7,8 +7,8 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/AlexsanderHamir/prof/config"
-	"github.com/AlexsanderHamir/prof/shared"
+	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/shared"
 )
 
 const globalSign = "*"
@@ -52,7 +52,7 @@ func RunCollector(files []string, tag string) error {
 		}
 
 		outputTextFilePath := path.Join(profileDirPath, fileName+"."+shared.TextExtension)
-		if err = GenerateProfileTextOutput(fullBinaryPath, outputTextFilePath); err != nil {
+		if err = GetProfileTextOutput(fullBinaryPath, outputTextFilePath); err != nil {
 			return err
 		}
 
@@ -63,7 +63,7 @@ func RunCollector(files []string, tag string) error {
 	return nil
 }
 
-func GenerateProfileTextOutput(binaryFile, outputFile string) error {
+func GetProfileTextOutput(binaryFile, outputFile string) error {
 	pprofTextParams := getPprofTextParams()
 	cmd := append([]string{"go", "tool", "pprof"}, pprofTextParams...)
 	cmd = append(cmd, binaryFile)
@@ -78,10 +78,10 @@ func GenerateProfileTextOutput(binaryFile, outputFile string) error {
 	return os.WriteFile(outputFile, output, shared.PermFile)
 }
 
-func GeneratePNGVisualization(binaryFile, outputFile string) error {
+func GetPNGOutput(binaryFile, outputFile string) error {
 	cmd := []string{"go", "tool", "pprof", "-png", binaryFile}
 
-	// #nosec G204 -- cmd is constructed internally by generatePNGVisualization(), not from user input
+	// #nosec G204 -- cmd is constructed internally by GetPNGOutput(), not from user input
 	execCmd := exec.Command(cmd[0], cmd[1:]...)
 	output, err := execCmd.Output()
 	if err != nil {
@@ -91,8 +91,8 @@ func GeneratePNGVisualization(binaryFile, outputFile string) error {
 	return os.WriteFile(outputFile, output, shared.PermFile)
 }
 
-// SaveAllFunctionsPprofContents calls [GetFunctionPprofContent] sequentially.
-func SaveAllFunctionsPprofContents(functions []string, binaryPath, basePath string) error {
+// GetFunctionsOutput calls [GetFunctionPprofContent] sequentially.
+func GetFunctionsOutput(functions []string, binaryPath, basePath string) error {
 	for _, functionName := range functions {
 		outputFile := filepath.Join(basePath, functionName+"."+shared.TextExtension)
 		if err := getFunctionPprofContent(functionName, binaryPath, outputFile); err != nil {

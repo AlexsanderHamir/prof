@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/config"
-	"github.com/AlexsanderHamir/prof/shared"
+	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/shared"
 )
 
 var (

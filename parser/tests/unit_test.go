@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/args"
+	"github.com/AlexsanderHamir/prof/internal/args"
 	"github.com/AlexsanderHamir/prof/parser"
 )
 

@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/AlexsanderHamir/prof/args"
-	"github.com/AlexsanderHamir/prof/collector"
+	"github.com/AlexsanderHamir/prof/engine/collector"
+	"github.com/AlexsanderHamir/prof/internal/args"
+	"github.com/AlexsanderHamir/prof/internal/shared"
 	"github.com/AlexsanderHamir/prof/parser"
-	"github.com/AlexsanderHamir/prof/shared"
 )
 
 // SetupDirectories creates the structure of the library's output.
@@ -73,12 +73,12 @@ func ProcessProfiles(benchmarkName string, profiles []string, tag string) error 
 		outputFile := filepath.Join(textDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, shared.TextExtension))
 		profileFunctionsDir := filepath.Join(tagDir, profile+shared.FunctionsDirSuffix, benchmarkName)
 
-		if err := collector.GenerateProfileTextOutput(profileFile, outputFile); err != nil {
+		if err := collector.GetProfileTextOutput(profileFile, outputFile); err != nil {
 			return fmt.Errorf("failed to generate text profile for %s: %w", profile, err)
 		}
 
 		pngDesiredFilePath := filepath.Join(profileFunctionsDir, fmt.Sprintf("%s_%s.png", benchmarkName, profile))
-		if err := collector.GeneratePNGVisualization(profileFile, pngDesiredFilePath); err != nil {
+		if err := collector.GetPNGOutput(profileFile, pngDesiredFilePath); err != nil {
 			return fmt.Errorf("failed to generate PNG visualization for %s: %w", profile, err)
 		}
 
@@ -101,7 +101,7 @@ func CollectProfileFunctions(args *args.CollectionArgs) error {
 			return fmt.Errorf("failed to extract function names: %w", err)
 		}
 
-		if err = collector.SaveAllFunctionsPprofContents(functions, paths.ProfileBinaryFile, paths.FunctionDirectory); err != nil {
+		if err = collector.GetFunctionsOutput(functions, paths.ProfileBinaryFile, paths.FunctionDirectory); err != nil {
 			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", err)
 		}
 	}

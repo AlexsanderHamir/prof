@@ -6,11 +6,11 @@ import (
 	"math"
 	"sort"
 
-	"github.com/AlexsanderHamir/prof/args"
-	"github.com/AlexsanderHamir/prof/benchmark"
-	"github.com/AlexsanderHamir/prof/config"
-	"github.com/AlexsanderHamir/prof/shared"
-	"github.com/AlexsanderHamir/prof/tracker"
+	"github.com/AlexsanderHamir/prof/engine/benchmark"
+	"github.com/AlexsanderHamir/prof/engine/tracker"
+	"github.com/AlexsanderHamir/prof/internal/args"
+	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/shared"
 )
 
 func printConfiguration(benchArgs *args.BenchArgs, functionFilterPerBench map[string]config.FunctionFilter) {
