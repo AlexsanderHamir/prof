@@ -81,9 +81,9 @@ func (cr *FunctionChangeResult) writeHeader(report *strings.Builder) {
 }
 
 func (cr *FunctionChangeResult) writeFunctionInfo(report *strings.Builder) {
-	report.WriteString(fmt.Sprintf("Function: %s\n", cr.FunctionName))
-	report.WriteString(fmt.Sprintf("Analysis Time: %s\n", cr.Timestamp.Format("2006-01-02 15:04:05 MST")))
-	report.WriteString(fmt.Sprintf("Change Type: %s\n\n", cr.ChangeType))
+	fmt.Fprintf(report, "Function: %s\n", cr.FunctionName)
+	fmt.Fprintf(report, "Analysis Time: %s\n", cr.Timestamp.Format("2006-01-02 15:04:05 MST"))
+	fmt.Fprintf(report, "Change Type: %s\n\n", cr.ChangeType)
 }
 
 func (cr *FunctionChangeResult) writeStatusAssessment(report *strings.Builder) {
@@ -105,7 +105,7 @@ func (cr *FunctionChangeResult) writeStatusAssessment(report *strings.Builder) {
 		assessment = "No significant change detected"
 	}
 
-	report.WriteString(fmt.Sprintf("%s %s\n\n", statusIcon, assessment))
+	fmt.Fprintf(report, "%s %s\n\n", statusIcon, assessment)
 }
 
 func (cr *FunctionChangeResult) writeFlatAnalysis(report *strings.Builder) {
@@ -115,16 +115,16 @@ func (cr *FunctionChangeResult) writeFlatAnalysis(report *strings.Builder) {
 
 	sign := signPrefix(cr.FlatChangePercent)
 
-	report.WriteString(fmt.Sprintf("Before:       %.6fs\n", cr.FlatAbsolute.Before))
-	report.WriteString(fmt.Sprintf("After:        %.6fs\n", cr.FlatAbsolute.After))
-	report.WriteString(fmt.Sprintf("Delta:        %s%.6fs\n", sign, cr.FlatAbsolute.Delta))
-	report.WriteString(fmt.Sprintf("Change:       %s%.2f%%\n", sign, cr.FlatChangePercent))
+	fmt.Fprintf(report, "Before:       %.6fs\n", cr.FlatAbsolute.Before)
+	fmt.Fprintf(report, "After:        %.6fs\n", cr.FlatAbsolute.After)
+	fmt.Fprintf(report, "Delta:        %s%.6fs\n", sign, cr.FlatAbsolute.Delta)
+	fmt.Fprintf(report, "Change:       %s%.2f%%\n", sign, cr.FlatChangePercent)
 
 	switch {
 	case cr.FlatChangePercent > 0:
-		report.WriteString(fmt.Sprintf("Impact:       Function is %.2f%% SLOWER\n\n", cr.FlatChangePercent))
+		fmt.Fprintf(report, "Impact:       Function is %.2f%% SLOWER\n\n", cr.FlatChangePercent)
 	case cr.FlatChangePercent < 0:
-		report.WriteString(fmt.Sprintf("Impact:       Function is %.2f%% FASTER\n\n", math.Abs(cr.FlatChangePercent)))
+		fmt.Fprintf(report, "Impact:       Function is %.2f%% FASTER\n\n", math.Abs(cr.FlatChangePercent))
 	default:
 		report.WriteString("Impact:       No change in execution time\n\n")
 	}
@@ -137,10 +137,10 @@ func (cr *FunctionChangeResult) writeCumulativeAnalysis(report *strings.Builder)
 
 	sign := signPrefix(cr.CumChangePercent)
 
-	report.WriteString(fmt.Sprintf("Before:       %.3fs\n", cr.CumAbsolute.Before))
-	report.WriteString(fmt.Sprintf("After:        %.3fs\n", cr.CumAbsolute.After))
-	report.WriteString(fmt.Sprintf("Delta:        %s%.3fs\n", sign, cr.CumAbsolute.Delta))
-	report.WriteString(fmt.Sprintf("Change:       %s%.2f%%\n\n", sign, cr.CumChangePercent))
+	fmt.Fprintf(report, "Before:       %.3fs\n", cr.CumAbsolute.Before)
+	fmt.Fprintf(report, "After:        %.3fs\n", cr.CumAbsolute.After)
+	fmt.Fprintf(report, "Delta:        %s%.3fs\n", sign, cr.CumAbsolute.Delta)
+	fmt.Fprintf(report, "Change:       %s%.2f%%\n\n", sign, cr.CumChangePercent)
 }
 
 func (cr *FunctionChangeResult) writeImpactAssessment(report *strings.Builder) {
@@ -148,7 +148,7 @@ func (cr *FunctionChangeResult) writeImpactAssessment(report *strings.Builder) {
 	report.WriteString("                    IMPACT ASSESSMENT\n")
 	report.WriteString("───────────────────────────────────────────────────────────────\n")
 
-	report.WriteString(fmt.Sprintf("Severity:     %s\n", cr.calculateSeverity()))
+	fmt.Fprintf(report, "Severity:     %s\n", cr.calculateSeverity())
 	report.WriteString("Recommendation: ")
 	report.WriteString(cr.recommendation())
 	report.WriteString("\n")
