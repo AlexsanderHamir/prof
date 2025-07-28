@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="None">
+        
+        
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>Prof Docs</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body class="homepage">
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href=".">Prof Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/AlexsanderHamir/prof" class="nav-link"><i class="fa-brands fa-github"></i> GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#profiling-data-management" class="nav-link">Profiling Data Management</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#auto" class="nav-link">Auto</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#auto-configuration" class="nav-link">Auto - Configuration</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#manual" class="nav-link">Manual</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#manual-configuration" class="nav-link">Manual - Configuration</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="1"><a href="#performance-comparison" class="nav-link">Performance Comparison</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#track-auto" class="nav-link">Track Auto</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#track-manual" class="nav-link">Track Manual</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#result-examples" class="nav-link">Result Examples</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="profiling-data-management">Profiling Data Management</h1>
+<p>When performing complex profiling, developers often find themselves lost in a maze of repetitive commands and scattered files. You run <code>go test -bench=BenchmarkMyFunc -cpuprofile=cpu.out</code>, then <code>go tool pprof -top cpu.out &gt; results.txt</code>, inspect a function with <code>go tool pprof -list=MyFunc cpu.out</code>, make modifications, run the benchmark again—and hours later, you're exhausted, have dozens of inconsistently named files scattered across directories, and can't remember which changes led to which results. Without systematic organization, you lose track of your optimization journey, lack accurate "before and after" snapshots to share with your team, and waste valuable time context-switching between profiling commands instead of focusing on actual performance improvements. Prof eliminates this chaos by capturing everything in one command and automatically organizing all profiling data—binary files, text reports, function-level analysis, and visualizations—into a structured, tagged hierarchy that preserves your optimization history and makes collaboration effortless.</p>
+<h2 id="auto">Auto</h2>
+<p>The <code>auto</code> command wraps <code>go test</code> and <code>pprof</code> to run benchmarks, collect all profile types, and organize everything automatically:</p>
+<pre><code class="language-bash">prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu,memory,mutex,block&quot; --count 10 --tag &quot;baseline&quot;
+</code></pre>
+<p>This single command replaces dozens of manual steps and creates a complete, organized profiling dataset ready for analysis or comparison.</p>
+<p><strong>Output Structure:</strong></p>
+<pre><code>bench/baseline/
+├── description.txt                 # User documentation for this run
+├── bin/BenchmarkGenPool/           # Binary profile files
+│   ├── BenchmarkGenPool_cpu.out
+│   ├── BenchmarkGenPool_memory.out
+│   ├── BenchmarkGenPool_mutex.out
+│   └── BenchmarkGenPool_block.out
+├── text/BenchmarkGenPool/          # Text reports &amp; benchmark output
+│   ├── BenchmarkGenPool_cpu.txt
+│   ├── BenchmarkGenPool_memory.txt
+│   └── BenchmarkGenPool.txt
+├── cpu_functions/BenchmarkGenPool/ # Function-level CPU profile data
+│   ├── Put.txt
+│   ├── Get.txt
+│   └── getShard.txt
+└── memory_functions/BenchmarkGenPool/ # Function-level memory profile data
+    ├── Put.txt
+    └── allocator.txt
+</code></pre>
+<h2 id="auto-configuration">Auto - Configuration</h2>
+<p>By default, prof collects all functions shown in the text report of a profile. To customize this behavior, run:</p>
+<pre><code class="language-bash">prof setup
+</code></pre>
+<p>This creates a configuration file with the following structure:</p>
+<pre><code class="language-json">{
+  &quot;function_collection_filter&quot;: {
+    &quot;BenchmarkGenPool&quot;: {
+      &quot;include_prefixes&quot;: [&quot;github.com/example/GenPool&quot;],
+      &quot;ignore_functions&quot;: [&quot;init&quot;, &quot;TestMain&quot;, &quot;BenchmarkMain&quot;]
+    }
+  }
+}
+</code></pre>
+<p><strong>Configuration Options:</strong></p>
+<ul>
+<li><code>BenchmarkGenPool</code>: Replace it with your benchmark function name, or with <code>"*"</code> to apply for all benchmarks.</li>
+<li><code>include_prefixes</code>: Only collect functions whose names start with these prefixes.</li>
+<li><code>ignore_functions</code>: Exclude specific functions from collection, even if they match the include prefixes.</li>
+</ul>
+<p>This filtering helps focus profiling on relevant code paths while excluding test setup and initialization functions that may not be meaningful for performance analysis.</p>
+<h2 id="manual">Manual</h2>
+<p>The <code>manual</code> command processes existing profile files without running benchmarks - it only uses <code>pprof</code> to organize data you already have:</p>
+<pre><code class="language-bash">prof manual --tag &quot;external-profiles&quot; BenchmarkGenPool_cpu.out memory.out block.out
+</code></pre>
+<p>This organizes your existing profile files into a flatter structure based on the profile filename:</p>
+<p><strong>Manual Output Structure:</strong></p>
+<pre><code>bench/external-profiles/
+├── BenchmarkGenPool_cpu/
+│   ├── BenchmarkGenPool_cpu.txt    # Text report
+│   └── functions/                  # Function-level profile data
+│       ├── Put.txt
+│       ├── Get.txt
+│       └── getShard.txt
+├── memory/
+│   ├── memory.txt                  # Text report
+│   └── functions/                  # Function-level profile data
+│       └── allocator.txt
+└── block/
+    ├── block.txt                   # Text report
+    └── functions/                  # Function-level profile data
+        └── runtime.txt
+</code></pre>
+<h2 id="manual-configuration">Manual - Configuration</h2>
+<p>The configuration works the same as auto configuration, except you should use profile file base names (without extensions) instead of benchmark names:</p>
+<pre><code class="language-json">{
+  &quot;function_collection_filter&quot;: {
+    &quot;BenchmarkGenPool_cpu&quot;: {
+      &quot;include_prefixes&quot;: [&quot;github.com/example/GenPool&quot;],
+      &quot;ignore_functions&quot;: [&quot;init&quot;, &quot;TestMain&quot;, &quot;BenchmarkMain&quot;]
+    }
+  }
+}
+</code></pre>
+<p>For example, <code>BenchmarkGenPool_cpu.out</code> becomes <code>BenchmarkGenPool_cpu</code> in the configuration.</p>
+<h1 id="performance-comparison">Performance Comparison</h1>
+<p>Prof's performance comparison automatically drills down from benchmark-level changes to show you exactly which functions changed. Instead of just reporting that performance improved or regressed, Prof pinpoints the specific functions responsible and shows you detailed before-and-after comparisons.</p>
+<h2 id="track-auto">Track Auto</h2>
+<p>Use <code>track auto</code> when comparing data collected with <code>prof auto</code>. Simply reference the tag names:</p>
+<pre><code class="language-bash">prof track auto --base &quot;baseline&quot; --current &quot;optimized&quot; \
+                --profile-type &quot;cpu&quot; --bench-name &quot;BenchmarkGenPool&quot; \
+                --output-format &quot;summary&quot;
+
+prof track auto --base &quot;baseline&quot; --current &quot;optimized&quot; \
+                --profile-type &quot;cpu&quot; --bench-name &quot;BenchmarkGenPool&quot; \
+                --output-format &quot;detailed&quot;
+</code></pre>
+<h2 id="track-manual">Track Manual</h2>
+<p>Use <code>track manual</code> when comparing external profile files by specifying their relative paths:</p>
+<pre><code class="language-bash">prof track manual --base path/to/base/report/cpu.txt \
+                  --current path/to/current/report/cpu.txt \
+                  --output-format &quot;summary&quot;
+
+prof track manual --base path/to/base/report/cpu.txt \
+                  --current path/to/current/report/cpu.txt \
+                  --output-format &quot;detailed&quot;
+</code></pre>
+<h2 id="result-examples">Result Examples</h2>
+<p>Prof's performance comparison provides two output formats to help you understand performance changes at different levels of detail.</p>
+<h3 id="summary-format">Summary Format</h3>
+<p>The summary format gives you a high-level overview of all performance changes, organized by impact:</p>
+<pre><code>==== Performance Tracking Summary ====
+Total Functions Analyzed: 78
+Regressions: 9
+Improvements: 8
+Stable: 61
+
+⚠️  Top Regressions (worst first):
+• internal/cache.getShard: +200.0% (0.030s → 0.090s)
+• internal/hash.Spread: +180.0% (0.050s → 0.140s)
+• pool/acquire: +150.0% (0.020s → 0.050s)
+• encoding/json.Marshal: +125.0% (0.080s → 0.180s)
+• sync.Pool.Get: +100.0% (0.010s → 0.020s)
+
+✅ Top Improvements (best first):
+• compress/gzip.NewWriter: -100.0% (0.020s → 0.000s)
+• internal/metrics.resetCounters: -100.0% (0.010s → 0.000s)
+• encoding/json.Unmarshal: -95.0% (0.100s → 0.005s)
+• net/url.ParseQuery: -90.0% (0.050s → 0.005s)
+• pool/isFull: -85.0% (0.020s → 0.003s)
+</code></pre>
+<h3 id="detailed-format">Detailed Format</h3>
+<p>The detailed format provides comprehensive analysis for each changed function, including impact assessment and action recommendations:</p>
+<pre><code>📊 Summary: 78 total functions | 🔴 9 regressions | 🟢 8 improvements | ⚪ 61 stable
+📋 Report Order: Regressions first (worst → best), then Improvements (best → worst), then Stable
+
+║ ║ ║ ║ ║ ║ ║      PERFORMANCE CHANGE REPORT
+
+Function: github.com/Random/Pool/pool.getShard
+Analysis Time: 2025-07-23 15:51:59 PDT
+Change Type: REGRESSION
+⚠️ Performance regression detected
+
+║ ║ ║ ║ ║      FLAT TIME ANALYSIS
+
+Before:        0.030000s
+After:         0.090000s
+Delta:         +0.060000s
+Change:        +200.00%
+Impact:        Function is 200.00% SLOWER
+
+║ ║ ║ ║ ║      CUMULATIVE TIME ANALYSIS
+
+Before:        0.030s
+After:         0.100s
+Delta:         +0.070s
+Change:        +233.33%
+
+║ ║ ║ ║ ║      IMPACT ASSESSMENT
+
+Severity:      CRITICAL
+Recommendation: Critical regression! Immediate investigation required.
+</code></pre></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 2025-07-28 23:38:26.364244+00:00
+-->
