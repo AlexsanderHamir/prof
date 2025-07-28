@@ -44,6 +44,7 @@ func TestConfig(t *testing.T) {
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
 			expectedProfiles:        []string{cpuProfile, memProfile},
+			checkSuccessMessage:     true,
 		}
 
 		testConfigScenario(t, testArgs)
@@ -78,6 +79,7 @@ func TestConfig(t *testing.T) {
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
 			expectedProfiles:        []string{cpuProfile, memProfile},
+			checkSuccessMessage:     true,
 		}
 
 		testConfigScenario(t, testArgs)
@@ -115,6 +117,7 @@ func TestConfig(t *testing.T) {
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
 			expectedProfiles:        []string{cpuProfile, memProfile},
+			checkSuccessMessage:     true,
 		}
 
 		testConfigScenario(t, testArgs)
@@ -134,6 +137,7 @@ func TestConfig(t *testing.T) {
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
 			expectedProfiles:        []string{cpuProfile, memProfile},
+			checkSuccessMessage:     true,
 		}
 
 		testConfigScenario(t, testArgs)
@@ -153,6 +157,7 @@ func TestConfig(t *testing.T) {
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
 			expectedProfiles:        []string{cpuProfile, memProfile},
+			checkSuccessMessage:     true,
 		}
 
 		testConfigScenario(t, testArgs)
@@ -183,6 +188,7 @@ func TestProfileValidation(t *testing.T) {
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
 			expectedProfiles:        nil,
+			checkSuccessMessage:     true,
 		}
 
 		testConfigScenario(t, testArgs)
@@ -211,6 +217,7 @@ func TestProfileValidation(t *testing.T) {
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
 			expectedProfiles:        nil,
+			checkSuccessMessage:     true,
 		}
 
 		testConfigScenario(t, testArgs)
@@ -238,6 +245,7 @@ func TestProfileValidation(t *testing.T) {
 			expectedNumberOfFiles:   4, // cpu, mem, goroutine, block
 			withCleanUp:             true,
 			expectedProfiles:        []string{cpuProfile, memProfile, blockProfile},
+			checkSuccessMessage:     true,
 		}
 
 		testConfigScenario(t, testArgs)
@@ -267,6 +275,7 @@ func TestCommandValidation(t *testing.T) {
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
 			expectedProfiles:        nil,
+			checkSuccessMessage:     true,
 		}
 
 		testConfigScenario(t, testArgs)
@@ -294,6 +303,7 @@ func TestCommandValidation(t *testing.T) {
 			expectedNumberOfFiles:   3,
 			withCleanUp:             true,
 			expectedProfiles:        nil,
+			checkSuccessMessage:     true,
 		}
 
 		testConfigScenario(t, testArgs)
@@ -345,6 +355,74 @@ func TestManualCommand(t *testing.T) {
 
 		if stdout.Len() > 0 {
 			fmt.Println(stdout.String())
+		}
+	})
+}
+
+// TestTrackerBasicRun is not inspecting the results, but just ensuring that no errors occur when the command is run.
+func TestTrackerBasicRun(t *testing.T) {
+	// 1. Set up
+	label := "testing"
+	runs := "5"
+	tagName := "tag1"
+	blockOutputCheck := true
+	isEnvironmentSet := false
+	checkSuccessMessage := false
+	createBenchForTracker(t, label, runs, tagName, blockOutputCheck, isEnvironmentSet)
+	envDirName = "Enviroment"
+
+	runs = "10"
+	tagName = "tag2"
+	isEnvironmentSet = true
+	createBenchForTracker(t, label, runs, tagName, blockOutputCheck, isEnvironmentSet)
+
+	root, err := getProjectRoot()
+	if err != nil {
+		t.Error(err)
+	}
+
+	envFullPath := path.Join(root, testDirName, "Enviroment testing")
+	t.Cleanup(func() {
+		if err = os.RemoveAll(envFullPath); err != nil {
+			t.Logf("Failed to clean up bench: %v", err)
+		}
+	})
+
+	// 2. Test Tracker
+	label = "Auto"
+	t.Run(label, func(t *testing.T) {
+		args := []string{
+			"track",
+			shared.AUTOCMD,
+			"--base", "tag1",
+			"--current", "tag2",
+			"--bench-name", benchName,
+			"--profile-type", "cpu",
+			"--output-format", "summary",
+		}
+
+		shouldContinue := runProf(t, envFullPath, args, "", checkSuccessMessage)
+		if !shouldContinue {
+			t.Error("runProf failed")
+		}
+	})
+
+	label = "Manual"
+	baseTag := "bench/tag1/text/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.txt"
+	currentTag := "bench/tag2/text/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.txt"
+	outputFormat := "summary"
+	t.Run(label, func(t *testing.T) {
+		args := []string{
+			"track",
+			shared.MANUALCMD,
+			"--base", baseTag,
+			"--current", currentTag,
+			"--output-format", outputFormat,
+		}
+
+		shouldContinue := runProf(t, envFullPath, args, "", checkSuccessMessage)
+		if !shouldContinue {
+			t.Error("runProf failed")
 		}
 	})
 }

@@ -107,8 +107,8 @@ func createTrackCmd() *cobra.Command {
 }
 
 func createTrackAutoCmd() *cobra.Command {
-	baseTagFlag := "base-tag"
-	currentTagFlag := "current-tag"
+	baseTagFlag := "base"
+	currentTagFlag := "current"
 	benchNameFlag := "bench-name"
 	profileTypeFlag := "profile-type"
 	outputFormatFlag := "output-format"
@@ -235,13 +235,13 @@ func runSetup(_ *cobra.Command, _ []string) error {
 	return config.CreateTemplate()
 }
 
+var validFormats = map[string]bool{
+	"summary":  true,
+	"detailed": true,
+}
+
 // runTrack handles the track command execution
 func runTrackAuto(_ *cobra.Command, _ []string) error {
-	validFormats := map[string]bool{
-		"summary":  true,
-		"detailed": true,
-	}
-
 	if !validFormats[outputFormat] {
 		return fmt.Errorf("invalid output format '%s'. Valid formats: summary, detailed", outputFormat)
 	}
@@ -268,11 +268,6 @@ func runTrackAuto(_ *cobra.Command, _ []string) error {
 }
 
 func runTrackManual(_ *cobra.Command, _ []string) error {
-	validFormats := map[string]bool{
-		"summary":  true,
-		"detailed": true,
-	}
-
 	if !validFormats[outputFormat] {
 		return fmt.Errorf("invalid output format '%s'. Valid formats: summary, detailed", outputFormat)
 	}
