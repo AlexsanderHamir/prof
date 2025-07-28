@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bufio"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -234,4 +235,13 @@ func createLineObjects(lines []string) ([]*LineObj, error) {
 	}
 
 	return lineObjs, nil
+}
+
+func removeHeader(scanner *bufio.Scanner) {
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, header) {
+			break
+		}
+	}
 }

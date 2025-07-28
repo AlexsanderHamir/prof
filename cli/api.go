@@ -38,8 +38,8 @@ func CreateRootCmd() *cobra.Command {
 		RunE:  runBenchmarks,
 	}
 
-	rootCmd.AddCommand(createManualCmd())
-	rootCmd.AddCommand(createRunCmd())
+	rootCmd.AddCommand(createProfManual())
+	rootCmd.AddCommand(createProfAuto())
 	rootCmd.AddCommand(createSetupCmd())
 	rootCmd.AddCommand(createTrackCmd())
 	rootCmd.AddCommand(createVersionCmd())
@@ -47,7 +47,7 @@ func CreateRootCmd() *cobra.Command {
 	return rootCmd
 }
 
-func createManualCmd() *cobra.Command {
+func createProfManual() *cobra.Command {
 	manualCmd := &cobra.Command{
 		Use:     shared.MANUALCMD,
 		Short:   "Receives profile files and performs data collection and organization. (doesn't wrap go test)",
@@ -65,7 +65,7 @@ func createManualCmd() *cobra.Command {
 	return manualCmd
 }
 
-func createRunCmd() *cobra.Command {
+func createProfAuto() *cobra.Command {
 	benchFlag := "benchmarks"
 	profileFlag := "profiles"
 	tagFlag := "tag"
