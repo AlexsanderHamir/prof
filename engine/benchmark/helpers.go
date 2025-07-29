@@ -121,11 +121,17 @@ func runBenchmarkCommand(cmd []string, outputFile string) error {
 	execCmd := exec.Command(cmd[0], cmd[1:]...)
 
 	output, err := execCmd.CombinedOutput()
+
+	// Always print the output, even if there was an error - it may contain meaningful information
+	fmt.Println("🚀 ==================== BENCHMARK OUTPUT ==================== 🚀")
+	fmt.Println(string(output))
+	fmt.Println("📊 ========================================================== 📊")
+
 	if err != nil {
 		if strings.Contains(string(output), moduleNotFoundMsg) {
-			return fmt.Errorf("%s - ensure you're in a Go project directory", moduleNotFoundMsg)
+			return fmt.Errorf("❌ %s - ensure you're in a Go project directory 📁", moduleNotFoundMsg)
 		}
-		return errors.New(string(output))
+		return fmt.Errorf("💥 BENCHMARK COMMAND FAILED 💥\n%s", string(output))
 	}
 
 	return os.WriteFile(outputFile, output, shared.PermFile)
