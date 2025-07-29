@@ -242,6 +242,8 @@ var validFormats = map[string]bool{
 	"detailed":      true,
 	"summary-html":  true,
 	"detailed-html": true,
+	"summary-json":  true,
+	"detailed-json": true,
 }
 
 // runTrack handles the track command execution
