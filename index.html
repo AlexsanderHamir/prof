@@ -91,7 +91,7 @@
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-bs-level="2"><a href="#result-examples" class="nav-link">Result Examples</a>
+            <li class="nav-item" data-bs-level="2"><a href="#output-formats" class="nav-link">Output Formats</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -206,8 +206,14 @@ prof track manual --base path/to/base/report/cpu.txt \
                   --current path/to/current/report/cpu.txt \
                   --output-format &quot;detailed&quot;
 </code></pre>
-<h2 id="result-examples">Result Examples</h2>
-<p>Prof's performance comparison provides two output formats to help you understand performance changes at different levels of detail.</p>
+<h2 id="output-formats">Output Formats</h2>
+<p>Prof's performance comparison provides multiple output formats to help you understand performance changes at different levels of detail and presentation.
+<strong>Currently supported formats:</strong></p>
+<ul>
+<li><strong>Terminal (default)</strong></li>
+<li><strong>HTML</strong></li>
+<li><strong>JSON</strong></li>
+</ul>
 <h3 id="summary-format">Summary Format</h3>
 <p>The summary format gives you a high-level overview of all performance changes, organized by impact:</p>
 <pre><code>==== Performance Tracking Summary ====
@@ -261,6 +267,15 @@ Change:        +233.33%
 
 Severity:      CRITICAL
 Recommendation: Critical regression! Immediate investigation required.
+</code></pre>
+<h3 id="html-json-output">HTML &amp; JSON Output</h3>
+<p>In addition to terminal display, Prof can export both <strong>summary</strong> and <strong>detailed</strong> reports in:</p>
+<ul>
+<li>📄 <strong>HTML</strong>: shareable and human-friendly</li>
+<li>🧩 <strong>JSON</strong>: structured format for programmatic use or further integration</li>
+</ul>
+<pre><code class="language-sh">--output-format summary-html
+--output-format detailed-json
 </code></pre></div>
             </div>
         </div>
@@ -343,5 +358,5 @@ Recommendation: Critical regression! Immediate investigation required.
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2025-07-28 23:38:26.364244+00:00
+Build Date UTC : 2025-07-29 16:07:47.194040+00:00
 -->
