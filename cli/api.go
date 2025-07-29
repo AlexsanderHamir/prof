@@ -261,7 +261,7 @@ func runTrackAuto(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	chooseOutputFormat(report)
+	report.ChooseOutputFormat(outputFormat)
 
 	return nil
 }
@@ -282,7 +282,7 @@ func runTrackManual(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	chooseOutputFormat(report)
+	report.ChooseOutputFormat(outputFormat)
 
 	return nil
 }
