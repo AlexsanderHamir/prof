@@ -11,7 +11,7 @@ Prof automates Go performance profiling by collecting all pprof data in one comm
 ![Version](https://img.shields.io/github/v/tag/AlexsanderHamir/prof?sort=semver)
 ![Go Version](https://img.shields.io/badge/Go-1.24.3%2B-blue)
 
-▶️ [Watch Demo Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/output.mp4)
+📖 [Documentation](https://alexsanderhamir.github.io/prof/) | ▶️ [Watch Demo Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/output.mp4)
 
 ## Benchmark Comparison Summary View:
 
@@ -56,124 +56,21 @@ go install github.com/AlexsanderHamir/prof/cmd/prof@latest
 1. **Collect profiling data:**
 
 ```bash
-prof --benchmarks "[BenchmarkMyFunction]" --profiles "[cpu,memory]" --count 5 --tag "v1.0"
+prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
+prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "optimized"
 ```
 
 2. **Compare performance between tags:**
 
 ```bash
-prof track --base-tag "TagNamev1.0" --current-tag "TagNamev1.1" --bench-name "BenchmarkFunctionName" --profile-type "cpu" --output-format "summary"
-```
-
-## Usage
-
-### Data Collection
-
-```bash
-prof --benchmarks "[BenchmarkFunc1,BenchmarkFunc2]" \
-     --profiles "[cpu,memory,mutex,block]" \
-     --count 10 \
-     --tag "experiment-1"
-```
-
-**Options:**
-
-- `--benchmarks`: Benchmark functions to run (comma-separated in brackets)
-- `--profiles`: Profile types: `cpu`, `memory`, `mutex`, `block`
-- `--count`: Number of benchmark iterations
-- `--tag`: Identifier for this run
-
-### Performance Comparison
-
-```bash
-prof track --base-tag "baseline" \
-           --current-tag "experiment" \
-           --bench-name "BenchmarkMyFunction" \
-           --profile-type "cpu" \
-           --output-format "summary"
-```
-
-**Options:**
-
-- `--base-tag`/`--current-tag`: Tags to compare
-- `--bench-name`: Exact benchmark function name
-- `--profile-type`: `cpu`, `memory`, `mutex`, or `block`
-- `--output-format`: `"summary"` (quick overview) or `"detailed"` (comprehensive reports)
-
-## Configuration (Optional)
-
-By default, Prof collects function-level profiling data for **every function** it finds in your profiles. This can generate hundreds of files for large codebases. Use configuration to focus on specific functions.
-
-### Setting Up Configuration
-
-```bash
-prof setup
-```
-
-This creates a `config_template.json` file in your current directory.
-
-### Configuration Options
-
-```json
-{
-  "function_collection_filter": {
-    "BenchmarkMyPool": {
-      "include_prefixes": [
-        "github.com/myorg/myproject",
-        "github.com/myorg/myproject/internal"
-      ],
-      "ignore_functions": ["init", "TestMain", "setupBenchmark"]
-    },
-    "BenchmarkCache": {
-      "include_prefixes": ["github.com/myorg/cache"]
-    }
-  }
-}
-```
-
-**Per-benchmark filtering:**
-
-- `include_prefixes`: Only collect detailed data for functions starting with these prefixes (typically your package paths)
-- `ignore_functions`: Skip these specific function names, even if they match the prefixes
-
-## What Prof Collects
-
-Prof organizes all data automatically:
-
-```
-bench/your-tag/
-├── bin/                    # Binary profile files (.out files)
-├── text/                   # Benchmark output and pprof text reports
-├── cpu_functions/          # Function-level CPU profiling data
-├── memory_functions/       # Function-level memory profiling data
-└── [profile]_functions/    # Other profile types
+prof track auto --base "baseline" --current "optimized" --profile-type "cpu" --bench-name "BenchmarkName" --output-format "summary"
 ```
 
 ## Requirements
 
 - Go 1.24.3 or later
+- Install graphviz
 - Run from within your Go project directory (where benchmarks are located)
-
-## Examples
-
-**Single benchmark:**
-
-```bash
-prof --benchmarks "[BenchmarkStringProcessor]" --profiles "[cpu,memory]" --count 5 --tag "baseline"
-```
-
-**Multiple benchmarks:**
-
-```bash
-prof --benchmarks "[BenchmarkPool,BenchmarkCache]" --profiles "[cpu,memory,mutex]" --count 10 --tag "v2.0"
-```
-
-"
-**Performance tracking:**
-
-```bash
-prof track --base-tag "baseline" --current-tag "v2.0" --bench-name "BenchmarkPool" --profile-type "cpu" --output-format "summary"
-```
 
 ## Troubleshooting
 
@@ -189,11 +86,6 @@ prof track --base-tag "baseline" --current-tag "v2.0" --bench-name "BenchmarkPoo
 **Too many function files**
 
 - Use configuration to filter functions with `include_prefixes`
-
-**Empty profiles**
-
-- Increase `--count` for more benchmark iterations
-- Ensure benchmark does enough work to generate meaningful data
 
 **Configuration Not Taking Effect**
 
@@ -238,17 +130,17 @@ go build -o prof ./cmd/prof
    Structure commits logically, each should represent a focused change. Avoid mixing formatting, refactoring, and feature implementation in a single commit.
 
 4. **Add Tests for New Features or Fixes:**
-   All non-trivial changes should be accompanied by appropriate test coverage. If you’re unsure how to test something, feel free to ask in the PR or open an issue first.
+   All non-trivial changes should be accompanied by appropriate test coverage. If you're unsure how to test something, feel free to ask in the PR or open an issue first.
 
 5. **Document Any User-Facing Changes:**
    If your contribution affects the CLI, config file, or output format, update the relevant parts of the documentation (README, CLI help, or usage examples).
 
 6. **Open a Pull Request:**
-   Once your changes are ready and tested locally, open a PR with a clear description of what’s changed and why. Link to any relevant issues.
+   Once your changes are ready and tested locally, open a PR with a clear description of what's changed and why. Link to any relevant issues.
 
 7. **Be Open to Feedback:**
-   Reviews are meant to maintain code quality and project direction. We’re happy to help iterate on PRs to get them merged.
+   Reviews are meant to maintain code quality and project direction. We're happy to help iterate on PRs to get them merged.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see  the [LICENSE](LICENSE) file for details.
