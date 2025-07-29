@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log/slog"
@@ -323,6 +324,126 @@ func (r *ProfileChangeReport) generateDetailedHTMLReport(outputPath string) erro
 	return t.Execute(file, data)
 }
 
+// JSON data structures
+type jsonSummaryData struct {
+	TotalFunctions int                     `json:"total_functions"`
+	Statistics     jsonStatistics          `json:"statistics"`
+	Regressions    []*FunctionChangeResult `json:"regressions"`
+	Improvements   []*FunctionChangeResult `json:"improvements"`
+}
+
+type jsonStatistics struct {
+	Regressions  int `json:"regressions"`
+	Improvements int `json:"improvements"`
+	Stable       int `json:"stable"`
+}
+
+type jsonDetailedData struct {
+	TotalFunctions int                     `json:"total_functions"`
+	Statistics     jsonStatistics          `json:"statistics"`
+	Changes        []*FunctionChangeResult `json:"changes"`
+	SortOrder      string                  `json:"sort_order"`
+}
+
+func (r *ProfileChangeReport) generateJSONSummary(outputPath string) error {
+	var regressionList, improvementList []*FunctionChangeResult
+	var stable int
+
+	for _, change := range r.FunctionChanges {
+		switch change.ChangeType {
+		case shared.REGRESSION:
+			regressionList = append(regressionList, change)
+		case shared.IMPROVEMENT:
+			improvementList = append(improvementList, change)
+		default:
+			stable++
+		}
+	}
+
+	// Sort regressions by percentage (biggest regression first)
+	sort.Slice(regressionList, func(i, j int) bool {
+		return regressionList[i].FlatChangePercent > regressionList[j].FlatChangePercent
+	})
+
+	// Sort improvements by absolute percentage (biggest improvement first)
+	sort.Slice(improvementList, func(i, j int) bool {
+		return math.Abs(improvementList[i].FlatChangePercent) > math.Abs(improvementList[j].FlatChangePercent)
+	})
+
+	data := jsonSummaryData{
+		TotalFunctions: len(r.FunctionChanges),
+		Statistics: jsonStatistics{
+			Regressions:  len(regressionList),
+			Improvements: len(improvementList),
+			Stable:       stable,
+		},
+		Regressions:  regressionList,
+		Improvements: improvementList,
+	}
+
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(data)
+}
+
+func (r *ProfileChangeReport) generateDetailedJSONReport(outputPath string) error {
+	changes := r.FunctionChanges
+
+	// Count types
+	var regressions, improvements, stable int
+	for _, change := range changes {
+		switch change.ChangeType {
+		case shared.REGRESSION:
+			regressions++
+		case shared.IMPROVEMENT:
+			improvements++
+		default:
+			stable++
+		}
+	}
+
+	// Sort: regressions → improvements → stable, each by magnitude
+	typePriority := map[string]int{
+		shared.REGRESSION:  regressionPriority,
+		shared.IMPROVEMENT: improvementPriority,
+		shared.STABLE:      stablePriority,
+	}
+
+	sort.Slice(changes, func(i, j int) bool {
+		if typePriority[changes[i].ChangeType] != typePriority[changes[j].ChangeType] {
+			return typePriority[changes[i].ChangeType] < typePriority[changes[j].ChangeType]
+		}
+		return math.Abs(changes[i].FlatChangePercent) > math.Abs(changes[j].FlatChangePercent)
+	})
+
+	data := jsonDetailedData{
+		TotalFunctions: len(changes),
+		Statistics: jsonStatistics{
+			Regressions:  regressions,
+			Improvements: improvements,
+			Stable:       stable,
+		},
+		Changes:   changes,
+		SortOrder: "Regressions (worst → best), then Improvements (best → worst), then Stable",
+	}
+
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(data)
+}
+
 func (r *ProfileChangeReport) ChooseOutputFormat(outputFormat string) {
 	switch outputFormat {
 	case "summary":
@@ -336,6 +457,14 @@ func (r *ProfileChangeReport) ChooseOutputFormat(outputFormat string) {
 	case "detailed-html":
 		if err := r.generateDetailedHTMLReport("detailed.html"); err != nil {
 			slog.Info("detailed-html failed", "err", err)
+		}
+	case "summary-json":
+		if err := r.generateJSONSummary("summary.json"); err != nil {
+			slog.Info("summary-json failed", "err", err)
+		}
+	case "detailed-json":
+		if err := r.generateDetailedJSONReport("detailed.json"); err != nil {
+			slog.Info("detailed-json failed", "err", err)
 		}
 	}
 }

@@ -8,20 +8,18 @@ type ProfileChangeReport struct {
 	FunctionChanges []*FunctionChangeResult
 }
 
+type AbsoluteChange struct {
+	Before float64 `json:"before"`
+	After  float64 `json:"after"`
+	Delta  float64 `json:"delta"`
+}
+
 type FunctionChangeResult struct {
-	FunctionName      string
-	ChangeType        string // shared.REGRESSION, shred.IMPROVEMENT, shared.STABLE
-	FlatChangePercent float64
-	CumChangePercent  float64
-	FlatAbsolute      struct {
-		Before float64
-		After  float64
-		Delta  float64
-	}
-	CumAbsolute struct {
-		Before float64
-		After  float64
-		Delta  float64
-	}
-	Timestamp time.Time
+	FunctionName      string         `json:"function_name"`
+	ChangeType        string         `json:"change_type"`
+	FlatChangePercent float64        `json:"flat_change_percent"`
+	CumChangePercent  float64        `json:"cum_change_percent"`
+	FlatAbsolute      AbsoluteChange `json:"flat_absolute"`
+	CumAbsolute       AbsoluteChange `json:"cum_absolute"`
+	Timestamp         time.Time      `json:"timestamp"`
 }
