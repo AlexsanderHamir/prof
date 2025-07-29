@@ -69,6 +69,7 @@ prof track auto --base "baseline" --current "optimized" --profile-type "cpu" --b
 ## Requirements
 
 - Go 1.24.3 or later
+- Install graphviz
 - Run from within your Go project directory (where benchmarks are located)
 
 ## Troubleshooting
