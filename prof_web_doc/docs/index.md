@@ -143,9 +143,14 @@ prof track manual --base path/to/base/report/cpu.txt \
                   --output-format "detailed"
 ```
 
-## Result Examples
+## Output Formats
 
-Prof's performance comparison provides two output formats to help you understand performance changes at different levels of detail.
+Prof's performance comparison provides multiple output formats to help you understand performance changes at different levels of detail and presentation.
+**Currently supported formats:**
+
+- **Terminal (default)**
+- **HTML**
+- **JSON**
 
 ### Summary Format
 
@@ -207,4 +212,16 @@ Change:        +233.33%
 
 Severity:      CRITICAL
 Recommendation: Critical regression! Immediate investigation required.
+```
+
+### HTML & JSON Output
+
+In addition to terminal display, Prof can export both **summary** and **detailed** reports in:
+
+- 📄 **HTML**: shareable and human-friendly
+- 🧩 **JSON**: structured format for programmatic use or further integration
+
+```sh
+--output-format summary-html
+--output-format detailed-json
 ```

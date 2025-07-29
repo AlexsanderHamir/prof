@@ -8,7 +8,6 @@ import (
 	"github.com/AlexsanderHamir/prof/engine/benchmark"
 	"github.com/AlexsanderHamir/prof/engine/collector"
 	"github.com/AlexsanderHamir/prof/engine/tracker"
-	"github.com/AlexsanderHamir/prof/engine/version"
 	"github.com/AlexsanderHamir/prof/internal/args"
 	"github.com/AlexsanderHamir/prof/internal/config"
 	"github.com/AlexsanderHamir/prof/internal/shared"
@@ -42,7 +41,6 @@ func CreateRootCmd() *cobra.Command {
 	rootCmd.AddCommand(createProfAuto())
 	rootCmd.AddCommand(createSetupCmd())
 	rootCmd.AddCommand(createTrackCmd())
-	rootCmd.AddCommand(createVersionCmd())
 
 	return rootCmd
 }
@@ -162,17 +160,6 @@ func createTrackManualCmd() *cobra.Command {
 	return cmd
 }
 
-func createVersionCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:                   "version",
-		Short:                 "Shows the current version of prof and checks for updates.",
-		RunE:                  runVersion,
-		DisableFlagsInUseLine: true,
-	}
-
-	return cmd
-}
-
 // createSetupCmd creates the setup subcommand
 func createSetupCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -221,14 +208,6 @@ func runBenchmarks(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	return nil
-}
-
-// runVersion handles the version command execution
-func runVersion(_ *cobra.Command, _ []string) error {
-	current, latest := version.Check()
-	output := version.FormatOutput(current, latest)
-	fmt.Print(output)
 	return nil
 }
 
