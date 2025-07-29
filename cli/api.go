@@ -238,8 +238,10 @@ func runSetup(_ *cobra.Command, _ []string) error {
 }
 
 var validFormats = map[string]bool{
-	"summary":  true,
-	"detailed": true,
+	"summary":       true,
+	"detailed":      true,
+	"summary-html":  true,
+	"detailed-html": true,
 }
 
 // runTrack handles the track command execution
@@ -259,12 +261,7 @@ func runTrackAuto(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	switch outputFormat {
-	case "summary":
-		printSummary(report)
-	case "detailed":
-		printDetailedReport(report)
-	}
+	chooseOutputFormat(report)
 
 	return nil
 }
@@ -285,11 +282,7 @@ func runTrackManual(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	switch outputFormat {
-	case "summary":
-		printSummary(report)
-	case "detailed":
-		printDetailedReport(report)
-	}
+	chooseOutputFormat(report)
+
 	return nil
 }
