@@ -52,20 +52,12 @@ func DetectChange(baseline, current *parser.LineObj) (*FunctionChangeResult, err
 		ChangeType:        changeType,
 		FlatChangePercent: flatChange,
 		CumChangePercent:  cumChange,
-		FlatAbsolute: struct {
-			Before float64
-			After  float64
-			Delta  float64
-		}{
+		FlatAbsolute: AbsoluteChange{
 			Before: baseline.Flat,
 			After:  current.Flat,
 			Delta:  current.Flat - baseline.Flat,
 		},
-		CumAbsolute: struct {
-			Before float64
-			After  float64
-			Delta  float64
-		}{
+		CumAbsolute: AbsoluteChange{
 			Before: baseline.Cum,
 			After:  current.Cum,
 			Delta:  current.Cum - baseline.Cum,
