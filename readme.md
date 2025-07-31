@@ -93,7 +93,7 @@ prof track auto --base "baseline" --current "optimized" --profile-type "cpu" --b
 
 ## Contributing
 
-We welcome contributions of all kinds—bug fixes, new features, tests, and documentation improvements. Before getting started, make sure to review the [issues](https://github.com/AlexsanderHamir/prof/issues) to avoid duplicated effort.
+We welcome contributions of all kinds—bug fixes, new features, tests, and documentation improvements. Before getting started, make sure to review the [issues](https://github.com/AlexsanderHamir/prof/issues) to avoid duplicated effort, and see the [contribution guidelines](./CONTRIBUTING.MD) for more information.
 
 ### Quick Start
 
@@ -115,32 +115,6 @@ golangci-lint run
 go build -o prof ./cmd/prof
 ```
 
-### Instructions
-
-1. **Run Tests and Linters Locally:**
-   GitHub Actions will automatically run unit tests and lint checks on each pull request, but you should run them locally first to ensure your code is clean and passes all checks:
-
-   - Run all tests: `go test ./...`
-   - Run the linter: `golangci-lint run`
-
-2. **Follow the Code Style:**
-   Use idiomatic Go. Keep functions small, testable, and documented. Use descriptive names and avoid unnecessary abstractions.
-
-3. **Keep Commits Atomic and Meaningful:**
-   Structure commits logically, each should represent a focused change. Avoid mixing formatting, refactoring, and feature implementation in a single commit.
-
-4. **Add Tests for New Features or Fixes:**
-   All non-trivial changes should be accompanied by appropriate test coverage. If you're unsure how to test something, feel free to ask in the PR or open an issue first.
-
-5. **Document Any User-Facing Changes:**
-   If your contribution affects the CLI, config file, or output format, update the relevant parts of the documentation (README, CLI help, or usage examples).
-
-6. **Open a Pull Request:**
-   Once your changes are ready and tested locally, open a PR with a clear description of what's changed and why. Link to any relevant issues.
-
-7. **Be Open to Feedback:**
-   Reviews are meant to maintain code quality and project direction. We're happy to help iterate on PRs to get them merged.
-
 ## License
 
-This project is licensed under the MIT License - see  the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
