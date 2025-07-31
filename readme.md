@@ -93,7 +93,7 @@ prof track auto --base "baseline" --current "optimized" --profile-type "cpu" --b
 
 ## Contributing
 
-We welcome contributions of all kinds—bug fixes, new features, tests, and documentation improvements. Before getting started, make sure to review the [issues](https://github.com/AlexsanderHamir/prof/issues) to avoid duplicated effort, and see the [contribution guidelines](./CONTRIBUTING.MD) for more information.
+We welcome contributions of all kinds—bug fixes, new features, tests, and documentation improvements. Before getting started, make sure to review the [issues](https://github.com/AlexsanderHamir/prof/issues) to avoid duplicated effort, and see the [contribution guidelines](./CONTRIBUTING.md) for more information.
 
 ### Quick Start
 
