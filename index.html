@@ -97,6 +97,11 @@
             </li>
               </ul>
             </li>
+            
+            <li class="nav-item" data-bs-level="1"><a href="#cicd-fail-on-regressions" class="nav-link">CI/CD: Fail on regressions</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
         </ul>
     </div>
 </div></div>
@@ -276,6 +281,63 @@ Recommendation: Critical regression! Immediate investigation required.
 </ul>
 <pre><code class="language-sh">--output-format summary-html
 --output-format detailed-json
+</code></pre>
+<h1 id="cicd-fail-on-regressions">CI/CD: Fail on regressions</h1>
+<p><strong>Understanding the regression threshold:</strong></p>
+<p>The <code>--regression-threshold</code> flag sets a percentage limit on performance regressions. When enabled with <code>--fail-on-regression</code>, the command will exit with a non-zero status code if any function's <strong>flat time</strong> regression exceeds this threshold.</p>
+<p><strong>Flat time regression calculation:</strong></p>
+<pre><code>Flat regression % = (current_time - baseline_time) / baseline_time × 100
+</code></pre>
+<p><strong>Example:</strong> If a function took 100ms in baseline and 110ms in current run:</p>
+<ul>
+<li>Flat regression = (110 - 100) / 100 × 100 = +10%</li>
+<li>With <code>--regression-threshold 5.0</code>, this would fail the build</li>
+<li>With <code>--regression-threshold 15.0</code>, this would pass</li>
+</ul>
+<p><strong>Note:</strong> The threshold applies to <strong>flat time</strong> (time spent directly in the function), not cumulative time (time including all called functions). Flat time gives a more direct measure of the function's own performance impact.</p>
+<p><strong>Important:</strong> The <code>prof</code> command must be run from within the Go project directory where the benchmarks are located, otherwise it will fail with "go: cannot find main module" errors. This means running <code>prof</code> from the exact directory containing your <code>*_test.go</code> files with the benchmarks.</p>
+<pre><code class="language-bash">prof track auto \
+  --base baseline \
+  --current PR \
+  --profile-type cpu \
+  --bench-name BenchmarkGenPool \
+  --output-format summary \
+  --fail-on-regression \
+  --regression-threshold 5.0
+</code></pre>
+<p><strong>Example GitHub Actions job:</strong></p>
+<pre><code class="language-yaml">name: perf-regression-check
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: &quot;&gt;=1.24&quot;
+      - name: Install prof
+        run: go install github.com/AlexsanderHamir/prof/cmd/prof@latest
+      - name: Collect baseline (main)
+        run: |
+          git fetch origin main --depth=1
+          git checkout -qf origin/main
+          # prof must be run from within the Go project directory where benchmarks are located
+          cd ${{ github.workspace }}
+          prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu&quot; --count 5 --tag baseline
+      - name: Collect current (PR)
+        run: |
+          git checkout -
+          # prof must be run from within the Go project directory where benchmarks are located
+          cd ${{ github.workspace }}
+          prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu&quot; --count 5 --tag PR
+      - name: Compare and fail on regression
+        run: |
+          # prof must be run from within the Go project directory where benchmarks are located
+          cd ${{ github.workspace }}
+          prof track auto --base baseline --current PR \
+            --profile-type cpu --bench-name &quot;BenchmarkGenPool&quot; \
+            --output-format summary --fail-on-regression --regression-threshold 5.0
 </code></pre></div>
             </div>
         </div>
@@ -358,5 +420,5 @@ Recommendation: Critical regression! Immediate investigation required.
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2025-07-29 16:07:47.194040+00:00
+Build Date UTC : 2025-08-14 16:56:21.163251+00:00
 -->
