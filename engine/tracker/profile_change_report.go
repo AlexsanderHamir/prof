@@ -468,3 +468,18 @@ func (r *ProfileChangeReport) ChooseOutputFormat(outputFormat string) {
 		}
 	}
 }
+
+// WorstRegression returns the single worst regression by flat change percent.
+// Returns nil if there are no regressions.
+func (r *ProfileChangeReport) WorstRegression() *FunctionChangeResult {
+	var worst *FunctionChangeResult
+	for _, change := range r.FunctionChanges {
+		if change.ChangeType != shared.REGRESSION {
+			continue
+		}
+		if worst == nil || change.FlatChangePercent > worst.FlatChangePercent {
+			worst = change
+		}
+	}
+	return worst
+}
