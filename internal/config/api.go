@@ -29,6 +29,8 @@ func LoadFromFile(filename string) (*Config, error) {
 // with pre-built examples.
 func CreateTemplate() error {
 	outputPath := "./config_template.json"
+	runCount := 5
+	maxSnapshotCount := 10
 
 	template := Config{
 		FunctionFilter: map[string]FunctionFilter{
@@ -51,11 +53,11 @@ func CreateTemplate() error {
 			},
 			DefaultBenchmarks: []string{"BenchmarkGenPool"},
 			DefaultProfiles:   []string{"cpu", "memory"},
-			DefaultRunCount:   5,
+			DefaultRunCount:   runCount,
 			AutoCleanup: SnapshotCleanupConfig{
-				MaxAge:   "30d",
-				MaxCount: 10,
-				KeepTags: []string{"v1.0", "baseline", "release-*"},
+				MaxAge:           "30d",
+				MaxSnapshotCount: maxSnapshotCount,
+				KeepTags:         []string{"v1.0", "baseline", "release-*"},
 			},
 			Metadata: SnapshotMetadataConfig{
 				CaptureGitInfo:    true,
