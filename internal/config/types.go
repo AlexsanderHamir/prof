@@ -72,7 +72,7 @@ type SnapshotCleanupConfig struct {
 
 	// MaxCount specifies maximum number of snapshots to retain
 	// The 0 value will be interpeted as not active.
-	MaxCount int `json:"max_count,omitempty"`
+	MaxSnapshotCount int `json:"max_count,omitempty"`
 
 	// KeepTags specifies tags that should never be automatically cleaned up.
 	// Example: ["v1.0", "release-*", "baseline"].
