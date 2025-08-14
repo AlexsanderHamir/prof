@@ -29,8 +29,6 @@ func LoadFromFile(filename string) (*Config, error) {
 // with pre-built examples.
 func CreateTemplate() error {
 	outputPath := "./config_template.json"
-	runCount := 5
-	maxSnapshotCount := 10
 
 	template := Config{
 		FunctionFilter: map[string]FunctionFilter{
@@ -41,28 +39,6 @@ func CreateTemplate() error {
 					"github.com/example/GenPool/pkg",
 				},
 				IgnoreFunctions: []string{"init", "TestMain", "BenchmarkMain"},
-			},
-		},
-		Snapshot: SnapshotConfig{
-			StorageDirectory: "prof-snapshots",
-			Git: SnapshotGitConfig{
-				WorkingDirectory: "temp-snapshot-work",
-				StandardSavePath: "snapshot-checkout",
-				RepositoryURL:    "https://github.com/your-org/your-repo.git",
-				GitCommand:       "git",
-			},
-			DefaultBenchmarks: []string{"BenchmarkGenPool"},
-			DefaultProfiles:   []string{"cpu", "memory"},
-			DefaultRunCount:   runCount,
-			AutoCleanup: SnapshotCleanupConfig{
-				MaxAge:           "30d",
-				MaxSnapshotCount: maxSnapshotCount,
-				KeepTags:         []string{"v1.0", "baseline", "release-*"},
-			},
-			Metadata: SnapshotMetadataConfig{
-				CaptureGitInfo:    true,
-				CaptureSystemInfo: true,
-				CaptureGoVersion:  true,
 			},
 		},
 	}
