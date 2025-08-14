@@ -41,6 +41,28 @@ func CreateTemplate() error {
 				IgnoreFunctions: []string{"init", "TestMain", "BenchmarkMain"},
 			},
 		},
+		Snapshot: SnapshotConfig{
+			StorageDirectory: "prof-snapshots",
+			Git: SnapshotGitConfig{
+				WorkingDirectory: "temp-snapshot-work",
+				StandardSavePath: "snapshot-checkout",
+				RepositoryURL:    "https://github.com/your-org/your-repo.git",
+				GitCommand:       "git",
+			},
+			DefaultBenchmarks: []string{"BenchmarkGenPool"},
+			DefaultProfiles:   []string{"cpu", "memory"},
+			DefaultRunCount:   5,
+			AutoCleanup: SnapshotCleanupConfig{
+				MaxAge:   "30d",
+				MaxCount: 10,
+				KeepTags: []string{"v1.0", "baseline", "release-*"},
+			},
+			Metadata: SnapshotMetadataConfig{
+				CaptureGitInfo:    true,
+				CaptureSystemInfo: true,
+				CaptureGoVersion:  true,
+			},
+		},
 	}
 
 	if err := os.MkdirAll(filepath.Dir(outputPath), shared.PermDir); err != nil {
