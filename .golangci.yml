@@ -16,9 +16,9 @@ run:
 issues:
   max-same-issues: 50
   exclude-dirs:
-    - ^test$
-    - /test/
-    - .*/test/.*
+    - ^tests$
+    - /tests/
+    - .*/tests/.*
   exclude-files:
     - "_test\\.go$"
 
