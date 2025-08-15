@@ -129,76 +129,6 @@ prof track auto --base "baseline" --current "optimized" \
                 --output-format "detailed"
 ```
 
-### CI/CD: Fail on regressions
-
-**Understanding the regression threshold:**
-
-The `--regression-threshold` flag sets a percentage limit on performance regressions. When enabled with `--fail-on-regression`, the command will exit with a non-zero status code if any function's **flat time** regression exceeds this threshold.
-
-**Flat time regression calculation:**
-
-```
-Flat regression % = (current_time - baseline_time) / baseline_time × 100
-```
-
-**Example:** If a function took 100ms in baseline and 110ms in current run:
-
-- Flat regression = (110 - 100) / 100 × 100 = +10%
-- With `--regression-threshold 5.0`, this would fail the build
-- With `--regression-threshold 15.0`, this would pass
-
-**Note:** The threshold applies to **flat time** (time spent directly in the function), not cumulative time (time including all called functions). Flat time gives a more direct measure of the function's own performance impact.
-
-**Important:** The `prof` command must be run from within the Go project directory where the benchmarks are located, otherwise it will fail with "go: cannot find main module" errors. This means running `prof` from the exact directory containing your `*_test.go` files with the benchmarks.
-
-```bash
-prof track auto \
-  --base baseline \
-  --current PR \
-  --profile-type cpu \
-  --bench-name BenchmarkGenPool \
-  --output-format summary \
-  --fail-on-regression \
-  --regression-threshold 5.0
-```
-
-**Example GitHub Actions job:**
-
-```yaml
-name: perf-regression-check
-on: [pull_request]
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ">=1.24"
-      - name: Install prof
-        run: go install github.com/AlexsanderHamir/prof/cmd/prof@latest
-      - name: Collect baseline (main)
-        run: |
-          git fetch origin main --depth=1
-          git checkout -qf origin/main
-          # prof must be run from within the Go project directory where benchmarks are located
-          cd ${{ github.workspace }}
-          prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu" --count 5 --tag baseline
-      - name: Collect current (PR)
-        run: |
-          git checkout -
-          # prof must be run from within the Go project directory where benchmarks are located
-          cd ${{ github.workspace }}
-          prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu" --count 5 --tag PR
-      - name: Compare and fail on regression
-        run: |
-          # prof must be run from within the Go project directory where benchmarks are located
-          cd ${{ github.workspace }}
-          prof track auto --base baseline --current PR \
-            --profile-type cpu --bench-name "BenchmarkGenPool" \
-            --output-format summary --fail-on-regression --regression-threshold 5.0
-```
-
 ## Track Manual
 
 Use `track manual` when comparing external profile files by specifying their relative paths:
@@ -294,4 +224,74 @@ In addition to terminal display, Prof can export both **summary** and **detailed
 ```sh
 --output-format summary-html
 --output-format detailed-json
+```
+
+# CI/CD: Fail on regressions
+
+**Understanding the regression threshold:**
+
+The `--regression-threshold` flag sets a percentage limit on performance regressions. When enabled with `--fail-on-regression`, the command will exit with a non-zero status code if any function's **flat time** regression exceeds this threshold.
+
+**Flat time regression calculation:**
+
+```
+Flat regression % = (current_time - baseline_time) / baseline_time × 100
+```
+
+**Example:** If a function took 100ms in baseline and 110ms in current run:
+
+- Flat regression = (110 - 100) / 100 × 100 = +10%
+- With `--regression-threshold 5.0`, this would fail the build
+- With `--regression-threshold 15.0`, this would pass
+
+**Note:** The threshold applies to **flat time** (time spent directly in the function), not cumulative time (time including all called functions). Flat time gives a more direct measure of the function's own performance impact.
+
+**Important:** The `prof` command must be run from within the Go project directory where the benchmarks are located, otherwise it will fail with "go: cannot find main module" errors. This means running `prof` from the exact directory containing your `*_test.go` files with the benchmarks.
+
+```bash
+prof track auto \
+  --base baseline \
+  --current PR \
+  --profile-type cpu \
+  --bench-name BenchmarkGenPool \
+  --output-format summary \
+  --fail-on-regression \
+  --regression-threshold 5.0
+```
+
+**Example GitHub Actions job:**
+
+```yaml
+name: perf-regression-check
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ">=1.24"
+      - name: Install prof
+        run: go install github.com/AlexsanderHamir/prof/cmd/prof@latest
+      - name: Collect baseline (main)
+        run: |
+          git fetch origin main --depth=1
+          git checkout -qf origin/main
+          # prof must be run from within the Go project directory where benchmarks are located
+          cd ${{ github.workspace }}
+          prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu" --count 5 --tag baseline
+      - name: Collect current (PR)
+        run: |
+          git checkout -
+          # prof must be run from within the Go project directory where benchmarks are located
+          cd ${{ github.workspace }}
+          prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu" --count 5 --tag PR
+      - name: Compare and fail on regression
+        run: |
+          # prof must be run from within the Go project directory where benchmarks are located
+          cd ${{ github.workspace }}
+          prof track auto --base baseline --current PR \
+            --profile-type cpu --bench-name "BenchmarkGenPool" \
+            --output-format summary --fail-on-regression --regression-threshold 5.0
 ```
