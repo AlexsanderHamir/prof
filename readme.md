@@ -27,6 +27,7 @@ This view provides a breakdown of performance metrics per function.
 
 ## TUI:
 
+Easily select which benchmarks to run, allowing you to "build" the prof command through the terminal without having to remember anything
 ![TUI VIEW](./tui.png)
 
 ## Why Prof?
@@ -112,6 +113,56 @@ $ prof tui
 ? Number of runs (count): 10
 
 ? Tag name: v2.0-optimized
+```
+
+### TUI Track - Interactive Performance Comparison
+
+Don't want to remember tag names for comparison? Use the interactive tracking interface:
+
+```bash
+prof tui track
+```
+
+**What it does:**
+
+- 🔍 **Auto-discovers** existing benchmark data in `bench/<tag>/` directories
+- 📋 **Interactive selection** of baseline vs current tags, benchmarks, and profiles
+- 🎯 **Data validation** - only shows options that actually exist
+- 📊 **Same output** as `prof track auto` - full performance analysis
+
+**Prerequisites:**
+
+- Must have run `prof tui` or `prof auto` at least twice to create baseline and current tags
+
+**Example workflow:**
+
+```bash
+$ prof tui track
+
+? Select baseline tag (the 'before' version) [Press Enter to select]:
+  baseline
+  optimized
+
+? Select current tag (the 'after' version) [Press Enter to select]:
+  optimized
+
+? Select benchmark to compare [Press Enter to select]:
+  BenchmarkGenPool
+  BenchmarkCacheGet
+
+? Select profile type to compare [Press Enter to select]:
+  cpu
+  memory
+
+? Select output format [Press Enter to select]:
+  summary
+  detailed
+
+? Do you want to fail on performance regressions? (Y/n)
+
+? Enter regression threshold percentage: 5.0
+
+🚀 Running: prof track auto --base baseline --current optimized --bench-name BenchmarkGenPool --profile-type cpu --output-format detailed --fail-on-regression --regression-threshold 5.0
 ```
 
 2. **Compare performance between tags:**
