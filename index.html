@@ -32,6 +32,49 @@
 
                 <!-- Expanded navigation -->
                 <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="." class="nav-link active" aria-current="page">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Commands</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="index.md#auto" class="dropdown-item">Auto</a>
+</li>
+                                    
+<li>
+    <a href="index.md#tui-interactive-selection" class="dropdown-item">TUI</a>
+</li>
+                                    
+<li>
+    <a href="index.md#manual" class="dropdown-item">Manual</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Performance Comparison</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="index.md#tui-track-interactive-performance-comparison" class="dropdown-item">TUI Track</a>
+</li>
+                                    
+<li>
+    <a href="index.md#track-auto" class="dropdown-item">Track Auto</a>
+</li>
+                                    
+<li>
+    <a href="index.md#track-manual" class="dropdown-item">Track Manual</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a href="index.md#cicd-fail-on-regressions" class="nav-link">CI/CD</a>
+                            </li>
+                        </ul>
 
                     <ul class="nav navbar-nav ms-md-auto">
                         <li class="nav-item">
@@ -62,11 +105,19 @@
             
             <li class="nav-item" data-bs-level="1"><a href="#profiling-data-management" class="nav-link">Profiling Data Management</a>
               <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#quick-reference" class="nav-link">Quick Reference</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
             <li class="nav-item" data-bs-level="2"><a href="#auto" class="nav-link">Auto</a>
               <ul class="nav flex-column">
               </ul>
             </li>
             <li class="nav-item" data-bs-level="2"><a href="#auto-configuration" class="nav-link">Auto - Configuration</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#tui-interactive-selection" class="nav-link">TUI - Interactive Selection</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -83,6 +134,10 @@
             
             <li class="nav-item" data-bs-level="1"><a href="#performance-comparison" class="nav-link">Performance Comparison</a>
               <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#tui-track-interactive-performance-comparison" class="nav-link">TUI Track - Interactive Performance Comparison</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
             <li class="nav-item" data-bs-level="2"><a href="#track-auto" class="nav-link">Track Auto</a>
               <ul class="nav flex-column">
               </ul>
@@ -109,6 +164,16 @@
 
 <h1 id="profiling-data-management">Profiling Data Management</h1>
 <p>When performing complex profiling, developers often find themselves lost in a maze of repetitive commands and scattered files. You run <code>go test -bench=BenchmarkMyFunc -cpuprofile=cpu.out</code>, then <code>go tool pprof -top cpu.out &gt; results.txt</code>, inspect a function with <code>go tool pprof -list=MyFunc cpu.out</code>, make modifications, run the benchmark again—and hours later, you're exhausted, have dozens of inconsistently named files scattered across directories, and can't remember which changes led to which results. Without systematic organization, you lose track of your optimization journey, lack accurate "before and after" snapshots to share with your team, and waste valuable time context-switching between profiling commands instead of focusing on actual performance improvements. Prof eliminates this chaos by capturing everything in one command and automatically organizing all profiling data—binary files, text reports, function-level analysis, and visualizations—into a structured, tagged hierarchy that preserves your optimization history and makes collaboration effortless.</p>
+<h2 id="quick-reference">Quick Reference</h2>
+<p><strong>Main Commands:</strong></p>
+<ul>
+<li><strong><code>prof auto</code></strong>: Automated benchmark collection and profiling</li>
+<li><strong><code>prof tui</code></strong>: Interactive benchmark collection</li>
+<li><strong><code>prof tui track</code></strong>: Interactive performance comparison</li>
+<li><strong><code>prof manual</code></strong>: Process existing profile files</li>
+<li><strong><code>prof track auto</code></strong>: Compare performance between tags</li>
+<li><strong><code>prof track manual</code></strong>: Compare external profile files</li>
+</ul>
 <h2 id="auto">Auto</h2>
 <p>The <code>auto</code> command wraps <code>go test</code> and <code>pprof</code> to run benchmarks, collect all profile types, and organize everything automatically:</p>
 <pre><code class="language-bash">prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu,memory,mutex,block&quot; --count 10 --tag &quot;baseline&quot;
@@ -155,6 +220,47 @@
 <li><code>ignore_functions</code>: Exclude specific functions from collection, even if they match the include prefixes.</li>
 </ul>
 <p>This filtering helps focus profiling on relevant code paths while excluding test setup and initialization functions that may not be meaningful for performance analysis.</p>
+<h2 id="tui-interactive-selection">TUI - Interactive Selection</h2>
+<p>The <code>tui</code> command provides an interactive terminal interface that automatically discovers benchmarks in your project and guides you through the selection process:</p>
+<pre><code class="language-bash">prof tui
+</code></pre>
+<p><strong>What it does:</strong></p>
+<ol>
+<li><strong>Discovers benchmarks</strong>: Automatically scans your Go module for <code>func BenchmarkXxx(b *testing.B)</code> functions in <code>*_test.go</code> files</li>
+<li><strong>Interactive selection</strong>: Presents a menu where you can select:</li>
+<li>Which benchmarks to run (multi-select from discovered list)</li>
+<li>Which profiles to collect (cpu, memory, mutex, block)</li>
+<li>Number of benchmark runs (count)</li>
+<li>Tag name for organizing results</li>
+</ol>
+<p><strong>Navigation:</strong></p>
+<ul>
+<li><strong>Page size</strong>: Shows up to 20 benchmarks at once for readability</li>
+<li><strong>Scroll</strong>: Use arrow keys (↑/↓) to navigate through the list</li>
+<li><strong>Multi-select</strong>: Use spacebar to select/deselect benchmarks</li>
+<li><strong>Search</strong>: Type to filter and find specific benchmarks quickly</li>
+</ul>
+<p><strong>Example workflow:</strong></p>
+<pre><code class="language-bash">$ prof tui
+
+? Select benchmarks to run:
+  ◯ BenchmarkGenPool
+  ◯ BenchmarkCacheGet
+  ◯ BenchmarkCacheSet
+  ◯ BenchmarkHTTPHandler
+  [Use arrows to move, space to select, type to filter]
+
+? Select profiles:
+  ◉ cpu
+  ◯ memory
+  ◯ mutex
+  ◯ block
+  [Use arrows to move, space to select]
+
+? Number of runs (count): 10
+
+? Tag name (used to group results under bench/&lt;tag&gt;): v2.0-optimized
+</code></pre>
 <h2 id="manual">Manual</h2>
 <p>The <code>manual</code> command processes existing profile files without running benchmarks - it only uses <code>pprof</code> to organize data you already have:</p>
 <pre><code class="language-bash">prof manual --tag &quot;external-profiles&quot; BenchmarkGenPool_cpu.out memory.out block.out
@@ -191,6 +297,72 @@
 <p>For example, <code>BenchmarkGenPool_cpu.out</code> becomes <code>BenchmarkGenPool_cpu</code> in the configuration.</p>
 <h1 id="performance-comparison">Performance Comparison</h1>
 <p>Prof's performance comparison automatically drills down from benchmark-level changes to show you exactly which functions changed. Instead of just reporting that performance improved or regressed, Prof pinpoints the specific functions responsible and shows you detailed before-and-after comparisons.</p>
+<h2 id="tui-track-interactive-performance-comparison">TUI Track - Interactive Performance Comparison</h2>
+<p>The <code>tui track</code> command provides an interactive interface for comparing performance between existing benchmark runs. This is a companion to the main <code>prof tui</code> command and requires that you have already collected benchmark data using either <code>prof tui</code> or <code>prof auto</code>.</p>
+<pre><code class="language-bash">prof tui track
+</code></pre>
+<p><strong>What it does:</strong></p>
+<ol>
+<li><strong>Discovers existing data</strong>: Scans the <code>bench/</code> directory for tags you've already collected</li>
+<li><strong>Interactive selection</strong>: Guides you through selecting:</li>
+<li>Baseline tag (the "before" version)</li>
+<li>Current tag (the "after" version)</li>
+<li>Benchmark to compare</li>
+<li>Profile type to analyze</li>
+<li>Output format</li>
+<li>Regression threshold settings</li>
+</ol>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>Must have run <code>prof tui</code> or <code>prof auto</code> at least twice to create baseline and current tags</li>
+<li>Data must be organized under <code>bench/&lt;tag&gt;/</code> directories</li>
+</ul>
+<p><strong>Example workflow:</strong></p>
+<pre><code class="language-bash">$ prof tui track
+
+? Select baseline tag (the 'before' version) [Press Enter to select]:
+  baseline
+  optimized
+  [Use arrows to move, Enter to select, type to filter]
+
+? Select current tag (the 'after' version) [Press Enter to select]:
+  optimized
+  [Use arrows to move, Enter to select, type to filter]
+
+? Select benchmark to compare [Press Enter to select]:
+  BenchmarkGenPool
+  BenchmarkCacheGet
+  [Use arrows to move, Enter to select, type to filter]
+
+? Select profile type to compare [Press Enter to select]:
+  cpu
+  memory
+  [Use arrows to move, Enter to select, type to filter]
+
+? Select output format [Press Enter to select]:
+  summary
+  detailed
+  summary-html
+  detailed-html
+  summary-json
+  detailed-json
+  [Use arrows to move, Enter to select, type to filter]
+
+? Do you want to fail on performance regressions? (Y/n)
+
+? Enter regression threshold percentage (e.g., 5.0 for 5%): 5.0
+
+🚀 Running: prof track auto --base baseline --current optimized --bench-name BenchmarkGenPool --profile-type cpu --output-format detailed --fail-on-regression --regression-threshold 5.0
+</code></pre>
+<p><strong>Output formats supported:</strong></p>
+<ul>
+<li><strong>summary</strong>: High-level overview of all performance changes</li>
+<li><strong>detailed</strong>: Comprehensive analysis for each changed function</li>
+<li><strong>summary-html</strong>: HTML export of summary report</li>
+<li><strong>detailed-html</strong>: HTML export of detailed report</li>
+<li><strong>summary-json</strong>: JSON export of summary report</li>
+<li><strong>detailed-json</strong>: JSON export of detailed report</li>
+</ul>
 <h2 id="track-auto">Track Auto</h2>
 <p>Use <code>track auto</code> when comparing data collected with <code>prof auto</code>. Simply reference the tag names:</p>
 <pre><code class="language-bash">prof track auto --base &quot;baseline&quot; --current &quot;optimized&quot; \
@@ -420,5 +592,5 @@ jobs:
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2025-08-14 16:56:21.163251+00:00
+Build Date UTC : 2025-08-18 17:22:19.351267+00:00
 -->
