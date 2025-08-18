@@ -16,8 +16,8 @@ When performing complex profiling, developers often find themselves lost in a ma
 **Directory Flexibility:**
 
 - **Project root**: Run from anywhere in your Go project (recommended)
-- **Package directories**: Run from specific package directories for focused profiling
-- **Configuration**: Place `config_template.json` in root or package directories as needed
+- **Configuration**: Configuration file (`config_template.json`) is always looked for at the project root
+- **Global Search**: prof auto searches for the benchmark name globally, regardless of the directory you run it from. If you run it from a subdirectory, the **bench** directory will be created there instead of at the project root.
 
 ## Auto
 
@@ -384,7 +384,7 @@ Flat regression % = (current_time - baseline_time) / baseline_time × 100
 
 **Note:** The threshold applies to **flat time** (time spent directly in the function), not cumulative time (time including all called functions). Flat time gives a more direct measure of the function's own performance impact.
 
-**Important:** Prof commands can be run from the Go project root directory or from within specific package directories. When running from the root, ensure your configuration file (if using one) is located at the project root. When running from package directories, the configuration file should be in that package directory or the root.
+**Important:** Prof commands can be run from the Go project root directory or from within specific package directories. The configuration file (if using one) is always expected at the project root, regardless of where you run the command from, any extra configuration files will be ignored.
 
 ```bash
 prof track auto \
