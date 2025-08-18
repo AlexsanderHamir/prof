@@ -25,6 +25,10 @@ This view provides a breakdown of performance metrics per function.
 
 ![Function-level performance comparison](./detailed_example.png)
 
+## TUI:
+
+![TUI VIEW](./tui.png)
+
 ## Why Prof?
 
 **Before Prof:** Profiling a single benchmark with multiple profile types requires dozens of manual commands:
