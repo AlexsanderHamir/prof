@@ -3,7 +3,7 @@
 Prof automates Go performance profiling by collecting all pprof data in one command and enabling easy performance comparisons between benchmark runs.
 
 [![GoDoc](https://godoc.org/github.com/AlexsanderHamir/prof?status.svg)](https://godoc.org/github.com/AlexsanderHamir/prof)
-[![Go Report Card](https://goreportcard.com/badge/github.com/AlexsanderHamir/prof)](https://goreportcard.com/report/github.com/AlexsanderHamir/prof)
+[![Go Report Card](https://goreportcard.com/badge/github.com/AlexsanderHamir/prof)](https://goreportcard.com/badge/github.com/AlexsanderHamir/prof)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Issues](https://img.shields.io/github/issues/AlexsanderHamir/prof)
 ![Last Commit](https://img.shields.io/github/last-commit/AlexsanderHamir/prof)
@@ -12,23 +12,6 @@ Prof automates Go performance profiling by collecting all pprof data in one comm
 ![Go Version](https://img.shields.io/badge/Go-1.24.3%2B-blue)
 
 📖 [Documentation](https://alexsanderhamir.github.io/prof/) | ▶️ [Watch Demo Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/output.mp4)
-
-## Benchmark Comparison Summary View:
-
-This view highlights regressions, improvements, and stable functions.
-
-![Summary of benchmark performance changes](./summary_example.png)
-
-## Benchmark Comparison Detailed View:
-
-This view provides a breakdown of performance metrics per function.
-
-![Function-level performance comparison](./detailed_example.png)
-
-## TUI:
-
-Easily select which benchmarks to run, allowing you to "build" the prof command through the terminal without having to remember anything
-![TUI VIEW](./tui.png)
 
 ## Why Prof?
 
@@ -50,30 +33,39 @@ go tool pprof -list=Function2 cpu.out > function2.txt
 
 **With Prof:** One command collects everything and organizes it automatically.
 
-## Installation
+## Key Features
 
-```bash
-go install github.com/AlexsanderHamir/prof/cmd/prof@latest
-```
+### 🚀 One Command Profiling
 
-## Quick Start
-
-1. **Collect profiling data (run from anywhere inside the repo):**
+Collect CPU, memory, mutex, and block profiles in a single command:
 
 ```bash
 prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
-prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "optimized"
 ```
 
-Under the hood, Prof runs:
+### 📊 Performance Comparison
+
+Easily compare performance between different versions or optimizations:
 
 ```bash
-go test ./... -run=^$ -bench='(BenchmarkName)' -benchmem -count=10 -cpuprofile=cpu.out -memprofile=memory.out -mutexprofile=mutex.out -blockprofile=block.out
+prof track auto --base "baseline" --current "optimized" --profile-type "cpu" --bench-name "BenchmarkName"
 ```
 
-### Interactive TUI Mode
+### 🔍 Regression Detection
 
-Don't want to remember benchmark names? Use the interactive terminal interface:
+Fail CI/CD pipelines on performance regressions with configurable thresholds:
+
+```bash
+prof track auto --base "baseline" --current "PR" --profile-type "cpu" --bench-name "BenchmarkName" --fail-on-regression --regression-threshold 5.0
+```
+
+### 📁 Organized Output
+
+All profiling data is automatically organized under `bench/<tag>/` directories with clear structure.
+
+## Interactive TUI
+
+Don't want to remember benchmark names or commands? Use the interactive terminal interface:
 
 ```bash
 prof tui
@@ -86,208 +78,47 @@ prof tui
 - 🎯 **No typos** - everything is selected from menus
 - 📁 **Same output** as `prof auto` - organized under `bench/<tag>/`
 
-**Navigation:**
-
-- Shows up to **20 benchmarks per page** for readability
-- Use **arrow keys** (↑/↓) to scroll through the list
-- **Spacebar** to select/deselect options
-- **Type to search** and filter benchmarks quickly
-
-**Example workflow:**
-
-```bash
-$ prof tui
-
-? Select benchmarks to run:
-  ◯ BenchmarkGenPool
-  ◯ BenchmarkCacheGet
-  ◯ BenchmarkCacheSet
-  [Use arrows to move, space to select, type to filter]
-
-? Select profiles:
-  ◉ cpu
-  ◯ memory
-  ◯ mutex
-  ◯ block
-
-? Number of runs (count): 10
-
-? Tag name: v2.0-optimized
-```
-
-### TUI Track - Interactive Performance Comparison
-
-Don't want to remember tag names for comparison? Use the interactive tracking interface:
+**TUI Track Mode:**
+Compare existing benchmark data interactively:
 
 ```bash
 prof tui track
 ```
 
-**What it does:**
-
-- 🔍 **Auto-discovers** existing benchmark data in `bench/<tag>/` directories
-- 📋 **Interactive selection** of baseline vs current tags, benchmarks, and profiles
-- 🎯 **Data validation** - only shows options that actually exist
-- 📊 **Same output** as `prof track auto` - full performance analysis
-
-**Prerequisites:**
-
-- Must have run `prof tui` or `prof auto` at least twice to create baseline and current tags
-
-**Example workflow:**
+## Installation
 
 ```bash
-$ prof tui track
-
-? Select baseline tag (the 'before' version) [Press Enter to select]:
-  baseline
-  optimized
-
-? Select current tag (the 'after' version) [Press Enter to select]:
-  optimized
-
-? Select benchmark to compare [Press Enter to select]:
-  BenchmarkGenPool
-  BenchmarkCacheGet
-
-? Select profile type to compare [Press Enter to select]:
-  cpu
-  memory
-
-? Select output format [Press Enter to select]:
-  summary
-  detailed
-
-? Do you want to fail on performance regressions? (Y/n)
-
-? Enter regression threshold percentage: 5.0
-
-🚀 Running: prof track auto --base baseline --current optimized --bench-name BenchmarkGenPool --profile-type cpu --output-format detailed --fail-on-regression --regression-threshold 5.0
+go install github.com/AlexsanderHamir/prof/cmd/prof@latest
 ```
 
-2. **Compare performance between tags:**
+## Quick Start
+
+1. **Collect profiling data:**
+
+```bash
+prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
+prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "optimized"
+```
+
+2. **Compare performance:**
 
 ```bash
 prof track auto --base "baseline" --current "optimized" --profile-type "cpu" --bench-name "BenchmarkName" --output-format "summary"
 ```
 
-### CI/CD: fail the pipeline on regressions
+## Documentation
 
-Use the tracking command with a threshold so your pipeline fails if the worst flat regression exceeds the limit:
-
-**What is the regression threshold?**
-
-The `--regression-threshold` flag sets a percentage limit on performance regressions. When enabled with `--fail-on-regression`, the command will exit with a non-zero status code if any function's **flat time** regression exceeds this threshold.
-
-**Flat time regression calculation:**
-
-```
-Flat regression % = (current_time - baseline_time) / baseline_time × 100
-```
-
-**Example:** If a function took 100ms in baseline and 110ms in current run:
-
-- Flat regression = (110 - 100) / 100 × 100 = +10%
-- With `--regression-threshold 5.0`, this would fail the build
-- With `--regression-threshold 15.0`, this would pass
-
-**Note:** The threshold applies to **flat time** (time spent directly in the function), not cumulative time (time including all called functions). Flat time gives a more direct measure of the function's own performance impact.
-
-```bash
-prof track auto \
-  --base "baseline" \
-  --current "PR" \
-  --profile-type "cpu" \
-  --bench-name "BenchmarkName" \
-  --output-format "summary" \
-  --fail-on-regression \
-  --regression-threshold 5.0
-```
-
-**Important:**
-
-- You no longer need to run `prof` from the same directory as your benchmarks. Prof detects the Go module root and runs `go test ./...` from there.
-- The configuration file must be named `config_template.json` and must live at the repository root (next to `go.mod`). Use `prof setup` to scaffold it there.
-
-Example GitHub Actions job:
-
-```yaml
-name: perf-regression-check
-on: [pull_request]
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ">=1.24"
-      - name: Install prof
-        run: go install github.com/AlexsanderHamir/prof/cmd/prof@latest
-      - name: Collect baseline (main)
-        run: |
-          git fetch origin main --depth=1
-          git checkout -qf origin/main
-          prof auto --benchmarks "BenchmarkName" --profiles "cpu" --count 5 --tag baseline
-      - name: Collect current (PR)
-        run: |
-          git checkout -
-          prof auto --benchmarks "BenchmarkName" --profiles "cpu" --count 5 --tag PR
-      - name: Compare and fail on regression
-        run: |
-          prof track auto --base baseline --current PR \
-            --profile-type cpu --bench-name "BenchmarkName" \
-            --output-format summary --fail-on-regression --regression-threshold 5.0
-```
+- 📚 **[Full Documentation](https://alexsanderhamir.github.io/prof/)** - Complete API reference and guides
+- 🚀 **[Contributing Guidelines](./CONTRIBUTING.md)** - How to contribute to Prof
+- 🔒 **[Security Policy](./SECURITY.md)** - Reporting security issues
+- 📋 **[Code of Conduct](./CODE_OF_CONDUCT.md)** - Community guidelines
+- 🏗️ **[Codebase Design](./docs/codebase_design.md)** - Architecture and design decisions
 
 ## Requirements
 
 - Go 1.24.3 or later
 - Install graphviz
 - A Go module (`go.mod`) at the repository root
-
-## Troubleshooting
-
-**"go: cannot find main module"**
-
-- Ensure your repository has a `go.mod` at its root.
-
-**"Profile file not found"**
-
-- Verify benchmark names are correct
-- Ensure benchmarks run successfully and generate profiles
-
-**Too many function files**
-
-- Use configuration to filter functions with `include_prefixes`
-
-**Configuration Not Taking Effect**
-
-- Ensure `config_template.json` is located at the repository root (next to `go.mod`).
-
-## Contributing
-
-We welcome contributions of all kinds—bug fixes, new features, tests, and documentation improvements. Before getting started, make sure to review the [issues](https://github.com/AlexsanderHamir/prof/issues) to avoid duplicated effort, and see the [contribution guidelines](./CONTRIBUTING.md) for more information.
-
-### Quick Start
-
-**Requirements:** Go 1.24.3+, Git
-
-```bash
-# Clone the repository
-git clone https://github.com/AlexsanderHamir/prof.git
-cd prof
-
-# Run tests
-go test -v ./...
-
-# Check for linter issues (first-time install if needed)
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-golangci-lint run
-
-# Build the binary for local testing
-go build -o prof ./cmd/prof
-```
 
 ## License
 
