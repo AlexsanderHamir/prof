@@ -177,8 +177,8 @@
 <p><strong>Directory Flexibility:</strong></p>
 <ul>
 <li><strong>Project root</strong>: Run from anywhere in your Go project (recommended)</li>
-<li><strong>Package directories</strong>: Run from specific package directories for focused profiling</li>
-<li><strong>Configuration</strong>: Place <code>config_template.json</code> in root or package directories as needed</li>
+<li><strong>Configuration</strong>: Configuration file (<code>config_template.json</code>) is always looked for at the project root</li>
+<li><strong>Global Search</strong>: prof auto searches for the benchmark name globally, regardless of the directory you run it from. If you run it from a subdirectory, the <strong>bench</strong> directory will be created there instead of at the project root.</li>
 </ul>
 <h2 id="auto">Auto</h2>
 <p>The <code>auto</code> command wraps <code>go test</code> and <code>pprof</code> to run benchmarks, collect all profile types, and organize everything automatically:</p>
@@ -473,7 +473,7 @@ Recommendation: Critical regression! Immediate investigation required.
 <li>With <code>--regression-threshold 15.0</code>, this would pass</li>
 </ul>
 <p><strong>Note:</strong> The threshold applies to <strong>flat time</strong> (time spent directly in the function), not cumulative time (time including all called functions). Flat time gives a more direct measure of the function's own performance impact.</p>
-<p><strong>Important:</strong> Prof commands can be run from the Go project root directory or from within specific package directories. When running from the root, ensure your configuration file (if using one) is located at the project root. When running from package directories, the configuration file should be in that package directory or the root.</p>
+<p><strong>Important:</strong> Prof commands can be run from the Go project root directory or from within specific package directories. The configuration file (if using one) is always expected at the project root, regardless of where you run the command from, any extra configuration files will be ignored.</p>
 <pre><code class="language-bash">prof track auto \
   --base baseline \
   --current PR \
@@ -598,5 +598,5 @@ jobs:
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2025-08-18 17:40:32.118766+00:00
+Build Date UTC : 2025-08-18 17:51:20.874936+00:00
 -->
