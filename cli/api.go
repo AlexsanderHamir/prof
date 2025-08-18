@@ -41,6 +41,7 @@ func CreateRootCmd() *cobra.Command {
 
 	rootCmd.AddCommand(createProfManual())
 	rootCmd.AddCommand(createProfAuto())
+	rootCmd.AddCommand(createTuiCmd())
 	rootCmd.AddCommand(createSetupCmd())
 	rootCmd.AddCommand(createTrackCmd())
 

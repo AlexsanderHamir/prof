@@ -64,6 +64,68 @@ This creates a configuration file with the following structure:
 
 This filtering helps focus profiling on relevant code paths while excluding test setup and initialization functions that may not be meaningful for performance analysis.
 
+## TUI - Interactive Selection
+
+The `tui` command provides an interactive terminal interface that automatically discovers benchmarks in your project and guides you through the selection process:
+
+```bash
+prof tui
+```
+
+**What it does:**
+
+1. **Discovers benchmarks**: Automatically scans your Go module for `func BenchmarkXxx(b *testing.B)` functions in `*_test.go` files
+2. **Interactive selection**: Presents a menu where you can select:
+   - Which benchmarks to run (multi-select from discovered list)
+   - Which profiles to collect (cpu, memory, mutex, block)
+   - Number of benchmark runs (count)
+   - Tag name for organizing results
+
+**Navigation:**
+
+- **Page size**: Shows up to 20 benchmarks at once for readability
+- **Scroll**: Use arrow keys (↑/↓) to navigate through the list
+- **Multi-select**: Use spacebar to select/deselect benchmarks
+- **Search**: Type to filter and find specific benchmarks quickly
+
+**Example workflow:**
+
+```bash
+$ prof tui
+
+? Select benchmarks to run:
+  ◯ BenchmarkGenPool
+  ◯ BenchmarkCacheGet
+  ◯ BenchmarkCacheSet
+  ◯ BenchmarkHTTPHandler
+  [Use arrows to move, space to select, type to filter]
+
+? Select profiles:
+  ◉ cpu
+  ◯ memory
+  ◯ mutex
+  ◯ block
+  [Use arrows to move, space to select]
+
+? Number of runs (count): 10
+
+? Tag name (used to group results under bench/<tag>): v2.0-optimized
+```
+
+**Benefits:**
+
+- **No need to remember benchmark names** - they're discovered automatically
+- **Visual confirmation** of what will be run
+- **Prevents typos** in benchmark names or profile types
+- **Same output structure** as `prof auto` - organized under `bench/<tag>/`
+
+**When to use:**
+
+- Exploring a new codebase to see what benchmarks exist
+- Quick profiling sessions where you want to see all options
+- Avoiding command-line argument mistakes
+- Interactive development workflows
+
 ## Manual
 
 The `manual` command processes existing profile files without running benchmarks - it only uses `pprof` to organize data you already have:
