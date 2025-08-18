@@ -198,6 +198,8 @@ func runBenchmarks(_ *cobra.Command, _ []string) error {
 
 	cfg, err := config.LoadFromFile(shared.ConfigFilename)
 	if err != nil {
+		slog.Info("No config file found at repository root; proceeding without function filters.", "expected", shared.ConfigFilename)
+		slog.Info("You can generate one with 'prof setup'. It will be placed at the root next to go.mod.")
 		cfg = &config.Config{}
 	}
 

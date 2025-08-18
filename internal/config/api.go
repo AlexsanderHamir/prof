@@ -12,7 +12,13 @@ import (
 
 // LoadFromFile loads and validates config from a JSON file.
 func LoadFromFile(filename string) (*Config, error) {
-	data, err := os.ReadFile(filename)
+	root, err := shared.FindGoModuleRoot()
+	if err != nil {
+		return nil, fmt.Errorf("failed to locate module root for config: %w", err)
+	}
+
+	configPath := filepath.Join(root, filename)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
@@ -28,7 +34,12 @@ func LoadFromFile(filename string) (*Config, error) {
 // CreateTemplate creates a template configuration file from the actual Config struct
 // with pre-built examples.
 func CreateTemplate() error {
-	outputPath := "./config_template.json"
+	root, err := shared.FindGoModuleRoot()
+	if err != nil {
+		return fmt.Errorf("failed to locate module root for template: %w", err)
+	}
+
+	outputPath := filepath.Join(root, "config_template.json")
 
 	template := Config{
 		FunctionFilter: map[string]FunctionFilter{
@@ -43,7 +54,7 @@ func CreateTemplate() error {
 		},
 	}
 
-	if err := os.MkdirAll(filepath.Dir(outputPath), shared.PermDir); err != nil {
+	if err = os.MkdirAll(filepath.Dir(outputPath), shared.PermDir); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
