@@ -174,6 +174,12 @@
 <li><strong><code>prof track auto</code></strong>: Compare performance between tags</li>
 <li><strong><code>prof track manual</code></strong>: Compare external profile files</li>
 </ul>
+<p><strong>Directory Flexibility:</strong></p>
+<ul>
+<li><strong>Project root</strong>: Run from anywhere in your Go project (recommended)</li>
+<li><strong>Package directories</strong>: Run from specific package directories for focused profiling</li>
+<li><strong>Configuration</strong>: Place <code>config_template.json</code> in root or package directories as needed</li>
+</ul>
 <h2 id="auto">Auto</h2>
 <p>The <code>auto</code> command wraps <code>go test</code> and <code>pprof</code> to run benchmarks, collect all profile types, and organize everything automatically:</p>
 <pre><code class="language-bash">prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu,memory,mutex,block&quot; --count 10 --tag &quot;baseline&quot;
@@ -226,7 +232,7 @@
 </code></pre>
 <p><strong>What it does:</strong></p>
 <ol>
-<li><strong>Discovers benchmarks</strong>: Automatically scans your Go module for <code>func BenchmarkXxx(b *testing.B)</code> functions in <code>*_test.go</code> files</li>
+<li><strong>Discovers benchmarks</strong>: Automatically scans your Go module for <code>func BenchmarkXxx(b *testing.B)</code> functions in <code>*_test.go</code> files (works from project root or package directories)</li>
 <li><strong>Interactive selection</strong>: Presents a menu where you can select:</li>
 <li>Which benchmarks to run (multi-select from discovered list)</li>
 <li>Which profiles to collect (cpu, memory, mutex, block)</li>
@@ -467,7 +473,7 @@ Recommendation: Critical regression! Immediate investigation required.
 <li>With <code>--regression-threshold 15.0</code>, this would pass</li>
 </ul>
 <p><strong>Note:</strong> The threshold applies to <strong>flat time</strong> (time spent directly in the function), not cumulative time (time including all called functions). Flat time gives a more direct measure of the function's own performance impact.</p>
-<p><strong>Important:</strong> The <code>prof</code> command must be run from within the Go project directory where the benchmarks are located, otherwise it will fail with "go: cannot find main module" errors. This means running <code>prof</code> from the exact directory containing your <code>*_test.go</code> files with the benchmarks.</p>
+<p><strong>Important:</strong> Prof commands can be run from the Go project root directory or from within specific package directories. When running from the root, ensure your configuration file (if using one) is located at the project root. When running from package directories, the configuration file should be in that package directory or the root.</p>
 <pre><code class="language-bash">prof track auto \
   --base baseline \
   --current PR \
@@ -494,18 +500,18 @@ jobs:
         run: |
           git fetch origin main --depth=1
           git checkout -qf origin/main
-          # prof must be run from within the Go project directory where benchmarks are located
+          # prof can be run from the Go project root directory
           cd ${{ github.workspace }}
           prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu&quot; --count 5 --tag baseline
       - name: Collect current (PR)
         run: |
           git checkout -
-          # prof must be run from within the Go project directory where benchmarks are located
+          # prof can be run from the Go project root directory
           cd ${{ github.workspace }}
           prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu&quot; --count 5 --tag PR
       - name: Compare and fail on regression
         run: |
-          # prof must be run from within the Go project directory where benchmarks are located
+          # prof can be run from the Go project root directory
           cd ${{ github.workspace }}
           prof track auto --base baseline --current PR \
             --profile-type cpu --bench-name &quot;BenchmarkGenPool&quot; \
@@ -592,5 +598,5 @@ jobs:
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2025-08-18 17:22:19.351267+00:00
+Build Date UTC : 2025-08-18 17:40:32.118766+00:00
 -->
