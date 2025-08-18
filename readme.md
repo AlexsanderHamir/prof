@@ -11,7 +11,7 @@ Prof automates Go performance profiling by collecting all pprof data in one comm
 ![Version](https://img.shields.io/github/v/tag/AlexsanderHamir/prof?sort=semver)
 ![Go Version](https://img.shields.io/badge/Go-1.24.3%2B-blue)
 
-📖 [Documentation](https://alexsanderhamir.github.io/prof/) | ▶️ [Watch Demo Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/output.mp4)
+📖 [Documentation](https://alexsanderhamir.github.io/prof/) | ▶️ [Watch Demo Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/output.mp4) |▶️ [Watch TUI Demo](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/tui_prof.mp4)
 
 ## Why Prof?
 
@@ -110,7 +110,6 @@ prof track auto --base "baseline" --current "optimized" --profile-type "cpu" --b
 
 - 📚 **[Full Documentation](https://alexsanderhamir.github.io/prof/)** - Complete API reference and guides
 - 🚀 **[Contributing Guidelines](./CONTRIBUTING.md)** - How to contribute to Prof
-- 🔒 **[Security Policy](./SECURITY.md)** - Reporting security issues
 - 📋 **[Code of Conduct](./CODE_OF_CONDUCT.md)** - Community guidelines
 - 🏗️ **[Codebase Design](./docs/codebase_design.md)** - Architecture and design decisions
 
