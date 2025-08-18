@@ -53,11 +53,17 @@ go install github.com/AlexsanderHamir/prof/cmd/prof@latest
 
 ## Quick Start
 
-1. **Collect profiling data:**
+1. **Collect profiling data (run from anywhere inside the repo):**
 
 ```bash
 prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
 prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "optimized"
+```
+
+Under the hood, Prof runs:
+
+```bash
+go test ./... -run=^$ -bench='(BenchmarkName)' -benchmem -count=10 -cpuprofile=cpu.out -memprofile=memory.out -mutexprofile=mutex.out -blockprofile=block.out
 ```
 
 2. **Compare performance between tags:**
@@ -99,7 +105,10 @@ prof track auto \
   --regression-threshold 5.0
 ```
 
-**Important:** The `prof` command must be run from within the Go project directory where the benchmarks are located, otherwise it will fail with "go: cannot find main module" errors. This means running `prof` from the exact directory containing your `*_test.go` files with the benchmarks.
+**Important:**
+
+- You no longer need to run `prof` from the same directory as your benchmarks. Prof detects the Go module root and runs `go test ./...` from there.
+- The configuration file must be named `config_template.json` and must live at the repository root (next to `go.mod`). Use `prof setup` to scaffold it there.
 
 Example GitHub Actions job:
 
@@ -120,19 +129,13 @@ jobs:
         run: |
           git fetch origin main --depth=1
           git checkout -qf origin/main
-          # prof must be run from within the Go project directory where benchmarks are located
-          cd ${{ github.workspace }}
           prof auto --benchmarks "BenchmarkName" --profiles "cpu" --count 5 --tag baseline
       - name: Collect current (PR)
         run: |
           git checkout -
-          # prof must be run from within the Go project directory where benchmarks are located
-          cd ${{ github.workspace }}
           prof auto --benchmarks "BenchmarkName" --profiles "cpu" --count 5 --tag PR
       - name: Compare and fail on regression
         run: |
-          # prof must be run from within the Go project directory where benchmarks are located
-          cd ${{ github.workspace }}
           prof track auto --base baseline --current PR \
             --profile-type cpu --bench-name "BenchmarkName" \
             --output-format summary --fail-on-regression --regression-threshold 5.0
@@ -142,13 +145,13 @@ jobs:
 
 - Go 1.24.3 or later
 - Install graphviz
-- Run from within your Go project directory (where benchmarks are located)
+- A Go module (`go.mod`) at the repository root
 
 ## Troubleshooting
 
 **"go: cannot find main module"**
 
-- Run prof from within a Go project directory with `go.mod`
+- Ensure your repository has a `go.mod` at its root.
 
 **"Profile file not found"**
 
@@ -161,7 +164,7 @@ jobs:
 
 **Configuration Not Taking Effect**
 
-- Make sure the config file is located in the current working directory, the one you're running the command from.
+- Ensure `config_template.json` is located at the repository root (next to `go.mod`).
 
 ## Contributing
 

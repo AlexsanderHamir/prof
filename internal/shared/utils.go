@@ -76,3 +76,24 @@ func CleanOrCreateDir(dir string) error {
 
 	return nil
 }
+
+// FindGoModuleRoot searches upwards from the current working directory for a directory
+// containing a go.mod file and returns its absolute path. If none is found, an error is returned.
+func FindGoModuleRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		if _, err = os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", fmt.Errorf("go.mod not found from current directory upwards")
+		}
+		dir = parent
+	}
+}

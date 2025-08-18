@@ -42,16 +42,25 @@ func RunBenchmark(benchmarkName string, profiles []string, count int, tag string
 
 	textDir, binDir := getOutputDirectories(benchmarkName, tag)
 
+	moduleRoot, err := shared.FindGoModuleRoot()
+	if err != nil {
+		return fmt.Errorf("failed to find Go module root: %w", err)
+	}
+	pkgDir, err := findBenchmarkPackageDir(moduleRoot, benchmarkName)
+	if err != nil {
+		return fmt.Errorf("failed to locate benchmark %s: %w", benchmarkName, err)
+	}
+
 	outputFile := filepath.Join(textDir, fmt.Sprintf("%s.%s", benchmarkName, shared.TextExtension))
-	if err = runBenchmarkCommand(cmd, outputFile); err != nil {
+	if err = runBenchmarkCommand(cmd, outputFile, pkgDir); err != nil {
 		return err
 	}
 
-	if err = moveProfileFiles(benchmarkName, profiles, binDir); err != nil {
+	if err = moveProfileFiles(benchmarkName, profiles, pkgDir, binDir); err != nil {
 		return err
 	}
 
-	return moveTestFiles(benchmarkName, binDir)
+	return moveTestFiles(benchmarkName, pkgDir, binDir)
 }
 
 // ProcessProfiles collects all pprof info for a specific benchmark and its specified profiles.

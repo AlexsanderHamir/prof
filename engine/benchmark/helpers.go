@@ -1,12 +1,12 @@
 package benchmark
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -82,6 +82,46 @@ func createProfileFunctionDirectories(tagDir string, profiles, benchmarks []stri
 	return nil
 }
 
+// findBenchmarkPackageDir walks the module root to locate the package directory
+// that defines the uniquely named benchmark function.
+func findBenchmarkPackageDir(moduleRoot, benchmarkName string) (string, error) {
+	pattern := regexp.MustCompile(`(?m)^\s*func\s+` + regexp.QuoteMeta(benchmarkName) + `\s*\(\s*b\s*\*\s*testing\.B\s*\)\s*{`)
+
+	var foundDir string
+	err := filepath.WalkDir(moduleRoot, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			base := filepath.Base(path)
+			// skip common vendor-like directories
+			if strings.HasPrefix(base, ".") || base == "vendor" || base == "node_modules" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		data, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return readErr
+		}
+		if pattern.Find(data) != nil {
+			foundDir = filepath.Dir(path)
+			return fmt.Errorf("FOUND")
+		}
+		return nil
+	})
+	if err != nil && err.Error() != "FOUND" {
+		return "", err
+	}
+	if foundDir == "" {
+		return "", fmt.Errorf("benchmark %s not found in module", benchmarkName)
+	}
+	return foundDir, nil
+}
+
 // buildBenchmarkCommand builds the command to run the benchmark.
 func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) ([]string, error) {
 	cmd := []string{
@@ -114,11 +154,14 @@ func getOutputDirectories(benchmarkName, tag string) (textDir string, binDir str
 	return textDir, binDir
 }
 
-func runBenchmarkCommand(cmd []string, outputFile string) error {
+func runBenchmarkCommand(cmd []string, outputFile string, rootDir string) error {
 	// cmd[0] = executable program (e.g., "go")
 	// cmd[1:] = arguments to pass to the program (e.g., ["test", "-run=^$", "-bench=..."])
 	// #nosec G204 -- cmd is constructed internally by buildBenchmarkCommand(), not from user input
 	execCmd := exec.Command(cmd[0], cmd[1:]...)
+	if rootDir != "" {
+		execCmd.Dir = rootDir
+	}
 
 	output, err := execCmd.CombinedOutput()
 
@@ -137,7 +180,7 @@ func runBenchmarkCommand(cmd []string, outputFile string) error {
 	return os.WriteFile(outputFile, output, shared.PermFile)
 }
 
-func moveProfileFiles(benchmarkName string, profiles []string, binDir string) error {
+func moveProfileFiles(benchmarkName string, profiles []string, rootDir string, binDir string) error {
 	profileFlags := getProfileFlags()
 
 	for _, profile := range profiles {
@@ -147,33 +190,66 @@ func moveProfileFiles(benchmarkName string, profiles []string, binDir string) er
 		}
 
 		profileFile := strings.Split(flag, "=")[1]
-		if _, err := os.Stat(profileFile); err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				continue
+
+		var latestPath string
+		var latestMod time.Time
+		// Walk the search root to find the most recent profile file matching the expected name
+		err := filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
 			}
-			return fmt.Errorf("failed to stat profile file %s: %w", profileFile, err)
+			if d.IsDir() {
+				return nil
+			}
+			if filepath.Base(path) == profileFile {
+				info, statErr := d.Info()
+				if statErr != nil {
+					return statErr
+				}
+				if info.ModTime().After(latestMod) {
+					latestMod = info.ModTime()
+					latestPath = path
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("failed to search for profile files: %w", err)
+		}
+
+		if latestPath == "" {
+			continue
 		}
 
 		// Wait for file to be fully written (workaround)
 		time.Sleep(waitForFiles * time.Millisecond)
 
 		newPath := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
-		if err := os.Rename(profileFile, newPath); err != nil {
-			return fmt.Errorf("failed to move profile file %s: %w", profileFile, err)
+		if err := os.Rename(latestPath, newPath); err != nil {
+			return fmt.Errorf("failed to move profile file %s: %w", latestPath, err)
 		}
 	}
 	return nil
 }
 
-func moveTestFiles(benchmarkName, binDir string) error {
-	files, err := filepath.Glob("*.test")
-	if err != nil {
-		return err
-	}
+func moveTestFiles(benchmarkName, rootDir, binDir string) error {
+	var testFiles []string
+	_ = filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if strings.HasSuffix(path, ".test") {
+			testFiles = append(testFiles, path)
+		}
+		return nil
+	})
 
-	for _, file := range files {
+	for _, file := range testFiles {
 		newPath := filepath.Join(binDir, fmt.Sprintf("%s_%s", benchmarkName, filepath.Base(file)))
-		if err = os.Rename(file, newPath); err != nil {
+		if err := os.Rename(file, newPath); err != nil {
 			return fmt.Errorf("failed to move test file %s: %w", file, err)
 		}
 	}
