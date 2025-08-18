@@ -13,6 +13,7 @@ Before getting started, please check the [issues](https://github.com/AlexsanderH
 # Clone the repository
 git clone https://github.com/AlexsanderHamir/prof.git
 cd prof
+go mod tidy
 
 # Run tests
 go test -v ./...
