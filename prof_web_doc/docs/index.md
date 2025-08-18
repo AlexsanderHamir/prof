@@ -13,6 +13,12 @@ When performing complex profiling, developers often find themselves lost in a ma
 - **`prof track auto`**: Compare performance between tags
 - **`prof track manual`**: Compare external profile files
 
+**Directory Flexibility:**
+
+- **Project root**: Run from anywhere in your Go project (recommended)
+- **Package directories**: Run from specific package directories for focused profiling
+- **Configuration**: Place `config_template.json` in root or package directories as needed
+
 ## Auto
 
 The `auto` command wraps `go test` and `pprof` to run benchmarks, collect all profile types, and organize everything automatically:
@@ -85,7 +91,7 @@ prof tui
 
 **What it does:**
 
-1. **Discovers benchmarks**: Automatically scans your Go module for `func BenchmarkXxx(b *testing.B)` functions in `*_test.go` files
+1. **Discovers benchmarks**: Automatically scans your Go module for `func BenchmarkXxx(b *testing.B)` functions in `*_test.go` files (works from project root or package directories)
 2. **Interactive selection**: Presents a menu where you can select:
    - Which benchmarks to run (multi-select from discovered list)
    - Which profiles to collect (cpu, memory, mutex, block)
@@ -378,7 +384,7 @@ Flat regression % = (current_time - baseline_time) / baseline_time × 100
 
 **Note:** The threshold applies to **flat time** (time spent directly in the function), not cumulative time (time including all called functions). Flat time gives a more direct measure of the function's own performance impact.
 
-**Important:** The `prof` command must be run from within the Go project directory where the benchmarks are located, otherwise it will fail with "go: cannot find main module" errors. This means running `prof` from the exact directory containing your `*_test.go` files with the benchmarks.
+**Important:** Prof commands can be run from the Go project root directory or from within specific package directories. When running from the root, ensure your configuration file (if using one) is located at the project root. When running from package directories, the configuration file should be in that package directory or the root.
 
 ```bash
 prof track auto \
@@ -410,18 +416,18 @@ jobs:
         run: |
           git fetch origin main --depth=1
           git checkout -qf origin/main
-          # prof must be run from within the Go project directory where benchmarks are located
+          # prof can be run from the Go project root directory
           cd ${{ github.workspace }}
           prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu" --count 5 --tag baseline
       - name: Collect current (PR)
         run: |
           git checkout -
-          # prof must be run from within the Go project directory where benchmarks are located
+          # prof can be run from the Go project root directory
           cd ${{ github.workspace }}
           prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu" --count 5 --tag PR
       - name: Compare and fail on regression
         run: |
-          # prof must be run from within the Go project directory where benchmarks are located
+          # prof can be run from the Go project root directory
           cd ${{ github.workspace }}
           prof track auto --base baseline --current PR \
             --profile-type cpu --bench-name "BenchmarkGenPool" \
