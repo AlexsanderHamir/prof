@@ -1,6 +1,7 @@
 package benchmark
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -109,7 +110,7 @@ func findBenchmarkPackageDir(moduleRoot, benchmarkName string) (string, error) {
 		}
 		if pattern.Find(data) != nil {
 			foundDir = filepath.Dir(path)
-			return fmt.Errorf("FOUND")
+			return errors.New("FOUND")
 		}
 		return nil
 	})
@@ -180,52 +181,81 @@ func runBenchmarkCommand(cmd []string, outputFile string, rootDir string) error 
 	return os.WriteFile(outputFile, output, shared.PermFile)
 }
 
+// profileFlagToFile extracts the file name from a profile flag like "-cpuprofile=cpu.out".
+func profileFlagToFile(profile string, profileFlags map[string]string) (string, bool) {
+	flag, exists := profileFlags[profile]
+	if !exists {
+		return "", false
+	}
+	expectedParts := 2
+	parts := strings.SplitN(flag, "=", expectedParts)
+	if len(parts) != expectedParts {
+		return "", false
+	}
+	return parts[1], true
+}
+
+// findMostRecentFile searches for the most recently modified file named fileName under rootDir.
+func findMostRecentFile(rootDir, fileName string) (string, error) {
+	var latestPath string
+	var latestMod time.Time
+
+	err := filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if filepath.Base(path) != fileName {
+			return nil
+		}
+		info, statErr := d.Info()
+		if statErr != nil {
+			return statErr
+		}
+		if info.ModTime().After(latestMod) {
+			latestMod = info.ModTime()
+			latestPath = path
+		}
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return latestPath, nil
+}
+
+// buildProfileDestPath builds the destination path for a profile binary output.
+func buildProfileDestPath(binDir, benchmarkName, profile string) string {
+	return filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
+}
+
+// moveFileWithDelay waits for a short period and then renames the src to dst.
+func moveFileWithDelay(src, dst string, delay time.Duration) error {
+	time.Sleep(delay)
+	return os.Rename(src, dst)
+}
+
 func moveProfileFiles(benchmarkName string, profiles []string, rootDir string, binDir string) error {
 	profileFlags := getProfileFlags()
 
 	for _, profile := range profiles {
-		flag, exists := profileFlags[profile]
-		if !exists {
+		profileFile, ok := profileFlagToFile(profile, profileFlags)
+		if !ok {
 			continue
 		}
 
-		profileFile := strings.Split(flag, "=")[1]
-
-		var latestPath string
-		var latestMod time.Time
-		// Walk the search root to find the most recent profile file matching the expected name
-		err := filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if d.IsDir() {
-				return nil
-			}
-			if filepath.Base(path) == profileFile {
-				info, statErr := d.Info()
-				if statErr != nil {
-					return statErr
-				}
-				if info.ModTime().After(latestMod) {
-					latestMod = info.ModTime()
-					latestPath = path
-				}
-			}
-			return nil
-		})
+		latestPath, err := findMostRecentFile(rootDir, profileFile)
 		if err != nil {
 			return fmt.Errorf("failed to search for profile files: %w", err)
 		}
-
 		if latestPath == "" {
 			continue
 		}
 
-		// Wait for file to be fully written (workaround)
-		time.Sleep(waitForFiles * time.Millisecond)
-
-		newPath := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
-		if err := os.Rename(latestPath, newPath); err != nil {
+		destPath := buildProfileDestPath(binDir, benchmarkName, profile)
+		if err = moveFileWithDelay(latestPath, destPath, waitForFiles*time.Millisecond); err != nil {
 			return fmt.Errorf("failed to move profile file %s: %w", latestPath, err)
 		}
 	}
@@ -236,11 +266,13 @@ func moveTestFiles(benchmarkName, rootDir, binDir string) error {
 	var testFiles []string
 	_ = filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			return nil
+			return err
 		}
+
 		if d.IsDir() {
 			return nil
 		}
+
 		if strings.HasSuffix(path, ".test") {
 			testFiles = append(testFiles, path)
 		}

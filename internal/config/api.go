@@ -54,7 +54,7 @@ func CreateTemplate() error {
 		},
 	}
 
-	if err := os.MkdirAll(filepath.Dir(outputPath), shared.PermDir); err != nil {
+	if err = os.MkdirAll(filepath.Dir(outputPath), shared.PermDir); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 

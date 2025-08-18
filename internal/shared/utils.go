@@ -2,6 +2,7 @@ package shared
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -92,7 +93,7 @@ func FindGoModuleRoot() (string, error) {
 
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return "", fmt.Errorf("go.mod not found from current directory upwards")
+			return "", errors.New("go.mod not found from current directory upwards")
 		}
 		dir = parent
 	}
