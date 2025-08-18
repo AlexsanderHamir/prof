@@ -1,3 +1,15 @@
 site_name: Prof Docs
 repo_url: https://github.com/AlexsanderHamir/prof
 edit_uri: ""
+
+nav:
+  - Home: index.md
+  - Commands:
+      - Auto: index.md#auto
+      - TUI: index.md#tui-interactive-selection
+      - Manual: index.md#manual
+  - Performance Comparison:
+      - TUI Track: index.md#tui-track-interactive-performance-comparison
+      - Track Auto: index.md#track-auto
+      - Track Manual: index.md#track-manual
+  - CI/CD: index.md#cicd-fail-on-regressions
