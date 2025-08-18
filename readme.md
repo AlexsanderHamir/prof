@@ -66,6 +66,50 @@ Under the hood, Prof runs:
 go test ./... -run=^$ -bench='(BenchmarkName)' -benchmem -count=10 -cpuprofile=cpu.out -memprofile=memory.out -mutexprofile=mutex.out -blockprofile=block.out
 ```
 
+### Interactive TUI Mode
+
+Don't want to remember benchmark names? Use the interactive terminal interface:
+
+```bash
+prof tui
+```
+
+**What it does:**
+
+- 🔍 **Auto-discovers** all `BenchmarkXxx` functions in your project
+- 📋 **Interactive selection** of benchmarks, profiles, count, and tag
+- 🎯 **No typos** - everything is selected from menus
+- 📁 **Same output** as `prof auto` - organized under `bench/<tag>/`
+
+**Navigation:**
+
+- Shows up to **20 benchmarks per page** for readability
+- Use **arrow keys** (↑/↓) to scroll through the list
+- **Spacebar** to select/deselect options
+- **Type to search** and filter benchmarks quickly
+
+**Example workflow:**
+
+```bash
+$ prof tui
+
+? Select benchmarks to run:
+  ◯ BenchmarkGenPool
+  ◯ BenchmarkCacheGet
+  ◯ BenchmarkCacheSet
+  [Use arrows to move, space to select, type to filter]
+
+? Select profiles:
+  ◉ cpu
+  ◯ memory
+  ◯ mutex
+  ◯ block
+
+? Number of runs (count): 10
+
+? Tag name: v2.0-optimized
+```
+
 2. **Compare performance between tags:**
 
 ```bash
