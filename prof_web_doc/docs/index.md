@@ -126,6 +126,74 @@ $ prof tui
 - Avoiding command-line argument mistakes
 - Interactive development workflows
 
+### TUI Track - Interactive Performance Comparison
+
+The `tui track` command provides an interactive interface for comparing performance between existing benchmark runs:
+
+```bash
+prof tui track
+```
+
+**What it does:**
+
+1. **Discovers existing data**: Scans the `bench/` directory for tags you've already collected
+2. **Interactive selection**: Guides you through selecting:
+   - Baseline tag (the "before" version)
+   - Current tag (the "after" version)
+   - Benchmark to compare
+   - Profile type to analyze
+   - Output format
+   - Regression threshold settings
+
+**Prerequisites:**
+
+- Must have run `prof tui` or `prof auto` at least twice to create baseline and current tags
+- Data must be organized under `bench/<tag>/` directories
+
+**Example workflow:**
+
+```bash
+$ prof tui track
+
+? Select baseline tag (the 'before' version) [Press Enter to select]:
+  baseline
+  optimized
+  [Use arrows to move, Enter to select, type to filter]
+
+? Select current tag (the 'after' version) [Press Enter to select]:
+  optimized
+  [Use arrows to move, Enter to select, type to filter]
+
+? Select benchmark to compare [Press Enter to select]:
+  BenchmarkGenPool
+  BenchmarkCacheGet
+  [Use arrows to move, Enter to select, type to filter]
+
+? Select profile type to compare [Press Enter to select]:
+  cpu
+  memory
+  [Use arrows to move, Enter to select, type to filter]
+
+? Select output format [Press Enter to select]:
+  summary
+  detailed
+  [Use arrows to move, Enter to select, type to filter]
+
+? Do you want to fail on performance regressions? (Y/n)
+
+? Enter regression threshold percentage (e.g., 5.0 for 5%): 5.0
+
+🚀 Running: prof track auto --base baseline --current optimized --bench-name BenchmarkGenPool --profile-type cpu --output-format detailed --fail-on-regression --regression-threshold 5.0
+```
+
+**Benefits:**
+
+- **No need to remember tag names** - they're discovered automatically
+- **Guided workflow** - step-by-step selection prevents mistakes
+- **Data validation** - only shows options that actually exist
+- **Same output** as `prof track auto` - full performance analysis
+
+
 ## Manual
 
 The `manual` command processes existing profile files without running benchmarks - it only uses `pprof` to organize data you already have:
