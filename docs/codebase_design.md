@@ -1,229 +1,192 @@
-# Codebase
+# Prof Codebase Design
 
-Prof is a Go benchmark profiling tool designed to automate performance analysis and comparison. It wraps Go's built-in benchmarking and pprof tools to provide comprehensive profiling data collection, organization, and performance regression detection.
+Prof is a Go benchmark profiling tool that automates performance analysis by wrapping Go's built-in benchmarking and pprof tools. This document explains the architecture, design decisions, and how the system works.
 
-**[Interactive Architecture Graph](https://claude.ai/public/artifacts/3582cc33-8d87-447a-8cac-7e94c2b67f5b)** - Explore the component relationships visually
+## 🎯 What Prof Does
 
-## Core Functionality
+Prof solves three main problems:
 
-Prof provides three main capabilities:
+1. **Automates profiling**: Runs Go benchmarks with multiple profile types (CPU, memory, mutex, block)
+2. **Organizes data**: Creates a structured directory hierarchy for all profiling outputs
+3. **Tracks performance**: Compares benchmark runs to detect regressions and improvements
 
-1. **Automated Profiling**: Runs Go benchmarks with multiple profile types (CPU, memory, mutex, block)
-2. **Data Organization**: Collects and organizes all profiling data in a structured directory hierarchy
-3. **Performance Tracking**: Compares benchmark runs to detect performance regressions and improvements
-
-## Package Architecture
-
-### Package Structure
+## 🏗️ Architecture Overview
 
 ```
-prof/
-├── cmd/prof/          # Application entry point
-├── cli/               # Command-line interface
-├── engine/            # Core business logic
-│   ├── benchmark/     # Benchmark execution
-│   ├── collector/     # Profile collection
-│   └── tracker/       # Performance analysis
-│   └── version/       # Version management
-├── parser/            # Profile data parsing
-├── internal/          # Internal utilities (protected)
-│   ├── args/          # Data structures
-│   ├── config/        # Configuration management
-│   ├── shared/        # Common utilities
-└── tests/             # Test suite
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   CLI Layer     │───▶│  Engine Layer   │───▶│  Parser Layer   │
+│   (User Input)  │    │ (Business Logic)│    │ (Data Processing)│
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Internal      │    │   Configuration │    │   File System   │
+│   (Utilities)   │    │   (JSON Config) │    │   (Output Org)  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-## Package Details
+## 📦 Package Structure
 
-### `cmd/prof` - Entry Point
+### `cmd/prof/` - Application Entry Point
 
-**Location**: `cmd/prof/main.go`
+**File**: `main.go`
+**Purpose**: Minimal main function that delegates to CLI
 
-The application entry point that initializes and starts the CLI. This is the minimal main function that delegates all functionality to the CLI package.
+```go
+func main() {
+    if err := cli.Execute(); err != nil {
+        // Handle fatal errors with visual indicators
+        os.Exit(1)
+    }
+}
+```
 
-**Responsibilities**:
+**Key Design**: Single responsibility - only handles startup and error exit. All business logic is delegated.
 
-- Application startup
-- Error handling and exit codes
-- CLI delegation
-
-### `cli` - Command Interface
+### `cli/` - Command Interface Layer
 
 **Location**: `cli/`
+**Framework**: Cobra CLI framework
+**Purpose**: Orchestrates user commands and coordinates between engine components
 
-Handles all user interaction through a Cobra-based command-line interface. Acts as the orchestration layer that coordinates between different engine components.
+#### Commands Available:
 
-**Key Files**:
+- **`auto`** - Automated benchmark execution with profiling
+- **`manual`** - Process existing profile files
+- **`track`** - Compare performance between runs
+- **`setup`** - Generate configuration templates
+- **`tui`** - Text-based user interface
 
-- `api.go` - Command definitions and CLI setup
-- `helpers.go` - CLI utility functions and output formatting
+#### Key Functions:
 
-**Commands**:
+```go
+// Creates the root command with all subcommands
+func CreateRootCmd() *cobra.Command
 
-- `auto` - Automated benchmark and profiling workflow
-- `manual` - Manual profile file processing
-- `track` - Performance comparison between runs
-- `setup` - Configuration file generation
-- `version` - Version information and updates
+// Handles benchmark execution workflow
+func runBenchmarks(cmd *cobra.Command, args []string) error
 
-**Responsibilities**:
+// Manages performance tracking
+func runTrackAuto(cmd *cobra.Command, args []string) error
+```
 
-- Command parsing and validation
-- User input handling
-- Workflow orchestration
-- Output formatting and reporting
+**Design Pattern**: Command pattern with clear separation between command definition and execution logic.
 
-### `engine` - Core Business Logic
+### `engine/` - Core Business Logic
 
-The engine package contains all the core operational components of Prof.
+The engine package contains three main components that handle the core workflows:
 
-#### `engine/benchmark` - Test Execution
+#### `engine/benchmark/` - Test Execution Engine
 
-**Responsibilities**:
-
-- Directory structure setup
-- Go benchmark execution with profiling flags
-- Profile file management and organization
-- Integration with collector for profile processing
+**Purpose**: Manages Go benchmark execution and directory setup
 
 **Key Functions**:
 
-- `SetupDirectories()` - Creates output directory structure
-- `RunBenchmark()` - Executes Go benchmarks with profiling
-- `ProcessProfiles()` - Processes profile files after benchmark execution
-- `CollectProfileFunctions()` - Collects function-level profiling data
+```go
+// Creates the output directory structure
+func SetupDirectories(tag string, benchmarks, profiles []string) error
 
-#### `engine/collector` - Profile Collection
+// Runs a specific benchmark with profiling
+func RunBenchmark(benchmarkName string, profiles []string, count int, tag string) error
 
-**Responsibilities**:
+// Processes generated profile files
+func ProcessProfiles(benchmarkName string, profiles []string, tag string) error
+```
 
-- Profile file processing (binary → text conversion)
-- PNG visualization generation
-- Function-level data extraction
-- Manual profile file handling
+**How It Works**:
+
+1. Creates organized directory structure for outputs
+2. Executes `go test -bench` with profiling flags
+3. Moves generated profile files to organized locations
+4. Triggers profile processing pipeline
+
+#### `engine/collector/` - Profile Collection Engine
+
+**Purpose**: Converts binary profiles to text and generates visualizations
 
 **Key Functions**:
 
-- `GetProfileTextOutput()` - Converts binary profiles to text format
-- `GetPNGOutput()` - Generates profile visualizations
-- `GetFunctionsOutput()` - Extracts individual function profiles
-- `RunCollector()` - Handles manual profile processing workflow
+```go
+// Converts binary profiles to text format
+func GetProfileTextOutput(binaryFile, outputFile string) error
 
-#### `engine/tracker` - Performance Analysis
+// Generates PNG visualizations
+func GetPNGOutput(binaryFile, outputFile string) error
 
-**Responsibilities**:
+// Handles manual profile processing workflow
+func RunCollector(files []string, tag string) error
+```
 
-- Performance comparison between benchmark runs
-- Regression and improvement detection
-- Detailed performance reporting
-- Statistical analysis of profile differences
+**How It Works**:
+
+1. Uses `go tool pprof` to convert binary profiles to text
+2. Generates PNG visualizations for visual analysis
+3. Applies function filtering based on configuration
+4. Organizes outputs in structured directories
+
+#### `engine/tracker/` - Performance Analysis Engine
+
+**Purpose**: Compares benchmark runs to detect performance changes
 
 **Key Functions**:
 
-- `CheckPerformanceDifferences()` - Compares two benchmark runs
-- `CheckPerformanceDifferencesManual()` - Manual profile comparison
-- `DetectChange()` - Analyzes performance changes between runs
+```go
+// Compares auto-generated benchmark data
+func CheckPerformanceDifferences(baselineTag, currentTag, benchName, profileType string) (*ProfileChangeReport, error)
 
-### `parser` - Profile Data Processing
+// Compares manually specified profile files
+func CheckPerformanceDifferencesManual(baselineProfile, currentProfile string) (*ProfileChangeReport, error)
+```
 
-**Location**: `parser/`
+**How It Works**:
 
-Handles parsing and processing of pprof text output into structured data that can be analyzed and compared.
+1. Loads profile data from two different runs
+2. Parses text profiles into comparable objects
+3. Matches functions between runs
+4. Calculates performance differences (regressions/improvements)
+5. Generates detailed reports
 
-**Responsibilities**:
+### `parser/` - Profile Data Processing
 
-- pprof text file parsing
-- Function name extraction with filtering
-- Profile data structure conversion
-- Line-by-line profile analysis
+**Purpose**: Converts pprof text output into structured data for analysis
 
 **Key Functions**:
 
-- `GetAllFunctionNames()` - Extracts function names from profiles
-- `TurnLinesIntoObjects()` - Converts profile lines to structured data
-- `ShouldKeepLine()` - Applies filtering rules to profile lines
+```go
+// Converts profile lines to structured objects
+func TurnLinesIntoObjects(profilePath string) ([]*LineObj, error)
 
-### `internal` - Protected Utilities
-
-The internal package contains utilities that are protected from external imports by Go's internal package convention.
-
-#### `internal/config` - Configuration Management
-
-**Responsibilities**:
-
-- JSON configuration file handling
-- Function filtering configuration
-- Template generation
-
-**Key Types**:
-
-- `Config` - Main configuration structure
-- `FunctionFilter` - Per-benchmark filtering rules
-
-#### `internal/args` - Data Structures
-
-**Responsibilities**:
-
-- Shared data structures across packages
-- Parameter passing between components
-
-**Key Types**:
-
-- `BenchArgs` - Benchmark execution parameters
-- `CollectionArgs` - Profile collection parameters
-- `LineFilterArgs` - Profile filtering parameters
-
-#### `internal/shared` - Common Utilities
-
-**Responsibilities**:
-
-- File system operations
-- Constants and shared values
-- Common utility functions
-
-**Key Constants**:
-
-- Directory and file naming conventions
-- Command names and status messages
-- File permissions and extensions
-
-#### `internal/version` - Version Management
-
-**Responsibilities**:
-
-- Version checking and comparison
-- GitHub release API integration
-- Update notifications
-
-## Data Flow
-
-### 1. Benchmark Execution Flow
-
-```
-CLI → Benchmark → Collector → Parser
+// Extracts function names with filtering
+func GetAllFunctionNames(filePath string, filter config.FunctionFilter) (names []string, err error)
 ```
 
-1. **CLI** receives user command with benchmark parameters
-2. **Benchmark** sets up directories and runs Go tests with profiling
-3. **Collector** processes the generated profile files
-4. **Parser** extracts function-level data from profiles
+**Data Structure**:
 
-### 2. Performance Tracking Flow
-
+```go
+type LineObj struct {
+    FnName         string  // Function name
+    Flat           float64 // Flat time/memory usage
+    FlatPercentage float64 // Percentage of total
+    SumPercentage  float64 // Cumulative percentage
+    Cum            float64 // Cumulative time/memory
+    CumPercentage  float64 // Cumulative percentage
+}
 ```
-CLI → Tracker → Parser
-```
 
-1. **CLI** receives track command with baseline and current tags
-2. **Tracker** loads profile data from both runs
-3. **Parser** converts profile text to comparable objects
-4. **Tracker** analyzes differences and generates reports
+**How It Works**:
 
-## Configuration System
+1. Reads pprof text output line by line
+2. Parses numeric values and function names using regex
+3. Applies filtering rules (prefixes, ignore functions)
+4. Creates structured objects for comparison
 
-Prof uses a JSON-based configuration system for customizing function collection behavior.
+### `internal/` - Protected Utilities
 
-### Configuration File Structure
+#### `internal/config/` - Configuration Management
+
+**Purpose**: Manages JSON-based configuration for function filtering
+
+**Configuration Structure**:
 
 ```json
 {
@@ -231,106 +194,289 @@ Prof uses a JSON-based configuration system for customizing function collection 
     "BenchmarkName": {
       "include_prefixes": ["github.com/myorg/myproject"],
       "ignore_functions": ["init", "TestMain"]
+    },
+    "*": {
+      "include_prefixes": ["github.com/myorg"],
+      "ignore_functions": ["runtime.*"]
     }
   }
 }
 ```
 
-### Configuration Options
+**Key Features**:
 
-- **`include_prefixes`**: Only collect functions matching these package prefixes
-- **`ignore_functions`**: Skip specific function names even if they match prefixes
+- Per-benchmark filtering rules
+- Global filtering with `*` wildcard
+- Prefix-based inclusion (package paths)
+- Function name exclusion
 
-## Output Structure
+#### `internal/args/` - Data Structures
 
-Prof organizes all output in a structured directory hierarchy:
+**Purpose**: Shared data structures for parameter passing between components
+
+**Key Types**:
+
+```go
+type BenchArgs struct {
+    Benchmarks []string
+    Profiles   []string
+    Count      int
+    Tag        string
+}
+
+type CollectionArgs struct {
+    Tag             string
+    Profiles        []string
+    BenchmarkName   string
+    BenchmarkConfig config.FunctionFilter
+}
+```
+
+#### `internal/shared/` - Common Utilities
+
+**Purpose**: File system operations and shared constants
+
+**Key Functions**:
+
+```go
+// Creates or cleans directories
+func CleanOrCreateDir(dir string) error
+
+// Finds Go module root
+func FindGoModuleRoot() (string, error)
+
+// File operations with proper permissions
+func GetScanner(filePath string) (*bufio.Scanner, *os.File, error)
+```
+
+## 🔄 Data Flow
+
+### 1. Automated Benchmark Workflow
+
+```
+User Command → CLI → Benchmark Engine → Collector → Parser → Output Files
+     ↓              ↓           ↓           ↓         ↓
+  prof auto    Setup Dirs   Run Tests   Process   Extract
+  --benchmarks --profiles   --count     Profiles  Functions
+```
+
+**Step-by-Step**:
+
+1. **CLI**: Validates user input and loads configuration
+2. **Benchmark**: Creates directories and runs `go test -bench`
+3. **Collector**: Converts binary profiles to text and PNG
+4. **Parser**: Extracts function-level data with filtering
+5. **Output**: Organized directory structure with all data
+
+### 2. Performance Tracking Workflow
+
+```
+User Command → CLI → Tracker → Parser → Comparison → Report
+     ↓              ↓         ↓         ↓           ↓
+  prof track   Load Data   Parse    Match      Generate
+  --base       --current   Files    Functions  Report
+```
+
+**Step-by-Step**:
+
+1. **CLI**: Validates tracking parameters
+2. **Tracker**: Loads profile data from both runs
+3. **Parser**: Converts text to comparable objects
+4. **Comparison**: Matches functions and calculates differences
+5. **Report**: Generates detailed performance analysis
+
+## 📁 Output Organization
+
+Prof creates a structured directory hierarchy:
 
 ```
 bench/
-├── {tag}/
-│   ├── bin/                    # Binary profile files
+├── {tag}/                          # Benchmark run identifier
+│   ├── bin/                        # Binary profile files
 │   │   └── {benchmark}/
 │   │       ├── {benchmark}_cpu.out
 │   │       ├── {benchmark}_memory.out
-│   │       └── ...
-│   ├── text/                   # Text profile reports
+│   │       └── {benchmark}_block.out
+│   ├── text/                       # Text profile reports
 │   │   └── {benchmark}/
 │   │       ├── {benchmark}_cpu.txt
 │   │       ├── {benchmark}_memory.txt
-│   │       └── ...
-│   ├── cpu_functions/          # Function-level CPU data
+│   │       └── {benchmark}_block.txt
+│   ├── cpu_functions/              # Function-level CPU data
 │   │   └── {benchmark}/
 │   │       ├── function1.txt
-│   │       ├── function2.txt
-│   │       └── ...
-│   └── memory_functions/       # Function-level memory data
-│       └── {benchmark}/
-│           ├── function1.txt
-│           └── ...
+│   │       └── function2.txt
+│   ├── memory_functions/           # Function-level memory data
+│   │   └── {benchmark}/
+│   │       ├── function1.txt
+│   │       └── function2.txt
+│   └── {profile}_functions/        # Other profile types
 ```
 
-## Dependencies
+**Design Benefits**:
 
-### External Dependencies
+- **Organized**: Clear separation by profile type and data format
+- **Tagged**: Multiple runs can coexist without conflicts
+- **Structured**: Consistent naming and organization
+- **Accessible**: Easy to navigate and find specific data
 
-- **Cobra** (`github.com/spf13/cobra`) - CLI framework
-- **Go toolchain** - `go test`, `go tool pprof`
+## ⚙️ Configuration System
 
-### Internal Dependencies
+### Function Filtering
 
-The dependency graph follows a clean layered architecture:
+Prof uses a sophisticated filtering system to control which functions are analyzed:
 
-- **CLI** depends on **Engine** and **Internal** packages
-- **Engine** components depend on **Parser** and **Internal** packages
-- **Parser** depends on **Internal** packages
-- **Internal** packages have minimal cross-dependencies
+```json
+{
+  "function_collection_filter": {
+    "BenchmarkGenPool": {
+      "include_prefixes": ["github.com/myorg/pool"],
+      "ignore_functions": ["runtime.*", "testing.*"]
+    }
+  }
+}
+```
 
-## Testing Strategy
+**Filter Types**:
+
+- **`include_prefixes`**: Only collect functions from specific packages
+- **`ignore_functions`**: Skip specific function names (supports wildcards)
+- **Global filters**: Apply to all benchmarks using `*` key
+
+### Configuration Benefits
+
+- **Performance**: Reduces data collection overhead
+- **Focus**: Concentrates analysis on relevant code
+- **Flexibility**: Different rules per benchmark
+- **Maintainability**: Easy to update without code changes
+
+## 🧪 Testing Strategy
 
 ### Test Organization
 
-- **Integration Tests** (`tests/`) - End-to-end workflow testing
-- **Unit Tests** (per package) - Component-specific testing
-- **Fixtures** - Test data and profile files for testing
+- **Integration Tests** (`tests/`): End-to-end workflow testing
+- **Unit Tests** (per package): Component-specific testing
+- **Blackbox Tests**: CLI command validation and output verification
 
-### Test Coverage
+### Test Coverage Areas
 
-- CLI command validation
+- CLI command validation and error handling
 - Benchmark execution workflows
 - Profile parsing accuracy
 - Configuration handling
 - Error scenarios and edge cases
+- Performance regression detection
 
-## Usage Examples
+### Test Data
 
-### Basic Benchmark Profiling
+- **Fixtures**: Sample profile files and benchmark outputs
+- **Mock Data**: Simulated performance data for testing
+- **Edge Cases**: Various profile formats and error conditions
 
-```bash
-prof auto --benchmarks BenchmarkMyFunction --profiles cpu,memory --count 5 --tag baseline
+## 🔌 Dependencies
+
+### External Dependencies
+
+- **Cobra** (`github.com/spf13/cobra`): CLI framework for command management
+- **Go Toolchain**: `go test`, `go tool pprof` for profiling
+- **Survey** (`github.com/AlecAivazis/survey/v2`): Interactive prompts for TUI
+
+### Internal Dependencies
+
+The dependency graph follows clean layered architecture:
+
+```
+CLI → Engine → Parser → Internal
+ ↓      ↓       ↓        ↓
+Cobra  Business Data   Utils
+       Logic   Processing
 ```
 
-### Manual Profile Processing
+**Dependency Rules**:
 
-```bash
-prof manual --tag manual-analysis cpu.out memory.out
-```
+- Higher layers can depend on lower layers
+- Lower layers cannot depend on higher layers
+- Internal packages are protected from external imports
+- Clear interfaces between major components
 
-### Performance Comparison
+## 🎨 Design Principles
 
-```bash
-prof track auto --base-tag baseline --current-tag optimized --bench-name BenchmarkMyFunction --profile-type cpu --output-format summary
-```
+### 1. Single Responsibility
 
-## Contributing Guidelines
+Each package has one clear purpose:
 
-When modifying the codebase:
+- **CLI**: User interaction and command orchestration
+- **Engine**: Business logic and workflow management
+- **Parser**: Data transformation and filtering
+- **Internal**: Utility functions and shared resources
 
-1. **Respect Package Boundaries** - Keep engine, parser, and internal concerns separated
-2. **Maintain Interfaces** - Preserve existing API contracts
-3. **Add Tests** - Include tests for new functionality
-4. **Update Documentation** - Keep this documentation current with changes
-5. **Follow Conventions** - Use established naming and organization patterns
+### 2. Interface Segregation
+
+Components communicate through well-defined interfaces:
+
+- Clear function signatures
+- Consistent error handling
+- Predictable data structures
+
+### 3. Configuration Over Code
+
+Behavior is controlled through configuration files:
+
+- Function filtering rules
+- Output formatting options
+- Performance thresholds
+
+### 4. Error Handling
+
+Comprehensive error handling throughout the system:
+
+- Descriptive error messages
+- Proper error propagation
+- Graceful degradation where possible
+
+## 🚀 Performance Considerations
+
+### Memory Management
+
+- **Streaming**: Processes large profiles line by line
+- **Filtering**: Reduces memory usage through early filtering
+- **Cleanup**: Proper file handling and resource cleanup
+
+### Scalability
+
+- **Parallel Processing**: Can handle multiple profile types simultaneously
+- **Efficient Parsing**: Regex-based parsing for fast text processing
+- **Structured Output**: Organized data for quick access and analysis
+
+## 🔧 Development Workflow
+
+### Adding New Features
+
+1. **Identify Layer**: Determine which architectural layer needs changes
+2. **Maintain Boundaries**: Respect package dependencies and interfaces
+3. **Add Tests**: Include comprehensive testing for new functionality
+4. **Update Documentation**: Keep this document current with changes
+
+### Code Organization
+
+- **New Commands**: Add to appropriate CLI package
+- **New Engines**: Create in engine package with clear interfaces
+- **New Parsers**: Extend parser package for new data formats
+- **New Utilities**: Place in internal packages for reuse
+
+### Testing Guidelines
+
+- **Unit Tests**: Test individual functions and methods
+- **Integration Tests**: Test component interactions
+- **End-to-End Tests**: Test complete user workflows
+- **Performance Tests**: Ensure changes don't introduce regressions
+
+## 📚 Further Reading
+
+- **Go Profiling**: [Go pprof documentation](https://pkg.go.dev/runtime/pprof)
+- **Cobra CLI**: [Cobra framework documentation](https://github.com/spf13/cobra)
+- **Go Testing**: [Go testing package documentation](https://pkg.go.dev/testing)
 
 ---
 
-> For more detailed information about specific functions and APIs, refer to the source code documentation and inline comments.
+This documentation provides a comprehensive understanding of Prof's architecture. For specific implementation details, refer to the source code and inline comments in each package.
