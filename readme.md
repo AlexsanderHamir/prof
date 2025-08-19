@@ -11,7 +11,7 @@ Prof automates Go performance profiling by collecting all pprof data in one comm
 ![Version](https://img.shields.io/github/v/tag/AlexsanderHamir/prof?sort=semver)
 ![Go Version](https://img.shields.io/badge/Go-1.24.3%2B-blue)
 
-📖 [Documentation](https://alexsanderhamir.github.io/prof/) | ▶️ [Watch Demo Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/output.mp4) | ▶️ [Watch TUI Demo](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/tui_prof.mp4) | [Project Vision](#project-vision)
+📖 [Documentation](https://alexsanderhamir.github.io/prof/) | ▶️ [Watch Demo Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/output.mp4) | ▶️ [Watch TUI Demo](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/tui_prof.mp4) | 🌟 [Project Vision](#project-vision)
 
 ## Why Prof?
 
@@ -125,14 +125,13 @@ Go developers today juggle too many tools (`pprof`, `benchstat`, `qcachegrind`, 
 
 `prof` is building a different path:
 
-* **One hub** — unify the best profiling and benchmarking tools under a single interface.
-* **Smooth workflows** — make profiling as quick and natural as running tests.
-* **Open platform** — allow extensions and custom tools, so anyone can shape how performance is analyzed.
+- **One hub** — unify the best profiling and benchmarking tools under a single interface.
+- **Smooth workflows** — make profiling as quick and natural as running tests.
+- **Open platform** — allow extensions and custom tools, so anyone can shape how performance is analyzed.
 
 The long-term vision: **turn `prof` into the go-to performance analysis hub for Go — one install, every workflow, no friction.**
 
 As a contributor, you’re not just fixing bugs — you’re helping design the future of how Go developers improve their code.
-
 
 ## License
 
