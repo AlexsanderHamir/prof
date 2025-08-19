@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
 // CheckPerformanceDifferences creates the profile report by comparing data from  prof's auto run.
 func CheckPerformanceDifferences(baselineTag, currentTag, benchName, profileType string) (*ProfileChangeReport, error) {
 	fileName := fmt.Sprintf("%s_%s.txt", benchName, profileType)
-	textFilePath1BaseLine := filepath.Join(shared.MainDirOutput, baselineTag, shared.ProfileTextDir, benchName, fileName)
-	textFilePath2Current := filepath.Join(shared.MainDirOutput, currentTag, shared.ProfileTextDir, benchName, fileName)
+	textFilePath1BaseLine := filepath.Join(internal.MainDirOutput, baselineTag, internal.ProfileTextDir, benchName, fileName)
+	textFilePath2Current := filepath.Join(internal.MainDirOutput, currentTag, internal.ProfileTextDir, benchName, fileName)
 
 	lineObjsBaseline, err := parser.TurnLinesIntoObjects(textFilePath1BaseLine)
 	if err != nil {

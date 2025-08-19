@@ -7,29 +7,28 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/AlexsanderHamir/prof/internal/config"
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 )
 
 // RunCollector handles data organization without wrapping go test.
 func RunCollector(files []string, tag string) error {
-	if err := ensureDirExists(shared.MainDirOutput); err != nil {
+	if err := ensureDirExists(internal.MainDirOutput); err != nil {
 		return err
 	}
 
-	tagDir := filepath.Join(shared.MainDirOutput, tag)
-	err := shared.CleanOrCreateDir(tagDir)
+	tagDir := filepath.Join(internal.MainDirOutput, tag)
+	err := internal.CleanOrCreateDir(tagDir)
 	if err != nil {
 		return fmt.Errorf("CleanOrCreateDir failed: %w", err)
 	}
 
-	cfg, err := config.LoadFromFile(shared.ConfigFilename)
+	cfg, err := internal.LoadFromFile(internal.ConfigFilename)
 	if err != nil {
-		cfg = &config.Config{}
+		cfg = &internal.Config{}
 	}
 
-	var functionFilter config.FunctionFilter
-	globalFilter, hasGlobalFilter := cfg.FunctionFilter[shared.GlobalSign]
+	var functionFilter internal.FunctionFilter
+	globalFilter, hasGlobalFilter := cfg.FunctionFilter[internal.GlobalSign]
 	if hasGlobalFilter {
 		functionFilter = globalFilter
 	}
@@ -43,14 +42,14 @@ func RunCollector(files []string, tag string) error {
 		}
 
 		if !hasGlobalFilter {
-			functionFilter = config.FunctionFilter{} // clean previous one
+			functionFilter = internal.FunctionFilter{} // clean previous one
 			localFilter, hasLocalFilter := cfg.FunctionFilter[fileName]
 			if hasLocalFilter {
 				functionFilter = localFilter
 			}
 		}
 
-		outputTextFilePath := path.Join(profileDirPath, fileName+"."+shared.TextExtension)
+		outputTextFilePath := path.Join(profileDirPath, fileName+"."+internal.TextExtension)
 		if err = GetProfileTextOutput(fullBinaryPath, outputTextFilePath); err != nil {
 			return err
 		}
@@ -74,7 +73,7 @@ func GetProfileTextOutput(binaryFile, outputFile string) error {
 		return fmt.Errorf("pprof command failed: %w", err)
 	}
 
-	return os.WriteFile(outputFile, output, shared.PermFile)
+	return os.WriteFile(outputFile, output, internal.PermFile)
 }
 
 func GetPNGOutput(binaryFile, outputFile string) error {
@@ -87,13 +86,13 @@ func GetPNGOutput(binaryFile, outputFile string) error {
 		return fmt.Errorf("pprof PNG generation failed: %w", err)
 	}
 
-	return os.WriteFile(outputFile, output, shared.PermFile)
+	return os.WriteFile(outputFile, output, internal.PermFile)
 }
 
 // GetFunctionsOutput calls [GetFunctionPprofContent] sequentially.
 func GetFunctionsOutput(functions []string, binaryPath, basePath string) error {
 	for _, functionName := range functions {
-		outputFile := filepath.Join(basePath, functionName+"."+shared.TextExtension)
+		outputFile := filepath.Join(basePath, functionName+"."+internal.TextExtension)
 		if err := getFunctionPprofContent(functionName, binaryPath, outputFile); err != nil {
 			return fmt.Errorf("failed to extract function content for %s: %w", functionName, err)
 		}

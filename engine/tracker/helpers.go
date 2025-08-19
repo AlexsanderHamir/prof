@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
@@ -40,11 +40,11 @@ func DetectChange(baseline, current *parser.LineObj) (*FunctionChangeResult, err
 		cumChange = ((current.Cum - baseline.Cum) / baseline.Cum) * percentMultiplier
 	}
 
-	changeType := shared.STABLE
+	changeType := internal.STABLE
 	if flatChange > 0 {
-		changeType = shared.REGRESSION
+		changeType = internal.REGRESSION
 	} else if flatChange < 0 {
-		changeType = shared.IMPROVEMENT
+		changeType = internal.IMPROVEMENT
 	}
 
 	return &FunctionChangeResult{
@@ -80,8 +80,8 @@ func (cr *FunctionChangeResult) writeFunctionInfo(report *strings.Builder) {
 
 func (cr *FunctionChangeResult) writeStatusAssessment(report *strings.Builder) {
 	statusIcon := map[string]string{
-		shared.IMPROVEMENT: "✅",
-		shared.REGRESSION:  "⚠️",
+		internal.IMPROVEMENT: "✅",
+		internal.REGRESSION:  "⚠️",
 	}[cr.ChangeType]
 
 	if statusIcon == "" {
@@ -89,8 +89,8 @@ func (cr *FunctionChangeResult) writeStatusAssessment(report *strings.Builder) {
 	}
 
 	assessment := map[string]string{
-		shared.IMPROVEMENT: "Performance improvement detected",
-		shared.REGRESSION:  "Performance regression detected",
+		internal.IMPROVEMENT: "Performance improvement detected",
+		internal.REGRESSION:  "Performance regression detected",
 	}[cr.ChangeType]
 
 	if assessment == "" {

@@ -7,8 +7,7 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/AlexsanderHamir/prof/internal/config"
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
@@ -16,7 +15,7 @@ func ensureDirExists(basePath string) error {
 	_, err := os.Stat(basePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return os.MkdirAll(basePath, shared.PermDir)
+			return os.MkdirAll(basePath, internal.PermDir)
 		}
 		return err
 	}
@@ -36,7 +35,7 @@ func getFunctionPprofContent(function, binaryFile, outputFile string) error {
 		return fmt.Errorf("pprof list command failed: %w", err)
 	}
 
-	if err = os.WriteFile(outputFile, output, shared.PermFile); err != nil {
+	if err = os.WriteFile(outputFile, output, internal.PermFile); err != nil {
 		return fmt.Errorf("failed to write function content: %w", err)
 	}
 
@@ -44,7 +43,7 @@ func getFunctionPprofContent(function, binaryFile, outputFile string) error {
 	return nil
 }
 
-func collectFunctions(outputTextFilePath, profileDirPath, fullBinaryPath string, functionFilter config.FunctionFilter) error {
+func collectFunctions(outputTextFilePath, profileDirPath, fullBinaryPath string, functionFilter internal.FunctionFilter) error {
 	var functions []string
 	functions, err := parser.GetAllFunctionNames(outputTextFilePath, functionFilter)
 	if err != nil {

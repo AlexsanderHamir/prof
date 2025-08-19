@@ -13,8 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal/config"
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 )
 
 var (
@@ -23,7 +22,7 @@ var (
 
 type TestArgs struct {
 	specifiedFiles          map[fileFullName]*FieldsCheck
-	cfg                     config.Config
+	cfg                     internal.Config
 	expectedNumberOfFiles   int
 	expectedErrorMessage    string
 	label                   string
@@ -83,12 +82,12 @@ var utilsTemplate string
 
 func createPackage(dir string) error {
 	utilsDir := filepath.Join(dir, "utils")
-	if err := os.MkdirAll(utilsDir, shared.PermDir); err != nil {
+	if err := os.MkdirAll(utilsDir, internal.PermDir); err != nil {
 		return fmt.Errorf("failed to create utils directory: %w", err)
 	}
 
 	utilsPath := filepath.Join(utilsDir, "utils.go")
-	return os.WriteFile(utilsPath, []byte(utilsTemplate), shared.PermFile)
+	return os.WriteFile(utilsPath, []byte(utilsTemplate), internal.PermFile)
 }
 
 //go:embed assets/benchmark_test.go.txt
@@ -96,7 +95,7 @@ var BenchmarkContent string
 
 func createBenchmarkFile(dir string) error {
 	benchPath := filepath.Join(dir, "benchmark_test.go")
-	return os.WriteFile(benchPath, []byte(BenchmarkContent), shared.PermFile)
+	return os.WriteFile(benchPath, []byte(BenchmarkContent), internal.PermFile)
 }
 
 func getProjectRoot() (string, error) {
@@ -118,7 +117,7 @@ func getProjectRoot() (string, error) {
 	}
 }
 
-func createConfigFile(t *testing.T, cfgTemplate *config.Config) {
+func createConfigFile(t *testing.T, cfgTemplate *internal.Config) {
 	t.Helper()
 
 	configPath := filepath.Join(envDirName, templateFile)
@@ -128,7 +127,7 @@ func createConfigFile(t *testing.T, cfgTemplate *config.Config) {
 		t.Fatalf("failed to marshal config template: %v", err)
 	}
 
-	if err = os.WriteFile(configPath, data, shared.PermFile); err != nil {
+	if err = os.WriteFile(configPath, data, internal.PermFile); err != nil {
 		t.Fatalf("failed to write config template file: %v", err)
 	}
 }
@@ -136,7 +135,7 @@ func createConfigFile(t *testing.T, cfgTemplate *config.Config) {
 func setupEnviroment(t *testing.T) {
 	t.Helper()
 	// 1. Create environment Directory.
-	if err := os.Mkdir(envDirName, shared.PermDir); err != nil && !os.IsExist(err) {
+	if err := os.Mkdir(envDirName, internal.PermDir); err != nil && !os.IsExist(err) {
 		t.Fatalf("couldn't create environment dir: %v", err)
 	}
 
@@ -200,7 +199,7 @@ func runProf(t *testing.T, envFullPath string, args []string, expectedErrMessage
 		}
 	}
 
-	successMessage := shared.InfoCollectionSuccess
+	successMessage := internal.InfoCollectionSuccess
 	if checkSuccessMessage && !strings.Contains(stderr.String(), successMessage) {
 		t.Fatal("Expected success message not found")
 	}
@@ -244,15 +243,15 @@ func checkOutput(t *testing.T, envPath string, testArgs *TestArgs) {
 	specifiedFiles := testArgs.specifiedFiles
 	expectedNumberOfFiles := testArgs.expectedNumberOfFiles
 
-	benchPath := filepath.Join(envPath, shared.MainDirOutput)
+	benchPath := filepath.Join(envPath, internal.MainDirOutput)
 
 	// 1. Check that the tag dir exists
 	tagPath := filepath.Join(benchPath, tag)
 	checkDirectory(t, tagPath, tag)
 
 	// 2. Check that the bin and text dir exists
-	binPath := filepath.Join(tagPath, shared.ProfileBinDir)
-	textPath := filepath.Join(tagPath, shared.ProfileTextDir)
+	binPath := filepath.Join(tagPath, internal.ProfileBinDir)
+	textPath := filepath.Join(tagPath, internal.ProfileTextDir)
 	binBenchPath := filepath.Join(binPath, benchName)
 	textBenchPath := filepath.Join(textPath, benchName)
 
@@ -270,7 +269,7 @@ func checkOutput(t *testing.T, envPath string, testArgs *TestArgs) {
 
 	// 3. Check that profile function directories and files exist for each profile
 	for _, profile := range expectedProfiles {
-		profileFunctionsDir := fmt.Sprintf("%s%s", profile, shared.FunctionsDirSuffix)
+		profileFunctionsDir := fmt.Sprintf("%s%s", profile, internal.FunctionsDirSuffix)
 		profileFunctionsPath := filepath.Join(tagPath, profileFunctionsDir)
 		checkDirectory(t, profileFunctionsPath, "profile functions directory e.g cpu_functions")
 
@@ -435,7 +434,7 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 
 func defaultRunCmd() []string {
 	return []string{
-		shared.AUTOCMD,
+		internal.AUTOCMD,
 		"--benchmarks", benchName,
 		"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
 		"--count", count,
@@ -456,7 +455,7 @@ func buildProf(t *testing.T, outputPath, root string) {
 
 func createBenchForTracker(t *testing.T, label, iterations, tagName string, blockOutputCheck, isEnvironmentSet bool) {
 	cmd := []string{
-		shared.AUTOCMD,
+		internal.AUTOCMD,
 		"--benchmarks", benchName,
 		"--profiles", "cpu",
 		"--count", iterations,
@@ -465,7 +464,7 @@ func createBenchForTracker(t *testing.T, label, iterations, tagName string, bloc
 
 	testArgs := &TestArgs{
 		specifiedFiles:          nil,
-		cfg:                     config.Config{},
+		cfg:                     internal.Config{},
 		withConfig:              false,
 		expectNonSpecifiedFiles: true,
 		noConfigFile:            true,

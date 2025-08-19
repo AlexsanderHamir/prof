@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal/args"
+	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
@@ -87,7 +87,7 @@ func TestShouldKeepLine(t *testing.T) {
 				ignorePrefixesMap[p] = struct{}{}
 			}
 
-			options := &args.LineFilterArgs{
+			options := &internal.LineFilterArgs{
 				ProfileFilters:    tt.profileFilters,
 				IgnoreFunctionSet: ignoreFuncsMap,
 				IgnorePrefixSet:   ignorePrefixesMap,

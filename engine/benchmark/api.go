@@ -8,10 +8,97 @@ import (
 	"path/filepath"
 
 	"github.com/AlexsanderHamir/prof/engine/collector"
-	"github.com/AlexsanderHamir/prof/internal/args"
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/parser"
 )
+
+func RunBenchmarks(cliArgs []string) error {
+	fmt.Println(cliArgs)
+	panic("stop")
+
+	benchmarks := []string{}
+	profiles := []string{}
+	tag := ""
+	count := 1
+
+	if len(benchmarks) == 0 {
+		return errors.New("benchmarks flag is empty")
+	}
+
+	if len(profiles) == 0 {
+		return errors.New("profiles flag is empty")
+	}
+
+	cfg, err := internal.LoadFromFile(internal.ConfigFilename)
+	if err != nil {
+		slog.Info("No config file found at repository root; proceeding without function filters.", "expected", internal.ConfigFilename)
+		slog.Info("You can generate one with 'prof setup'. It will be placed at the root next to go.mod.")
+		cfg = &internal.Config{}
+	}
+
+	if err = SetupDirectories(tag, benchmarks, profiles); err != nil {
+		return fmt.Errorf("failed to setup directories: %w", err)
+	}
+
+	benchArgs := &internal.BenchArgs{
+		Benchmarks: benchmarks,
+		Profiles:   profiles,
+		Count:      count,
+		Tag:        tag,
+	}
+
+	internal.PrintConfiguration(benchArgs, cfg.FunctionFilter)
+
+	if err = RunBenchAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RunBenchAndGetProfiles(benchArgs *internal.BenchArgs, benchmarkConfigs map[string]internal.FunctionFilter) error {
+	slog.Info("Starting benchmark pipeline...")
+
+	var functionFilter internal.FunctionFilter
+	globalFilter, hasGlobalFilter := benchmarkConfigs[internal.GlobalSign]
+	if hasGlobalFilter {
+		functionFilter = globalFilter
+	}
+
+	for _, benchmarkName := range benchArgs.Benchmarks {
+		slog.Info("Running benchmark", "Benchmark", benchmarkName)
+		if err := RunBenchmark(benchmarkName, benchArgs.Profiles, benchArgs.Count, benchArgs.Tag); err != nil {
+			return fmt.Errorf("failed to run %s: %w", benchmarkName, err)
+		}
+
+		slog.Info("Processing profiles", "Benchmark", benchmarkName)
+		if err := ProcessProfiles(benchmarkName, benchArgs.Profiles, benchArgs.Tag); err != nil {
+			return fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err)
+		}
+
+		slog.Info("Analyzing profile functions", "Benchmark", benchmarkName)
+
+		if !hasGlobalFilter {
+			functionFilter = benchmarkConfigs[benchmarkName]
+		}
+
+		args := &internal.CollectionArgs{
+			Tag:             benchArgs.Tag,
+			Profiles:        benchArgs.Profiles,
+			BenchmarkName:   benchmarkName,
+			BenchmarkConfig: functionFilter,
+		}
+
+		if err := CollectProfileFunctions(args); err != nil {
+			return fmt.Errorf("failed to analyze profile functions for %s: %w", benchmarkName, err)
+		}
+
+		slog.Info("Completed pipeline for benchmark", "Benchmark", benchmarkName)
+	}
+
+	slog.Info(internal.InfoCollectionSuccess)
+	return nil
+}
 
 // SetupDirectories creates the structure of the library's output.
 func SetupDirectories(tag string, benchmarks, profiles []string) error {
@@ -20,8 +107,8 @@ func SetupDirectories(tag string, benchmarks, profiles []string) error {
 		return err
 	}
 
-	tagDir := filepath.Join(currentDir, shared.MainDirOutput, tag)
-	err = shared.CleanOrCreateDir(tagDir)
+	tagDir := filepath.Join(currentDir, internal.MainDirOutput, tag)
+	err = internal.CleanOrCreateDir(tagDir)
 	if err != nil {
 		return fmt.Errorf("CleanOrCreateDir failed: %w", err)
 	}
@@ -33,75 +120,11 @@ func SetupDirectories(tag string, benchmarks, profiles []string) error {
 	return createProfileFunctionDirectories(tagDir, profiles, benchmarks)
 }
 
-// RunBenchmark runs a specific benchmark and collects all of its information.
-func RunBenchmark(benchmarkName string, profiles []string, count int, tag string) error {
-	cmd, err := buildBenchmarkCommand(benchmarkName, profiles, count)
-	if err != nil {
-		return err
-	}
-
-	textDir, binDir := getOutputDirectories(benchmarkName, tag)
-
-	moduleRoot, err := shared.FindGoModuleRoot()
-	if err != nil {
-		return fmt.Errorf("failed to find Go module root: %w", err)
-	}
-	pkgDir, err := findBenchmarkPackageDir(moduleRoot, benchmarkName)
-	if err != nil {
-		return fmt.Errorf("failed to locate benchmark %s: %w", benchmarkName, err)
-	}
-
-	outputFile := filepath.Join(textDir, fmt.Sprintf("%s.%s", benchmarkName, shared.TextExtension))
-	if err = runBenchmarkCommand(cmd, outputFile, pkgDir); err != nil {
-		return err
-	}
-
-	if err = moveProfileFiles(benchmarkName, profiles, pkgDir, binDir); err != nil {
-		return err
-	}
-
-	return moveTestFiles(benchmarkName, pkgDir, binDir)
-}
-
-// ProcessProfiles collects all pprof info for a specific benchmark and its specified profiles.
-func ProcessProfiles(benchmarkName string, profiles []string, tag string) error {
-	tagDir := filepath.Join(shared.MainDirOutput, tag)
-	binDir := filepath.Join(tagDir, shared.ProfileBinDir, benchmarkName)
-	textDir := filepath.Join(tagDir, shared.ProfileTextDir, benchmarkName)
-
-	for _, profile := range profiles {
-		profileFile := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
-		if _, err := os.Stat(profileFile); err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				slog.Warn("Profile file not found", "file", profileFile)
-				continue
-			}
-			return fmt.Errorf("failed to stat profile file %s: %w", profileFile, err)
-		}
-
-		outputFile := filepath.Join(textDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, shared.TextExtension))
-		profileFunctionsDir := filepath.Join(tagDir, profile+shared.FunctionsDirSuffix, benchmarkName)
-
-		if err := collector.GetProfileTextOutput(profileFile, outputFile); err != nil {
-			return fmt.Errorf("failed to generate text profile for %s: %w", profile, err)
-		}
-
-		pngDesiredFilePath := filepath.Join(profileFunctionsDir, fmt.Sprintf("%s_%s.png", benchmarkName, profile))
-		if err := collector.GetPNGOutput(profileFile, pngDesiredFilePath); err != nil {
-			return fmt.Errorf("failed to generate PNG visualization for %s: %w", profile, err)
-		}
-
-		slog.Info("Processed profile", "profile", profile, "benchmark", benchmarkName)
-	}
-
-	return nil
-}
-
 // CollectProfileFunctions collects all pprof information for each function, according to configurations.
-func CollectProfileFunctions(args *args.CollectionArgs) error {
+func CollectProfileFunctions(args *internal.CollectionArgs) error {
 	for _, profile := range args.Profiles {
 		paths := getProfilePaths(args.Tag, args.BenchmarkName, profile)
-		if err := os.MkdirAll(paths.FunctionDirectory, shared.PermDir); err != nil {
+		if err := os.MkdirAll(paths.FunctionDirectory, internal.PermDir); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
 

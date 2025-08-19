@@ -7,9 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlexsanderHamir/prof/internal/args"
-	"github.com/AlexsanderHamir/prof/internal/config"
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 )
 
 const (
@@ -55,7 +53,7 @@ type LineObj struct {
 func TurnLinesIntoObjects(profilePath string) ([]*LineObj, error) {
 	var lines []string
 
-	scanner, file, err := shared.GetScanner(profilePath)
+	scanner, file, err := internal.GetScanner(profilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +71,8 @@ func TurnLinesIntoObjects(profilePath string) ([]*LineObj, error) {
 }
 
 // GetAllFunctionNames extracts all function names from a profile text file, applying the given filter.
-func GetAllFunctionNames(filePath string, filter config.FunctionFilter) (names []string, err error) {
-	scanner, file, err := shared.GetScanner(filePath)
+func GetAllFunctionNames(filePath string, filter internal.FunctionFilter) (names []string, err error) {
+	scanner, file, err := internal.GetScanner(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("GetAllFunctionNames Failed: %w", err)
 	}
@@ -123,7 +121,7 @@ func GetAllFunctionNames(filePath string, filter config.FunctionFilter) (names [
 }
 
 // ShouldKeepLine determines if a line from a profile should be kept based on profile values and ignore filters.
-func ShouldKeepLine(line string, agrs *args.LineFilterArgs) bool {
+func ShouldKeepLine(line string, agrs *internal.LineFilterArgs) bool {
 	if line == "" {
 		return false
 	}
