@@ -111,7 +111,7 @@ prof track auto --base "baseline" --current "optimized" --profile-type "cpu" --b
 - 📚 **[Full Documentation](https://alexsanderhamir.github.io/prof/)** - Complete API reference and guides
 - 🚀 **[Contributing Guidelines](./CONTRIBUTING.md)** - How to contribute to Prof
 - 📋 **[Code of Conduct](./CODE_OF_CONDUCT.md)** - Community guidelines
-- 🏗️ **[Codebase Design](./docs/codebase_design.md)** - Architecture and design decisions
+- 🏗️ **[Codebase Design](./CODEBASE_DESIGN.md)** - Architecture and design decisions
 
 ## Requirements
 
