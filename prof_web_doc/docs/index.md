@@ -54,7 +54,7 @@ bench/baseline/
 
 ## Auto - Configuration
 
-By default, prof collects all functions shown in the text report of a profile. To customize this behavior, run:
+By default, prof gathers code-level data for every function listed in a profile’s text report. To change this behavior, run:
 
 ```bash
 prof setup
@@ -79,8 +79,6 @@ This creates a configuration file with the following structure:
 - `include_prefixes`: Only collect functions whose names start with these prefixes.
 - `ignore_functions`: Exclude specific functions from collection, even if they match the include prefixes.
 
-This filtering helps focus profiling on relevant code paths while excluding test setup and initialization functions that may not be meaningful for performance analysis.
-
 ## TUI - Interactive Selection
 
 The `tui` command provides an interactive terminal interface that automatically discovers benchmarks in your project and guides you through the selection process:
@@ -91,7 +89,7 @@ prof tui
 
 **What it does:**
 
-1. **Discovers benchmarks**: Automatically scans your Go module for `func BenchmarkXxx(b *testing.B)` functions in `*_test.go` files (works from project root or package directories)
+1. **Discovers benchmarks**: Automatically scans your Go module for `func BenchmarkXxx(b *testing.B)` functions in `*_test.go` files.
 2. **Interactive selection**: Presents a menu where you can select:
    - Which benchmarks to run (multi-select from discovered list)
    - Which profiles to collect (cpu, memory, mutex, block)
@@ -104,30 +102,6 @@ prof tui
 - **Scroll**: Use arrow keys (↑/↓) to navigate through the list
 - **Multi-select**: Use spacebar to select/deselect benchmarks
 - **Search**: Type to filter and find specific benchmarks quickly
-
-**Example workflow:**
-
-```bash
-$ prof tui
-
-? Select benchmarks to run:
-  ◯ BenchmarkGenPool
-  ◯ BenchmarkCacheGet
-  ◯ BenchmarkCacheSet
-  ◯ BenchmarkHTTPHandler
-  [Use arrows to move, space to select, type to filter]
-
-? Select profiles:
-  ◉ cpu
-  ◯ memory
-  ◯ mutex
-  ◯ block
-  [Use arrows to move, space to select]
-
-? Number of runs (count): 10
-
-? Tag name (used to group results under bench/<tag>): v2.0-optimized
-```
 
 ## Manual
 
@@ -176,82 +150,11 @@ The configuration works the same as auto configuration, except you should use pr
 
 For example, `BenchmarkGenPool_cpu.out` becomes `BenchmarkGenPool_cpu` in the configuration.
 
+Use `*` if you want the config to be applied to all profile files.
+
 # Performance Comparison
 
 Prof's performance comparison automatically drills down from benchmark-level changes to show you exactly which functions changed. Instead of just reporting that performance improved or regressed, Prof pinpoints the specific functions responsible and shows you detailed before-and-after comparisons.
-
-## TUI Track - Interactive Performance Comparison
-
-The `tui track` command provides an interactive interface for comparing performance between existing benchmark runs. This is a companion to the main `prof tui` command and requires that you have already collected benchmark data using either `prof tui` or `prof auto`.
-
-```bash
-prof tui track
-```
-
-**What it does:**
-
-1. **Discovers existing data**: Scans the `bench/` directory for tags you've already collected
-2. **Interactive selection**: Guides you through selecting:
-   - Baseline tag (the "before" version)
-   - Current tag (the "after" version)
-   - Benchmark to compare
-   - Profile type to analyze
-   - Output format
-   - Regression threshold settings
-
-**Prerequisites:**
-
-- Must have run `prof tui` or `prof auto` at least twice to create baseline and current tags
-- Data must be organized under `bench/<tag>/` directories
-
-**Example workflow:**
-
-```bash
-$ prof tui track
-
-? Select baseline tag (the 'before' version) [Press Enter to select]:
-  baseline
-  optimized
-  [Use arrows to move, Enter to select, type to filter]
-
-? Select current tag (the 'after' version) [Press Enter to select]:
-  optimized
-  [Use arrows to move, Enter to select, type to filter]
-
-? Select benchmark to compare [Press Enter to select]:
-  BenchmarkGenPool
-  BenchmarkCacheGet
-  [Use arrows to move, Enter to select, type to filter]
-
-? Select profile type to compare [Press Enter to select]:
-  cpu
-  memory
-  [Use arrows to move, Enter to select, type to filter]
-
-? Select output format [Press Enter to select]:
-  summary
-  detailed
-  summary-html
-  detailed-html
-  summary-json
-  detailed-json
-  [Use arrows to move, Enter to select, type to filter]
-
-? Do you want to fail on performance regressions? (Y/n)
-
-? Enter regression threshold percentage (e.g., 5.0 for 5%): 5.0
-
-🚀 Running: prof track auto --base baseline --current optimized --bench-name BenchmarkGenPool --profile-type cpu --output-format detailed --fail-on-regression --regression-threshold 5.0
-```
-
-**Output formats supported:**
-
-- **summary**: High-level overview of all performance changes
-- **detailed**: Comprehensive analysis for each changed function
-- **summary-html**: HTML export of summary report
-- **detailed-html**: HTML export of detailed report
-- **summary-json**: JSON export of summary report
-- **detailed-json**: JSON export of detailed report
 
 ## Track Auto
 
@@ -281,14 +184,40 @@ prof track manual --base path/to/base/report/cpu.txt \
                   --output-format "detailed"
 ```
 
-## Output Formats
+## TUI Track - Interactive Performance Comparison
+
+The `tui track` command provides an interactive interface for comparing performance between existing benchmark runs. This is a companion to the main `prof tui` command and requires that you have already collected benchmark data using either `prof tui` or `prof auto`.
+
+```bash
+prof tui track
+```
+
+**What it does:**
+
+1. **Discovers existing data**: Scans the `bench/` directory for tags you've already collected
+2. **Interactive selection**: Guides you through selecting:
+   - Baseline tag (the "before" version)
+   - Current tag (the "after" version)
+   - Benchmark to compare
+   - Profile type to analyze
+   - Output format
+   - Regression threshold settings
+
+**Prerequisites:**
+
+- Must have run `prof tui` or `prof auto` at least twice to create baseline and current tags
+- Data must be organized under `bench/<tag>/` directories
+
+## Output formats supported:
 
 Prof's performance comparison provides multiple output formats to help you understand performance changes at different levels of detail and presentation.
-**Currently supported formats:**
 
-- **Terminal (default)**
-- **HTML**
-- **JSON**
+- **summary**: High-level overview of all performance changes
+- **detailed**: Comprehensive analysis for each changed function
+- **summary-html**: HTML export of summary report
+- **detailed-html**: HTML export of detailed report
+- **summary-json**: JSON export of summary report
+- **detailed-json**: JSON export of detailed report
 
 ### Summary Format
 
@@ -350,18 +279,6 @@ Change:        +233.33%
 
 Severity:      CRITICAL
 Recommendation: Critical regression! Immediate investigation required.
-```
-
-### HTML & JSON Output
-
-In addition to terminal display, Prof can export both **summary** and **detailed** reports in:
-
-- 📄 **HTML**: shareable and human-friendly
-- 🧩 **JSON**: structured format for programmatic use or further integration
-
-```sh
---output-format summary-html
---output-format detailed-json
 ```
 
 # CI/CD: Fail on regressions
