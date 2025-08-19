@@ -1,125 +1,106 @@
 # Contributing
 
-We welcome contributions of all kinds — bug fixes, new features, tests, and documentation improvements. Whether you're a seasoned Go developer or just getting started, we appreciate your interest in making `prof` better!
+Thanks for your interest in improving **`prof`**! We welcome contributions of all kinds — bug fixes, features, tests, and documentation.
 
-Before getting started, please check the [issues](https://github.com/AlexsanderHamir/prof/issues) to avoid duplicated effort or to find something to work on.
+👉 Before starting, check [issues](https://github.com/AlexsanderHamir/prof/issues) to avoid duplication or to pick something up.
 
-## 🏗️ Codebase Design
+## 🏗️ Codebase Overview
 
-Before diving into development, we recommend familiarizing yourself with the project's architecture and design principles. This will help you understand how your contributions fit into the overall system.
+- **Architecture:** Layered design with clear separation:
 
-**📖 [Codebase Design Documentation](docs/codebase_design.md)** - Comprehensive overview of the project's architecture, package structure, data flow, and design decisions.
+  ```
+  CLI → Engine → Parser → Internal
+  ```
 
-**Key Design Principles:**
+- **Key principles:**
 
-- **Layered Architecture**: Clean separation between CLI, engine, and internal packages
-- **Single Responsibility**: Each package has a focused, well-defined purpose
-- **Interface Contracts**: Stable APIs between major components
-- **Configuration-Driven**: Flexible behavior through JSON configuration files
+  - Single responsibility per package
+  - Stable interfaces between components
+  - Config-driven behavior (JSON)
 
-**Quick Architecture Overview:**
+- **Structure:**
 
-```
-CLI (User Interface) → Engine (Business Logic) → Parser (Data Processing) → Internal (Utilities)
-```
+  - `cmd/prof/` – Entry point
+  - `cli/` – Cobra-based CLI
 
-### 📁 Understanding the Codebase Structure
+  - `engine/` – Core logic
 
-The project follows Go's standard project layout with clear package responsibilities:
+    - `benchmark/` – Running and managing benchmarks
+    - `collector/` – Gathering profiling data
+    - `tracker/` – Tracking runs, comparisons, and state
 
-- **`cmd/prof/`** - Application entry point and main function
-- **`cli/`** - Command-line interface using Cobra framework
-- **`engine/`** - Core business logic (benchmark, collector, tracker)
-- **`parser/`** - Profile data parsing and processing
-- **`internal/`** - Protected utilities (config, args, shared)
-- **`tests/`** - Integration and end-to-end tests
+  - `parser/` – Profile data parsing and processing
 
-**💡 Pro Tip**: Start with the [codebase design documentation](docs/codebase_design.md) to understand the relationships between these packages and how data flows through the system.
+  - `internal/` – Shared utilities
+
+    - `config/` – Config file handling
+    - `args/` – Argument parsing
+    - `shared/` – Common helpers
+
+  - `tests/` – Integration and E2E tests
+
+📖 For details, see [codebase design docs](CODEBASE_DESIGN.md).
 
 ## 🔧 Quick Start
 
 **Requirements:** Go 1.24.3+, Git
 
 ```bash
-# Clone the repository
 git clone https://github.com/AlexsanderHamir/prof.git
 cd prof
 go mod tidy
 
 # Run tests
-go test -v ./...
+go test ./...
 
-# Check for linter issues (first-time install if needed)
+# Lint (install first if needed)
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 golangci-lint run
 
-# Build the binary for local testing
+# Build binary
 go build -o prof ./cmd/prof
 ```
 
 ## 📋 Contribution Guidelines
 
-### 1. ✅ Run Tests and Linters Locally
+1. **✅ Tests & Linting**
+   Run before pushing:
 
-Before submitting a pull request, make sure your changes pass:
+   ```bash
+   go test ./...
+   golangci-lint run
+   ```
 
-- Unit tests:
+2. **🎯 Code Style**
 
-  ```bash
-  go test ./...
-  ```
+   - Idiomatic Go
+   - Small, focused functions
+   - Clear > clever
+   - Comments for exported functions & tricky logic
 
-- Linting (using `golangci-lint`):
+3. **📦 Commits**
 
-  ```bash
-  golangci-lint run
-  ```
+   - One logical change per commit
+   - Use verbs (`Add`, `Fix`, `Refactor`, `Docs`)
+   - Don’t mix unrelated changes
 
-GitHub Actions will run these checks again, but local checks save time and ensure faster feedback.
+4. **🧪 Tests**
 
-### 2. 🎯 Follow Code Style Guidelines
+   - Required for non-trivial changes
+   - Unsure? Open a draft PR for feedback
 
-- Write idiomatic Go.
-- Keep functions small and focused.
-- Favor clarity over cleverness.
-- Add comments for exported functions and any complex logic.
+5. **📝 Documentation**
+   Update when changes affect:
 
-### 3. 📦 Commit Practices
+   - CLI
+   - Config
+   - Output
 
-- Use atomic commits — one logical change per commit.
-- Start commit messages with a verb (e.g., `Fix`, `Add`, `Refactor`, `Document`).
-- Avoid mixing unrelated changes like formatting, renaming, and new logic in the same commit.
+6. **📬 Pull Requests**
 
-### 4. 🧪 Add Tests
+   - Descriptive title & summary
+   - Reference issues (e.g., `Closes #12`)
+   - Draft if not ready
 
-All non-trivial features and bug fixes should include tests that validate the behavior. If you're unsure how to test a change, open a draft PR or ask in the issue thread.
-
-### 5. 📝 Document User-Facing Changes
-
-If your change affects the:
-
-- **CLI**
-- **Configuration**
-- **Output format**
-
-…please update the corresponding documentation:
-
-- `README.md`
-- CLI help text (`--help`)
-- Code comments or examples
-
-### 6. 📬 Open a Pull Request
-
-When your code is ready:
-
-- Open a PR with a descriptive title and summary.
-- Reference any relevant issue numbers (e.g., `Closes #12`).
-- Mark the PR as a draft if it's not ready for review yet.
-
-### 7. 💬 Collaborate Through Feedback
-
-We review pull requests to ensure consistency, maintainability, and direction. Reviews are collaborative — don't hesitate to ask questions or propose alternatives. We're here to help you land the change.
-
-## 📄 License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+7. **💬 Reviews**
+   Feedback is collaborative — ask questions, suggest alternatives, and we’ll help guide contributions.
