@@ -131,11 +131,11 @@ func runTUI(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to discover benchmarks: %w", err)
 	}
+
 	if len(benchNames) == 0 {
 		return errors.New("no benchmarks found in this module (look for func BenchmarkXxx(b *testing.B) in *_test.go)")
 	}
 
-	// Select benchmarks
 	var selectedBenches []string
 	benchPrompt := &survey.MultiSelect{
 		Message:  "Select benchmarks to run:",
@@ -146,19 +146,18 @@ func runTUI(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	// Select profiles
-	profilesOptions := []string{"cpu", "memory", "mutex", "block"}
+	profilesOptions := benchmark.SupportedProfiles
 	var selectedProfiles []string
 	profilesPrompt := &survey.MultiSelect{
 		Message: "Select profiles:",
 		Options: profilesOptions,
 		Default: []string{"cpu"},
 	}
+
 	if err = survey.AskOne(profilesPrompt, &selectedProfiles, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
 
-	// Count
 	var countStr string
 	countPrompt := &survey.Input{Message: "Number of runs (count):", Default: "1"}
 	if err = survey.AskOne(countPrompt, &countStr, survey.WithValidator(survey.Required)); err != nil {
@@ -169,32 +168,13 @@ func runTUI(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("invalid count: %s", countStr)
 	}
 
-	// Tag
 	var tagStr string
 	tagPrompt := &survey.Input{Message: "Tag name (used to group results under bench/<tag>):"}
 	if err = survey.AskOne(tagPrompt, &tagStr, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
 
-	cfg, err := internal.LoadFromFile(internal.ConfigFilename)
-	if err != nil {
-		// Not fatal; proceed without function filters
-		cfg = &internal.Config{}
-	}
-
-	if err = benchmark.SetupDirectories(tagStr, selectedBenches, selectedProfiles); err != nil {
-		return fmt.Errorf("failed to setup directories: %w", err)
-	}
-
-	benchArgs := &internal.BenchArgs{
-		Benchmarks: selectedBenches,
-		Profiles:   selectedProfiles,
-		Count:      runCount,
-		Tag:        tagStr,
-	}
-
-	internal.PrintConfiguration(benchArgs, cfg.FunctionFilter)
-	if err = benchmark.RunBenchAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
+	if err := benchmark.RunBenchmarks(selectedBenches, selectedProfiles, tagStr, runCount); err != nil {
 		return err
 	}
 

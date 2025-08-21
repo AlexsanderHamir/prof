@@ -15,13 +15,13 @@ import (
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
-func getProfileFlags() map[string]string {
-	return map[string]string{
-		"cpu":    "-cpuprofile=cpu.out",
-		"memory": "-memprofile=memory.out",
-		"mutex":  "-mutexprofile=mutex.out",
-		"block":  "-blockprofile=block.out",
-	}
+var SupportedProfiles = []string{"cpu", "memory", "mutex", "block"}
+
+var ProfileFlags = map[string]string{
+	"cpu":    "-cpuprofile=cpu.out",
+	"memory": "-memprofile=memory.out",
+	"mutex":  "-mutexprofile=mutex.out",
+	"block":  "-blockprofile=block.out",
 }
 
 const (
@@ -133,9 +133,8 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) (
 		fmt.Sprintf("-count=%d", count),
 	}
 
-	profileFlags := getProfileFlags()
 	for _, profile := range profiles {
-		flag, exists := profileFlags[profile]
+		flag, exists := ProfileFlags[profile]
 
 		if !exists {
 			return nil, fmt.Errorf("profile %s is not supported", profile)
@@ -239,10 +238,8 @@ func moveFileWithDelay(src, dst string, delay time.Duration) error {
 }
 
 func moveProfileFiles(benchmarkName string, profiles []string, rootDir string, binDir string) error {
-	profileFlags := getProfileFlags()
-
 	for _, profile := range profiles {
-		profileFile, ok := profileFlagToFile(profile, profileFlags)
+		profileFile, ok := profileFlagToFile(profile, ProfileFlags)
 		if !ok {
 			continue
 		}
@@ -325,7 +322,7 @@ func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 }
 
 // RunBenchmark runs a specific benchmark and collects all of its information.
-func RunBenchmark(benchmarkName string, profiles []string, count int, tag string) error {
+func runBenchmark(benchmarkName string, profiles []string, count int, tag string) error {
 	cmd, err := buildBenchmarkCommand(benchmarkName, profiles, count)
 	if err != nil {
 		return err

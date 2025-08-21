@@ -12,7 +12,6 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
-// TODO: Complete the implementation
 func RunBenchmarks(benchmarks, profiles []string, tag string, count int) error {
 	if len(benchmarks) == 0 {
 		return errors.New("benchmarks flag is empty")
@@ -60,7 +59,7 @@ func RunBenchAndGetProfiles(benchArgs *internal.BenchArgs, benchmarkConfigs map[
 
 	for _, benchmarkName := range benchArgs.Benchmarks {
 		slog.Info("Running benchmark", "Benchmark", benchmarkName)
-		if err := RunBenchmark(benchmarkName, benchArgs.Profiles, benchArgs.Count, benchArgs.Tag); err != nil {
+		if err := runBenchmark(benchmarkName, benchArgs.Profiles, benchArgs.Count, benchArgs.Tag); err != nil {
 			return fmt.Errorf("failed to run %s: %w", benchmarkName, err)
 		}
 
