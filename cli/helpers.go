@@ -77,7 +77,7 @@ func createProfAuto() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   internal.AUTOCMD,
 		Short: "Wraps `go test` and `pprof` to benchmark code and gather profiling data for performance investigations.",
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return benchmark.RunBenchmarks(benchmarks, profiles, tag, count)
 		},
 		Example: example,
