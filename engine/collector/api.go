@@ -17,9 +17,9 @@ func RunCollector(files []string, tag string) error {
 	}
 
 	tagDir := filepath.Join(internal.MainDirOutput, tag)
-	err := internal.CleanOrCreateDir(tagDir)
+	err := internal.CleanOrCreateTag(tagDir)
 	if err != nil {
-		return fmt.Errorf("CleanOrCreateDir failed: %w", err)
+		return fmt.Errorf("CleanOrCreateTag failed: %w", err)
 	}
 
 	cfg, err := internal.LoadFromFile(internal.ConfigFilename)

@@ -21,8 +21,8 @@ func GetScanner(filePath string) (*bufio.Scanner, *os.File, error) {
 	return scanner, file, nil
 }
 
-// CleanOrCreateDir cleans a directory if it exists, or creates one if it.
-func CleanOrCreateDir(dir string) error {
+// CleanOrCreateTag cleans the tag directory if it exists, or creates one.
+func CleanOrCreateTag(dir string) error {
 	info, err := os.Stat(dir)
 	if err != nil {
 		if os.IsNotExist(err) {

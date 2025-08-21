@@ -56,7 +56,7 @@ func scanForBenchmarks(root string) ([]string, error) {
 // handleDirectory determines if a directory should be traversed or skipped
 func handleDirectory(path string) error {
 	base := filepath.Base(path)
-	if strings.HasPrefix(base, ".") || base == "vendor" || base == "node_modules" {
+	if strings.HasPrefix(base, ".") || base == "vendor" {
 		return filepath.SkipDir
 	}
 	return nil
