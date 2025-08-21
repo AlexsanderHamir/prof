@@ -285,7 +285,7 @@ func moveTestFiles(benchmarkName, rootDir, binDir string) error {
 
 	for _, file := range testFiles {
 		newPath := filepath.Join(binDir, fmt.Sprintf("%s_%s", benchmarkName, filepath.Base(file)))
-		if err := os.Rename(file, newPath); err != nil {
+		if err = os.Rename(file, newPath); err != nil {
 			return fmt.Errorf("failed to move test file %s: %w", file, err)
 		}
 	}
