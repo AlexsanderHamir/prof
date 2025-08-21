@@ -26,4 +26,5 @@ const (
 	TextExtension      = "txt"
 	ConfigFilename     = "config_template.json"
 	GlobalSign         = "*"
+	ExpectedTestSuffix = ".test"
 )

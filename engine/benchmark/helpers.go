@@ -205,6 +205,7 @@ func getExpectedProfileFileName(profile string) (string, bool) {
 }
 
 // findMostRecentFile searches for the most recently modified file named fileName under rootDir.
+// In case a user has some pprof files from manual runs, we don't want mix ups.
 func findMostRecentFile(rootDir, fileName string) (string, error) {
 	var latestPath string
 	var latestMod time.Time
@@ -229,21 +230,12 @@ func findMostRecentFile(rootDir, fileName string) (string, error) {
 		}
 		return nil
 	})
+
 	if err != nil {
 		return "", err
 	}
+
 	return latestPath, nil
-}
-
-// buildProfileDestPath builds the destination path for a profile binary output.
-func buildProfileDestPath(binDir, benchmarkName, profile string) string {
-	return filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
-}
-
-// moveFileWithDelay waits for a short period and then renames the src to dst.
-func moveFileWithDelay(src, dst string, delay time.Duration) error {
-	time.Sleep(delay)
-	return os.Rename(src, dst)
 }
 
 func moveProfileFiles(benchmarkName string, profiles []string, rootDir string, binDir string) error {
@@ -261,17 +253,18 @@ func moveProfileFiles(benchmarkName string, profiles []string, rootDir string, b
 			continue
 		}
 
-		destPath := buildProfileDestPath(binDir, benchmarkName, profile)
-		if err = moveFileWithDelay(latestPath, destPath, waitForFiles*time.Millisecond); err != nil {
+		destPath := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
+		if err = os.Rename(latestPath, destPath); err != nil {
 			return fmt.Errorf("failed to move profile file %s: %w", latestPath, err)
 		}
 	}
+
 	return nil
 }
 
 func moveTestFiles(benchmarkName, rootDir, binDir string) error {
 	var testFiles []string
-	_ = filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
+	err := filepath.WalkDir(rootDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -280,11 +273,15 @@ func moveTestFiles(benchmarkName, rootDir, binDir string) error {
 			return nil
 		}
 
-		if strings.HasSuffix(path, ".test") {
+		if strings.HasSuffix(path, internal.ExpectedTestSuffix) {
 			testFiles = append(testFiles, path)
 		}
 		return nil
 	})
+
+	if err != nil {
+		return fmt.Errorf("WalkDir Failed: %w", err)
+	}
 
 	for _, file := range testFiles {
 		newPath := filepath.Join(binDir, fmt.Sprintf("%s_%s", benchmarkName, filepath.Base(file)))
@@ -319,13 +316,13 @@ type ProfilePaths struct {
 //   - bench/v1.0/bin/BenchmarkPool/BenchmarkPool_cpu.out
 //   - bench/v1.0/cpu_functions/BenchmarkPool/function1.txt
 func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
-	tagDir := filepath.Join("bench", tag)
+	tagDir := filepath.Join(internal.MainDirOutput, tag)
 	profileTextFile := fmt.Sprintf("%s_%s.%s", benchmarkName, profile, internal.TextExtension)
 	profileBinFile := fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension)
 
 	return ProfilePaths{
-		ProfileTextFile:   filepath.Join(tagDir, "text", benchmarkName, profileTextFile),
-		ProfileBinaryFile: filepath.Join(tagDir, "bin", benchmarkName, profileBinFile),
+		ProfileTextFile:   filepath.Join(tagDir, internal.ProfileTextDir, benchmarkName, profileTextFile),
+		ProfileBinaryFile: filepath.Join(tagDir, internal.ProfileBinDir, benchmarkName, profileBinFile),
 		FunctionDirectory: filepath.Join(tagDir, profile+internal.FunctionsDirSuffix, benchmarkName),
 	}
 }
