@@ -12,15 +12,8 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
-func RunBenchmarks(cliArgs []string) error {
-	fmt.Println(cliArgs)
-	panic("stop")
-
-	benchmarks := []string{}
-	profiles := []string{}
-	tag := ""
-	count := 1
-
+// TODO: Complete the implementation
+func RunBenchmarks(benchmarks, profiles []string, tag string, count int) error {
 	if len(benchmarks) == 0 {
 		return errors.New("benchmarks flag is empty")
 	}
