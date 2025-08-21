@@ -25,6 +25,13 @@ var ProfileFlags = map[string]string{
 	"block":  "-blockprofile=block.out",
 }
 
+var ExpectedFiles = map[string]string{
+	"cpu":    "cpu.out",
+	"memory": "memory.out",
+	"mutex":  "mutex.out",
+	"block":  "block.out",
+}
+
 const (
 	binExtension           = "out"
 	descriptionFileName    = "description.txt"
@@ -188,20 +195,13 @@ func runBenchmarkCommand(cmd []string, outputFile string, rootDir string) error 
 	return os.WriteFile(outputFile, output, internal.PermFile)
 }
 
-// TODO - I don't understand why this is necessary
-//
-// profileFlagToFile extracts the file name from a profile flag like "-cpuprofile=cpu.out".
-func profileFlagToFile(profile string, profileFlags map[string]string) (string, bool) {
-	flag, exists := profileFlags[profile]
+// getExpectedProfileFileName gets the expected file name for a profile such as "cpu.out".
+func getExpectedProfileFileName(profile string) (string, bool) {
+	expectedFileName, exists := ExpectedFiles[profile]
 	if !exists {
 		return "", false
 	}
-	expectedParts := 2
-	parts := strings.SplitN(flag, "=", expectedParts)
-	if len(parts) != expectedParts {
-		return "", false
-	}
-	return parts[1], true
+	return expectedFileName, true
 }
 
 // findMostRecentFile searches for the most recently modified file named fileName under rootDir.
@@ -248,7 +248,7 @@ func moveFileWithDelay(src, dst string, delay time.Duration) error {
 
 func moveProfileFiles(benchmarkName string, profiles []string, rootDir string, binDir string) error {
 	for _, profile := range profiles {
-		profileFile, ok := profileFlagToFile(profile, ProfileFlags)
+		profileFile, ok := getExpectedProfileFileName(profile)
 		if !ok {
 			continue
 		}
