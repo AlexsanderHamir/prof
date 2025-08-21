@@ -43,3 +43,16 @@ func RunBenchmarks(benchmarks, profiles []string, tag string, count int) error {
 
 	return nil
 }
+
+// DiscoverBenchmarks scans the Go module for benchmark functions and returns their names.
+// A benchmark is identified by functions matching:
+//
+//	func BenchmarkXxx(b *testing.B) { ... }
+func DiscoverBenchmarks() ([]string, error) {
+	root, err := internal.FindGoModuleRoot()
+	if err != nil {
+		return nil, fmt.Errorf("failed to locate module root: %w", err)
+	}
+
+	return scanForBenchmarks(root)
+}

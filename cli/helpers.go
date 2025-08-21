@@ -1,12 +1,7 @@
 package cli
 
-// TODOS:
-// 1. run functions should not be implemented here, they should be inplemented
-// on their respective packages.
-
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/AlexsanderHamir/prof/engine/benchmark"
 	"github.com/AlexsanderHamir/prof/engine/collector"
@@ -96,7 +91,6 @@ func createProfAuto() *cobra.Command {
 	return cmd
 }
 
-// createTrackCmd creates the track subcommand
 func createTrackCmd() *cobra.Command {
 	shortExplanation := "Compare performance between two benchmark runs to detect regressions and improvements"
 	cmd := &cobra.Command{
@@ -123,10 +117,21 @@ func createTrackAutoCmd() *cobra.Command {
 	shortExplanation := "If prof auto was used to collect the data, track auto can be used to analyze it, you just have to pass the tag name."
 
 	cmd := &cobra.Command{
-		Use:     internal.TrackAutoCMD,
-		Short:   shortExplanation,
-		Long:    longExplanation,
-		RunE:    runTrackAuto,
+		Use:   internal.TrackAutoCMD,
+		Short: shortExplanation,
+		Long:  longExplanation,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			selections := &tracker.AutoSelections{
+				OutputFormat:        outputFormat,
+				BaselineTag:         baselineTag,
+				CurrentTag:          currentTag,
+				ProfileType:         profileType,
+				BenchmarkName:       benchmarkName,
+				RegressionThreshold: regressionThreshold,
+				UseThreshold:        failOnRegression,
+			}
+			return tracker.RunTrackAuto(selections)
+		},
 		Example: example,
 	}
 
@@ -155,9 +160,20 @@ func createTrackManualCmd() *cobra.Command {
 	example := fmt.Sprintf(`prof track %s --%s "path/to/profile_file.txt" --%s  "path/to/profile_file.txt"  --%s "summary"`, internal.TrackManualCMD, baseFlag, currentFlag, outputFormatFlag)
 
 	cmd := &cobra.Command{
-		Use:     internal.TrackManualCMD,
-		Short:   "Manually specify the paths to the profile text files you want to compare.",
-		RunE:    runTrackManual,
+		Use:   internal.TrackManualCMD,
+		Short: "Manually specify the paths to the profile text files you want to compare.",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			selections := &tracker.AutoSelections{
+				OutputFormat:        outputFormat,
+				BaselineTag:         baselineTag,
+				CurrentTag:          currentTag,
+				ProfileType:         profileType,
+				BenchmarkName:       benchmarkName,
+				RegressionThreshold: regressionThreshold,
+				UseThreshold:        failOnRegression,
+			}
+			return tracker.RunTrackManual(selections)
+		},
 		Example: example,
 	}
 
@@ -174,85 +190,15 @@ func createTrackManualCmd() *cobra.Command {
 	return cmd
 }
 
-// createSetupCmd creates the setup subcommand
 func createSetupCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                   "setup",
-		Short:                 "Generates the template configuration file.",
-		RunE:                  runSetup,
+		Use:   "setup",
+		Short: "Generates the template configuration file.",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return internal.CreateTemplate()
+		},
 		DisableFlagsInUseLine: true,
 	}
 
 	return cmd
-}
-
-// runSetup handles the setup command execution
-func runSetup(_ *cobra.Command, _ []string) error {
-	return internal.CreateTemplate()
-}
-
-var validFormats = map[string]bool{
-	"summary":       true,
-	"detailed":      true,
-	"summary-html":  true,
-	"detailed-html": true,
-	"summary-json":  true,
-	"detailed-json": true,
-}
-
-// runTrack handles the track command execution
-func runTrackAuto(_ *cobra.Command, _ []string) error {
-	if !validFormats[outputFormat] {
-		return fmt.Errorf("invalid output format '%s'. Valid formats: summary, detailed", outputFormat)
-	}
-
-	report, err := tracker.CheckPerformanceDifferences(baselineTag, currentTag, benchmarkName, profileType)
-	if err != nil {
-		return fmt.Errorf("failed to track performance differences: %w", err)
-	}
-
-	noFunctionChanges := len(report.FunctionChanges) == 0
-	if noFunctionChanges {
-		slog.Info("No function changes detected between the two runs")
-		return nil
-	}
-
-	report.ChooseOutputFormat(outputFormat)
-
-	if failOnRegression && regressionThreshold > 0.0 {
-		worst := report.WorstRegression()
-		if worst != nil && worst.FlatChangePercent >= regressionThreshold {
-			return fmt.Errorf("performance regression %.2f%% in %s exceeds threshold %.2f%%", worst.FlatChangePercent, worst.FunctionName, regressionThreshold)
-		}
-	}
-
-	return nil
-}
-
-func runTrackManual(_ *cobra.Command, _ []string) error {
-	if !validFormats[outputFormat] {
-		return fmt.Errorf("invalid output format '%s'. Valid formats: summary, detailed", outputFormat)
-	}
-
-	report, err := tracker.CheckPerformanceDifferencesManual(baselineTag, currentTag)
-	if err != nil {
-		return fmt.Errorf("failed to track performance differences: %w", err)
-	}
-
-	noFunctionChanges := len(report.FunctionChanges) == 0
-	if noFunctionChanges {
-		slog.Info("No function changes detected between the two runs")
-		return nil
-	}
-
-	report.ChooseOutputFormat(outputFormat)
-
-	if failOnRegression && regressionThreshold > 0.0 {
-		worst := report.WorstRegression()
-		if worst != nil && worst.FlatChangePercent >= regressionThreshold {
-			return fmt.Errorf("performance regression %.2f%% in %s exceeds threshold %.2f%%", worst.FlatChangePercent, worst.FunctionName, regressionThreshold)
-		}
-	}
-
-	return nil
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlexsanderHamir/prof/engine/benchmark"
+	"github.com/AlexsanderHamir/prof/engine/tracker"
 	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/spf13/cobra"
 )
@@ -202,29 +203,18 @@ func runTUITrackAuto(_ *cobra.Command, _ []string) error {
 
 	// Now run the actual tracking command
 	fmt.Printf("\n🚀 Running: prof track auto --base %s --current %s --bench-name %s --profile-type %s --output-format %s",
-		selections.baselineTag, selections.currentTag, selections.benchmarkName, selections.profileType, selections.outputFormat)
-	if selections.useThreshold {
-		fmt.Printf(" --fail-on-regression --regression-threshold %.1f", selections.regressionThreshold)
+		selections.BaselineTag, selections.CurrentTag, selections.BenchmarkName, selections.ProfileType, selections.OutputFormat)
+	if selections.UseThreshold {
+		fmt.Printf(" --fail-on-regression --regression-threshold %.1f", selections.RegressionThreshold)
 	}
 	fmt.Println()
 
-	return runTrackAuto(nil, nil)
-}
-
-// trackAutoSelections holds all the user selections for tracking
-type trackAutoSelections struct {
-	baselineTag         string
-	currentTag          string
-	benchmarkName       string
-	profileType         string
-	outputFormat        string
-	useThreshold        bool
-	regressionThreshold float64
+	return tracker.RunTrackAuto(selections)
 }
 
 // getTrackAutoSelections collects all user selections interactively
-func getTrackAutoSelections(tags []string) (*trackAutoSelections, error) {
-	selections := &trackAutoSelections{}
+func getTrackAutoSelections(tags []string) (*tracker.AutoSelections, error) {
+	selections := &tracker.AutoSelections{}
 
 	// Select baseline tag
 	baselinePrompt := &survey.Select{
@@ -232,14 +222,14 @@ func getTrackAutoSelections(tags []string) (*trackAutoSelections, error) {
 		Options:  tags,
 		PageSize: tuiPageSize,
 	}
-	if err := survey.AskOne(baselinePrompt, &selections.baselineTag, survey.WithValidator(survey.Required)); err != nil {
+	if err := survey.AskOne(baselinePrompt, &selections.BaselineTag, survey.WithValidator(survey.Required)); err != nil {
 		return nil, err
 	}
 
 	// Select current tag (filter out baseline)
 	var currentTagOptions []string
 	for _, tag := range tags {
-		if tag != selections.baselineTag {
+		if tag != selections.BaselineTag {
 			currentTagOptions = append(currentTagOptions, tag)
 		}
 	}
@@ -249,7 +239,7 @@ func getTrackAutoSelections(tags []string) (*trackAutoSelections, error) {
 		Options:  currentTagOptions,
 		PageSize: tuiPageSize,
 	}
-	if err := survey.AskOne(currentPrompt, &selections.currentTag, survey.WithValidator(survey.Required)); err != nil {
+	if err := survey.AskOne(currentPrompt, &selections.CurrentTag, survey.WithValidator(survey.Required)); err != nil {
 		return nil, err
 	}
 
@@ -277,13 +267,13 @@ func getTrackAutoSelections(tags []string) (*trackAutoSelections, error) {
 }
 
 // selectBenchmark discovers and selects a benchmark
-func selectBenchmark(selections *trackAutoSelections) error {
-	availableBenchmarks, err := discoverAvailableBenchmarks(selections.baselineTag)
+func selectBenchmark(selections *tracker.AutoSelections) error {
+	availableBenchmarks, err := discoverAvailableBenchmarks(selections.BaselineTag)
 	if err != nil {
-		return fmt.Errorf("failed to discover benchmarks for tag %s: %w", selections.baselineTag, err)
+		return fmt.Errorf("failed to discover benchmarks for tag %s: %w", selections.BaselineTag, err)
 	}
 	if len(availableBenchmarks) == 0 {
-		return fmt.Errorf("no benchmarks found for tag %s", selections.baselineTag)
+		return fmt.Errorf("no benchmarks found for tag %s", selections.BaselineTag)
 	}
 
 	benchPrompt := &survey.Select{
@@ -291,17 +281,17 @@ func selectBenchmark(selections *trackAutoSelections) error {
 		Options:  availableBenchmarks,
 		PageSize: tuiPageSize,
 	}
-	return survey.AskOne(benchPrompt, &selections.benchmarkName, survey.WithValidator(survey.Required))
+	return survey.AskOne(benchPrompt, &selections.BenchmarkName, survey.WithValidator(survey.Required))
 }
 
 // selectProfileType discovers and selects a profile type
-func selectProfileType(selections *trackAutoSelections) error {
-	availableProfiles, err := discoverAvailableProfiles(selections.baselineTag, selections.benchmarkName)
+func selectProfileType(selections *tracker.AutoSelections) error {
+	availableProfiles, err := discoverAvailableProfiles(selections.BaselineTag, selections.BenchmarkName)
 	if err != nil {
-		return fmt.Errorf("failed to discover profiles for tag %s, benchmark %s: %w", selections.baselineTag, selections.benchmarkName, err)
+		return fmt.Errorf("failed to discover profiles for tag %s, benchmark %s: %w", selections.BaselineTag, selections.BenchmarkName, err)
 	}
 	if len(availableProfiles) == 0 {
-		return fmt.Errorf("no profiles found for tag %s, benchmark %s", selections.baselineTag, selections.benchmarkName)
+		return fmt.Errorf("no profiles found for tag %s, benchmark %s", selections.BaselineTag, selections.BenchmarkName)
 	}
 
 	profilePrompt := &survey.Select{
@@ -309,11 +299,11 @@ func selectProfileType(selections *trackAutoSelections) error {
 		Options:  availableProfiles,
 		PageSize: tuiPageSize,
 	}
-	return survey.AskOne(profilePrompt, &selections.profileType, survey.WithValidator(survey.Required))
+	return survey.AskOne(profilePrompt, &selections.ProfileType, survey.WithValidator(survey.Required))
 }
 
 // selectOutputFormat selects the output format
-func selectOutputFormat(selections *trackAutoSelections) error {
+func selectOutputFormat(selections *tracker.AutoSelections) error {
 	outputFormats := []string{"summary", "detailed", "summary-html", "detailed-html", "summary-json", "detailed-json"}
 	formatPrompt := &survey.Select{
 		Message:  "Select output format [Press Enter to select]:",
@@ -321,20 +311,20 @@ func selectOutputFormat(selections *trackAutoSelections) error {
 		Default:  "detailed",
 		PageSize: tuiPageSize,
 	}
-	return survey.AskOne(formatPrompt, &selections.outputFormat, survey.WithValidator(survey.Required))
+	return survey.AskOne(formatPrompt, &selections.OutputFormat, survey.WithValidator(survey.Required))
 }
 
 // selectRegressionThreshold handles regression threshold selection
-func selectRegressionThreshold(selections *trackAutoSelections) error {
+func selectRegressionThreshold(selections *tracker.AutoSelections) error {
 	thresholdPrompt := &survey.Confirm{
 		Message: "Do you want to fail on performance regressions?",
 		Default: false,
 	}
-	if err := survey.AskOne(thresholdPrompt, &selections.useThreshold); err != nil {
+	if err := survey.AskOne(thresholdPrompt, &selections.UseThreshold); err != nil {
 		return err
 	}
 
-	if selections.useThreshold {
+	if selections.UseThreshold {
 		var thresholdStr string
 		thresholdInputPrompt := &survey.Input{
 			Message: "Enter regression threshold percentage (e.g., 5.0 for 5%):",
@@ -347,19 +337,19 @@ func selectRegressionThreshold(selections *trackAutoSelections) error {
 		if convErr != nil || threshold <= 0 {
 			return fmt.Errorf("invalid threshold: %s", thresholdStr)
 		}
-		selections.regressionThreshold = threshold
+		selections.RegressionThreshold = threshold
 	}
 
 	return nil
 }
 
 // setGlobalTrackingVariables sets the global CLI variables for tracking
-func setGlobalTrackingVariables(selections *trackAutoSelections) {
-	baselineTag = selections.baselineTag
-	currentTag = selections.currentTag
-	benchmarkName = selections.benchmarkName
-	profileType = selections.profileType
-	outputFormat = selections.outputFormat
-	failOnRegression = selections.useThreshold
-	regressionThreshold = selections.regressionThreshold
+func setGlobalTrackingVariables(selections *tracker.AutoSelections) {
+	baselineTag = selections.BaselineTag
+	currentTag = selections.CurrentTag
+	benchmarkName = selections.BenchmarkName
+	profileType = selections.ProfileType
+	outputFormat = selections.OutputFormat
+	failOnRegression = selections.UseThreshold
+	regressionThreshold = selections.RegressionThreshold
 }
