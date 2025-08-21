@@ -11,16 +11,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/engine/collector"
+	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/parser"
 )
 
-func getProfileFlags() map[string]string {
-	return map[string]string{
-		"cpu":    "-cpuprofile=cpu.out",
-		"memory": "-memprofile=memory.out",
-		"mutex":  "-mutexprofile=mutex.out",
-		"block":  "-blockprofile=block.out",
-	}
+var SupportedProfiles = []string{"cpu", "memory", "mutex", "block"}
+
+var ProfileFlags = map[string]string{
+	"cpu":    "-cpuprofile=cpu.out",
+	"memory": "-memprofile=memory.out",
+	"mutex":  "-mutexprofile=mutex.out",
+	"block":  "-blockprofile=block.out",
 }
 
 const (
@@ -32,30 +34,30 @@ const (
 
 // createBenchDirectories creates the main structure of the library's output.
 func createBenchDirectories(tagDir string, benchmarks []string) error {
-	binDir := filepath.Join(tagDir, shared.ProfileBinDir)
-	textDir := filepath.Join(tagDir, shared.ProfileTextDir)
+	binDir := filepath.Join(tagDir, internal.ProfileBinDir)
+	textDir := filepath.Join(tagDir, internal.ProfileTextDir)
 	descFile := filepath.Join(tagDir, descriptionFileName)
 
 	// Create main directories
-	if err := os.MkdirAll(binDir, shared.PermDir); err != nil {
+	if err := os.MkdirAll(binDir, internal.PermDir); err != nil {
 		return fmt.Errorf("failed to create bin directory: %w", err)
 	}
-	if err := os.MkdirAll(textDir, shared.PermDir); err != nil {
+	if err := os.MkdirAll(textDir, internal.PermDir); err != nil {
 		return fmt.Errorf("failed to create text directory: %w", err)
 	}
 
 	// Create benchmark subdirectories
 	for _, benchmark := range benchmarks {
-		if err := os.MkdirAll(filepath.Join(binDir, benchmark), shared.PermDir); err != nil {
+		if err := os.MkdirAll(filepath.Join(binDir, benchmark), internal.PermDir); err != nil {
 			return fmt.Errorf("failed to create bin subdirectory for %s: %w", benchmark, err)
 		}
-		if err := os.MkdirAll(filepath.Join(textDir, benchmark), shared.PermDir); err != nil {
+		if err := os.MkdirAll(filepath.Join(textDir, benchmark), internal.PermDir); err != nil {
 			return fmt.Errorf("failed to create text subdirectory for %s: %w", benchmark, err)
 		}
 	}
 
 	// Create description file
-	if err := os.WriteFile(descFile, []byte(""), shared.PermFile); err != nil {
+	if err := os.WriteFile(descFile, []byte(""), internal.PermFile); err != nil {
 		return fmt.Errorf("failed to create description file: %w", err)
 	}
 
@@ -66,14 +68,14 @@ func createBenchDirectories(tagDir string, benchmarks []string) error {
 // createProfileFunctionDirectories creates the structure for the code line level data collection.
 func createProfileFunctionDirectories(tagDir string, profiles, benchmarks []string) error {
 	for _, profile := range profiles {
-		profileDir := filepath.Join(tagDir, profile+shared.FunctionsDirSuffix)
-		if err := os.MkdirAll(profileDir, shared.PermDir); err != nil {
+		profileDir := filepath.Join(tagDir, profile+internal.FunctionsDirSuffix)
+		if err := os.MkdirAll(profileDir, internal.PermDir); err != nil {
 			return fmt.Errorf("failed to create profile directory %s: %w", profileDir, err)
 		}
 
 		for _, benchmark := range benchmarks {
 			benchmarkDir := filepath.Join(profileDir, benchmark)
-			if err := os.MkdirAll(benchmarkDir, shared.PermDir); err != nil {
+			if err := os.MkdirAll(benchmarkDir, internal.PermDir); err != nil {
 				return fmt.Errorf("failed to create benchmark directory %s: %w", benchmarkDir, err)
 			}
 		}
@@ -132,9 +134,8 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) (
 		fmt.Sprintf("-count=%d", count),
 	}
 
-	profileFlags := getProfileFlags()
 	for _, profile := range profiles {
-		flag, exists := profileFlags[profile]
+		flag, exists := ProfileFlags[profile]
 
 		if !exists {
 			return nil, fmt.Errorf("profile %s is not supported", profile)
@@ -148,9 +149,9 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) (
 
 // getOutputDirectories gets or creates the output directories.
 func getOutputDirectories(benchmarkName, tag string) (textDir string, binDir string) {
-	tagDir := filepath.Join(shared.MainDirOutput, tag)
-	textDir = filepath.Join(tagDir, shared.ProfileTextDir, benchmarkName)
-	binDir = filepath.Join(tagDir, shared.ProfileBinDir, benchmarkName)
+	tagDir := filepath.Join(internal.MainDirOutput, tag)
+	textDir = filepath.Join(tagDir, internal.ProfileTextDir, benchmarkName)
+	binDir = filepath.Join(tagDir, internal.ProfileBinDir, benchmarkName)
 
 	return textDir, binDir
 }
@@ -178,7 +179,7 @@ func runBenchmarkCommand(cmd []string, outputFile string, rootDir string) error 
 		return fmt.Errorf("💥 BENCHMARK COMMAND FAILED 💥\n%s", string(output))
 	}
 
-	return os.WriteFile(outputFile, output, shared.PermFile)
+	return os.WriteFile(outputFile, output, internal.PermFile)
 }
 
 // profileFlagToFile extracts the file name from a profile flag like "-cpuprofile=cpu.out".
@@ -238,10 +239,8 @@ func moveFileWithDelay(src, dst string, delay time.Duration) error {
 }
 
 func moveProfileFiles(benchmarkName string, profiles []string, rootDir string, binDir string) error {
-	profileFlags := getProfileFlags()
-
 	for _, profile := range profiles {
-		profileFile, ok := profileFlagToFile(profile, profileFlags)
+		profileFile, ok := profileFlagToFile(profile, ProfileFlags)
 		if !ok {
 			continue
 		}
@@ -313,12 +312,161 @@ type ProfilePaths struct {
 //   - bench/v1.0/cpu_functions/BenchmarkPool/function1.txt
 func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 	tagDir := filepath.Join("bench", tag)
-	profileTextFile := fmt.Sprintf("%s_%s.%s", benchmarkName, profile, shared.TextExtension)
+	profileTextFile := fmt.Sprintf("%s_%s.%s", benchmarkName, profile, internal.TextExtension)
 	profileBinFile := fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension)
 
 	return ProfilePaths{
 		ProfileTextFile:   filepath.Join(tagDir, "text", benchmarkName, profileTextFile),
 		ProfileBinaryFile: filepath.Join(tagDir, "bin", benchmarkName, profileBinFile),
-		FunctionDirectory: filepath.Join(tagDir, profile+shared.FunctionsDirSuffix, benchmarkName),
+		FunctionDirectory: filepath.Join(tagDir, profile+internal.FunctionsDirSuffix, benchmarkName),
 	}
+}
+
+// RunBenchmark runs a specific benchmark and collects all of its information.
+func runBenchmark(benchmarkName string, profiles []string, count int, tag string) error {
+	cmd, err := buildBenchmarkCommand(benchmarkName, profiles, count)
+	if err != nil {
+		return err
+	}
+
+	textDir, binDir := getOutputDirectories(benchmarkName, tag)
+
+	moduleRoot, err := internal.FindGoModuleRoot()
+	if err != nil {
+		return fmt.Errorf("failed to find Go module root: %w", err)
+	}
+	pkgDir, err := findBenchmarkPackageDir(moduleRoot, benchmarkName)
+	if err != nil {
+		return fmt.Errorf("failed to locate benchmark %s: %w", benchmarkName, err)
+	}
+
+	outputFile := filepath.Join(textDir, fmt.Sprintf("%s.%s", benchmarkName, internal.TextExtension))
+	if err = runBenchmarkCommand(cmd, outputFile, pkgDir); err != nil {
+		return err
+	}
+
+	if err = moveProfileFiles(benchmarkName, profiles, pkgDir, binDir); err != nil {
+		return err
+	}
+
+	return moveTestFiles(benchmarkName, pkgDir, binDir)
+}
+
+// processProfiles collects all pprof info for a specific benchmark and its specified profiles.
+func processProfiles(benchmarkName string, profiles []string, tag string) error {
+	tagDir := filepath.Join(internal.MainDirOutput, tag)
+	binDir := filepath.Join(tagDir, internal.ProfileBinDir, benchmarkName)
+	textDir := filepath.Join(tagDir, internal.ProfileTextDir, benchmarkName)
+
+	for _, profile := range profiles {
+		profileFile := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
+		if _, err := os.Stat(profileFile); err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				slog.Warn("Profile file not found", "file", profileFile)
+				continue
+			}
+			return fmt.Errorf("failed to stat profile file %s: %w", profileFile, err)
+		}
+
+		outputFile := filepath.Join(textDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, internal.TextExtension))
+		profileFunctionsDir := filepath.Join(tagDir, profile+internal.FunctionsDirSuffix, benchmarkName)
+
+		if err := collector.GetProfileTextOutput(profileFile, outputFile); err != nil {
+			return fmt.Errorf("failed to generate text profile for %s: %w", profile, err)
+		}
+
+		pngDesiredFilePath := filepath.Join(profileFunctionsDir, fmt.Sprintf("%s_%s.png", benchmarkName, profile))
+		if err := collector.GetPNGOutput(profileFile, pngDesiredFilePath); err != nil {
+			return fmt.Errorf("failed to generate PNG visualization for %s: %w", profile, err)
+		}
+
+		slog.Info("Processed profile", "profile", profile, "benchmark", benchmarkName)
+	}
+
+	return nil
+}
+
+func runBenchAndGetProfiles(benchArgs *internal.BenchArgs, benchmarkConfigs map[string]internal.FunctionFilter) error {
+	slog.Info("Starting benchmark pipeline...")
+
+	var functionFilter internal.FunctionFilter
+	globalFilter, hasGlobalFilter := benchmarkConfigs[internal.GlobalSign]
+	if hasGlobalFilter {
+		functionFilter = globalFilter
+	}
+
+	for _, benchmarkName := range benchArgs.Benchmarks {
+		slog.Info("Running benchmark", "Benchmark", benchmarkName)
+		if err := runBenchmark(benchmarkName, benchArgs.Profiles, benchArgs.Count, benchArgs.Tag); err != nil {
+			return fmt.Errorf("failed to run %s: %w", benchmarkName, err)
+		}
+
+		slog.Info("Processing profiles", "Benchmark", benchmarkName)
+		if err := processProfiles(benchmarkName, benchArgs.Profiles, benchArgs.Tag); err != nil {
+			return fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err)
+		}
+
+		slog.Info("Analyzing profile functions", "Benchmark", benchmarkName)
+
+		if !hasGlobalFilter {
+			functionFilter = benchmarkConfigs[benchmarkName]
+		}
+
+		args := &internal.CollectionArgs{
+			Tag:             benchArgs.Tag,
+			Profiles:        benchArgs.Profiles,
+			BenchmarkName:   benchmarkName,
+			BenchmarkConfig: functionFilter,
+		}
+
+		if err := collectProfileFunctions(args); err != nil {
+			return fmt.Errorf("failed to analyze profile functions for %s: %w", benchmarkName, err)
+		}
+
+		slog.Info("Completed pipeline for benchmark", "Benchmark", benchmarkName)
+	}
+
+	slog.Info(internal.InfoCollectionSuccess)
+	return nil
+}
+
+// SetupDirectories creates the structure of the library's output.
+func setupDirectories(tag string, benchmarks, profiles []string) error {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	tagDir := filepath.Join(currentDir, internal.MainDirOutput, tag)
+	err = internal.CleanOrCreateDir(tagDir)
+	if err != nil {
+		return fmt.Errorf("CleanOrCreateDir failed: %w", err)
+	}
+
+	if err = createBenchDirectories(tagDir, benchmarks); err != nil {
+		return err
+	}
+
+	return createProfileFunctionDirectories(tagDir, profiles, benchmarks)
+}
+
+// CollectProfileFunctions collects all pprof information for each function, according to configurations.
+func collectProfileFunctions(args *internal.CollectionArgs) error {
+	for _, profile := range args.Profiles {
+		paths := getProfilePaths(args.Tag, args.BenchmarkName, profile)
+		if err := os.MkdirAll(paths.FunctionDirectory, internal.PermDir); err != nil {
+			return fmt.Errorf("failed to create output directory: %w", err)
+		}
+
+		functions, err := parser.GetAllFunctionNames(paths.ProfileTextFile, args.BenchmarkConfig)
+		if err != nil {
+			return fmt.Errorf("failed to extract function names: %w", err)
+		}
+
+		if err = collector.GetFunctionsOutput(functions, paths.ProfileBinaryFile, paths.FunctionDirectory); err != nil {
+			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", err)
+		}
+	}
+
+	return nil
 }

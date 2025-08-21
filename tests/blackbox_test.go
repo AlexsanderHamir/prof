@@ -8,8 +8,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal/config"
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 )
 
 func TestConfig(t *testing.T) {
@@ -24,8 +23,8 @@ func TestConfig(t *testing.T) {
 			"BenchmarkStringProcessor_memory.png": newDefaultFieldsCheckExpected(),
 		}
 
-		cfg := config.Config{
-			FunctionFilter: map[string]config.FunctionFilter{
+		cfg := internal.Config{
+			FunctionFilter: map[string]internal.FunctionFilter{
 				benchName: {
 					IncludePrefixes: []string{"test-environment"},
 				},
@@ -59,8 +58,8 @@ func TestConfig(t *testing.T) {
 			"AddString.txt":                newDefaultFieldsCheckNotExpected(),
 		}
 
-		cfg := config.Config{
-			FunctionFilter: map[string]config.FunctionFilter{
+		cfg := internal.Config{
+			FunctionFilter: map[string]internal.FunctionFilter{
 				benchName: {
 					IgnoreFunctions: []string{"BenchmarkStringProcessor", "ProcessStrings", "AddString"},
 				},
@@ -96,8 +95,8 @@ func TestConfig(t *testing.T) {
 			"AddString.txt":                       newDefaultFieldsCheckNotExpected(),
 		}
 
-		cfg := config.Config{
-			FunctionFilter: map[string]config.FunctionFilter{
+		cfg := internal.Config{
+			FunctionFilter: map[string]internal.FunctionFilter{
 				benchName: {
 					IncludePrefixes: []string{"test-environment"},
 					IgnoreFunctions: []string{"BenchmarkStringProcessor", "ProcessStrings", "AddString"},
@@ -127,7 +126,7 @@ func TestConfig(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
-			cfg:                     config.Config{},
+			cfg:                     internal.Config{},
 			withConfig:              false,
 			expectNonSpecifiedFiles: true,
 			noConfigFile:            false,
@@ -147,7 +146,7 @@ func TestConfig(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
-			cfg:                     config.Config{},
+			cfg:                     internal.Config{},
 			withConfig:              false,
 			expectNonSpecifiedFiles: true,
 			noConfigFile:            true,
@@ -169,7 +168,7 @@ func TestProfileValidation(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		profileName := "fakeProfileName"
 		cmd := []string{
-			shared.AUTOCMD,
+			internal.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", fmt.Sprintf("%s,%s,%s", cpuProfile, memProfile, profileName),
 			"--count", count,
@@ -178,7 +177,7 @@ func TestProfileValidation(t *testing.T) {
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
-			cfg:                     config.Config{},
+			cfg:                     internal.Config{},
 			withConfig:              false,
 			expectNonSpecifiedFiles: true,
 			noConfigFile:            true,
@@ -198,7 +197,7 @@ func TestProfileValidation(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		profileName := "goroutine"
 		cmd := []string{
-			shared.AUTOCMD,
+			internal.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", profileName,
 			"--count", count,
@@ -207,7 +206,7 @@ func TestProfileValidation(t *testing.T) {
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
-			cfg:                     config.Config{},
+			cfg:                     internal.Config{},
 			withConfig:              false,
 			expectNonSpecifiedFiles: true,
 			noConfigFile:            true,
@@ -226,7 +225,7 @@ func TestProfileValidation(t *testing.T) {
 	label = "CollectedProfile"
 	t.Run(label, func(t *testing.T) {
 		cmd := []string{
-			shared.AUTOCMD,
+			internal.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", fmt.Sprintf("%s,%s,%s", cpuProfile, memProfile, blockProfile),
 			"--count", count,
@@ -235,7 +234,7 @@ func TestProfileValidation(t *testing.T) {
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
-			cfg:                     config.Config{},
+			cfg:                     internal.Config{},
 			withConfig:              false,
 			expectNonSpecifiedFiles: true,
 			noConfigFile:            true,
@@ -256,7 +255,7 @@ func TestCommandValidation(t *testing.T) {
 	label := "EmptyBenchmarkSlice"
 	t.Run(label, func(t *testing.T) {
 		cmd := []string{
-			shared.AUTOCMD,
+			internal.AUTOCMD,
 			"--benchmarks", "",
 			"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
 			"--count", count,
@@ -265,7 +264,7 @@ func TestCommandValidation(t *testing.T) {
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
-			cfg:                     config.Config{},
+			cfg:                     internal.Config{},
 			withConfig:              false,
 			expectNonSpecifiedFiles: true,
 			noConfigFile:            true,
@@ -284,7 +283,7 @@ func TestCommandValidation(t *testing.T) {
 	label = "EmptyProfileSlice"
 	t.Run(label, func(t *testing.T) {
 		cmd := []string{
-			shared.AUTOCMD,
+			internal.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", "",
 			"--count", count,
@@ -293,7 +292,7 @@ func TestCommandValidation(t *testing.T) {
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
-			cfg:                     config.Config{},
+			cfg:                     internal.Config{},
 			withConfig:              false,
 			expectNonSpecifiedFiles: true,
 			noConfigFile:            true,
@@ -320,7 +319,7 @@ func TestManualCommand(t *testing.T) {
 	buildProf(t, binaryPath, root)
 
 	t.Cleanup(func() {
-		benchPath := path.Join(root, testDirName, shared.MainDirOutput)
+		benchPath := path.Join(root, testDirName, internal.MainDirOutput)
 		if err = os.RemoveAll(benchPath); err != nil {
 			t.Logf("Failed to clean up bench: %v", err)
 		}
@@ -333,7 +332,7 @@ func TestManualCommand(t *testing.T) {
 	label := "BasicRun"
 	t.Run(label, func(t *testing.T) {
 		args := []string{
-			shared.MANUALCMD,
+			internal.MANUALCMD,
 			"--tag", tag,
 			"assets/cpu.out",
 			"assets/memory.out",
@@ -393,7 +392,7 @@ func TestTrackerBasicRun(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		args := []string{
 			"track",
-			shared.AUTOCMD,
+			internal.AUTOCMD,
 			"--base", "tag1",
 			"--current", "tag2",
 			"--bench-name", benchName,
@@ -414,7 +413,7 @@ func TestTrackerBasicRun(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		args := []string{
 			"track",
-			shared.MANUALCMD,
+			internal.MANUALCMD,
 			"--base", baseTag,
 			"--current", currentTag,
 			"--output-format", outputFormat,

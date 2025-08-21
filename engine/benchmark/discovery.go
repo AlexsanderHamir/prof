@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 //
 //	func BenchmarkXxx(b *testing.B) { ... }
 func DiscoverBenchmarks() ([]string, error) {
-	root, err := shared.FindGoModuleRoot()
+	root, err := internal.FindGoModuleRoot()
 	if err != nil {
 		return nil, fmt.Errorf("failed to locate module root: %w", err)
 	}

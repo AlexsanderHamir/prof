@@ -3,7 +3,7 @@ package tracker
 import (
 	"math"
 
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 )
 
 const (
@@ -22,7 +22,7 @@ func signPrefix(val float64) string {
 
 func (cr *FunctionChangeResult) recommendation() string {
 	switch cr.ChangeType {
-	case shared.IMPROVEMENT:
+	case internal.IMPROVEMENT:
 		absChange := math.Abs(cr.FlatChangePercent)
 		switch {
 		case absChange > significantThreshold:
@@ -32,7 +32,7 @@ func (cr *FunctionChangeResult) recommendation() string {
 		default:
 			return "Minor improvement detected. Continue monitoring."
 		}
-	case shared.REGRESSION:
+	case internal.REGRESSION:
 		switch {
 		case cr.FlatChangePercent > criticalThreshold:
 			return "Critical regression! Immediate investigation required."

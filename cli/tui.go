@@ -10,9 +10,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlexsanderHamir/prof/engine/benchmark"
-	"github.com/AlexsanderHamir/prof/internal/args"
-	"github.com/AlexsanderHamir/prof/internal/config"
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -45,12 +43,12 @@ func createTuiTrackAutoCmd() *cobra.Command {
 
 // discoverAvailableTags scans the bench directory for existing tags
 func discoverAvailableTags() ([]string, error) {
-	root, err := shared.FindGoModuleRoot()
+	root, err := internal.FindGoModuleRoot()
 	if err != nil {
 		return nil, fmt.Errorf("failed to locate module root: %w", err)
 	}
 
-	benchDir := filepath.Join(root, shared.MainDirOutput)
+	benchDir := filepath.Join(root, internal.MainDirOutput)
 	entries, err := os.ReadDir(benchDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -71,12 +69,12 @@ func discoverAvailableTags() ([]string, error) {
 
 // discoverAvailableBenchmarks scans a specific tag directory for available benchmarks
 func discoverAvailableBenchmarks(tag string) ([]string, error) {
-	root, err := shared.FindGoModuleRoot()
+	root, err := internal.FindGoModuleRoot()
 	if err != nil {
 		return nil, fmt.Errorf("failed to locate module root: %w", err)
 	}
 
-	benchDir := filepath.Join(root, shared.MainDirOutput, tag, shared.ProfileTextDir)
+	benchDir := filepath.Join(root, internal.MainDirOutput, tag, internal.ProfileTextDir)
 	entries, err := os.ReadDir(benchDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -97,12 +95,12 @@ func discoverAvailableBenchmarks(tag string) ([]string, error) {
 
 // discoverAvailableProfiles scans a specific tag and benchmark for available profile types
 func discoverAvailableProfiles(tag, benchmarkName string) ([]string, error) {
-	root, err := shared.FindGoModuleRoot()
+	root, err := internal.FindGoModuleRoot()
 	if err != nil {
 		return nil, fmt.Errorf("failed to locate module root: %w", err)
 	}
 
-	benchDir := filepath.Join(root, shared.MainDirOutput, tag, shared.ProfileTextDir, benchmarkName)
+	benchDir := filepath.Join(root, internal.MainDirOutput, tag, internal.ProfileTextDir, benchmarkName)
 	entries, err := os.ReadDir(benchDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -133,11 +131,11 @@ func runTUI(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to discover benchmarks: %w", err)
 	}
+
 	if len(benchNames) == 0 {
 		return errors.New("no benchmarks found in this module (look for func BenchmarkXxx(b *testing.B) in *_test.go)")
 	}
 
-	// Select benchmarks
 	var selectedBenches []string
 	benchPrompt := &survey.MultiSelect{
 		Message:  "Select benchmarks to run:",
@@ -148,19 +146,18 @@ func runTUI(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	// Select profiles
-	profilesOptions := []string{"cpu", "memory", "mutex", "block"}
+	profilesOptions := benchmark.SupportedProfiles
 	var selectedProfiles []string
 	profilesPrompt := &survey.MultiSelect{
 		Message: "Select profiles:",
 		Options: profilesOptions,
 		Default: []string{"cpu"},
 	}
+
 	if err = survey.AskOne(profilesPrompt, &selectedProfiles, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
 
-	// Count
 	var countStr string
 	countPrompt := &survey.Input{Message: "Number of runs (count):", Default: "1"}
 	if err = survey.AskOne(countPrompt, &countStr, survey.WithValidator(survey.Required)); err != nil {
@@ -171,32 +168,13 @@ func runTUI(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("invalid count: %s", countStr)
 	}
 
-	// Tag
 	var tagStr string
 	tagPrompt := &survey.Input{Message: "Tag name (used to group results under bench/<tag>):"}
 	if err = survey.AskOne(tagPrompt, &tagStr, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
 
-	cfg, err := config.LoadFromFile(shared.ConfigFilename)
-	if err != nil {
-		// Not fatal; proceed without function filters
-		cfg = &config.Config{}
-	}
-
-	if err = benchmark.SetupDirectories(tagStr, selectedBenches, selectedProfiles); err != nil {
-		return fmt.Errorf("failed to setup directories: %w", err)
-	}
-
-	benchArgs := &args.BenchArgs{
-		Benchmarks: selectedBenches,
-		Profiles:   selectedProfiles,
-		Count:      runCount,
-		Tag:        tagStr,
-	}
-
-	printConfiguration(benchArgs, cfg.FunctionFilter)
-	if err = runBenchAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
+	if err = benchmark.RunBenchmarks(selectedBenches, selectedProfiles, tagStr, runCount); err != nil {
 		return err
 	}
 

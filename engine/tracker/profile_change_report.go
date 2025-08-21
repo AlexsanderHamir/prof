@@ -9,7 +9,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/AlexsanderHamir/prof/internal/shared"
+	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/microcosm-cc/bluemonday"
 )
 
@@ -22,9 +22,9 @@ func (r *ProfileChangeReport) printSummary() {
 	// Separate changes by type
 	for _, change := range r.FunctionChanges {
 		switch change.ChangeType {
-		case shared.REGRESSION:
+		case internal.REGRESSION:
 			regressionList = append(regressionList, change)
-		case shared.IMPROVEMENT:
+		case internal.IMPROVEMENT:
 			improvementList = append(improvementList, change)
 		default:
 			stable++
@@ -74,9 +74,9 @@ func (r *ProfileChangeReport) printDetailedReport() {
 	var regressions, improvements, stable int
 	for _, change := range changes {
 		switch change.ChangeType {
-		case shared.REGRESSION:
+		case internal.REGRESSION:
 			regressions++
-		case shared.IMPROVEMENT:
+		case internal.IMPROVEMENT:
 			improvements++
 		default:
 			stable++
@@ -97,9 +97,9 @@ func (r *ProfileChangeReport) printDetailedReport() {
 	sort.Slice(changes, func(i, j int) bool {
 		// Primary sort: by change type priority
 		typePriority := map[string]int{
-			shared.REGRESSION:  regressionPriority,
-			shared.IMPROVEMENT: improvementPriority,
-			shared.STABLE:      stablePriority,
+			internal.REGRESSION:  regressionPriority,
+			internal.IMPROVEMENT: improvementPriority,
+			internal.STABLE:      stablePriority,
 		}
 
 		if typePriority[changes[i].ChangeType] != typePriority[changes[j].ChangeType] {
@@ -132,9 +132,9 @@ func (r *ProfileChangeReport) generateHTMLSummary(outputPath string) error {
 
 	for _, change := range r.FunctionChanges {
 		switch change.ChangeType {
-		case shared.REGRESSION:
+		case internal.REGRESSION:
 			regressionList = append(regressionList, change)
-		case shared.IMPROVEMENT:
+		case internal.IMPROVEMENT:
 			improvementList = append(improvementList, change)
 		default:
 			stable++
@@ -238,9 +238,9 @@ func (r *ProfileChangeReport) generateDetailedHTMLReport(outputPath string) erro
 	var regressions, improvements, stable int
 	for _, change := range changes {
 		switch change.ChangeType {
-		case shared.REGRESSION:
+		case internal.REGRESSION:
 			regressions++
-		case shared.IMPROVEMENT:
+		case internal.IMPROVEMENT:
 			improvements++
 		default:
 			stable++
@@ -249,9 +249,9 @@ func (r *ProfileChangeReport) generateDetailedHTMLReport(outputPath string) erro
 
 	// Sort: regressions → improvements → stable, each by magnitude
 	typePriority := map[string]int{
-		shared.REGRESSION:  regressionPriority,
-		shared.IMPROVEMENT: improvementPriority,
-		shared.STABLE:      stablePriority,
+		internal.REGRESSION:  regressionPriority,
+		internal.IMPROVEMENT: improvementPriority,
+		internal.STABLE:      stablePriority,
 	}
 
 	sort.Slice(changes, func(i, j int) bool {
@@ -351,9 +351,9 @@ func (r *ProfileChangeReport) generateJSONSummary(outputPath string) error {
 
 	for _, change := range r.FunctionChanges {
 		switch change.ChangeType {
-		case shared.REGRESSION:
+		case internal.REGRESSION:
 			regressionList = append(regressionList, change)
-		case shared.IMPROVEMENT:
+		case internal.IMPROVEMENT:
 			improvementList = append(improvementList, change)
 		default:
 			stable++
@@ -399,9 +399,9 @@ func (r *ProfileChangeReport) generateDetailedJSONReport(outputPath string) erro
 	var regressions, improvements, stable int
 	for _, change := range changes {
 		switch change.ChangeType {
-		case shared.REGRESSION:
+		case internal.REGRESSION:
 			regressions++
-		case shared.IMPROVEMENT:
+		case internal.IMPROVEMENT:
 			improvements++
 		default:
 			stable++
@@ -410,9 +410,9 @@ func (r *ProfileChangeReport) generateDetailedJSONReport(outputPath string) erro
 
 	// Sort: regressions → improvements → stable, each by magnitude
 	typePriority := map[string]int{
-		shared.REGRESSION:  regressionPriority,
-		shared.IMPROVEMENT: improvementPriority,
-		shared.STABLE:      stablePriority,
+		internal.REGRESSION:  regressionPriority,
+		internal.IMPROVEMENT: improvementPriority,
+		internal.STABLE:      stablePriority,
 	}
 
 	sort.Slice(changes, func(i, j int) bool {
@@ -474,7 +474,7 @@ func (r *ProfileChangeReport) ChooseOutputFormat(outputFormat string) {
 func (r *ProfileChangeReport) WorstRegression() *FunctionChangeResult {
 	var worst *FunctionChangeResult
 	for _, change := range r.FunctionChanges {
-		if change.ChangeType != shared.REGRESSION {
+		if change.ChangeType != internal.REGRESSION {
 			continue
 		}
 		if worst == nil || change.FlatChangePercent > worst.FlatChangePercent {
