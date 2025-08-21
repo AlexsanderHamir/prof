@@ -13,6 +13,7 @@ import (
 
 	"github.com/AlexsanderHamir/prof/engine/collector"
 	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/parser"
 )
 
 var SupportedProfiles = []string{"cpu", "memory", "mutex", "block"}
@@ -351,8 +352,8 @@ func runBenchmark(benchmarkName string, profiles []string, count int, tag string
 	return moveTestFiles(benchmarkName, pkgDir, binDir)
 }
 
-// ProcessProfiles collects all pprof info for a specific benchmark and its specified profiles.
-func ProcessProfiles(benchmarkName string, profiles []string, tag string) error {
+// processProfiles collects all pprof info for a specific benchmark and its specified profiles.
+func processProfiles(benchmarkName string, profiles []string, tag string) error {
 	tagDir := filepath.Join(internal.MainDirOutput, tag)
 	binDir := filepath.Join(tagDir, internal.ProfileBinDir, benchmarkName)
 	textDir := filepath.Join(tagDir, internal.ProfileTextDir, benchmarkName)
@@ -380,6 +381,91 @@ func ProcessProfiles(benchmarkName string, profiles []string, tag string) error 
 		}
 
 		slog.Info("Processed profile", "profile", profile, "benchmark", benchmarkName)
+	}
+
+	return nil
+}
+
+func runBenchAndGetProfiles(benchArgs *internal.BenchArgs, benchmarkConfigs map[string]internal.FunctionFilter) error {
+	slog.Info("Starting benchmark pipeline...")
+
+	var functionFilter internal.FunctionFilter
+	globalFilter, hasGlobalFilter := benchmarkConfigs[internal.GlobalSign]
+	if hasGlobalFilter {
+		functionFilter = globalFilter
+	}
+
+	for _, benchmarkName := range benchArgs.Benchmarks {
+		slog.Info("Running benchmark", "Benchmark", benchmarkName)
+		if err := runBenchmark(benchmarkName, benchArgs.Profiles, benchArgs.Count, benchArgs.Tag); err != nil {
+			return fmt.Errorf("failed to run %s: %w", benchmarkName, err)
+		}
+
+		slog.Info("Processing profiles", "Benchmark", benchmarkName)
+		if err := processProfiles(benchmarkName, benchArgs.Profiles, benchArgs.Tag); err != nil {
+			return fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err)
+		}
+
+		slog.Info("Analyzing profile functions", "Benchmark", benchmarkName)
+
+		if !hasGlobalFilter {
+			functionFilter = benchmarkConfigs[benchmarkName]
+		}
+
+		args := &internal.CollectionArgs{
+			Tag:             benchArgs.Tag,
+			Profiles:        benchArgs.Profiles,
+			BenchmarkName:   benchmarkName,
+			BenchmarkConfig: functionFilter,
+		}
+
+		if err := collectProfileFunctions(args); err != nil {
+			return fmt.Errorf("failed to analyze profile functions for %s: %w", benchmarkName, err)
+		}
+
+		slog.Info("Completed pipeline for benchmark", "Benchmark", benchmarkName)
+	}
+
+	slog.Info(internal.InfoCollectionSuccess)
+	return nil
+}
+
+// SetupDirectories creates the structure of the library's output.
+func setupDirectories(tag string, benchmarks, profiles []string) error {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	tagDir := filepath.Join(currentDir, internal.MainDirOutput, tag)
+	err = internal.CleanOrCreateDir(tagDir)
+	if err != nil {
+		return fmt.Errorf("CleanOrCreateDir failed: %w", err)
+	}
+
+	if err = createBenchDirectories(tagDir, benchmarks); err != nil {
+		return err
+	}
+
+	return createProfileFunctionDirectories(tagDir, profiles, benchmarks)
+}
+
+// CollectProfileFunctions collects all pprof information for each function, according to configurations.
+func collectProfileFunctions(args *internal.CollectionArgs) error {
+	for _, profile := range args.Profiles {
+		paths := getProfilePaths(args.Tag, args.BenchmarkName, profile)
+		if err := os.MkdirAll(paths.FunctionDirectory, internal.PermDir); err != nil {
+			return fmt.Errorf("failed to create output directory: %w", err)
+		}
+
+		functions, err := parser.GetAllFunctionNames(paths.ProfileTextFile, args.BenchmarkConfig)
+		if err != nil {
+			return fmt.Errorf("failed to extract function names: %w", err)
+		}
+
+		if err = collector.GetFunctionsOutput(functions, paths.ProfileBinaryFile, paths.FunctionDirectory); err != nil {
+			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", err)
+		}
 	}
 
 	return nil
