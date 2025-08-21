@@ -26,10 +26,11 @@ var ProfileFlags = map[string]string{
 }
 
 const (
-	binExtension        = "out"
-	descriptionFileName = "description.txt"
-	moduleNotFoundMsg   = "go: cannot find main module"
-	waitForFiles        = 100
+	binExtension           = "out"
+	descriptionFileName    = "description.txt"
+	moduleNotFoundMsg      = "go: cannot find main module"
+	waitForFiles           = 100
+	descritpionFileMessage = "The explanation for this profilling session goes here"
 )
 
 // createBenchDirectories creates the main structure of the library's output.
@@ -39,25 +40,25 @@ func createBenchDirectories(tagDir string, benchmarks []string) error {
 	descFile := filepath.Join(tagDir, descriptionFileName)
 
 	// Create main directories
-	if err := os.MkdirAll(binDir, internal.PermDir); err != nil {
+	if err := os.Mkdir(binDir, internal.PermDir); err != nil {
 		return fmt.Errorf("failed to create bin directory: %w", err)
 	}
-	if err := os.MkdirAll(textDir, internal.PermDir); err != nil {
+	if err := os.Mkdir(textDir, internal.PermDir); err != nil {
 		return fmt.Errorf("failed to create text directory: %w", err)
 	}
 
 	// Create benchmark subdirectories
 	for _, benchmark := range benchmarks {
-		if err := os.MkdirAll(filepath.Join(binDir, benchmark), internal.PermDir); err != nil {
+		if err := os.Mkdir(filepath.Join(binDir, benchmark), internal.PermDir); err != nil {
 			return fmt.Errorf("failed to create bin subdirectory for %s: %w", benchmark, err)
 		}
-		if err := os.MkdirAll(filepath.Join(textDir, benchmark), internal.PermDir); err != nil {
+		if err := os.Mkdir(filepath.Join(textDir, benchmark), internal.PermDir); err != nil {
 			return fmt.Errorf("failed to create text subdirectory for %s: %w", benchmark, err)
 		}
 	}
 
 	// Create description file
-	if err := os.WriteFile(descFile, []byte(""), internal.PermFile); err != nil {
+	if err := os.WriteFile(descFile, []byte(descritpionFileMessage), internal.PermFile); err != nil {
 		return fmt.Errorf("failed to create description file: %w", err)
 	}
 
@@ -67,16 +68,16 @@ func createBenchDirectories(tagDir string, benchmarks []string) error {
 
 // createProfileFunctionDirectories creates the structure for the code line level data collection.
 func createProfileFunctionDirectories(tagDir string, profiles, benchmarks []string) error {
-	for _, profile := range profiles {
-		profileDir := filepath.Join(tagDir, profile+internal.FunctionsDirSuffix)
-		if err := os.MkdirAll(profileDir, internal.PermDir); err != nil {
-			return fmt.Errorf("failed to create profile directory %s: %w", profileDir, err)
+	for _, profileName := range profiles {
+		profileDirPath := filepath.Join(tagDir, profileName+internal.FunctionsDirSuffix)
+		if err := os.Mkdir(profileDirPath, internal.PermDir); err != nil {
+			return fmt.Errorf("failed to create profile directory %s: %w", profileDirPath, err)
 		}
 
 		for _, benchmark := range benchmarks {
-			benchmarkDir := filepath.Join(profileDir, benchmark)
-			if err := os.MkdirAll(benchmarkDir, internal.PermDir); err != nil {
-				return fmt.Errorf("failed to create benchmark directory %s: %w", benchmarkDir, err)
+			benchmarkDirPath := filepath.Join(profileDirPath, benchmark)
+			if err := os.Mkdir(benchmarkDirPath, internal.PermDir); err != nil {
+				return fmt.Errorf("failed to create benchmark directory %s: %w", benchmarkDirPath, err)
 			}
 		}
 	}
@@ -97,31 +98,37 @@ func findBenchmarkPackageDir(moduleRoot, benchmarkName string) (string, error) {
 		}
 		if d.IsDir() {
 			base := filepath.Base(path)
-			// skip common vendor-like directories
-			if strings.HasPrefix(base, ".") || base == "vendor" || base == "node_modules" {
+			if strings.HasPrefix(base, ".") || base == "vendor" {
 				return filepath.SkipDir
 			}
 			return nil
 		}
+
 		if !strings.HasSuffix(path, "_test.go") {
 			return nil
 		}
+
 		data, readErr := os.ReadFile(path)
 		if readErr != nil {
 			return readErr
 		}
+
 		if pattern.Find(data) != nil {
 			foundDir = filepath.Dir(path)
-			return errors.New("FOUND")
+			return nil
 		}
+
 		return nil
 	})
-	if err != nil && err.Error() != "FOUND" {
+
+	if err != nil {
 		return "", err
 	}
+
 	if foundDir == "" {
 		return "", fmt.Errorf("benchmark %s not found in module", benchmarkName)
 	}
+
 	return foundDir, nil
 }
 
@@ -136,7 +143,6 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) (
 
 	for _, profile := range profiles {
 		flag, exists := ProfileFlags[profile]
-
 		if !exists {
 			return nil, fmt.Errorf("profile %s is not supported", profile)
 		}
@@ -147,8 +153,8 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) (
 	return cmd, nil
 }
 
-// getOutputDirectories gets or creates the output directories.
-func getOutputDirectories(benchmarkName, tag string) (textDir string, binDir string) {
+// getOutputDirectoriesPath returns the paths of the necessary output directories.
+func getOutputDirectoriesPath(benchmarkName, tag string) (textDir string, binDir string) {
 	tagDir := filepath.Join(internal.MainDirOutput, tag)
 	textDir = filepath.Join(tagDir, internal.ProfileTextDir, benchmarkName)
 	binDir = filepath.Join(tagDir, internal.ProfileBinDir, benchmarkName)
@@ -182,6 +188,8 @@ func runBenchmarkCommand(cmd []string, outputFile string, rootDir string) error 
 	return os.WriteFile(outputFile, output, internal.PermFile)
 }
 
+// TODO - I don't understand why this is necessary
+//
 // profileFlagToFile extracts the file name from a profile flag like "-cpuprofile=cpu.out".
 func profileFlagToFile(profile string, profileFlags map[string]string) (string, bool) {
 	flag, exists := profileFlags[profile]
@@ -329,12 +337,13 @@ func runBenchmark(benchmarkName string, profiles []string, count int, tag string
 		return err
 	}
 
-	textDir, binDir := getOutputDirectories(benchmarkName, tag)
+	textDir, binDir := getOutputDirectoriesPath(benchmarkName, tag)
 
 	moduleRoot, err := internal.FindGoModuleRoot()
 	if err != nil {
 		return fmt.Errorf("failed to find Go module root: %w", err)
 	}
+
 	pkgDir, err := findBenchmarkPackageDir(moduleRoot, benchmarkName)
 	if err != nil {
 		return fmt.Errorf("failed to locate benchmark %s: %w", benchmarkName, err)
@@ -438,9 +447,9 @@ func setupDirectories(tag string, benchmarks, profiles []string) error {
 	}
 
 	tagDir := filepath.Join(currentDir, internal.MainDirOutput, tag)
-	err = internal.CleanOrCreateDir(tagDir)
+	err = internal.CleanOrCreateTag(tagDir)
 	if err != nil {
-		return fmt.Errorf("CleanOrCreateDir failed: %w", err)
+		return fmt.Errorf("CleanOrCreateTag failed: %w", err)
 	}
 
 	if err = createBenchDirectories(tagDir, benchmarks); err != nil {
