@@ -14,12 +14,11 @@ type ProfileData struct {
 	Flat  map[string]int64
 	Cum   map[string]int64
 	Total int64
-	// Pre-calculated percentages for easy access
+
 	FlatPercentages map[string]float64
 	CumPercentages  map[string]float64
 	SumPercentages  map[string]float64
-	// Sorted entries for easy iteration
-	SortedEntries []FuncEntry
+	SortedEntries   []FuncEntry
 }
 
 // FuncEntry represents a function with its flat value, sorted by flat value (descending)

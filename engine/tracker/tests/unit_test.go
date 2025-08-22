@@ -48,8 +48,8 @@ func TestTrackAuto(t *testing.T) {
 }
 
 func TestTrackManual(t *testing.T) {
-	filePath1 := "bench/tag1/text/BenchmarkGenPool/BenchmarkGenPool_cpu.txt"
-	filePath2 := "bench/tag2/text/BenchmarkGenPool/BenchmarkGenPool_cpu.txt"
+	filePath1 := "bench/tag1/bin/BenchmarkGenPool/BenchmarkGenPool_cpu.out"
+	filePath2 := "bench/tag2/bin/BenchmarkGenPool/BenchmarkGenPool_cpu.out"
 
 	selections := tracker.Selections{
 		Baseline: filePath1,

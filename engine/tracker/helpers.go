@@ -148,7 +148,7 @@ func (cr *FunctionChangeResult) writeImpactAssessment(report *strings.Builder) {
 }
 
 func getBinFilesLocations(selections *Selections) (string, string) {
-	fileName := fmt.Sprintf("%s_%s.txt", selections.BenchmarkName, selections.ProfileType)
+	fileName := fmt.Sprintf("%s_%s.out", selections.BenchmarkName, selections.ProfileType)
 	binFilePath1BaseLine := filepath.Join(internal.MainDirOutput, selections.Baseline, internal.ProfileBinDir, selections.BenchmarkName, fileName)
 	binFilePath2Current := filepath.Join(internal.MainDirOutput, selections.Current, internal.ProfileBinDir, selections.BenchmarkName, fileName)
 
