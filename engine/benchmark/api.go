@@ -54,7 +54,7 @@ func RunBenchmarks(benchmarks, profiles []string, tag string, count int) error {
 func DiscoverBenchmarks(scope string) ([]string, error) {
 	var searchRoot string
 	var err error
-	
+
 	if scope != "" {
 		// Use the provided scope directory
 		searchRoot = scope
