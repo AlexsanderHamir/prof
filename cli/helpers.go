@@ -37,6 +37,10 @@ var (
 const (
 	tuiPageSize          = 20
 	minTagsForComparison = 2
+
+	// 3 occurrences requires a const
+	base    = "base"
+	current = "current"
 )
 
 // CreateRootCmd creates and returns the root cobra command.
@@ -69,8 +73,8 @@ func createToolsCmd() *cobra.Command {
 }
 
 func createBenchStatCmd() *cobra.Command {
-	baseTagFlag := "base"
-	currentFlag := "current"
+	baseTagFlag := base
+	currentFlag := current
 	shortExplanation := "runs benchstat on txt collected data."
 
 	cmd := &cobra.Command{
