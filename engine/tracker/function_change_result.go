@@ -7,7 +7,7 @@ import (
 )
 
 // Helper method to get a summary
-func (cr *FunctionChangeResult) Summary() string {
+func (cr *FunctionChangeResult) summary() string {
 	sign := ""
 	if cr.FlatChangePercent > 0 {
 		sign = "+"
