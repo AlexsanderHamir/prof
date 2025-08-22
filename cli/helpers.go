@@ -37,6 +37,10 @@ var (
 const (
 	tuiPageSize          = 20
 	minTagsForComparison = 2
+
+	// 3 occurrences requires a const
+	base    = "base"
+	current = "current"
 )
 
 // CreateRootCmd creates and returns the root cobra command.
@@ -51,8 +55,41 @@ func CreateRootCmd() *cobra.Command {
 	rootCmd.AddCommand(createTuiCmd())
 	rootCmd.AddCommand(createSetupCmd())
 	rootCmd.AddCommand(createTrackCmd())
+	rootCmd.AddCommand(createToolsCmd())
 
 	return rootCmd
+}
+
+func createToolsCmd() *cobra.Command {
+	shortExplanation := "Offers many tools that can easily operate on the collected data."
+	cmd := &cobra.Command{
+		Use:   "tools",
+		Short: shortExplanation,
+	}
+
+	cmd.AddCommand(createBenchStatCmd())
+
+	return cmd
+}
+
+func createBenchStatCmd() *cobra.Command {
+	baseTagFlag := base
+	currentFlag := current
+	shortExplanation := "runs benchstat on txt collected data."
+
+	cmd := &cobra.Command{
+		Use:   "benchstats",
+		Short: shortExplanation,
+		// RunE: ,
+	}
+
+	cmd.Flags().StringVar(&Baseline, baseTagFlag, "", "Name of the baseline tag")
+	cmd.Flags().StringVar(&Current, currentFlag, "", "Name of the current tag")
+
+	_ = cmd.MarkFlagRequired(baseTagFlag)
+	_ = cmd.MarkFlagRequired(currentFlag)
+
+	return cmd
 }
 
 func createProfManual() *cobra.Command {
