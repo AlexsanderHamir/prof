@@ -104,7 +104,7 @@ func GetAllFunctionNames(filePath string, filter internal.FunctionFilter) (names
 			continue
 		}
 
-		if funcName := extractFunctionName(line, filter.IncludePrefixes, ignoreSet); funcName != "" {
+		if funcName := ExtractFunctionName(line, filter.IncludePrefixes, ignoreSet); funcName != "" {
 			names = append(names, funcName)
 		}
 	}
