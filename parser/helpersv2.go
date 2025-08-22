@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
 	pprofprofile "github.com/google/pprof/profile"
 )
@@ -165,4 +166,40 @@ func calculateAllPercentages(entries []FuncEntry, cum map[string]int64, total in
 		cumPercentages[fn] = cumPct
 		sumPercentages[fn] = running
 	}
+}
+
+// extractSimpleFunctionName extracts just the function name from a full function path
+func extractSimpleFunctionName(fullPath string) string {
+	// Handle cases like "github.com/user/pkg.(*Type).Method" => Method
+
+	// Split by dots and get the last part
+	parts := strings.Split(fullPath, ".")
+	if len(parts) == 0 {
+		return ""
+	}
+
+	lastPart := parts[len(parts)-1]
+
+	// Handle method calls like "(*Type).Method"
+	if strings.Contains(lastPart, ").") {
+		methodParts := strings.Split(lastPart, ").")
+		if len(methodParts) > 1 {
+			return methodParts[1]
+		}
+	}
+
+	// Handle generic types like "Type[Param].Method"
+	if strings.Contains(lastPart, "].)") {
+		methodParts := strings.Split(lastPart, "].)")
+		if len(methodParts) > 1 {
+			return methodParts[1]
+		}
+	}
+
+	// Remove any trailing parentheses and parameters
+	if idx := strings.Index(lastPart, "("); idx != -1 {
+		lastPart = lastPart[:idx]
+	}
+
+	return lastPart
 }

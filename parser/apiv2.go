@@ -1,5 +1,10 @@
 package parser
 
+import (
+	"github.com/AlexsanderHamir/prof/internal"
+)
+
+// TurnLinesIntoObjectsV2 turn profile data from a .pprof file into line objects.
 func TurnLinesIntoObjectsV2(profilePath string) ([]*LineObj, error) {
 	profileData, err := extractProfileData(profilePath)
 	if err != nil {
@@ -21,4 +26,37 @@ func TurnLinesIntoObjectsV2(profilePath string) ([]*LineObj, error) {
 	}
 
 	return lineObjs, nil
+}
+
+// GetAllFunctionNamesV2 extracts all function names from a profile (.pprof) file.
+func GetAllFunctionNamesV2(profilePath string, filter internal.FunctionFilter) (names []string, err error) {
+	profileData, err := extractProfileData(profilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	ignoreSet := getFilterSets(filter.IgnoreFunctions)
+	for _, entry := range profileData.SortedEntries {
+		fn := entry.Name
+
+		// Extract the function name from the full function path
+		funcName := extractSimpleFunctionName(fn)
+		if funcName == "" {
+			continue
+		}
+
+		// Check if function should be ignored
+		if _, ignored := ignoreSet[funcName]; ignored {
+			continue
+		}
+
+		// Check if function matches include prefixes
+		if len(filter.IncludePrefixes) > 0 && !matchPrefix(fn, filter.IncludePrefixes) {
+			continue
+		}
+
+		names = append(names, funcName)
+	}
+
+	return names, nil
 }
