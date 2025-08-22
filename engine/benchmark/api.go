@@ -48,11 +48,23 @@ func RunBenchmarks(benchmarks, profiles []string, tag string, count int) error {
 // A benchmark is identified by functions matching:
 //
 //	func BenchmarkXxx(b *testing.B) { ... }
-func DiscoverBenchmarks() ([]string, error) {
-	root, err := internal.FindGoModuleRoot()
-	if err != nil {
-		return nil, fmt.Errorf("failed to locate module root: %w", err)
+//
+// If scope is provided, only searches within that directory and its subdirectories.
+// If scope is empty, searches the entire module from the root.
+func DiscoverBenchmarks(scope string) ([]string, error) {
+	var searchRoot string
+	var err error
+
+	if scope != "" {
+		// Use the provided scope directory
+		searchRoot = scope
+	} else {
+		// Fall back to searching from module root
+		searchRoot, err = internal.FindGoModuleRoot()
+		if err != nil {
+			return nil, fmt.Errorf("failed to locate module root: %w", err)
+		}
 	}
 
-	return scanForBenchmarks(root)
+	return scanForBenchmarks(searchRoot)
 }
