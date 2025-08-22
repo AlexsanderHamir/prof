@@ -203,3 +203,24 @@ func extractSimpleFunctionName(fullPath string) string {
 
 	return lastPart
 }
+
+func matchPrefix(funcName string, functionPrefixes []string) bool {
+	var hasPrefix bool
+	for _, prefix := range functionPrefixes {
+		if strings.Contains(funcName, prefix) {
+			hasPrefix = true
+			break
+		}
+	}
+
+	return hasPrefix
+}
+
+func getFilterSets(ignoreFunctions []string) map[string]struct{} {
+	ignoreSet := make(map[string]struct{})
+	for _, f := range ignoreFunctions {
+		ignoreSet[f] = struct{}{}
+	}
+
+	return ignoreSet
+}

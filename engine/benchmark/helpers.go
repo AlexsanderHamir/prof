@@ -464,7 +464,7 @@ func collectProfileFunctions(args *internal.CollectionArgs) error {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
 
-		functions, err := parser.GetAllFunctionNames(paths.ProfileTextFile, args.BenchmarkConfig)
+		functions, err := parser.GetAllFunctionNamesV2(paths.ProfileBinaryFile, args.BenchmarkConfig)
 		if err != nil {
 			return fmt.Errorf("failed to extract function names: %w", err)
 		}

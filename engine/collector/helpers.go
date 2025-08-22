@@ -43,9 +43,9 @@ func getFunctionPprofContent(function, binaryFile, outputFile string) error {
 	return nil
 }
 
-func collectFunctions(outputTextFilePath, profileDirPath, fullBinaryPath string, functionFilter internal.FunctionFilter) error {
+func collectFunctions(profileDirPath, fullBinaryPath string, functionFilter internal.FunctionFilter) error {
 	var functions []string
-	functions, err := parser.GetAllFunctionNames(outputTextFilePath, functionFilter)
+	functions, err := parser.GetAllFunctionNamesV2(fullBinaryPath, functionFilter)
 	if err != nil {
 		return fmt.Errorf("failed to extract function names: %w", err)
 	}
