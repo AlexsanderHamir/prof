@@ -465,13 +465,19 @@ func discoverAvailableProfiles(tag, benchmarkName string) ([]string, error) {
 }
 
 func runTUI(_ *cobra.Command, _ []string) error {
-	benchNames, err := benchmark.DiscoverBenchmarks()
+	// Get current working directory for scope-aware benchmark discovery
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current working directory: %w", err)
+	}
+
+	benchNames, err := benchmark.DiscoverBenchmarks(currentDir)
 	if err != nil {
 		return fmt.Errorf("failed to discover benchmarks: %w", err)
 	}
 
 	if len(benchNames) == 0 {
-		return errors.New("no benchmarks found in this module (look for func BenchmarkXxx(b *testing.B) in *_test.go)")
+		return errors.New("no benchmarks found in this directory or its subdirectories (look for func BenchmarkXxx(b *testing.B) in *_test.go)")
 	}
 
 	var selectedBenches []string
