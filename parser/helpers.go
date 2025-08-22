@@ -101,8 +101,8 @@ func matchPrefix(funcName string, functionPrefixes []string) bool {
 	return hasPrefix
 }
 
-// extractFunctionName extracts a function name from a line, applying prefix and ignore filters.
-func extractFunctionName(line string, functionPrefixes []string, ignoreFunctionSet map[string]struct{}) string {
+// ExtractFunctionName extracts a function name from a line, applying prefix and ignore filters.
+func ExtractFunctionName(line string, functionPrefixes []string, ignoreFunctionSet map[string]struct{}) string {
 	parts := strings.Fields(line)
 	missingFields := len(parts) < minProfileLinelength
 	if missingFields {
