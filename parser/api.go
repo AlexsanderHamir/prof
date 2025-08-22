@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"regexp"
@@ -29,7 +28,6 @@ const (
 
 var (
 	funcNameRegexpCompiled = regexp.MustCompile(funcNameRegexp)
-	floatRegexpCompiled    = regexp.MustCompile(floatRegexp)
 )
 
 // ProfileFilter collects filters for extracting function names from a profile.
@@ -39,35 +37,6 @@ type ProfileFilter struct {
 
 	// Ignore all functions after the last dot even if includes the above prefix
 	IgnoreFunctions []string
-}
-
-type LineObj struct {
-	FnName         string
-	Flat           float64
-	FlatPercentage float64
-	SumPercentage  float64
-	Cum            float64
-	CumPercentage  float64
-}
-
-func TurnLinesIntoObjects(profilePath string) ([]*LineObj, error) {
-	var lines []string
-
-	scanner, file, err := internal.GetScanner(profilePath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	removeHeader(scanner)
-	GetAllProfileLines(scanner, &lines)
-
-	lineObjs, err := createLineObjects(lines)
-	if err != nil {
-		return nil, fmt.Errorf("failed creating line objects : %w", err)
-	}
-
-	return lineObjs, err
 }
 
 // GetAllFunctionNames extracts all function names from a profile text file, applying the given filter.
@@ -118,32 +87,4 @@ func GetAllFunctionNames(filePath string, filter internal.FunctionFilter) (names
 	}
 
 	return names, nil
-}
-
-// ShouldKeepLine determines if a line from a profile should be kept based on profile values and ignore filters.
-func ShouldKeepLine(line string, agrs *internal.LineFilterArgs) bool {
-	if line == "" {
-		return false
-	}
-
-	lineParts := strings.Fields(line)
-	if len(lineParts) < minProfileLinelength {
-		return false
-	}
-
-	if !filterByNumber(agrs.ProfileFilters, lineParts) {
-		return false
-	}
-
-	if !filterByIgnoreFunctions(agrs.IgnoreFunctionSet, lineParts) {
-		return false
-	}
-
-	return filterByIgnorePrefixes(agrs.IgnorePrefixSet, lineParts)
-}
-
-func GetAllProfileLines(scanner *bufio.Scanner, lines *[]string) {
-	for scanner.Scan() {
-		*lines = append(*lines, scanner.Text())
-	}
 }

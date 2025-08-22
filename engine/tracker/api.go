@@ -9,8 +9,8 @@ import (
 
 // trackAutoSelections holds all the user selections for tracking
 type Selections struct {
-	BaselineTag         string
-	CurrentTag          string
+	Baseline            string
+	Current             string
 	BenchmarkName       string
 	ProfileType         string
 	OutputFormat        string
@@ -88,16 +88,16 @@ func RunTrackManual(selections *Selections) error {
 
 // CheckPerformanceDifferences creates the profile report by comparing data from  prof's auto run.
 func CheckPerformanceDifferences(selections *Selections) (*ProfileChangeReport, error) {
-	textFilePathBaseLine, textFilePathCurrent := chooseFileLocations(selections)
+	binFilePathBaseLine, binFilePathCurrent := chooseFileLocations(selections)
 
-	lineObjsBaseline, err := parser.TurnLinesIntoObjects(textFilePathBaseLine)
+	lineObjsBaseline, err := parser.TurnLinesIntoObjectsV2(binFilePathBaseLine)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePathBaseLine, err)
+		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", binFilePathBaseLine, err)
 	}
 
-	lineObjsCurrent, err := parser.TurnLinesIntoObjects(textFilePathCurrent)
+	lineObjsCurrent, err := parser.TurnLinesIntoObjectsV2(binFilePathCurrent)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePathCurrent, err)
+		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", binFilePathCurrent, err)
 	}
 
 	matchingMap := createMapFromLineObjects(lineObjsBaseline)

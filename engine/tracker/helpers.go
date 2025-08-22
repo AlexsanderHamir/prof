@@ -147,22 +147,22 @@ func (cr *FunctionChangeResult) writeImpactAssessment(report *strings.Builder) {
 	report.WriteString("\n")
 }
 
-func getTextFilesLocations(selections *Selections) (string, string) {
+func getBinFilesLocations(selections *Selections) (string, string) {
 	fileName := fmt.Sprintf("%s_%s.txt", selections.BenchmarkName, selections.ProfileType)
-	textFilePath1BaseLine := filepath.Join(internal.MainDirOutput, selections.BaselineTag, internal.ProfileTextDir, selections.BenchmarkName, fileName)
-	textFilePath2Current := filepath.Join(internal.MainDirOutput, selections.CurrentTag, internal.ProfileTextDir, selections.BenchmarkName, fileName)
+	binFilePath1BaseLine := filepath.Join(internal.MainDirOutput, selections.Baseline, internal.ProfileBinDir, selections.BenchmarkName, fileName)
+	binFilePath2Current := filepath.Join(internal.MainDirOutput, selections.Current, internal.ProfileBinDir, selections.BenchmarkName, fileName)
 
-	return textFilePath1BaseLine, textFilePath2Current
+	return binFilePath1BaseLine, binFilePath2Current
 }
 
 func chooseFileLocations(selections *Selections) (string, string) {
 	var textFilePathBaseLine, textFilePathCurrent string
 
 	if selections.IsManual {
-		textFilePathBaseLine = selections.BaselineTag
-		textFilePathCurrent = selections.CurrentTag
+		textFilePathBaseLine = selections.Baseline
+		textFilePathCurrent = selections.Current
 	} else {
-		textFilePathBaseLine, textFilePathCurrent = getTextFilesLocations(selections)
+		textFilePathBaseLine, textFilePathCurrent = getBinFilesLocations(selections)
 	}
 
 	return textFilePathBaseLine, textFilePathCurrent
