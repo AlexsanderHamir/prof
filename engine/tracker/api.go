@@ -57,8 +57,7 @@ func RunTrackAuto(selections *Selections) error {
 	return nil
 }
 
-// RunTrackManual receives the location of the .out / .prof files,
-// and does what RunTrackAuto does.
+// RunTrackManual receives the location of the .out / .prof files.
 func RunTrackManual(selections *Selections) error {
 	if !validFormats[selections.OutputFormat] {
 		return fmt.Errorf("invalid output format '%s'. Valid formats: summary, detailed", selections.OutputFormat)
