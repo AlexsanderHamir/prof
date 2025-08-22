@@ -407,15 +407,15 @@ func TestTrackerBasicRun(t *testing.T) {
 	})
 
 	label = "Manual"
-	baseTag := "bench/tag1/text/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.txt"
-	currentTag := "bench/tag2/text/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.txt"
+	baseTag := "bench/tag1/bin/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.out"
+	Current := "bench/tag2/bin/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.out"
 	outputFormat := "summary"
 	t.Run(label, func(t *testing.T) {
 		args := []string{
 			"track",
 			internal.MANUALCMD,
 			"--base", baseTag,
-			"--current", currentTag,
+			"--current", Current,
 			"--output-format", outputFormat,
 		}
 

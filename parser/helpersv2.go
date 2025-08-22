@@ -14,12 +14,11 @@ type ProfileData struct {
 	Flat  map[string]int64
 	Cum   map[string]int64
 	Total int64
-	// Pre-calculated percentages for easy access
+
 	FlatPercentages map[string]float64
 	CumPercentages  map[string]float64
 	SumPercentages  map[string]float64
-	// Sorted entries for easy iteration
-	SortedEntries []FuncEntry
+	SortedEntries   []FuncEntry
 }
 
 // FuncEntry represents a function with its flat value, sorted by flat value (descending)
@@ -202,4 +201,25 @@ func extractSimpleFunctionName(fullPath string) string {
 	}
 
 	return lastPart
+}
+
+func matchPrefix(funcName string, functionPrefixes []string) bool {
+	var hasPrefix bool
+	for _, prefix := range functionPrefixes {
+		if strings.Contains(funcName, prefix) {
+			hasPrefix = true
+			break
+		}
+	}
+
+	return hasPrefix
+}
+
+func getFilterSets(ignoreFunctions []string) map[string]struct{} {
+	ignoreSet := make(map[string]struct{})
+	for _, f := range ignoreFunctions {
+		ignoreSet[f] = struct{}{}
+	}
+
+	return ignoreSet
 }

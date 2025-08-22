@@ -4,6 +4,15 @@ import (
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
+type LineObj struct {
+	FnName         string
+	Flat           float64
+	FlatPercentage float64
+	SumPercentage  float64
+	Cum            float64
+	CumPercentage  float64
+}
+
 // TurnLinesIntoObjectsV2 turn profile data from a .pprof file into line objects.
 func TurnLinesIntoObjectsV2(profilePath string) ([]*LineObj, error) {
 	profileData, err := extractProfileData(profilePath)

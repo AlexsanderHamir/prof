@@ -15,8 +15,8 @@ func TestTrackAuto(t *testing.T) {
 	for _, profileType := range profileTypes {
 		t.Run(profileType, func(t *testing.T) {
 			selections := tracker.Selections{
-				BaselineTag:   tagPath1,
-				CurrentTag:    tagPath2,
+				Baseline:      tagPath1,
+				Current:       tagPath2,
 				BenchmarkName: benchName,
 				ProfileType:   profileType,
 			}
@@ -48,13 +48,13 @@ func TestTrackAuto(t *testing.T) {
 }
 
 func TestTrackManual(t *testing.T) {
-	filePath1 := "bench/tag1/text/BenchmarkGenPool/BenchmarkGenPool_cpu.txt"
-	filePath2 := "bench/tag2/text/BenchmarkGenPool/BenchmarkGenPool_cpu.txt"
+	filePath1 := "bench/tag1/bin/BenchmarkGenPool/BenchmarkGenPool_cpu.out"
+	filePath2 := "bench/tag2/bin/BenchmarkGenPool/BenchmarkGenPool_cpu.out"
 
 	selections := tracker.Selections{
-		BaselineTag: filePath1,
-		CurrentTag:  filePath2,
-		IsManual:    true,
+		Baseline: filePath1,
+		Current:  filePath2,
+		IsManual: true,
 	}
 
 	profileResult, err := tracker.CheckPerformanceDifferences(&selections)

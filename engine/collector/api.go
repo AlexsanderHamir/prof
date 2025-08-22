@@ -54,7 +54,7 @@ func RunCollector(files []string, tag string) error {
 			return err
 		}
 
-		if err = collectFunctions(outputTextFilePath, profileDirPath, fullBinaryPath, functionFilter); err != nil {
+		if err = collectFunctions(profileDirPath, fullBinaryPath, functionFilter); err != nil {
 			return fmt.Errorf("collectFunctions failed: %w", err)
 		}
 	}

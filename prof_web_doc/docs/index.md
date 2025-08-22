@@ -11,7 +11,7 @@ When performing complex profiling, developers often find themselves lost in a ma
 - **`prof tui track`**: Interactive performance comparison
 - **`prof manual`**: Process existing profile files
 - **`prof track auto`**: Compare performance between tags
-- **`prof track manual`**: Compare external profile files
+- **`prof track manual`**: Compare external pprof files (`.out`/`.prof`)
 
 **Directory Flexibility:**
 
@@ -105,7 +105,7 @@ prof tui
 
 ## Manual
 
-The `manual` command processes existing profile files without running benchmarks - it only uses `pprof` to organize data you already have:
+The `manual` command processes existing pprof files (`.out` or `.prof`) without running benchmarks - it uses `pprof` to convert them to text reports and organize the data:
 
 ```bash
 prof manual --tag "external-profiles" BenchmarkGenPool_cpu.out memory.out block.out
@@ -172,15 +172,15 @@ prof track auto --base "baseline" --current "optimized" \
 
 ## Track Manual
 
-Use `track manual` when comparing external profile files by specifying their relative paths:
+Use `track manual` when comparing external profile files by specifying their relative paths. **Note**: This command accepts pprof files (`.out` or `.prof`) directly, not text reports:
 
 ```bash
-prof track manual --base path/to/base/report/cpu.txt \
-                  --current path/to/current/report/cpu.txt \
+prof track manual --base path/to/base/BenchmarkGenPool_cpu.out \
+                  --current path/to/current/BenchmarkGenPool_cpu.out \
                   --output-format "summary"
 
-prof track manual --base path/to/base/report/cpu.txt \
-                  --current path/to/current/report/cpu.txt \
+prof track manual --base path/to/base/BenchmarkGenPool_cpu.out \
+                  --current path/to/current/BenchmarkGenPool_cpu.out \
                   --output-format "detailed"
 ```
 
