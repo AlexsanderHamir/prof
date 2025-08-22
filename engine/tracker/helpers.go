@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
-func createHashFromLineObjects(lineobjects []*parser.LineObj) map[string]*parser.LineObj {
+func createMapFromLineObjects(lineobjects []*parser.LineObj) map[string]*parser.LineObj {
 	matchingMap := make(map[string]*parser.LineObj)
 	for _, lineObj := range lineobjects {
 		matchingMap[lineObj.FnName] = lineObj
@@ -20,7 +21,7 @@ func createHashFromLineObjects(lineobjects []*parser.LineObj) map[string]*parser
 	return matchingMap
 }
 
-func DetectChange(baseline, current *parser.LineObj) (*FunctionChangeResult, error) {
+func detectChangeBetweenTwoObjects(baseline, current *parser.LineObj) (*FunctionChangeResult, error) {
 	if current == nil {
 		return nil, errors.New("current obj is nil")
 	}
@@ -144,4 +145,25 @@ func (cr *FunctionChangeResult) writeImpactAssessment(report *strings.Builder) {
 	report.WriteString("Recommendation: ")
 	report.WriteString(cr.recommendation())
 	report.WriteString("\n")
+}
+
+func getTextFilesLocations(selections *Selections) (string, string) {
+	fileName := fmt.Sprintf("%s_%s.txt", selections.BenchmarkName, selections.ProfileType)
+	textFilePath1BaseLine := filepath.Join(internal.MainDirOutput, selections.BaselineTag, internal.ProfileTextDir, selections.BenchmarkName, fileName)
+	textFilePath2Current := filepath.Join(internal.MainDirOutput, selections.CurrentTag, internal.ProfileTextDir, selections.BenchmarkName, fileName)
+
+	return textFilePath1BaseLine, textFilePath2Current
+}
+
+func chooseFileLocations(selections *Selections) (string, string) {
+	var textFilePathBaseLine, textFilePathCurrent string
+
+	if selections.IsManual {
+		textFilePathBaseLine = selections.BaselineTag
+		textFilePathCurrent = selections.CurrentTag
+	} else {
+		textFilePathBaseLine, textFilePathCurrent = getTextFilesLocations(selections)
+	}
+
+	return textFilePathBaseLine, textFilePathCurrent
 }

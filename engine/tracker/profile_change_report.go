@@ -49,14 +49,14 @@ func (r *ProfileChangeReport) printSummary() {
 	if len(regressionList) > 0 {
 		fmt.Println("\n⚠️  Top Regressions (worst first):")
 		for _, change := range regressionList {
-			fmt.Printf("  • %s\n", change.Summary())
+			fmt.Printf("  • %s\n", change.summary())
 		}
 	}
 
 	if len(improvementList) > 0 {
 		fmt.Println("\n✅ Top Improvements (best first):")
 		for _, change := range improvementList {
-			fmt.Printf("  • %s\n", change.Summary())
+			fmt.Printf("  • %s\n", change.summary())
 		}
 	}
 }
@@ -205,7 +205,7 @@ func (r *ProfileChangeReport) generateHTMLSummary(outputPath string) error {
 
 	funcMap := template.FuncMap{
 		"summary": func(fc *FunctionChangeResult) string {
-			return fc.Summary()
+			return fc.summary()
 		},
 	}
 

@@ -3,14 +3,12 @@ package tracker
 import (
 	"fmt"
 	"log/slog"
-	"path/filepath"
 
-	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
 // trackAutoSelections holds all the user selections for tracking
-type AutoSelections struct {
+type Selections struct {
 	BaselineTag         string
 	CurrentTag          string
 	BenchmarkName       string
@@ -18,6 +16,7 @@ type AutoSelections struct {
 	OutputFormat        string
 	UseThreshold        bool
 	RegressionThreshold float64
+	IsManual            bool
 }
 
 var validFormats = map[string]bool{
@@ -30,12 +29,12 @@ var validFormats = map[string]bool{
 }
 
 // runTrack handles the track command execution
-func RunTrackAuto(selections *AutoSelections) error {
+func RunTrackAuto(selections *Selections) error {
 	if !validFormats[selections.OutputFormat] {
 		return fmt.Errorf("invalid output format '%s'. Valid formats: summary, detailed", selections.OutputFormat)
 	}
 
-	report, err := CheckPerformanceDifferences(selections.BaselineTag, selections.CurrentTag, selections.BenchmarkName, selections.ProfileType)
+	report, err := CheckPerformanceDifferences(selections)
 	if err != nil {
 		return fmt.Errorf("failed to track performance differences: %w", err)
 	}
@@ -58,12 +57,14 @@ func RunTrackAuto(selections *AutoSelections) error {
 	return nil
 }
 
-func RunTrackManual(selections *AutoSelections) error {
+// RunTrackManual receives the location of the .out / .prof files,
+// and does what RunTrackAuto does.
+func RunTrackManual(selections *Selections) error {
 	if !validFormats[selections.OutputFormat] {
 		return fmt.Errorf("invalid output format '%s'. Valid formats: summary, detailed", selections.OutputFormat)
 	}
 
-	report, err := CheckPerformanceDifferencesManual(selections.BaselineTag, selections.CurrentTag)
+	report, err := CheckPerformanceDifferences(selections)
 	if err != nil {
 		return fmt.Errorf("failed to track performance differences: %w", err)
 	}
@@ -87,22 +88,20 @@ func RunTrackManual(selections *AutoSelections) error {
 }
 
 // CheckPerformanceDifferences creates the profile report by comparing data from  prof's auto run.
-func CheckPerformanceDifferences(baselineTag, currentTag, benchName, profileType string) (*ProfileChangeReport, error) {
-	fileName := fmt.Sprintf("%s_%s.txt", benchName, profileType)
-	textFilePath1BaseLine := filepath.Join(internal.MainDirOutput, baselineTag, internal.ProfileTextDir, benchName, fileName)
-	textFilePath2Current := filepath.Join(internal.MainDirOutput, currentTag, internal.ProfileTextDir, benchName, fileName)
+func CheckPerformanceDifferences(selections *Selections) (*ProfileChangeReport, error) {
+	textFilePathBaseLine, textFilePathCurrent := chooseFileLocations(selections)
 
-	lineObjsBaseline, err := parser.TurnLinesIntoObjects(textFilePath1BaseLine)
+	lineObjsBaseline, err := parser.TurnLinesIntoObjects(textFilePathBaseLine)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePath1BaseLine, err)
+		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePathBaseLine, err)
 	}
 
-	lineObjsCurrent, err := parser.TurnLinesIntoObjects(textFilePath2Current)
+	lineObjsCurrent, err := parser.TurnLinesIntoObjects(textFilePathCurrent)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePath2Current, err)
+		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", textFilePathCurrent, err)
 	}
 
-	matchingMap := createHashFromLineObjects(lineObjsBaseline)
+	matchingMap := createMapFromLineObjects(lineObjsBaseline)
 
 	pgp := &ProfileChangeReport{}
 	for _, currentObj := range lineObjsCurrent {
@@ -112,42 +111,9 @@ func CheckPerformanceDifferences(baselineTag, currentTag, benchName, profileType
 		}
 
 		var changeResult *FunctionChangeResult
-		changeResult, err = DetectChange(baseLineObj, currentObj)
+		changeResult, err = detectChangeBetweenTwoObjects(baseLineObj, currentObj)
 		if err != nil {
-			return nil, fmt.Errorf("DetectChange failed: %w", err)
-		}
-
-		pgp.FunctionChanges = append(pgp.FunctionChanges, changeResult)
-	}
-
-	return pgp, nil
-}
-
-// CheckPerformanceDifferences creates the profile report by comparing data from  prof's auto run.
-func CheckPerformanceDifferencesManual(baselineProfile, currentProfile string) (*ProfileChangeReport, error) {
-	lineObjsBaseline, err := parser.TurnLinesIntoObjects(baselineProfile)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", baselineProfile, err)
-	}
-
-	lineObjsCurrent, err := parser.TurnLinesIntoObjects(currentProfile)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", currentProfile, err)
-	}
-
-	matchingMap := createHashFromLineObjects(lineObjsBaseline)
-
-	pgp := &ProfileChangeReport{}
-	for _, currentObj := range lineObjsCurrent {
-		baseLineObj, matchNotFound := matchingMap[currentObj.FnName]
-		if !matchNotFound {
-			continue
-		}
-
-		var changeResult *FunctionChangeResult
-		changeResult, err = DetectChange(baseLineObj, currentObj)
-		if err != nil {
-			return nil, fmt.Errorf("DetectChange failed: %w", err)
+			return nil, fmt.Errorf("detectChangeBetweenTwoObjects failed: %w", err)
 		}
 
 		pgp.FunctionChanges = append(pgp.FunctionChanges, changeResult)
