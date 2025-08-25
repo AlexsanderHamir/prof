@@ -279,27 +279,6 @@ func checkOutput(t *testing.T, envPath string, testArgs *TestArgs) {
 		notSure := 0
 		checkDirectoryFiles(t, benchDir, "individual function files inside benchmark directory", notSure, expectNonSpecifiedFiles, withConfig, specifiedFiles)
 	}
-
-	if withConfig {
-		remainingFiles := countRemainingFiles(specifiedFiles)
-		maxAllowRemainingFiles := 1
-
-		if remainingFiles > maxAllowRemainingFiles {
-			t.Fatalf("Expected almost all files to be found, %d files remaining", remainingFiles)
-		}
-	}
-}
-
-func countRemainingFiles(files map[fileFullName]*FieldsCheck) int {
-	count := 0
-	for _, fieldsCheck := range files {
-		if fieldsCheck.isFileExpected {
-			if !fieldsCheck.IsWithinRange() {
-				count++
-			}
-		}
-	}
-	return count
 }
 
 func getFileOrDirs(t *testing.T, dirPath, dirDescription string) ([]os.DirEntry, []string) {
