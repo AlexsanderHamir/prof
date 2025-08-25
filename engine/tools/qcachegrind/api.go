@@ -1,6 +1,7 @@
 package qcachegrind
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -43,7 +44,7 @@ func RunQcacheGrind(tag, benchName, profileName string) error {
 	cmd.Stdout = outputFile
 	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
+	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("failed to generate callgrind file: %w", err)
 	}
 
@@ -52,8 +53,8 @@ func RunQcacheGrind(tag, benchName, profileName string) error {
 	// 3. Use the output to call qcachegrind profile.callgrind and launch it for the user to analyze.
 
 	// Check if qcachegrind is installed
-	if _, err := exec.LookPath("qcachegrind"); err != nil {
-		return fmt.Errorf("qcachegrind command not found. Please install it first: sudo apt-get install qcachegrind (Ubuntu/Debian) or brew install qcachegrind (macOS)")
+	if _, err = exec.LookPath("qcachegrind"); err != nil {
+		return errors.New("qcachegrind command not found. Please install it first: sudo apt-get install qcachegrind (Ubuntu/Debian) or brew install qcachegrind (macOS)")
 	}
 
 	// Launch qcachegrind with the generated callgrind file
@@ -64,7 +65,7 @@ func RunQcacheGrind(tag, benchName, profileName string) error {
 	fmt.Printf("Launching qcachegrind with file: %s\n", callgrindOutputPath)
 
 	// Run qcachegrind in the background so the user can interact with it
-	if err := launchCmd.Start(); err != nil {
+	if err = launchCmd.Start(); err != nil {
 		return fmt.Errorf("failed to launch qcachegrind: %w", err)
 	}
 
