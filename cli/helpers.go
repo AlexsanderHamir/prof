@@ -12,6 +12,7 @@ import (
 	"github.com/AlexsanderHamir/prof/engine/benchmark"
 	"github.com/AlexsanderHamir/prof/engine/collector"
 
+	"github.com/AlexsanderHamir/prof/engine/tools/benchstats"
 	"github.com/AlexsanderHamir/prof/engine/tracker"
 	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/spf13/cobra"
@@ -75,19 +76,24 @@ func createToolsCmd() *cobra.Command {
 func createBenchStatCmd() *cobra.Command {
 	baseTagFlag := base
 	currentFlag := current
+	benchNameFlag := "bench-name"
 	shortExplanation := "runs benchstat on txt collected data."
 
 	cmd := &cobra.Command{
-		Use:   "benchstats",
+		Use:   "benchstat",
 		Short: shortExplanation,
-		// RunE: ,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return benchstats.RunBenchStats(Baseline, Current, benchmarkName)
+		},
 	}
 
 	cmd.Flags().StringVar(&Baseline, baseTagFlag, "", "Name of the baseline tag")
 	cmd.Flags().StringVar(&Current, currentFlag, "", "Name of the current tag")
+	cmd.Flags().StringVar(&benchmarkName, benchNameFlag, "", "Name of the benchmark")
 
 	_ = cmd.MarkFlagRequired(baseTagFlag)
 	_ = cmd.MarkFlagRequired(currentFlag)
+	_ = cmd.MarkFlagRequired(benchNameFlag)
 
 	return cmd
 }

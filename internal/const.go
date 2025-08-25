@@ -19,10 +19,12 @@ const (
 const (
 	MainDirOutput      = "bench"
 	ProfileTextDir     = "text"
+	ToolDir            = "tools"
 	ProfileBinDir      = "bin"
 	PermDir            = 0o755
 	PermFile           = 0o644
 	FunctionsDirSuffix = "_functions"
+	ToolsResultsSuffix = "_results.txt"
 	TextExtension      = "txt"
 	ConfigFilename     = "config_template.json"
 	GlobalSign         = "*"
