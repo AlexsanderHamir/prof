@@ -301,52 +301,227 @@ Flat regression % = (current_time - baseline_time) / baseline_time × 100
 
 **Note:** The threshold applies to **flat time** (time spent directly in the function), not cumulative time (time including all called functions). Flat time gives a more direct measure of the function's own performance impact.
 
-**Important:** Prof commands can be run from the Go project root directory or from within specific package directories. The configuration file (if using one) is always expected at the project root, regardless of where you run the command from, any extra configuration files will be ignored.
+## CI/CD Configuration-Based Approach
 
-```bash
-prof track auto \
-  --base baseline \
-  --current PR \
-  --profile-type cpu \
-  --bench-name BenchmarkGenPool \
-  --output-format summary \
-  --fail-on-regression \
-  --regression-threshold 5.0
+Prof now supports a configuration-based approach for CI/CD that eliminates the need for command-line flags and provides more flexibility.
+
+### Configuration Structure
+
+Add a `ci_config` section to your existing `config_template.json` file:
+
+```json
+{
+  "function_collection_filter": {
+    // ... existing function filtering ...
+  },
+  "ci_config": {
+    "global": {
+      // Global CI/CD settings
+    },
+    "benchmarks": {
+      "BenchmarkName": {
+        // Benchmark-specific CI/CD settings
+      }
+    }
+  }
+}
 ```
 
-**Example GitHub Actions job:**
+### Global Configuration
+
+```json
+"global": {
+  "ignore_functions": ["runtime.gcBgMarkWorker", "testing.(*B).ResetTimer"],
+  "ignore_prefixes": ["runtime.", "reflect.", "testing."],
+  "min_change_threshold": 5.0,
+  "max_regression_threshold": 20.0,
+  "fail_on_improvement": false
+}
+```
+
+### Benchmark-Specific Configuration
+
+```json
+"benchmarks": {
+  "BenchmarkMyFunction": {
+    "min_change_threshold": 3.0,
+    "max_regression_threshold": 10.0
+  }
+}
+```
+
+### Function Filtering
+
+**Ignore specific functions:**
+
+```json
+"ignore_functions": ["runtime.gcBgMarkWorker", "testing.(*B).ResetTimer"]
+```
+
+**Ignore function prefixes:**
+
+```json
+"ignore_prefixes": ["runtime.", "reflect.", "testing."]
+```
+
+### Threshold Configuration
+
+- `min_change_threshold`: Minimum change % to trigger CI/CD failure
+- `max_regression_threshold`: Maximum acceptable regression %
+- Command-line flags are optional when using configuration
+
+### Complete Example
+
+```json
+{
+  "ci_config": {
+    "global": {
+      "ignore_prefixes": ["runtime.", "reflect.", "testing."],
+      "min_change_threshold": 5.0,
+      "max_regression_threshold": 20.0
+    },
+    "benchmarks": {
+      "BenchmarkCriticalPath": {
+        "min_change_threshold": 1.0,
+        "max_regression_threshold": 5.0
+      }
+    }
+  }
+}
+```
+
+### CI/CD Integration
+
+With configuration-based CI/CD, you no longer need `--fail-on-regression` or `--regression-threshold` flags:
+
+```bash
+prof track auto --base baseline --current PR \
+  --profile-type cpu --bench-name "BenchmarkMyFunction" \
+```
+
+**Example GitHub Actions:**
 
 ```yaml
-name: perf-regression-check
-on: [pull_request]
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ">=1.24"
-      - name: Install prof
-        run: go install github.com/AlexsanderHamir/prof/cmd/prof@latest
-      - name: Collect baseline (main)
-        run: |
-          git fetch origin main --depth=1
-          git checkout -qf origin/main
-          # prof can be run from the Go project root directory
-          cd ${{ github.workspace }}
-          prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu" --count 5 --tag baseline
-      - name: Collect current (PR)
-        run: |
-          git checkout -
-          # prof can be run from the Go project root directory
-          cd ${{ github.workspace }}
-          prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu" --count 5 --tag PR
-      - name: Compare and fail on regression
-        run: |
-          # prof can be run from the Go project root directory
-          cd ${{ github.workspace }}
-          prof track auto --base baseline --current PR \
-            --profile-type cpu --bench-name "BenchmarkGenPool" \
-            --output-format summary --fail-on-regression --regression-threshold 5.0
+- name: Check for regressions
+  run: |
+    prof track auto --base baseline --current PR \
+      --profile-type cpu --bench-name "BenchmarkMyFunction" \
+```
+
+**Configuration File Location:** Must be at project root (same directory as `go.mod`).
+
+# Prof Tools
+
+Prof provides additional tools that can easily operate on the collected data for enhanced analysis and visualization.
+
+## Tools Overview
+
+The `prof tools` command provides access to specialized analysis tools:
+
+```bash
+prof tools [command] [flags]
+```
+
+Available tools:
+
+- **`benchstat`**: Statistical analysis of benchmark results
+- **`qcachegrind`**: Visual call graph analysis
+
+## Benchstat Tool
+
+Runs Go's official `benchstat` command on collected benchmark data.
+
+### Usage
+
+```bash
+prof tools benchstat --base <baseline-tag> --current <current-tag> --bench-name <benchmark-name>
+```
+
+### Example
+
+```bash
+prof tools benchstat --base baseline --current optimized --bench-name BenchmarkGenPool
+```
+
+### Prerequisites
+
+```bash
+go install golang.org/x/perf/cmd/benchstat@latest
+```
+
+### Output
+
+Results are saved to `bench/tools/benchstats/{benchmark_name}_results.txt`
+
+## QCacheGrind Tool
+
+Generates call graph data from binary profile files and launches the QCacheGrind visualizer.
+
+### Usage
+
+```bash
+prof tools qcachegrind --tag <tag> --profiles <profile-type> --bench-name <benchmark-name>
+```
+
+### Example
+
+```bash
+prof tools qcachegrind --tag optimized --profiles cpu --bench-name BenchmarkGenPool
+```
+
+### Prerequisites
+
+**Ubuntu/Debian:**
+
+```bash
+sudo apt-get install qcachegrind
+```
+
+**macOS:**
+
+```bash
+brew install qcachegrind
+```
+
+### Output
+
+Callgrind files are saved to `bench/tools/qcachegrind/{benchmark_name}_{profile_type}.callgrind`
+
+## Tool Output Organization
+
+```
+bench/
+├── baseline/
+├── optimized/
+└── tools/
+    ├── benchstats/
+    │   └── BenchmarkGenPool_results.txt
+    └── qcachegrind/
+        └── BenchmarkGenPool_cpu.callgrind
+```
+
+## Integration with Existing Workflow
+
+1. **Collect data**: Use `prof auto` or `prof tui`
+2. **Compare performance**: Use `prof track`
+3. **Deep analysis**: Use `prof tools`
+4. **Visual exploration**: Use QCacheGrind for interactive call graph analysis
+
+## Best Practices
+
+**Combine tools for comprehensive analysis:**
+
+```bash
+# Collect data
+prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu,memory" --count 10 --tag baseline
+prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu,memory" --count 10 --tag optimized
+
+# Compare performance
+prof track auto --base baseline --current optimized --bench-name BenchmarkGenPool
+
+# Statistical validation
+prof tools benchstat --base baseline --current optimized --bench-name BenchmarkGenPool
+
+# Deep analysis
+prof tools qcachegrind --tag optimized --profiles cpu --bench-name BenchmarkGenPool
 ```

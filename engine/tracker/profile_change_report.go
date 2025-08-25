@@ -483,3 +483,55 @@ func (r *ProfileChangeReport) WorstRegression() *FunctionChangeResult {
 	}
 	return worst
 }
+
+// BestImprovement returns the single best improvement by absolute flat change percent.
+// Returns nil if there are no improvements.
+func (r *ProfileChangeReport) BestImprovement() *FunctionChangeResult {
+	var best *FunctionChangeResult
+	for _, change := range r.FunctionChanges {
+		if change.ChangeType != internal.IMPROVEMENT {
+			continue
+		}
+		if best == nil || math.Abs(change.FlatChangePercent) > math.Abs(best.FlatChangePercent) {
+			best = change
+		}
+	}
+	return best
+}
+
+// ApplyCIConfiguration applies CI/CD configuration filtering to the report
+func (r *ProfileChangeReport) ApplyCIConfiguration(cicdConfig *internal.CIConfig, benchmarkName string) {
+	if cicdConfig == nil {
+		return
+	}
+
+	// Get the appropriate CI/CD configuration for this benchmark
+	var config *internal.CITrackingConfig
+	if benchmarkConfig, exists := cicdConfig.Benchmarks[benchmarkName]; exists {
+		config = &benchmarkConfig
+	} else if cicdConfig.Global != nil {
+		config = cicdConfig.Global
+	} else {
+		return
+	}
+
+	// Filter out ignored functions
+	var filteredChanges []*FunctionChangeResult
+	for _, change := range r.FunctionChanges {
+		if !shouldIgnoreFunctionByConfig(config, change.FunctionName) {
+			filteredChanges = append(filteredChanges, change)
+		} else {
+			slog.Debug("Function ignored by CI/CD config",
+				"function", change.FunctionName,
+				"benchmark", benchmarkName)
+		}
+	}
+
+	// Update the report with filtered changes
+	r.FunctionChanges = filteredChanges
+
+	slog.Info("Applied CI/CD configuration filtering",
+		"benchmark", benchmarkName,
+		"original_functions", len(r.FunctionChanges),
+		"filtered_functions", len(filteredChanges))
+}
