@@ -13,6 +13,7 @@ import (
 	"github.com/AlexsanderHamir/prof/engine/collector"
 
 	"github.com/AlexsanderHamir/prof/engine/tools/benchstats"
+	"github.com/AlexsanderHamir/prof/engine/tools/qcachegrind"
 	"github.com/AlexsanderHamir/prof/engine/tracker"
 	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/spf13/cobra"
@@ -69,10 +70,39 @@ func createToolsCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(createBenchStatCmd())
+	cmd.AddCommand(createQCacheGrindCmd())
 
 	return cmd
 }
 
+// TODO: Missing command example
+func createQCacheGrindCmd() *cobra.Command {
+	tagFlag := "tag"
+	profilesFlag := "profiles"
+	benchNameFlag := "bench-name"
+
+	shortExplanation := "runs benchstat on txt collected data."
+
+	cmd := &cobra.Command{
+		Use:   "qcachegrind",
+		Short: shortExplanation,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return qcachegrind.RunQcacheGrind(tag, benchmarkName, profiles[0])
+		},
+	}
+
+	cmd.Flags().StringVar(&benchmarkName, benchNameFlag, "", "Name of the benchmark")
+	cmd.Flags().StringSliceVar(&profiles, profilesFlag, []string{}, `Profiles to use (e.g., "cpu,memory,mutex")`)
+	cmd.Flags().StringVar(&tag, tagFlag, "", "The tag is used to organize the results")
+
+	_ = cmd.MarkFlagRequired(benchNameFlag)
+	_ = cmd.MarkFlagRequired(profilesFlag)
+	_ = cmd.MarkFlagRequired(tagFlag)
+
+	return cmd
+}
+
+// TODO: Missing command example
 func createBenchStatCmd() *cobra.Command {
 	baseTagFlag := base
 	currentFlag := current
