@@ -52,7 +52,7 @@ func RunTrackAuto(selections *Selections) error {
 	report.ChooseOutputFormat(selections.OutputFormat)
 
 	// Apply CI/CD filtering and thresholds
-	if err := applyCIConfiguration(report, selections); err != nil {
+	if err = applyCIConfiguration(report, selections); err != nil {
 		return err
 	}
 
@@ -79,7 +79,7 @@ func RunTrackManual(selections *Selections) error {
 	report.ChooseOutputFormat(selections.OutputFormat)
 
 	// Apply CI/CD filtering and thresholds
-	if err := applyCIConfiguration(report, selections); err != nil {
+	if err = applyCIConfiguration(report, selections); err != nil {
 		return err
 	}
 
@@ -105,11 +105,11 @@ func applyCIConfiguration(report *ProfileChangeReport, selections *Selections) e
 	if cliFlagsProvided {
 		// User provided CLI flags, use them (with CI/CD config as fallback)
 		return applyCommandLineThresholds(report, selections)
-	} else {
-		// No CLI flags provided, use CI/CD config only
-		slog.Info("No CLI regression flags provided, using CI/CD configuration settings")
-		return applyCICDThresholdsOnly(report, selections, cfg.CIConfig)
 	}
+
+	// No CLI flags provided, use CI/CD config only
+	slog.Info("No CLI regression flags provided, using CI/CD configuration settings")
+	return applyCICDThresholdsOnly(report, selections, cfg.CIConfig)
 }
 
 // applyCommandLineThresholds applies the legacy command-line threshold logic
