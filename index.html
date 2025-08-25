@@ -112,6 +112,39 @@
             
             <li class="nav-item" data-bs-level="1"><a href="#cicd-fail-on-regressions" class="nav-link">CI/CD: Fail on regressions</a>
               <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#cicd-configuration-based-approach" class="nav-link">CI/CD Configuration-Based Approach</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="1"><a href="#prof-tools" class="nav-link">Prof Tools</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#tools-overview" class="nav-link">Tools Overview</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#benchstat-tool" class="nav-link">Benchstat Tool</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#qcachegrind-tool" class="nav-link">QCacheGrind Tool</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#tool-output-organization" class="nav-link">Tool Output Organization</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#integration-with-existing-workflow" class="nav-link">Integration with Existing Workflow</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#best-practices" class="nav-link">Best Practices</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
               </ul>
             </li>
         </ul>
@@ -129,7 +162,7 @@
 <li><strong><code>prof tui track</code></strong>: Interactive performance comparison</li>
 <li><strong><code>prof manual</code></strong>: Process existing profile files</li>
 <li><strong><code>prof track auto</code></strong>: Compare performance between tags</li>
-<li><strong><code>prof track manual</code></strong>: Compare external profile files</li>
+<li><strong><code>prof track manual</code></strong>: Compare external pprof files (<code>.out</code>/<code>.prof</code>)</li>
 </ul>
 <p><strong>Directory Flexibility:</strong></p>
 <ul>
@@ -203,7 +236,7 @@
 <li><strong>Search</strong>: Type to filter and find specific benchmarks quickly</li>
 </ul>
 <h2 id="manual">Manual</h2>
-<p>The <code>manual</code> command processes existing profile files without running benchmarks - it only uses <code>pprof</code> to organize data you already have:</p>
+<p>The <code>manual</code> command processes existing pprof files (<code>.out</code> or <code>.prof</code>) without running benchmarks - it uses <code>pprof</code> to convert them to text reports and organize the data:</p>
 <pre><code class="language-bash">prof manual --tag &quot;external-profiles&quot; BenchmarkGenPool_cpu.out memory.out block.out
 </code></pre>
 <p>This organizes your existing profile files into a flatter structure based on the profile filename:</p>
@@ -250,13 +283,13 @@ prof track auto --base &quot;baseline&quot; --current &quot;optimized&quot; \
                 --output-format &quot;detailed&quot;
 </code></pre>
 <h2 id="track-manual">Track Manual</h2>
-<p>Use <code>track manual</code> when comparing external profile files by specifying their relative paths:</p>
-<pre><code class="language-bash">prof track manual --base path/to/base/report/cpu.txt \
-                  --current path/to/current/report/cpu.txt \
+<p>Use <code>track manual</code> when comparing external profile files by specifying their relative paths. <strong>Note</strong>: This command accepts pprof files (<code>.out</code> or <code>.prof</code>) directly, not text reports:</p>
+<pre><code class="language-bash">prof track manual --base path/to/base/BenchmarkGenPool_cpu.out \
+                  --current path/to/current/BenchmarkGenPool_cpu.out \
                   --output-format &quot;summary&quot;
 
-prof track manual --base path/to/base/report/cpu.txt \
-                  --current path/to/current/report/cpu.txt \
+prof track manual --base path/to/base/BenchmarkGenPool_cpu.out \
+                  --current path/to/current/BenchmarkGenPool_cpu.out \
                   --output-format &quot;detailed&quot;
 </code></pre>
 <h2 id="tui-track-interactive-performance-comparison">TUI Track - Interactive Performance Comparison</h2>
@@ -356,49 +389,157 @@ Recommendation: Critical regression! Immediate investigation required.
 <li>With <code>--regression-threshold 15.0</code>, this would pass</li>
 </ul>
 <p><strong>Note:</strong> The threshold applies to <strong>flat time</strong> (time spent directly in the function), not cumulative time (time including all called functions). Flat time gives a more direct measure of the function's own performance impact.</p>
-<p><strong>Important:</strong> Prof commands can be run from the Go project root directory or from within specific package directories. The configuration file (if using one) is always expected at the project root, regardless of where you run the command from, any extra configuration files will be ignored.</p>
-<pre><code class="language-bash">prof track auto \
-  --base baseline \
-  --current PR \
-  --profile-type cpu \
-  --bench-name BenchmarkGenPool \
-  --output-format summary \
-  --fail-on-regression \
-  --regression-threshold 5.0
+<h2 id="cicd-configuration-based-approach">CI/CD Configuration-Based Approach</h2>
+<p>Prof now supports a configuration-based approach for CI/CD that eliminates the need for command-line flags and provides more flexibility.</p>
+<h3 id="configuration-structure">Configuration Structure</h3>
+<p>Add a <code>ci_config</code> section to your existing <code>config_template.json</code> file:</p>
+<pre><code class="language-json">{
+  &quot;function_collection_filter&quot;: {
+    // ... existing function filtering ...
+  },
+  &quot;ci_config&quot;: {
+    &quot;global&quot;: {
+      // Global CI/CD settings
+    },
+    &quot;benchmarks&quot;: {
+      &quot;BenchmarkName&quot;: {
+        // Benchmark-specific CI/CD settings
+      }
+    }
+  }
+}
 </code></pre>
-<p><strong>Example GitHub Actions job:</strong></p>
-<pre><code class="language-yaml">name: perf-regression-check
-on: [pull_request]
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: &quot;&gt;=1.24&quot;
-      - name: Install prof
-        run: go install github.com/AlexsanderHamir/prof/cmd/prof@latest
-      - name: Collect baseline (main)
-        run: |
-          git fetch origin main --depth=1
-          git checkout -qf origin/main
-          # prof can be run from the Go project root directory
-          cd ${{ github.workspace }}
-          prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu&quot; --count 5 --tag baseline
-      - name: Collect current (PR)
-        run: |
-          git checkout -
-          # prof can be run from the Go project root directory
-          cd ${{ github.workspace }}
-          prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu&quot; --count 5 --tag PR
-      - name: Compare and fail on regression
-        run: |
-          # prof can be run from the Go project root directory
-          cd ${{ github.workspace }}
-          prof track auto --base baseline --current PR \
-            --profile-type cpu --bench-name &quot;BenchmarkGenPool&quot; \
-            --output-format summary --fail-on-regression --regression-threshold 5.0
+<h3 id="global-configuration">Global Configuration</h3>
+<pre><code class="language-json">&quot;global&quot;: {
+  &quot;ignore_functions&quot;: [&quot;runtime.gcBgMarkWorker&quot;, &quot;testing.(*B).ResetTimer&quot;],
+  &quot;ignore_prefixes&quot;: [&quot;runtime.&quot;, &quot;reflect.&quot;, &quot;testing.&quot;],
+  &quot;min_change_threshold&quot;: 5.0,
+  &quot;max_regression_threshold&quot;: 20.0,
+  &quot;fail_on_improvement&quot;: false
+}
+</code></pre>
+<h3 id="benchmark-specific-configuration">Benchmark-Specific Configuration</h3>
+<pre><code class="language-json">&quot;benchmarks&quot;: {
+  &quot;BenchmarkMyFunction&quot;: {
+    &quot;min_change_threshold&quot;: 3.0,
+    &quot;max_regression_threshold&quot;: 10.0
+  }
+}
+</code></pre>
+<h3 id="function-filtering">Function Filtering</h3>
+<p><strong>Ignore specific functions:</strong></p>
+<pre><code class="language-json">&quot;ignore_functions&quot;: [&quot;runtime.gcBgMarkWorker&quot;, &quot;testing.(*B).ResetTimer&quot;]
+</code></pre>
+<p><strong>Ignore function prefixes:</strong></p>
+<pre><code class="language-json">&quot;ignore_prefixes&quot;: [&quot;runtime.&quot;, &quot;reflect.&quot;, &quot;testing.&quot;]
+</code></pre>
+<h3 id="threshold-configuration">Threshold Configuration</h3>
+<ul>
+<li><code>min_change_threshold</code>: Minimum change % to trigger CI/CD failure</li>
+<li><code>max_regression_threshold</code>: Maximum acceptable regression %</li>
+<li>Command-line flags are optional when using configuration</li>
+</ul>
+<h3 id="complete-example">Complete Example</h3>
+<pre><code class="language-json">{
+  &quot;ci_config&quot;: {
+    &quot;global&quot;: {
+      &quot;ignore_prefixes&quot;: [&quot;runtime.&quot;, &quot;reflect.&quot;, &quot;testing.&quot;],
+      &quot;min_change_threshold&quot;: 5.0,
+      &quot;max_regression_threshold&quot;: 20.0
+    },
+    &quot;benchmarks&quot;: {
+      &quot;BenchmarkCriticalPath&quot;: {
+        &quot;min_change_threshold&quot;: 1.0,
+        &quot;max_regression_threshold&quot;: 5.0
+      }
+    }
+  }
+}
+</code></pre>
+<h3 id="cicd-integration">CI/CD Integration</h3>
+<p>With configuration-based CI/CD, you no longer need <code>--fail-on-regression</code> or <code>--regression-threshold</code> flags:</p>
+<pre><code class="language-bash">prof track auto --base baseline --current PR \
+  --profile-type cpu --bench-name &quot;BenchmarkMyFunction&quot; \
+</code></pre>
+<p><strong>Example GitHub Actions:</strong></p>
+<pre><code class="language-yaml">- name: Check for regressions
+  run: |
+    prof track auto --base baseline --current PR \
+      --profile-type cpu --bench-name &quot;BenchmarkMyFunction&quot; \
+</code></pre>
+<p><strong>Configuration File Location:</strong> Must be at project root (same directory as <code>go.mod</code>).</p>
+<h1 id="prof-tools">Prof Tools</h1>
+<p>Prof provides additional tools that can easily operate on the collected data for enhanced analysis and visualization.</p>
+<h2 id="tools-overview">Tools Overview</h2>
+<p>The <code>prof tools</code> command provides access to specialized analysis tools:</p>
+<pre><code class="language-bash">prof tools [command] [flags]
+</code></pre>
+<p>Available tools:</p>
+<ul>
+<li><strong><code>benchstat</code></strong>: Statistical analysis of benchmark results</li>
+<li><strong><code>qcachegrind</code></strong>: Visual call graph analysis</li>
+</ul>
+<h2 id="benchstat-tool">Benchstat Tool</h2>
+<p>Runs Go's official <code>benchstat</code> command on collected benchmark data.</p>
+<h3 id="usage">Usage</h3>
+<pre><code class="language-bash">prof tools benchstat --base &lt;baseline-tag&gt; --current &lt;current-tag&gt; --bench-name &lt;benchmark-name&gt;
+</code></pre>
+<h3 id="example">Example</h3>
+<pre><code class="language-bash">prof tools benchstat --base baseline --current optimized --bench-name BenchmarkGenPool
+</code></pre>
+<h3 id="prerequisites">Prerequisites</h3>
+<pre><code class="language-bash">go install golang.org/x/perf/cmd/benchstat@latest
+</code></pre>
+<h3 id="output">Output</h3>
+<p>Results are saved to <code>bench/tools/benchstats/{benchmark_name}_results.txt</code></p>
+<h2 id="qcachegrind-tool">QCacheGrind Tool</h2>
+<p>Generates call graph data from binary profile files and launches the QCacheGrind visualizer.</p>
+<h3 id="usage_1">Usage</h3>
+<pre><code class="language-bash">prof tools qcachegrind --tag &lt;tag&gt; --profiles &lt;profile-type&gt; --bench-name &lt;benchmark-name&gt;
+</code></pre>
+<h3 id="example_1">Example</h3>
+<pre><code class="language-bash">prof tools qcachegrind --tag optimized --profiles cpu --bench-name BenchmarkGenPool
+</code></pre>
+<h3 id="prerequisites_1">Prerequisites</h3>
+<p><strong>Ubuntu/Debian:</strong></p>
+<pre><code class="language-bash">sudo apt-get install qcachegrind
+</code></pre>
+<p><strong>macOS:</strong></p>
+<pre><code class="language-bash">brew install qcachegrind
+</code></pre>
+<h3 id="output_1">Output</h3>
+<p>Callgrind files are saved to <code>bench/tools/qcachegrind/{benchmark_name}_{profile_type}.callgrind</code></p>
+<h2 id="tool-output-organization">Tool Output Organization</h2>
+<pre><code>bench/
+├── baseline/
+├── optimized/
+└── tools/
+    ├── benchstats/
+    │   └── BenchmarkGenPool_results.txt
+    └── qcachegrind/
+        └── BenchmarkGenPool_cpu.callgrind
+</code></pre>
+<h2 id="integration-with-existing-workflow">Integration with Existing Workflow</h2>
+<ol>
+<li><strong>Collect data</strong>: Use <code>prof auto</code> or <code>prof tui</code></li>
+<li><strong>Compare performance</strong>: Use <code>prof track</code></li>
+<li><strong>Deep analysis</strong>: Use <code>prof tools</code></li>
+<li><strong>Visual exploration</strong>: Use QCacheGrind for interactive call graph analysis</li>
+</ol>
+<h2 id="best-practices">Best Practices</h2>
+<p><strong>Combine tools for comprehensive analysis:</strong></p>
+<pre><code class="language-bash"># Collect data
+prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu,memory&quot; --count 10 --tag baseline
+prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu,memory&quot; --count 10 --tag optimized
+
+# Compare performance
+prof track auto --base baseline --current optimized --bench-name BenchmarkGenPool
+
+# Statistical validation
+prof tools benchstat --base baseline --current optimized --bench-name BenchmarkGenPool
+
+# Deep analysis
+prof tools qcachegrind --tag optimized --profiles cpu --bench-name BenchmarkGenPool
 </code></pre></div>
             </div>
         </div>
@@ -481,5 +622,5 @@ jobs:
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2025-08-19 15:38:10.398314+00:00
+Build Date UTC : 2025-08-25 17:49:44.557346+00:00
 -->
