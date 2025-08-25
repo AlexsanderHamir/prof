@@ -136,6 +136,41 @@ func CreateTemplate() error {
 				IgnoreFunctions: []string{"init", "TestMain", "BenchmarkMain"},
 			},
 		},
+		CIConfig: &CIConfig{
+			Global: &CITrackingConfig{
+				// Ignore common noisy functions that shouldn't cause CI/CD failures
+				IgnoreFunctions: []string{
+					"runtime.gcBgMarkWorker",
+					"runtime.systemstack",
+					"runtime.mallocgc",
+					"reflect.ValueOf",
+					"testing.(*B).launch",
+				},
+				// Ignore runtime and reflect functions that are often noisy
+				IgnorePrefixes: []string{
+					"runtime.",
+					"reflect.",
+					"testing.",
+				},
+				// Only fail CI/CD for changes >= 5%
+				MinChangeThreshold: 5.0,
+				// Maximum acceptable regression is 15%
+				MaxRegressionThreshold: 15.0,
+				// Don't fail on improvements
+				FailOnImprovement: false,
+			},
+			Benchmarks: map[string]CITrackingConfig{
+				"BenchmarkGenPool": {
+					// Specific settings for this benchmark
+					IgnoreFunctions: []string{
+						"BenchmarkGenPool",
+						"testing.(*B).ResetTimer",
+					},
+					MinChangeThreshold:     3.0, // More sensitive for this benchmark
+					MaxRegressionThreshold: 10.0,
+				},
+			},
+		},
 	}
 
 	if err = os.MkdirAll(filepath.Dir(outputPath), PermDir); err != nil {
@@ -144,7 +179,7 @@ func CreateTemplate() error {
 
 	data, err := json.MarshalIndent(template, "", "    ")
 	if err != nil {
-		return fmt.Errorf("failed to marshal template: %w", err)
+		return fmt.Errorf("failed to marshal template file: %w", err)
 	}
 
 	if err = os.WriteFile(outputPath, data, PermFile); err != nil {
@@ -153,6 +188,11 @@ func CreateTemplate() error {
 
 	slog.Info("Template configuration file created", "path", outputPath)
 	slog.Info("Please edit this file with your configuration")
+	slog.Info("The new CI/CD configuration section allows you to:")
+	slog.Info("  - Filter out noisy functions from CI/CD failures")
+	slog.Info("  - Set different thresholds for different benchmarks")
+	slog.Info("  - Configure severity levels for performance changes")
+	slog.Info("  - Override command-line regression thresholds")
 
 	return nil
 }

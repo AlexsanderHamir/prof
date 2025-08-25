@@ -180,8 +180,8 @@ func createTrackAutoCmd() *cobra.Command {
 	cmd.Flags().StringVar(&benchmarkName, benchNameFlag, "", "Name of the benchmark")
 	cmd.Flags().StringVar(&profileType, profileTypeFlag, "", "Profile type (cpu, memory, mutex, block)")
 	cmd.Flags().StringVar(&outputFormat, outputFormatFlag, "detailed", `Output format: "summary" or "detailed"`)
-	cmd.Flags().BoolVar(&failOnRegression, failFlag, false, "Exit with non-zero code if regression exceeds threshold")
-	cmd.Flags().Float64Var(&regressionThreshold, thresholdFlag, 0.0, "Fail when worst flat regression exceeds this percent (e.g., 5.0)")
+	cmd.Flags().BoolVar(&failOnRegression, failFlag, false, "Exit with non-zero code if regression exceeds threshold (optional when using CI/CD config)")
+	cmd.Flags().Float64Var(&regressionThreshold, thresholdFlag, 0.0, "Fail when worst flat regression exceeds this percent (optional when using CI/CD config)")
 
 	_ = cmd.MarkFlagRequired(baseTagFlag)
 	_ = cmd.MarkFlagRequired(currentTagFlag)
@@ -219,8 +219,8 @@ func createTrackManualCmd() *cobra.Command {
 	cmd.Flags().StringVar(&Baseline, baseTagFlag, "", "Name of the baseline tag")
 	cmd.Flags().StringVar(&Current, currentTagFlag, "", "Name of the current tag")
 	cmd.Flags().StringVar(&outputFormat, outputFormatFlag, "", "Output format choice choice")
-	cmd.Flags().BoolVar(&failOnRegression, failFlag, false, "Exit with non-zero code if regression exceeds threshold")
-	cmd.Flags().Float64Var(&regressionThreshold, thresholdFlag, 0.0, "Fail when worst flat regression exceeds this percent (e.g., 5.0)")
+	cmd.Flags().BoolVar(&failOnRegression, failFlag, false, "Exit with non-zero code if regression exceeds threshold (optional when using CI/CD config)")
+	cmd.Flags().Float64Var(&regressionThreshold, thresholdFlag, 0.0, "Fail when worst flat regression exceeds this percent (optional when using CI/CD config)")
 
 	_ = cmd.MarkFlagRequired(baseTagFlag)
 	_ = cmd.MarkFlagRequired(currentTagFlag)
