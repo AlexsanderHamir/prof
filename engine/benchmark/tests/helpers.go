@@ -14,7 +14,7 @@ func createTestGoModule(root string) error {
 go 1.21
 `
 	goModPath := filepath.Join(root, "go.mod")
-	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {
+	if err := os.WriteFile(goModPath, []byte(goModContent), internal.PermFile); err != nil {
 		return err
 	}
 
@@ -40,7 +40,7 @@ func TestSomething(t *testing.T) {
 	t.Log("This is a regular test")
 }
 `
-	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(testContent), internal.PermFile); err != nil {
 		return err
 	}
 
@@ -61,7 +61,7 @@ func BenchmarkSubProcessor(b *testing.B) {
 	}
 }
 `
-	if err := os.WriteFile(subTestFile, []byte(subTestContent), 0644); err != nil {
+	if err := os.WriteFile(subTestFile, []byte(subTestContent), internal.PermFile); err != nil {
 		return err
 	}
 
@@ -78,19 +78,13 @@ func cleanupBenchDirectories() {
 
 	// Remove the entire bench directory if it exists in current directory
 	benchDir := filepath.Join(currentDir, internal.MainDirOutput)
-	if err := os.RemoveAll(benchDir); err != nil {
-		// Ignore errors during cleanup - file might not exist
-	}
+	os.RemoveAll(benchDir)
 
 	// Also try to clean up in the tests subdirectory if we're running from there
 	testsBenchDir := filepath.Join(currentDir, "tests", internal.MainDirOutput)
-	if err := os.RemoveAll(testsBenchDir); err != nil {
-		// Ignore errors during cleanup - file might not exist
-	}
+	os.RemoveAll(testsBenchDir)
 
 	// Try to clean up in the benchmark package directory
 	benchmarkBenchDir := filepath.Join(currentDir, "engine", "benchmark", "tests", internal.MainDirOutput)
-	if err := os.RemoveAll(benchmarkBenchDir); err != nil {
-		// Ignore errors during cleanup - file might not exist
-	}
+	os.RemoveAll(benchmarkBenchDir)
 }
