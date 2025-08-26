@@ -13,11 +13,11 @@ When performing complex profiling, developers often find themselves lost in a ma
 - **`prof track auto`**: Compare performance between tags
 - **`prof track manual`**: Compare external pprof files (`.out`/`.prof`)
 
-**Directory Flexibility:**
+**Directory Flexibility**
 
-- **Project root**: Run from anywhere in your Go project (recommended)
-- **Configuration**: Configuration file (`config_template.json`) is always looked for at the project root
-- **Global Search**: prof auto searches for the benchmark name globally, regardless of the directory you run it from. If you run it from a subdirectory, the **bench** directory will be created there instead of at the project root.
+- **Scoped Search**: `prof` searches for benchmarks within the current directory. If run from the project root, it will discover all benchmarks across the repository.
+- **Output Location**: Benchmark results are always written to the current directory.
+- **Configuration**: The configuration file (`config_template.json`) is always resolved from the project root.
 
 ## Auto
 
@@ -367,7 +367,7 @@ Add a `ci_config` section to your existing `config_template.json` file:
 ### Threshold Configuration
 
 - `min_change_threshold`: Minimum change % to trigger CI/CD failure
-- `max_regression_threshold`: Maximum acceptable regression %
+- `max_regression_threshold`: Maximum acceptable regression % before CI/CD fails. When a function's performance regresses by this percentage or less, the build will fail. This overrides command-line `--regression-threshold` settings and works in conjunction with `min_change_threshold` to filter which regressions are significant enough to fail the build.
 - Command-line flags are optional when using configuration
 
 ### Complete Example
@@ -486,26 +486,6 @@ brew install qcachegrind
 ### Output
 
 Callgrind files are saved to `bench/tools/qcachegrind/{benchmark_name}_{profile_type}.callgrind`
-
-## Tool Output Organization
-
-```
-bench/
-├── baseline/
-├── optimized/
-└── tools/
-    ├── benchstats/
-    │   └── BenchmarkGenPool_results.txt
-    └── qcachegrind/
-        └── BenchmarkGenPool_cpu.callgrind
-```
-
-## Integration with Existing Workflow
-
-1. **Collect data**: Use `prof auto` or `prof tui`
-2. **Compare performance**: Use `prof track`
-3. **Deep analysis**: Use `prof tools`
-4. **Visual exploration**: Use QCacheGrind for interactive call graph analysis
 
 ## Best Practices
 
