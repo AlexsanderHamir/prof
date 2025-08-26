@@ -223,3 +223,109 @@ func getFilterSets(ignoreFunctions []string) map[string]struct{} {
 
 	return ignoreSet
 }
+
+// extractPackageName extracts the package name from a full function path
+func extractPackageName(fullPath string) string {
+	// Handle cases like "github.com/user/pkg.(*Type).Method" => "github.com/user/pkg"
+	// or "sync/atomic.CompareAndSwapPointer" => "sync/atomic"
+
+	// Split by dots
+	parts := strings.Split(fullPath, ".")
+	if len(parts) < 2 {
+		return ""
+	}
+
+	// Check if it's a standard library package (like "sync/atomic")
+	if !strings.Contains(parts[0], "/") && len(parts) >= 2 {
+		// Standard library package
+		if len(parts) >= 3 && strings.Contains(parts[1], "/") {
+			return parts[0] + "." + parts[1]
+		}
+		return parts[0]
+	}
+
+	// Check if it's a GitHub-style package
+	if strings.Contains(parts[0], "github.com") || strings.Contains(parts[0], "golang.org") {
+		// For GitHub packages, take up to the third part (github.com/user/pkg)
+		if len(parts) >= 3 {
+			return strings.Join(parts[:3], ".")
+		}
+		return strings.Join(parts[:2], ".")
+	}
+
+	// For other cases, take the first part
+	return parts[0]
+}
+
+// sortPackagesByFlatPercentage sorts packages by their flat percentage in descending order
+func sortPackagesByFlatPercentage(packageGroups map[string]*PackageGroup) []*PackageGroup {
+	var packages []*PackageGroup
+	for _, pkg := range packageGroups {
+		packages = append(packages, pkg)
+	}
+
+	sort.Slice(packages, func(i, j int) bool {
+		return packages[i].FlatPercentage > packages[j].FlatPercentage
+	})
+
+	return packages
+}
+
+// formatFunctionOutput formats a single function's output based on package type
+func formatFunctionOutput(fn *FunctionInfo, isUnknownPackage bool) string {
+	if isUnknownPackage {
+		// For unknown package, show full prof-style output
+		return fmt.Sprintf("- `%s` → flat: %.2f, flat%%: %.2f%%, sum%%: %.2f%%, cum: %.2f, cum%%: %.2f%%\n",
+			fn.Name, fn.Flat, fn.FlatPercentage, fn.SumPercentage, fn.Cum, fn.CumPercentage)
+	}
+
+	// For known packages, show simplified format
+	return fmt.Sprintf("- `%s` → %.2f%%\n", fn.Name, fn.FlatPercentage)
+}
+
+// formatPackageReport formats the package groups into a readable report
+func formatPackageReport(packages []*PackageGroup) string {
+	var result strings.Builder
+
+	for i, pkg := range packages {
+		if i > 0 {
+			result.WriteString("\n\n")
+		}
+
+		// Package header
+		result.WriteString(fmt.Sprintf("#### **%s**\n", pkg.Name))
+
+		// Sort functions by flat percentage (descending)
+		sort.Slice(pkg.Functions, func(i, j int) bool {
+			return pkg.Functions[i].FlatPercentage > pkg.Functions[j].FlatPercentage
+		})
+
+		// List functions
+		isUnknownPackage := pkg.Name == "unknown"
+		for _, fn := range pkg.Functions {
+			result.WriteString(formatFunctionOutput(fn, isUnknownPackage))
+		}
+
+		// Package subtotal
+		result.WriteString(fmt.Sprintf("\n**Subtotal (%s)**: ≈%.1f%%",
+			extractShortPackageName(pkg.Name), pkg.FlatPercentage))
+	}
+
+	return result.String()
+}
+
+// extractShortPackageName extracts a shorter version of the package name for display
+func extractShortPackageName(fullPackageName string) string {
+	parts := strings.Split(fullPackageName, ".")
+	if len(parts) == 0 {
+		return fullPackageName
+	}
+
+	// For GitHub packages, show just the last part
+	if strings.Contains(fullPackageName, "github.com") {
+		return parts[len(parts)-1]
+	}
+
+	// For standard library, show the full name
+	return fullPackageName
+}
