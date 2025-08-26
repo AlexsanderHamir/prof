@@ -177,7 +177,7 @@ func TestRunCollector(t *testing.T) {
 	defer cleanupBenchDirectory(t)
 
 	// Test the function
-	err = collector.RunCollector(binaryFiles, "test_tag")
+	err = collector.RunCollector(binaryFiles, "test_tag", false)
 
 	// The function might fail if go tool pprof is not available
 	// or if the binary files are not valid profiles
@@ -233,7 +233,7 @@ func TestRunCollectorWithInvalidFiles(t *testing.T) {
 	defer cleanupBenchDirectory(t)
 
 	// Test the function - it should fail
-	err = collector.RunCollector(invalidFiles, "test_tag")
+	err = collector.RunCollector(invalidFiles, "test_tag", false)
 	if err == nil {
 		t.Error("Expected error when running collector with invalid files, got nil")
 	} else if !strings.Contains(err.Error(), "pprof command failed") {
@@ -256,7 +256,7 @@ func TestRunCollectorWithEmptyFileList(t *testing.T) {
 	defer cleanupBenchDirectory(t)
 
 	// Test the function - it should succeed with no files to process
-	err = collector.RunCollector(emptyFiles, "test_tag")
+	err = collector.RunCollector(emptyFiles, "test_tag", false)
 	if err != nil {
 		t.Errorf("Expected no error when running collector with empty file list, got: %v", err)
 	}
@@ -286,7 +286,7 @@ func TestRunCollectorWithMockFiles(t *testing.T) {
 	}
 
 	// Test the function - it should fail due to invalid binary files
-	err = collector.RunCollector(mockFiles, "test_tag")
+	err = collector.RunCollector(mockFiles, "test_tag", false)
 
 	// The function should fail because the mock files are not valid Go profiles
 	if err == nil {

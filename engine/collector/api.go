@@ -4,21 +4,19 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
 // RunCollector handles data organization without wrapping go test.
-func RunCollector(files []string, tag string) error {
+func RunCollector(files []string, tag string, groupByPackage bool) error {
 	if err := ensureDirExists(internal.MainDirOutput); err != nil {
 		return err
 	}
 
 	tagDir := filepath.Join(internal.MainDirOutput, tag)
-	err := internal.CleanOrCreateTag(tagDir)
-	if err != nil {
+	if err := internal.CleanOrCreateTag(tagDir); err != nil {
 		return fmt.Errorf("CleanOrCreateTag failed: %w", err)
 	}
 
@@ -27,35 +25,11 @@ func RunCollector(files []string, tag string) error {
 		cfg = &internal.Config{}
 	}
 
-	var functionFilter internal.FunctionFilter
-	globalFilter, hasGlobalFilter := cfg.FunctionFilter[internal.GlobalSign]
-	if hasGlobalFilter {
-		functionFilter = globalFilter
-	}
+	globalFilter, _ := getGlobalFunctionFilter(cfg)
 
-	var profileDirPath string
 	for _, fullBinaryPath := range files {
-		fileName := getFileName(fullBinaryPath)
-		profileDirPath, err = createProfileDirectory(tagDir, fileName)
-		if err != nil {
-			return fmt.Errorf("createProfileDirectory failed: %w", err)
-		}
-
-		if !hasGlobalFilter {
-			functionFilter = internal.FunctionFilter{} // clean previous one
-			localFilter, hasLocalFilter := cfg.FunctionFilter[fileName]
-			if hasLocalFilter {
-				functionFilter = localFilter
-			}
-		}
-
-		outputTextFilePath := path.Join(profileDirPath, fileName+"."+internal.TextExtension)
-		if err = GetProfileTextOutput(fullBinaryPath, outputTextFilePath); err != nil {
-			return err
-		}
-
-		if err = collectFunctions(profileDirPath, fullBinaryPath, functionFilter); err != nil {
-			return fmt.Errorf("collectFunctions failed: %w", err)
+		if processErr := processBinaryFile(fullBinaryPath, tagDir, cfg, globalFilter, groupByPackage); processErr != nil {
+			return processErr
 		}
 	}
 	return nil

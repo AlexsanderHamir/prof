@@ -65,6 +65,24 @@ prof track auto --base "baseline" --current "PR" --profile-type "cpu" --bench-na
 
 All profiling data is automatically organized under `bench/<tag>/` directories with clear structure.
 
+### 📦 Package-Level Grouping
+
+Organize profile data by package/module for better analysis and collaboration:
+
+```bash
+# Group profile data by package when collecting
+prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory" --count 5 --tag "baseline" --group-by-package
+
+# Group profile data from existing files
+prof manual --tag "external-profiles" --group-by-package cpu.prof memory.prof
+```
+
+When enabled, this creates additional `*_grouped.txt` files that organize functions by their package/module, making it easier to:
+
+- Identify which packages consume the most resources
+- Share package-level performance insights with team members
+- Focus optimization efforts on specific modules
+
 ## Interactive TUI
 
 Don't want to remember benchmark names or commands? Use the interactive terminal interface:

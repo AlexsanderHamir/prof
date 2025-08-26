@@ -66,7 +66,7 @@ func runTUI(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if err = benchmark.RunBenchmarks(selectedBenches, selectedProfiles, tagStr, runCount); err != nil {
+	if err = benchmark.RunBenchmarks(selectedBenches, selectedProfiles, tagStr, runCount, false); err != nil {
 		return err
 	}
 

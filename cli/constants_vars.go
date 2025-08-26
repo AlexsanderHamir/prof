@@ -15,6 +15,9 @@ var (
 	outputFormat        string
 	failOnRegression    bool
 	regressionThreshold float64
+
+	// Profile organization flags.
+	groupByPackage bool
 )
 
 const (

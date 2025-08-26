@@ -61,3 +61,75 @@ func collectFunctions(profileDirPath, fullBinaryPath string, functionFilter inte
 
 	return nil
 }
+
+// getGlobalFunctionFilter extracts the global function filter from config
+func getGlobalFunctionFilter(cfg *internal.Config) (internal.FunctionFilter, bool) {
+	globalFilter, hasGlobalFilter := cfg.FunctionFilter[internal.GlobalSign]
+	return globalFilter, hasGlobalFilter
+}
+
+// processBinaryFile handles the processing of a single binary file
+func processBinaryFile(fullBinaryPath, tagDir string, cfg *internal.Config, globalFilter internal.FunctionFilter, groupByPackage bool) error {
+	fileName := getFileName(fullBinaryPath)
+
+	profileDirPath, createErr := createProfileDirectory(tagDir, fileName)
+	if createErr != nil {
+		return fmt.Errorf("createProfileDirectory failed: %w", createErr)
+	}
+
+	functionFilter := determineFunctionFilter(cfg, fileName, globalFilter)
+
+	if genErr := generateProfileOutputs(fullBinaryPath, profileDirPath, fileName, functionFilter, groupByPackage); genErr != nil {
+		return genErr
+	}
+
+	if collectErr := collectFunctions(profileDirPath, fullBinaryPath, functionFilter); collectErr != nil {
+		return fmt.Errorf("collectFunctions failed: %w", collectErr)
+	}
+
+	return nil
+}
+
+// determineFunctionFilter determines which function filter to use for a given file
+func determineFunctionFilter(cfg *internal.Config, fileName string, globalFilter internal.FunctionFilter) internal.FunctionFilter {
+	_, hasGlobalFilter := cfg.FunctionFilter[internal.GlobalSign]
+	if hasGlobalFilter {
+		return globalFilter
+	}
+
+	localFilter, hasLocalFilter := cfg.FunctionFilter[fileName]
+	if hasLocalFilter {
+		return localFilter
+	}
+
+	return internal.FunctionFilter{}
+}
+
+// generateProfileOutputs generates all profile outputs for a binary file
+func generateProfileOutputs(fullBinaryPath, profileDirPath, fileName string, functionFilter internal.FunctionFilter, groupByPackage bool) error {
+	outputTextFilePath := path.Join(profileDirPath, fileName+"."+internal.TextExtension)
+	if err := GetProfileTextOutput(fullBinaryPath, outputTextFilePath); err != nil {
+		return err
+	}
+
+	if groupByPackage {
+		groupedOutputPath := path.Join(profileDirPath, fileName+"_grouped."+internal.TextExtension)
+		if err := generateGroupedProfileData(fullBinaryPath, groupedOutputPath, functionFilter); err != nil {
+			return fmt.Errorf("generateGroupedProfileData failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// generateGroupedProfileData generates profile data organized by package/module using the new parser function
+func generateGroupedProfileData(binaryFile, outputFile string, functionFilter internal.FunctionFilter) error {
+	// Import the parser package to use OrganizeProfileByPackageV2
+	groupedData, err := parser.OrganizeProfileByPackageV2(binaryFile, functionFilter)
+	if err != nil {
+		return fmt.Errorf("failed to organize profile by package: %w", err)
+	}
+
+	// Write the grouped data to the output file
+	return os.WriteFile(outputFile, []byte(groupedData), internal.PermFile)
+}

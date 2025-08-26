@@ -52,7 +52,7 @@ func TestRunBenchmarks(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			defer cleanupBenchDirectories()
 
-			err := benchmark.RunBenchmarks(tt.benchmarks, tt.profiles, tt.tag, tt.count)
+			err := benchmark.RunBenchmarks(tt.benchmarks, tt.profiles, tt.tag, tt.count, false)
 
 			if tt.wantErr {
 				if err == nil {
