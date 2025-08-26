@@ -2,6 +2,7 @@ package test
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/internal"
@@ -255,4 +256,83 @@ func TestGetAllFunctionNamesV2(t *testing.T) {
 			t.Error("Expected non-empty function names from mutex profile, got empty slice")
 		}
 	})
+}
+
+func TestOrganizeProfileByPackageV2(t *testing.T) {
+	// Use existing test profile file
+	profilePath := filepath.Join("testFilesV2", "BenchmarkGenPool_cpu.out")
+
+	// Test with empty filter
+	filter := internal.FunctionFilter{}
+	result, err := parser.OrganizeProfileByPackageV2(profilePath, filter)
+	if err != nil {
+		t.Fatalf("Expected no error, got: %v", err)
+	}
+
+	// Verify the result contains expected package names
+	if !strings.Contains(result, "github.com/AlexsanderHamir/GenPool") {
+		t.Error("Expected result to contain 'github.com/AlexsanderHamir/GenPool' package")
+	}
+
+	// Verify the result contains function names
+	if !strings.Contains(result, "func1") {
+		t.Error("Expected result to contain 'func1' function")
+	}
+
+	// Verify subtotals are present
+	if !strings.Contains(result, "Subtotal") {
+		t.Error("Expected result to contain subtotals")
+	}
+
+	// Verify that percentages are displayed
+	if !strings.Contains(result, "%") {
+		t.Error("Expected result to contain percentage values")
+	}
+
+	t.Logf("Generated report:\n%s", result)
+}
+
+func TestOrganizeProfileByPackageV2WithFilter(t *testing.T) {
+	// Use existing test profile file
+	profilePath := filepath.Join("testFilesV2", "BenchmarkGenPool_cpu.out")
+
+	// Test with include prefix filter
+	filter := internal.FunctionFilter{
+		IncludePrefixes: []string{"github.com/AlexsanderHamir/GenPool"},
+	}
+
+	result, err := parser.OrganizeProfileByPackageV2(profilePath, filter)
+	if err != nil {
+		t.Fatalf("Expected no error, got: %v", err)
+	}
+
+	// Should only contain the specified package
+	if !strings.Contains(result, "github.com/AlexsanderHamir/GenPool") {
+		t.Error("Expected result to contain 'github.com/AlexsanderHamir/GenPool' package when filtered")
+	}
+}
+
+func TestOrganizeProfileByPackageV2WithIgnoreFunctions(t *testing.T) {
+	// Use existing test profile file
+	profilePath := filepath.Join("testFilesV2", "BenchmarkGenPool_cpu.out")
+
+	// Test with ignore functions filter
+	filter := internal.FunctionFilter{
+		IgnoreFunctions: []string{"BenchmarkGenPool"},
+	}
+
+	result, err := parser.OrganizeProfileByPackageV2(profilePath, filter)
+	if err != nil {
+		t.Fatalf("Expected no error, got: %v", err)
+	}
+
+	// Should not contain ignored functions
+	if strings.Contains(result, "BenchmarkGenPool") {
+		t.Error("Expected result to NOT contain 'BenchmarkGenPool' function when ignored")
+	}
+
+	// Should still contain other functions
+	if !strings.Contains(result, "github.com/AlexsanderHamir/GenPool") {
+		t.Error("Expected result to contain 'github.com/AlexsanderHamir/GenPool' package")
+	}
 }
