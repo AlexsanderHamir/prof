@@ -271,6 +271,18 @@ func sortPackagesByFlatPercentage(packageGroups map[string]*PackageGroup) []*Pac
 	return packages
 }
 
+// formatFunctionOutput formats a single function's output based on package type
+func formatFunctionOutput(fn *FunctionInfo, isUnknownPackage bool) string {
+	if isUnknownPackage {
+		// For unknown package, show full prof-style output
+		return fmt.Sprintf("- `%s` → flat: %.2f, flat%%: %.2f%%, sum%%: %.2f%%, cum: %.2f, cum%%: %.2f%%\n",
+			fn.Name, fn.Flat, fn.FlatPercentage, fn.SumPercentage, fn.Cum, fn.CumPercentage)
+	}
+
+	// For known packages, show simplified format
+	return fmt.Sprintf("- `%s` → %.2f%%\n", fn.Name, fn.FlatPercentage)
+}
+
 // formatPackageReport formats the package groups into a readable report
 func formatPackageReport(packages []*PackageGroup) string {
 	var result strings.Builder
@@ -289,26 +301,9 @@ func formatPackageReport(packages []*PackageGroup) string {
 		})
 
 		// List functions
+		isUnknownPackage := pkg.Name == "unknown"
 		for _, fn := range pkg.Functions {
-			if pkg.Name == "unknown" {
-				// For unknown package, show full prof-style output
-				if fn.Flat > 0 {
-					result.WriteString(fmt.Sprintf("- `%s` → flat: %.2f, flat%%: %.2f%%, sum%%: %.2f%%, cum: %.2f, cum%%: %.2f%%\n",
-						fn.Name, fn.Flat, fn.FlatPercentage, fn.SumPercentage, fn.Cum, fn.CumPercentage))
-				} else if fn.Cum > 0 {
-					result.WriteString(fmt.Sprintf("- `%s` → flat: 0, flat%%: 0%%, sum%%: 0%%, cum: %.2f, cum%%: %.2f%%\n",
-						fn.Name, fn.Cum, fn.CumPercentage))
-				}
-			} else {
-				// For known packages, show simplified format
-				if fn.Flat > 0 {
-					result.WriteString(fmt.Sprintf("- `%s` → %.2f%%\n",
-						fn.Name, fn.FlatPercentage))
-				} else if fn.Cum > 0 {
-					result.WriteString(fmt.Sprintf("- `%s` → 0%% (cum %.2f%%)\n",
-						fn.Name, fn.CumPercentage))
-				}
-			}
+			result.WriteString(formatFunctionOutput(fn, isUnknownPackage))
 		}
 
 		// Package subtotal
