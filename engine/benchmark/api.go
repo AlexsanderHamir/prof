@@ -8,7 +8,7 @@ import (
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
-func RunBenchmarks(benchmarks, profiles []string, tag string, count int) error {
+func RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupByPackage bool) error {
 	if len(benchmarks) == 0 {
 		return errors.New("benchmarks flag is empty")
 	}
@@ -37,7 +37,7 @@ func RunBenchmarks(benchmarks, profiles []string, tag string, count int) error {
 
 	internal.PrintConfiguration(benchArgs, cfg.FunctionFilter)
 
-	if err = runBenchAndGetProfiles(benchArgs, cfg.FunctionFilter); err != nil {
+	if err = runBenchAndGetProfiles(benchArgs, cfg.FunctionFilter, groupByPackage); err != nil {
 		return err
 	}
 

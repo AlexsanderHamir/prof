@@ -96,11 +96,12 @@ func createProfManual() *cobra.Command {
 		Args:    cobra.MinimumNArgs(1),
 		Example: fmt.Sprintf("prof %s --tag tagName cpu.prof memory.prof block.prof mutex.prof", internal.MANUALCMD),
 		RunE: func(_ *cobra.Command, args []string) error {
-			return collector.RunCollector(args, tag)
+			return collector.RunCollector(args, tag, groupByPackage)
 		},
 	}
 
 	manualCmd.Flags().StringVar(&tag, tagFlag, "", "The tag is used to organize the results")
+	manualCmd.Flags().BoolVar(&groupByPackage, "group-by-package", false, "Group profile data by package/module and save as organized text file")
 	_ = manualCmd.MarkFlagRequired(tagFlag)
 
 	return manualCmd
@@ -116,7 +117,7 @@ func createProfAuto() *cobra.Command {
 		Use:   internal.AUTOCMD,
 		Short: "Wraps `go test` and `pprof` to benchmark code and gather profiling data for performance investigations.",
 		RunE: func(_ *cobra.Command, _ []string) error {
-			return benchmark.RunBenchmarks(benchmarks, profiles, tag, count)
+			return benchmark.RunBenchmarks(benchmarks, profiles, tag, count, groupByPackage)
 		},
 		Example: example,
 	}
@@ -125,6 +126,7 @@ func createProfAuto() *cobra.Command {
 	cmd.Flags().StringSliceVar(&profiles, profileFlag, []string{}, `Profiles to use (e.g., "cpu,memory,mutex")`)
 	cmd.Flags().StringVar(&tag, tagFlag, "", "The tag is used to organize the results")
 	cmd.Flags().IntVar(&count, countFlag, 0, "Number of runs")
+	cmd.Flags().BoolVar(&groupByPackage, "group-by-package", false, "Group profile data by package/module and save as organized text file")
 
 	_ = cmd.MarkFlagRequired(benchFlag)
 	_ = cmd.MarkFlagRequired(profileFlag)

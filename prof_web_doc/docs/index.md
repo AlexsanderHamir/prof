@@ -27,6 +27,12 @@ The `auto` command wraps `go test` and `pprof` to run benchmarks, collect all pr
 prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
 ```
 
+**With package grouping:**
+
+```bash
+prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline" --group-by-package
+```
+
 This single command replaces dozens of manual steps and creates a complete, organized profiling dataset ready for analysis or comparison.
 
 **Output Structure:**
@@ -79,6 +85,32 @@ This creates a configuration file with the following structure:
 - `include_prefixes`: Only collect functions whose names start with these prefixes.
 - `ignore_functions`: Exclude specific functions from collection, even if they match the include prefixes.
 
+## Package Grouping
+
+The `--group-by-package` flag organizes functions by package and saves results under `bench/tag/text/benchmarkname`:
+
+```text
+#### **sync/atomic**
+- `CompareAndSwapPointer` → 31.21%
+- `Load` → 9.78%
+- `Add` → 2.00%
+- `CompareAndSwap` → 0.12%
+
+**Subtotal (sync/atomic)**: ≈43.2%
+
+#### **github.com/AlexsanderHamir/GenPool/pool**
+- `Put` → 19.43%
+- `Get` → 16.14%
+
+**Subtotal (github.com/AlexsanderHamir/GenPool/pool)**: ≈35.6%
+
+#### **github.com/AlexsanderHamir/GenPool/test**
+- `cleaner` → 6.12%
+- `func1` → 1.53%
+
+**Subtotal (com/AlexsanderHamir/GenPool/test)**: ≈7.7%
+```
+
 ## TUI - Interactive Selection
 
 The `tui` command provides an interactive terminal interface that automatically discovers benchmarks in your project and guides you through the selection process:
@@ -109,6 +141,12 @@ The `manual` command processes existing pprof files (`.out` or `.prof`) without 
 
 ```bash
 prof manual --tag "external-profiles" BenchmarkGenPool_cpu.out memory.out block.out
+```
+
+**With package grouping:**
+
+```bash
+prof manual --tag "external-profiles" --group-by-package BenchmarkGenPool_cpu.out memory.out block.out
 ```
 
 This organizes your existing profile files into a flatter structure based on the profile filename:
