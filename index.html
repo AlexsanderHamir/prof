@@ -74,6 +74,10 @@
               <ul class="nav flex-column">
               </ul>
             </li>
+            <li class="nav-item" data-bs-level="2"><a href="#package-grouping" class="nav-link">Package Grouping</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
             <li class="nav-item" data-bs-level="2"><a href="#tui-interactive-selection" class="nav-link">TUI - Interactive Selection</a>
               <ul class="nav flex-column">
               </ul>
@@ -133,14 +137,6 @@
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-bs-level="2"><a href="#tool-output-organization" class="nav-link">Tool Output Organization</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            <li class="nav-item" data-bs-level="2"><a href="#integration-with-existing-workflow" class="nav-link">Integration with Existing Workflow</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
             <li class="nav-item" data-bs-level="2"><a href="#best-practices" class="nav-link">Best Practices</a>
               <ul class="nav flex-column">
               </ul>
@@ -164,15 +160,18 @@
 <li><strong><code>prof track auto</code></strong>: Compare performance between tags</li>
 <li><strong><code>prof track manual</code></strong>: Compare external pprof files (<code>.out</code>/<code>.prof</code>)</li>
 </ul>
-<p><strong>Directory Flexibility:</strong></p>
+<p><strong>Directory Flexibility</strong></p>
 <ul>
-<li><strong>Project root</strong>: Run from anywhere in your Go project (recommended)</li>
-<li><strong>Configuration</strong>: Configuration file (<code>config_template.json</code>) is always looked for at the project root</li>
-<li><strong>Global Search</strong>: prof auto searches for the benchmark name globally, regardless of the directory you run it from. If you run it from a subdirectory, the <strong>bench</strong> directory will be created there instead of at the project root.</li>
+<li><strong>Scoped Search</strong>: <code>prof</code> searches for benchmarks within the current directory. If run from the project root, it will discover all benchmarks across the repository.</li>
+<li><strong>Output Location</strong>: Benchmark results are always written to the current directory.</li>
+<li><strong>Configuration</strong>: The configuration file (<code>config_template.json</code>) is always resolved from the project root.</li>
 </ul>
 <h2 id="auto">Auto</h2>
 <p>The <code>auto</code> command wraps <code>go test</code> and <code>pprof</code> to run benchmarks, collect all profile types, and organize everything automatically:</p>
 <pre><code class="language-bash">prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu,memory,mutex,block&quot; --count 10 --tag &quot;baseline&quot;
+</code></pre>
+<p><strong>With package grouping:</strong></p>
+<pre><code class="language-bash">prof auto --benchmarks &quot;BenchmarkGenPool&quot; --profiles &quot;cpu,memory,mutex,block&quot; --count 10 --tag &quot;baseline&quot; --group-by-package
 </code></pre>
 <p>This single command replaces dozens of manual steps and creates a complete, organized profiling dataset ready for analysis or comparison.</p>
 <p><strong>Output Structure:</strong></p>
@@ -215,6 +214,28 @@
 <li><code>include_prefixes</code>: Only collect functions whose names start with these prefixes.</li>
 <li><code>ignore_functions</code>: Exclude specific functions from collection, even if they match the include prefixes.</li>
 </ul>
+<h2 id="package-grouping">Package Grouping</h2>
+<p>The <code>--group-by-package</code> flag organizes functions by package and saves results under <code>bench/tag/text/benchmarkname</code>:</p>
+<pre><code class="language-text">#### **sync/atomic**
+- `CompareAndSwapPointer` → 31.21%
+- `Load` → 9.78%
+- `Add` → 2.00%
+- `CompareAndSwap` → 0.12%
+
+**Subtotal (sync/atomic)**: ≈43.2%
+
+#### **github.com/AlexsanderHamir/GenPool/pool**
+- `Put` → 19.43%
+- `Get` → 16.14%
+
+**Subtotal (github.com/AlexsanderHamir/GenPool/pool)**: ≈35.6%
+
+#### **github.com/AlexsanderHamir/GenPool/test**
+- `cleaner` → 6.12%
+- `func1` → 1.53%
+
+**Subtotal (com/AlexsanderHamir/GenPool/test)**: ≈7.7%
+</code></pre>
 <h2 id="tui-interactive-selection">TUI - Interactive Selection</h2>
 <p>The <code>tui</code> command provides an interactive terminal interface that automatically discovers benchmarks in your project and guides you through the selection process:</p>
 <pre><code class="language-bash">prof tui
@@ -238,6 +259,9 @@
 <h2 id="manual">Manual</h2>
 <p>The <code>manual</code> command processes existing pprof files (<code>.out</code> or <code>.prof</code>) without running benchmarks - it uses <code>pprof</code> to convert them to text reports and organize the data:</p>
 <pre><code class="language-bash">prof manual --tag &quot;external-profiles&quot; BenchmarkGenPool_cpu.out memory.out block.out
+</code></pre>
+<p><strong>With package grouping:</strong></p>
+<pre><code class="language-bash">prof manual --tag &quot;external-profiles&quot; --group-by-package BenchmarkGenPool_cpu.out memory.out block.out
 </code></pre>
 <p>This organizes your existing profile files into a flatter structure based on the profile filename:</p>
 <p><strong>Manual Output Structure:</strong></p>
@@ -436,7 +460,7 @@ Recommendation: Critical regression! Immediate investigation required.
 <h3 id="threshold-configuration">Threshold Configuration</h3>
 <ul>
 <li><code>min_change_threshold</code>: Minimum change % to trigger CI/CD failure</li>
-<li><code>max_regression_threshold</code>: Maximum acceptable regression %</li>
+<li><code>max_regression_threshold</code>: Maximum acceptable regression % before CI/CD fails. When a function's performance regresses by this percentage or less, the build will fail. This overrides command-line <code>--regression-threshold</code> settings and works in conjunction with <code>min_change_threshold</code> to filter which regressions are significant enough to fail the build.</li>
 <li>Command-line flags are optional when using configuration</li>
 </ul>
 <h3 id="complete-example">Complete Example</h3>
@@ -509,23 +533,6 @@ Recommendation: Critical regression! Immediate investigation required.
 </code></pre>
 <h3 id="output_1">Output</h3>
 <p>Callgrind files are saved to <code>bench/tools/qcachegrind/{benchmark_name}_{profile_type}.callgrind</code></p>
-<h2 id="tool-output-organization">Tool Output Organization</h2>
-<pre><code>bench/
-├── baseline/
-├── optimized/
-└── tools/
-    ├── benchstats/
-    │   └── BenchmarkGenPool_results.txt
-    └── qcachegrind/
-        └── BenchmarkGenPool_cpu.callgrind
-</code></pre>
-<h2 id="integration-with-existing-workflow">Integration with Existing Workflow</h2>
-<ol>
-<li><strong>Collect data</strong>: Use <code>prof auto</code> or <code>prof tui</code></li>
-<li><strong>Compare performance</strong>: Use <code>prof track</code></li>
-<li><strong>Deep analysis</strong>: Use <code>prof tools</code></li>
-<li><strong>Visual exploration</strong>: Use QCacheGrind for interactive call graph analysis</li>
-</ol>
 <h2 id="best-practices">Best Practices</h2>
 <p><strong>Combine tools for comprehensive analysis:</strong></p>
 <pre><code class="language-bash"># Collect data
@@ -622,5 +629,5 @@ prof tools qcachegrind --tag optimized --profiles cpu --bench-name BenchmarkGenP
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2025-08-25 17:49:44.557346+00:00
+Build Date UTC : 2025-08-26 19:52:47.553476+00:00
 -->
