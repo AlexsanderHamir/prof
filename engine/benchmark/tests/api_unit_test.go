@@ -85,19 +85,25 @@ func TestDiscoverBenchmarks(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		scope   string
-		wantErr bool
+		name             string
+		scope            string
+		wantErr          bool
+		expectBenchmarks bool
+		expectedCount    int
 	}{
 		{
-			name:    "discover benchmarks in specific scope",
-			scope:   tempDir,
-			wantErr: false,
+			name:             "discover benchmarks in specific scope",
+			scope:            tempDir,
+			wantErr:          false,
+			expectBenchmarks: true,
+			expectedCount:    3, // BenchmarkStringProcessor, BenchmarkNumberCruncher, BenchmarkSubProcessor
 		},
 		{
-			name:    "discover benchmarks in empty scope (module root)",
-			scope:   "",
-			wantErr: false,
+			name:             "discover benchmarks in empty scope (module root)",
+			scope:            "",
+			wantErr:          false,
+			expectBenchmarks: false,
+			expectedCount:    0, // No benchmarks in actual module root
 		},
 	}
 
@@ -116,26 +122,34 @@ func TestDiscoverBenchmarks(t *testing.T) {
 					return
 				}
 
-				// We expect at least our test benchmarks to be found
-				if len(benchmarks) < 2 {
-					t.Errorf("DiscoverBenchmarks() returned %d benchmarks, want at least 2", len(benchmarks))
-				}
-
-				// Check that we found the expected benchmark names
-				expectedNames := map[string]bool{
-					"BenchmarkStringProcessor": false,
-					"BenchmarkNumberCruncher":  false,
-				}
-
-				for _, name := range benchmarks {
-					if _, exists := expectedNames[name]; exists {
-						expectedNames[name] = true
+				if tt.expectBenchmarks {
+					// We expect at least our test benchmarks to be found
+					if len(benchmarks) < tt.expectedCount {
+						t.Errorf("DiscoverBenchmarks() returned %d benchmarks, want at least %d", len(benchmarks), tt.expectedCount)
 					}
-				}
 
-				for name, found := range expectedNames {
-					if !found {
-						t.Errorf("DiscoverBenchmarks() did not find expected benchmark: %s", name)
+					// Check that we found the expected benchmark names
+					expectedNames := map[string]bool{
+						"BenchmarkStringProcessor": false,
+						"BenchmarkNumberCruncher":  false,
+						"BenchmarkSubProcessor":    false,
+					}
+
+					for _, name := range benchmarks {
+						if _, exists := expectedNames[name]; exists {
+							expectedNames[name] = true
+						}
+					}
+
+					for name, found := range expectedNames {
+						if !found {
+							t.Errorf("DiscoverBenchmarks() did not find expected benchmark: %s", name)
+						}
+					}
+				} else {
+					// When not expecting benchmarks, verify we got an empty list
+					if len(benchmarks) != tt.expectedCount {
+						t.Errorf("DiscoverBenchmarks() returned %d benchmarks, want %d", len(benchmarks), tt.expectedCount)
 					}
 				}
 			}
