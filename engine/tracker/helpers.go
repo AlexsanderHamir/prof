@@ -225,7 +225,7 @@ func applyCICDThresholdsOnly(report *ProfileChangeReport, selections *Selections
 	// Apply thresholds
 	if effectiveThreshold > 0.0 {
 		worst := report.WorstRegression()
-		if worst != nil && worst.FlatChangePercent >= effectiveThreshold {
+		if worst != nil && worst.FlatChangePercent <= effectiveThreshold {
 			// Check if function should be ignored by CI/CD config
 			if !shouldIgnoreFunction(cicdConfig, worst.FunctionName, benchmarkName) {
 				return fmt.Errorf("performance regression %.2f%% in %s exceeds CI/CD threshold %.2f%%",

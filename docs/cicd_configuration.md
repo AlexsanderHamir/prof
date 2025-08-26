@@ -130,7 +130,7 @@ This overrides command-line `--regression-threshold` settings:
 "max_regression_threshold": 15.0
 ```
 
-If a function regresses by 15% or more, CI/CD will fail regardless of command-line settings.
+If a function regresses by 15%, CI/CD will fail regardless of command-line settings.
 
 ### Command-Line Override Priority
 
