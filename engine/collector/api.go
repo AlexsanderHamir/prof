@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 
 	"github.com/AlexsanderHamir/prof/internal"
-	"github.com/AlexsanderHamir/prof/parser"
 )
 
 // RunCollector handles data organization without wrapping go test.
@@ -18,8 +16,7 @@ func RunCollector(files []string, tag string, groupByPackage bool) error {
 	}
 
 	tagDir := filepath.Join(internal.MainDirOutput, tag)
-	err := internal.CleanOrCreateTag(tagDir)
-	if err != nil {
+	if err := internal.CleanOrCreateTag(tagDir); err != nil {
 		return fmt.Errorf("CleanOrCreateTag failed: %w", err)
 	}
 
@@ -28,43 +25,11 @@ func RunCollector(files []string, tag string, groupByPackage bool) error {
 		cfg = &internal.Config{}
 	}
 
-	var functionFilter internal.FunctionFilter
-	globalFilter, hasGlobalFilter := cfg.FunctionFilter[internal.GlobalSign]
-	if hasGlobalFilter {
-		functionFilter = globalFilter
-	}
+	globalFilter, _ := getGlobalFunctionFilter(cfg)
 
-	var profileDirPath string
 	for _, fullBinaryPath := range files {
-		fileName := getFileName(fullBinaryPath)
-		profileDirPath, err = createProfileDirectory(tagDir, fileName)
-		if err != nil {
-			return fmt.Errorf("createProfileDirectory failed: %w", err)
-		}
-
-		if !hasGlobalFilter {
-			functionFilter = internal.FunctionFilter{} // clean previous one
-			localFilter, hasLocalFilter := cfg.FunctionFilter[fileName]
-			if hasLocalFilter {
-				functionFilter = localFilter
-			}
-		}
-
-		outputTextFilePath := path.Join(profileDirPath, fileName+"."+internal.TextExtension)
-		if err = GetProfileTextOutput(fullBinaryPath, outputTextFilePath); err != nil {
-			return err
-		}
-
-		// Generate grouped profile data if requested
-		if groupByPackage {
-			groupedOutputPath := path.Join(profileDirPath, fileName+"_grouped."+internal.TextExtension)
-			if err = generateGroupedProfileData(fullBinaryPath, groupedOutputPath, functionFilter); err != nil {
-				return fmt.Errorf("generateGroupedProfileData failed: %w", err)
-			}
-		}
-
-		if err = collectFunctions(profileDirPath, fullBinaryPath, functionFilter); err != nil {
-			return fmt.Errorf("collectFunctions failed: %w", err)
+		if processErr := processBinaryFile(fullBinaryPath, tagDir, cfg, globalFilter, groupByPackage); processErr != nil {
+			return processErr
 		}
 	}
 	return nil
@@ -108,16 +73,4 @@ func GetFunctionsOutput(functions []string, binaryPath, basePath string) error {
 	}
 
 	return nil
-}
-
-// generateGroupedProfileData generates profile data organized by package/module using the new parser function
-func generateGroupedProfileData(binaryFile, outputFile string, functionFilter internal.FunctionFilter) error {
-	// Import the parser package to use OrganizeProfileByPackageV2
-	groupedData, err := parser.OrganizeProfileByPackageV2(binaryFile, functionFilter)
-	if err != nil {
-		return fmt.Errorf("failed to organize profile by package: %w", err)
-	}
-
-	// Write the grouped data to the output file
-	return os.WriteFile(outputFile, []byte(groupedData), internal.PermFile)
 }
