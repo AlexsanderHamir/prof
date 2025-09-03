@@ -13,7 +13,7 @@ Prof automates Go performance profiling by collecting all pprof data in one comm
 
 📖 [Documentation](https://alexsanderhamir.github.io/prof/) | ▶️ [Watch Demo Video](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/output.mp4) | ▶️ [Watch TUI Demo](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/tui_prof.mp4)
 
-> Contributions and feedback are more then welcomed, always be inclined to share your ideas !!
+> The project is actively looking for contributors !!
 
 ## Why Prof?
 
