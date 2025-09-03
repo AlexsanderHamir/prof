@@ -1,0 +1,49 @@
+# AtomOS Block Specification Example
+# This file defines a piece of software as a block that is supported by our runtime.
+
+name: go-profiler
+description: >
+  A Go-based profiler that can run, report, and generate flamegraphs.
+  Provides deterministic CLI entries for AI agents to execute workflows.
+version: v1.8.1
+source:
+  type: github
+  repo: AlexsanderHamir/prof
+
+# Platform-specific binaries (release-only, mandatory)
+binary:
+  from: release
+  assets:
+    darwin-arm64: prof-darwin-arm64
+
+# CLI entries exposed by this block
+entries:
+  - name: run
+    command: prof run
+    description: Run profiling on the target binary
+    inputs:
+      - name: target
+        type: path
+    outputs:
+      - name: profile
+        type: file
+
+  - name: report
+    command: prof report
+    description: Generate a profiling report from a saved profile
+    inputs:
+      - name: profile
+        type: file
+    outputs:
+      - name: summary
+        type: string
+
+  - name: flamegraph
+    command: prof flamegraph
+    description: Generate a flamegraph from a profile file
+    inputs:
+      - name: profile
+        type: file
+    outputs:
+      - name: flamegraph
+        type: svg
