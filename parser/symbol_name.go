@@ -5,22 +5,7 @@ import "strings"
 // simpleFunctionName returns the short name from a full symbol (e.g. "pkg.(*T).Method" → "Method").
 func simpleFunctionName(fullPath string) string {
 	parts := strings.Split(fullPath, ".")
-	if len(parts) == 0 {
-		return ""
-	}
 	lastPart := parts[len(parts)-1]
-	if strings.Contains(lastPart, ").") {
-		methodParts := strings.Split(lastPart, ").")
-		if len(methodParts) > 1 {
-			return methodParts[1]
-		}
-	}
-	if strings.Contains(lastPart, "].)") {
-		methodParts := strings.Split(lastPart, "].)")
-		if len(methodParts) > 1 {
-			return methodParts[1]
-		}
-	}
 	if idx := strings.Index(lastPart, "("); idx != -1 {
 		lastPart = lastPart[:idx]
 	}
@@ -56,20 +41,11 @@ func packageNameFromSymbol(fullPath string) string {
 		}
 		return parts[0]
 	}
-	if strings.Contains(parts[0], "github.com") || strings.Contains(parts[0], "golang.org") {
-		if len(parts) >= 3 {
-			return strings.Join(parts[:3], ".")
-		}
-		return strings.Join(parts[:2], ".")
-	}
 	return parts[0]
 }
 
 func shortPackageLabel(fullPackageName string) string {
 	parts := strings.Split(fullPackageName, ".")
-	if len(parts) == 0 {
-		return fullPackageName
-	}
 	if strings.Contains(fullPackageName, "github.com") {
 		return parts[len(parts)-1]
 	}
