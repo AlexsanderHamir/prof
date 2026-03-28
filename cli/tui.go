@@ -7,19 +7,18 @@ import (
 	"strconv"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/AlexsanderHamir/prof/engine/benchmark"
-	"github.com/AlexsanderHamir/prof/engine/tracker"
+	"github.com/AlexsanderHamir/prof/internal/app"
 	"github.com/spf13/cobra"
 )
 
-func runTUI(_ *cobra.Command, _ []string) error {
+func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 	// Get current working directory for scope-aware benchmark discovery
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current working directory: %w", err)
 	}
 
-	benchNames, err := benchmark.DiscoverBenchmarks(currentDir)
+	benchNames, err := svc.Benchmark.DiscoverBenchmarks(currentDir)
 	if err != nil {
 		return fmt.Errorf("failed to discover benchmarks: %w", err)
 	}
@@ -38,7 +37,7 @@ func runTUI(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	profilesOptions := benchmark.SupportedProfiles
+	profilesOptions := svc.Benchmark.SupportedProfiles()
 	var selectedProfiles []string
 	profilesPrompt := &survey.MultiSelect{
 		Message: "Select profiles:",
@@ -66,14 +65,14 @@ func runTUI(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if err = benchmark.RunBenchmarks(selectedBenches, selectedProfiles, tagStr, runCount, false); err != nil {
+	if err = svc.Benchmark.RunBenchmarks(selectedBenches, selectedProfiles, tagStr, runCount, false); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func runTUITrackAuto(_ *cobra.Command, _ []string) error {
+func runTUITrackAuto(svc *app.Services, _ *cobra.Command, _ []string) error {
 	// Discover available tags
 	tags, err := discoverAvailableTags()
 	if err != nil {
@@ -100,5 +99,5 @@ func runTUITrackAuto(_ *cobra.Command, _ []string) error {
 	}
 	fmt.Println()
 
-	return tracker.RunTrackAuto(selections)
+	return svc.Tracker.RunTrackAuto(selections)
 }
