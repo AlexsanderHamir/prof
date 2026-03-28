@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/internal"
@@ -314,17 +314,17 @@ func TestManualCommand(t *testing.T) {
 	if err != nil {
 		t.Log(err)
 	}
-	binaryPath := path.Join(root, testDirName, "prof")
+	binaryPath := filepath.Join(root, testDirName, profBinaryName())
 
 	buildProf(t, binaryPath, root)
 
 	t.Cleanup(func() {
-		benchPath := path.Join(root, testDirName, internal.MainDirOutput)
+		benchPath := filepath.Join(root, testDirName, internal.MainDirOutput)
 		if err = os.RemoveAll(benchPath); err != nil {
 			t.Logf("Failed to clean up bench: %v", err)
 		}
 
-		if err = os.Remove("prof"); err != nil {
+		if err = os.Remove(filepath.Join(root, testDirName, profBinaryName())); err != nil {
 			t.Logf("failed to clean prof binary: %s", err)
 		}
 	})
@@ -340,8 +340,8 @@ func TestManualCommand(t *testing.T) {
 			"assets/mutex.out",
 		}
 
-		cmd := exec.Command("./prof", args...)
-		cmd.Dir = path.Join(root, testDirName)
+		cmd := exec.Command(binaryPath, args...)
+		cmd.Dir = filepath.Join(root, testDirName)
 
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
@@ -380,7 +380,7 @@ func TestTrackerBasicRun(t *testing.T) {
 		t.Error(err)
 	}
 
-	envFullPath := path.Join(root, testDirName, "Enviroment testing")
+	envFullPath := filepath.Join(root, testDirName, "Enviroment testing")
 	t.Cleanup(func() {
 		if err = os.RemoveAll(envFullPath); err != nil {
 			t.Logf("Failed to clean up bench: %v", err)

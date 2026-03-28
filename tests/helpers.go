@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -80,6 +80,15 @@ const (
 	benchName        = "BenchmarkStringProcessor"
 )
 
+// profBinaryName is the built prof executable filename. On Windows, os/exec
+// requires a recognized extension (e.g. .exe); a bare "prof" fails lookup.
+func profBinaryName() string {
+	if runtime.GOOS == "windows" {
+		return "prof.exe"
+	}
+	return "prof"
+}
+
 //go:embed assets/utils.go.txt
 var utilsTemplate string
 
@@ -143,21 +152,26 @@ func setupEnviroment(t *testing.T) {
 		t.Fatalf("couldn't create environment dir: %v", err)
 	}
 
-	// 2. Initialize Go module.
-	cmd := exec.Command("go", "mod", "init", "test-environment")
-	cmd.Dir = envDirName
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("failed to initialize Go module: %v\nOutput: %s", err, output)
+	// 2. Initialize Go module (skip if go.mod already exists — e.g. committed fixture under tests/).
+	goModPath := filepath.Join(envDirName, "go.mod")
+	if _, statErr := os.Stat(goModPath); statErr != nil {
+		if !os.IsNotExist(statErr) {
+			t.Fatalf("stat go.mod: %v", statErr)
+		}
+		cmd := exec.Command("go", "mod", "init", "test-environment")
+		cmd.Dir = envDirName
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("failed to initialize Go module: %v\nOutput: %s", err, output)
+		}
 	}
 
 	// 3. Create package and benchmark files.
-	if err = createPackage(envDirName); err != nil {
+	if err := createPackage(envDirName); err != nil {
 		t.Fatalf("failed to create package: %v", err)
 	}
 
-	if err = createBenchmarkFile(envDirName); err != nil {
+	if err := createBenchmarkFile(envDirName); err != nil {
 		t.Fatalf("failed to create benchmark file: %v", err)
 	}
 }
@@ -166,7 +180,7 @@ func setUpProf(t *testing.T, projectRoot string) {
 	t.Helper()
 
 	// Build prof binary directly to the environment directory
-	profBinary := filepath.Join(projectRoot, testDirName, envDirName, "prof")
+	profBinary := filepath.Join(projectRoot, testDirName, envDirName, profBinaryName())
 
 	// Build from cmd/prof directory
 	cmdProfDir := filepath.Join(projectRoot, "cmd", "prof")
@@ -182,13 +196,12 @@ func setUpProf(t *testing.T, projectRoot string) {
 func runProf(t *testing.T, envFullPath string, args []string, expectedErrMessage string, checkSuccessMessage bool) (shouldContinue bool) {
 	t.Helper()
 
-	profBinary := filepath.Join(envFullPath, "prof")
-
+	profBinary := filepath.Join(envFullPath, profBinaryName())
 	if _, err := os.Stat(profBinary); os.IsNotExist(err) {
 		t.Fatalf("prof binary not found at: %s", profBinary)
 	}
 
-	cmd := exec.Command("./prof", args...)
+	cmd := exec.Command(profBinary, args...)
 	cmd.Dir = envFullPath
 
 	var stdout, stderr bytes.Buffer
@@ -381,7 +394,7 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 	}
 
 	envDirName = envDirName + " " + testArgs.label
-	envFullPath := path.Join(root, testDirName, envDirName)
+	envFullPath := filepath.Join(root, testDirName, envDirName)
 
 	if testArgs.withCleanUp {
 		t.Cleanup(func() {

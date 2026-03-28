@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/AlexsanderHamir/prof/internal"
 )
 
 func getExpectedProfileFileName(profile string) (string, bool) {
@@ -47,6 +45,15 @@ func findMostRecentFile(rootDir, fileName string) (string, error) {
 	return latestPath, nil
 }
 
+// isGoTestBinary reports whether name is a Go test executable left in the package
+// directory after "go test". On Windows the binary is named *.test.exe; elsewhere *.test.
+func isGoTestBinary(name string) bool {
+	if strings.HasSuffix(name, ".test") {
+		return true
+	}
+	return strings.HasSuffix(strings.ToLower(name), ".test.exe")
+}
+
 func moveProfileFiles(benchmarkName string, profiles []string, rootDir string, binDir string) error {
 	for _, profile := range profiles {
 		profileFile, ok := getExpectedProfileFileName(profile)
@@ -77,7 +84,7 @@ func moveTestFiles(benchmarkName, rootDir, binDir string) error {
 		if d.IsDir() {
 			return nil
 		}
-		if strings.HasSuffix(path, internal.ExpectedTestSuffix) {
+		if isGoTestBinary(d.Name()) {
 			testFiles = append(testFiles, path)
 		}
 		return nil

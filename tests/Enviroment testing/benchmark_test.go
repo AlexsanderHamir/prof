@@ -17,6 +17,10 @@ func BenchmarkStringProcessor(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		// Keep GenerateStrings on the CPU hot path so filtered profiles still list it
+		// (ProcessStrings is ignored in WithFunctionFilterPlusIgnore; without this, cpu.out
+		// can lack any matching test-environment symbols).
+		_ = generator.GenerateStrings(2000)
 		result := processor.ProcessStrings()
 		_ = result
 	}

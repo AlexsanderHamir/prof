@@ -100,6 +100,8 @@ func NewDataGenerator() *DataGenerator {
 }
 
 // GenerateStrings creates a slice of strings
+//
+//go:noinline
 func (dg *DataGenerator) GenerateStrings(count int) []string {
 	result := make([]string, count)
 	for i := 0; i < count; i++ {

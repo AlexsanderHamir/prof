@@ -80,7 +80,8 @@ func processProfiles(benchmarkName string, profiles []string, tag string, groupB
 
 		pngDesiredFilePath := filepath.Join(profileFunctionsDir, fmt.Sprintf("%s_%s.png", benchmarkName, profile))
 		if err := collector.GetPNGOutput(profileFile, pngDesiredFilePath); err != nil {
-			return fmt.Errorf("failed to generate PNG visualization for %s: %w", profile, err)
+			// pprof -png requires Graphviz (dot) on PATH; CI and many dev machines have text pprof only.
+			slog.Warn("PNG visualization skipped", "profile", profile, "benchmark", benchmarkName, "err", err)
 		}
 
 		slog.Info("Processed profile", "profile", profile, "benchmark", benchmarkName)
