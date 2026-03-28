@@ -41,12 +41,12 @@ type ProfileAggregator interface {
 // Pipeline composes the stages from open → decode → validate → normalize → aggregate.
 // Zero values in fields are replaced by stock implementations when you call RunFromReader or RunFromPath.
 type Pipeline struct {
-	Opener       ProfileOpener
-	Decoder      ProfileDecoder
-	Validator    ProfileValidator
-	IndexSelect  SampleIndexSelector
-	IndexCheck   SampleShapeChecker
-	Aggregator   ProfileAggregator
+	Opener      ProfileOpener
+	Decoder     ProfileDecoder
+	Validator   ProfileValidator
+	IndexSelect SampleIndexSelector
+	IndexCheck  SampleShapeChecker
+	Aggregator  ProfileAggregator
 }
 
 // DefaultPipeline returns an independent Pipeline with standard components; copy and replace fields to customize.
@@ -96,14 +96,14 @@ func (pl Pipeline) RunFromReader(r io.Reader) (*ProfileData, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := pl.Validator.Validate(p); err != nil {
+	if err = pl.Validator.Validate(p); err != nil {
 		return nil, err
 	}
 	idx, err := pl.IndexSelect.PrimaryIndex(p)
 	if err != nil {
 		return nil, err
 	}
-	if err := pl.IndexCheck.EnsureValueAt(p, idx); err != nil {
+	if err = pl.IndexCheck.EnsureValueAt(p, idx); err != nil {
 		return nil, err
 	}
 	return pl.Aggregator.Aggregate(p, idx), nil

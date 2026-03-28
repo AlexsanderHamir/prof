@@ -9,6 +9,11 @@ import (
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
+// Known pprof profile kinds (matches benchmark/collect layout).
+var knownProfileTypeNames = map[string]struct{}{
+	"cpu": {}, "memory": {}, "mutex": {}, "block": {},
+}
+
 // discoverAvailableTags scans the bench directory for existing tags
 func discoverAvailableTags() ([]string, error) {
 	root, err := internal.FindGoModuleRoot()
@@ -84,7 +89,7 @@ func discoverAvailableProfiles(tag, benchmarkName string) ([]string, error) {
 			name := entry.Name()
 			if strings.HasPrefix(name, benchmarkName+"_") {
 				profileTypeName := strings.TrimSuffix(strings.TrimPrefix(name, benchmarkName+"_"), ".txt")
-				if profileTypeName == "cpu" || profileTypeName == "memory" || profileTypeName == "mutex" || profileTypeName == "block" {
+				if _, ok := knownProfileTypeNames[profileTypeName]; ok {
 					availableProfiles = append(availableProfiles, profileTypeName)
 				}
 			}

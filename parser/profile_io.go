@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -30,13 +31,13 @@ func ParseProfileFromPath(path string) (*pprofprofile.Profile, error) {
 // ValidateProfile runs pprof structural checks and guards required for aggregation.
 func ValidateProfile(p *pprofprofile.Profile) error {
 	if p == nil {
-		return fmt.Errorf("nil profile")
+		return errors.New("nil profile")
 	}
 	if err := p.CheckValid(); err != nil {
 		return fmt.Errorf("invalid profile: %w", err)
 	}
 	if len(p.SampleType) == 0 {
-		return fmt.Errorf("profile has no sample types")
+		return errors.New("profile has no sample types")
 	}
 	return nil
 }
@@ -45,7 +46,7 @@ func ValidateProfile(p *pprofprofile.Profile) error {
 // Currently always 0 (first sample type); extend here to pick wall vs alloc, etc.
 func PrimarySampleValueIndex(p *pprofprofile.Profile) (int, error) {
 	if len(p.SampleType) == 0 {
-		return 0, fmt.Errorf("profile has no sample types")
+		return 0, errors.New("profile has no sample types")
 	}
 	return 0, nil
 }

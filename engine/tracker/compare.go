@@ -94,9 +94,9 @@ func CheckPerformanceDifferences(selections *Selections) (*ProfileChangeReport, 
 		if !ok {
 			continue
 		}
-		changeResult, err := detectChangeBetweenTwoObjects(baseLineObj, currentObj)
-		if err != nil {
-			return nil, fmt.Errorf("detectChangeBetweenTwoObjects failed: %w", err)
+		changeResult, derr := detectChangeBetweenTwoObjects(baseLineObj, currentObj)
+		if derr != nil {
+			return nil, fmt.Errorf("detectChangeBetweenTwoObjects failed: %w", derr)
 		}
 		report.FunctionChanges = append(report.FunctionChanges, changeResult)
 	}

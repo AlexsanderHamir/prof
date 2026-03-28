@@ -27,7 +27,7 @@ func RunCollector(files []string, tag string, groupByPackage bool) error {
 	globalFilter, _ := globalFilterFromConfig(cfg)
 
 	for _, fullBinaryPath := range files {
-		if err := processOneManualFile(fullBinaryPath, tagDir, cfg, globalFilter, groupByPackage); err != nil {
+		if err = processOneManualFile(fullBinaryPath, tagDir, cfg, globalFilter, groupByPackage); err != nil {
 			return err
 		}
 	}
@@ -42,7 +42,7 @@ func processOneManualFile(fullBinaryPath, tagDir string, cfg *internal.Config, g
 	}
 
 	filter := resolveFunctionFilter(cfg, name, globalFilter)
-	if err := emitProfileArtifacts(fullBinaryPath, profileDir, name, filter, groupByPackage); err != nil {
+	if err = emitProfileArtifacts(fullBinaryPath, profileDir, name, filter, groupByPackage); err != nil {
 		return err
 	}
 	return collectPerFunctionLists(profileDir, fullBinaryPath, filter)

@@ -10,7 +10,7 @@ var (
 	// Baseline is the baseline tag name for track and tools commands.
 	Baseline string
 	// Current is the current tag name for track and tools commands.
-	Current string
+	Current             string
 	benchmarkName       string
 	profileType         string
 	outputFormat        string
