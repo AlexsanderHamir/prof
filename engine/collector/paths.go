@@ -1,12 +1,11 @@
 package collector
 
 import (
-	"path"
 	"path/filepath"
 	"strings"
 )
 
-func getPprofTextParams() []string {
+func pprofTextListArgs() []string {
 	return []string{
 		"-cum",
 		"-edgefraction=0",
@@ -15,18 +14,15 @@ func getPprofTextParams() []string {
 	}
 }
 
-func getFileName(fullPath string) string {
+func stemFromPath(fullPath string) string {
 	file := filepath.Base(fullPath)
-	fileName := strings.TrimSuffix(file, filepath.Ext(file))
-
-	return fileName
+	return strings.TrimSuffix(file, filepath.Ext(file))
 }
 
-func createProfileDirectory(tagDir, fileName string) (string, error) {
-	profileDirPath := path.Join(tagDir, fileName)
+func profileSubdir(tagDir, fileName string) (string, error) {
+	profileDirPath := filepath.Join(tagDir, fileName)
 	if err := ensureDirExists(profileDirPath); err != nil {
 		return "", err
 	}
-
 	return profileDirPath, nil
 }
