@@ -8,11 +8,11 @@ import (
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
+// RunBenchmarks validates flags, loads optional repo config, prepares bench layout, then runs the full pipeline.
 func RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupByPackage bool) error {
 	if len(benchmarks) == 0 {
 		return errors.New("benchmarks flag is empty")
 	}
-
 	if len(profiles) == 0 {
 		return errors.New("profiles flag is empty")
 	}
@@ -40,31 +40,24 @@ func RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupBy
 	if err = runBenchAndGetProfiles(benchArgs, cfg.FunctionFilter, groupByPackage); err != nil {
 		return err
 	}
-
 	return nil
 }
 
-// DiscoverBenchmarks scans the Go module for benchmark functions and returns their names.
-// A benchmark is identified by functions matching:
+// DiscoverBenchmarks scans for functions matching:
 //
 //	func BenchmarkXxx(b *testing.B) { ... }
 //
-// If scope is provided, only searches within that directory and its subdirectories.
-// If scope is empty, searches the entire module from the root.
+// If scope is non-empty, search starts there; otherwise the module root is used.
 func DiscoverBenchmarks(scope string) ([]string, error) {
 	var searchRoot string
 	var err error
-
 	if scope != "" {
-		// Use the provided scope directory
 		searchRoot = scope
 	} else {
-		// Fall back to searching from module root
 		searchRoot, err = internal.FindGoModuleRoot()
 		if err != nil {
 			return nil, fmt.Errorf("failed to locate module root: %w", err)
 		}
 	}
-
 	return scanForBenchmarks(searchRoot)
 }

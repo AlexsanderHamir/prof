@@ -73,7 +73,7 @@ func processProfiles(benchmarkName string, profiles []string, tag string, groupB
 		// Generate grouped profile data if requested
 		if groupByPackage {
 			groupedOutputFile := filepath.Join(textDir, fmt.Sprintf("%s_%s_grouped.%s", benchmarkName, profile, internal.TextExtension))
-			if err := generateGroupedProfileData(profileFile, groupedOutputFile, internal.FunctionFilter{}); err != nil {
+			if err := collector.WriteGroupedPackageProfile(profileFile, groupedOutputFile, internal.FunctionFilter{}); err != nil {
 				return fmt.Errorf("failed to generate grouped profile for %s: %w", profile, err)
 			}
 		}
@@ -87,18 +87,6 @@ func processProfiles(benchmarkName string, profiles []string, tag string, groupB
 	}
 
 	return nil
-}
-
-// generateGroupedProfileData generates profile data organized by package/module using the new parser function
-func generateGroupedProfileData(binaryFile, outputFile string, functionFilter internal.FunctionFilter) error {
-	// Import the parser package to use OrganizeProfileByPackageV2
-	groupedData, err := parser.OrganizeProfileByPackageV2(binaryFile, functionFilter)
-	if err != nil {
-		return fmt.Errorf("failed to organize profile by package: %w", err)
-	}
-
-	// Write the grouped data to the output file
-	return os.WriteFile(outputFile, []byte(groupedData), internal.PermFile)
 }
 
 // CollectProfileFunctions collects all pprof information for each function, according to configurations.

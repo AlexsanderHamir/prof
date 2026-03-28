@@ -20,8 +20,7 @@ const (
 	binExtension           = "out"
 	descriptionFileName    = "description.txt"
 	moduleNotFoundMsg      = "go: cannot find main module"
-	waitForFiles           = 100
-	descritpionFileMessage = "The explanation for this profilling session goes here"
+	descriptionFileMessage = "The explanation for this profilling session goes here"
 
 	// Minimum number of regex capture groups expected for benchmark function
 	minCaptureGroups = 2
