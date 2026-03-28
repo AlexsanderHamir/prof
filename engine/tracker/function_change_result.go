@@ -21,7 +21,7 @@ func (cr *FunctionChangeResult) summary() string {
 		cr.FlatAbsolute.After)
 }
 
-// Full detailed report
+// Report returns a full detailed report for the function change.
 func (cr *FunctionChangeResult) Report() string {
 	var report strings.Builder
 
@@ -36,6 +36,7 @@ func (cr *FunctionChangeResult) Report() string {
 	return report.String()
 }
 
+// Severity thresholds classify flat change magnitude for reporting.
 const (
 	SeverityNoneThreshold     = 0.0
 	SeverityLowThreshold      = 5.0

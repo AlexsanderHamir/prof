@@ -10,9 +10,7 @@ import (
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
-// go tool pprof -callgrind {benchmarkName}_{profileName}.out > {benchmarkName}_{profileName}.callgrind
-// qcachegrind profile.callgrind
-
+// RunQcacheGrind generates callgrind output from a binary profile via go tool pprof and launches qcachegrind.
 func RunQcacheGrind(tag, benchName, profileName string) error {
 	// 1. find the binary file given the parameters of the function, it will be located under bench/tag/bin/benchName/{benchmarkName}_{profileName}.out
 	binaryFilePath := filepath.Join(internal.MainDirOutput, tag, internal.ProfileBinDir, benchName, fmt.Sprintf("%s_%s.out", benchName, profileName))

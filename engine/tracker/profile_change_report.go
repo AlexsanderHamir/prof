@@ -444,6 +444,7 @@ func (r *ProfileChangeReport) generateDetailedJSONReport(outputPath string) erro
 	return encoder.Encode(data)
 }
 
+// ChooseOutputFormat dispatches to the appropriate report formatter for the given output name.
 func (r *ProfileChangeReport) ChooseOutputFormat(outputFormat string) {
 	switch outputFormat {
 	case "summary":

@@ -2,6 +2,7 @@ package internal
 
 // The point of this file was to eliminate magic values on the codebase
 
+// CLI subcommand names for collect and track flows.
 const (
 	AUTOCMD        = "auto"
 	MANUALCMD      = "manual"
@@ -9,6 +10,7 @@ const (
 	TrackManualCMD = MANUALCMD
 )
 
+// Messages and labels for benchmark results and CI-style comparisons.
 const (
 	InfoCollectionSuccess = "All benchmarks and profile processing completed successfully!"
 	IMPROVEMENT           = "IMPROVEMENT"
@@ -16,6 +18,7 @@ const (
 	STABLE                = "STABLE"
 )
 
+// Output directory names and file layout constants for bench artifacts.
 const (
 	MainDirOutput      = "bench"
 	ProfileTextDir     = "text"

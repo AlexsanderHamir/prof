@@ -125,6 +125,7 @@ func (pl Pipeline) RunFromPath(path string) (*ProfileData, error) {
 // FileProfileOpener opens a local file path.
 type FileProfileOpener struct{}
 
+// Open opens the profile file at path.
 func (FileProfileOpener) Open(path string) (io.ReadCloser, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -136,6 +137,7 @@ func (FileProfileOpener) Open(path string) (io.ReadCloser, error) {
 // PProfDecoder uses github.com/google/pprof/profile.Parse.
 type PProfDecoder struct{}
 
+// Decode parses a pprof profile from r.
 func (PProfDecoder) Decode(r io.Reader) (*pprofprofile.Profile, error) {
 	p, err := pprofprofile.Parse(r)
 	if err != nil {
@@ -147,6 +149,7 @@ func (PProfDecoder) Decode(r io.Reader) (*pprofprofile.Profile, error) {
 // StandardProfileValidator applies CheckValid and sample-type guards.
 type StandardProfileValidator struct{}
 
+// Validate runs profile validation and sample-type checks.
 func (StandardProfileValidator) Validate(p *pprofprofile.Profile) error {
 	return ValidateProfile(p)
 }
@@ -154,6 +157,7 @@ func (StandardProfileValidator) Validate(p *pprofprofile.Profile) error {
 // FirstSampleIndexSelector uses sample value index 0.
 type FirstSampleIndexSelector struct{}
 
+// PrimaryIndex returns the primary sample value index (0).
 func (FirstSampleIndexSelector) PrimaryIndex(p *pprofprofile.Profile) (int, error) {
 	return PrimarySampleValueIndex(p)
 }
@@ -161,6 +165,7 @@ func (FirstSampleIndexSelector) PrimaryIndex(p *pprofprofile.Profile) (int, erro
 // AllSamplesValueChecker requires every sample to have a value at the chosen index.
 type AllSamplesValueChecker struct{}
 
+// EnsureValueAt checks that every sample has a value at index.
 func (AllSamplesValueChecker) EnsureValueAt(p *pprofprofile.Profile, index int) error {
 	return ValidateSamplesHaveValueAt(p, index)
 }
@@ -168,6 +173,7 @@ func (AllSamplesValueChecker) EnsureValueAt(p *pprofprofile.Profile, index int) 
 // FlatCumAggregator uses the package flat/cumulative aggregation rules.
 type FlatCumAggregator struct{}
 
+// Aggregate builds flat/cumulative profile data at valueIndex.
 func (FlatCumAggregator) Aggregate(p *pprofprofile.Profile, valueIndex int) *ProfileData {
 	return AggregateProfileData(p, valueIndex)
 }

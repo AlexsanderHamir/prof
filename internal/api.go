@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 )
 
+// GetScanner opens a profile file and returns a line scanner and the open file handle.
 func GetScanner(filePath string) (*bufio.Scanner, *os.File, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -74,6 +75,7 @@ func FindGoModuleRoot() (string, error) {
 	}
 }
 
+// PrintConfiguration logs parsed benchmark arguments and optional per-benchmark function filters.
 func PrintConfiguration(benchArgs *BenchArgs, functionFilterPerBench map[string]FunctionFilter) {
 	slog.Info(
 		"Parsed arguments",

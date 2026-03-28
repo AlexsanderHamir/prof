@@ -2,7 +2,7 @@ package tests
 
 import (
 	"bytes"
-	_ "embed"
+	_ "embed" // embedded assets for synthetic test modules (see //go:embed below)
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,6 +20,7 @@ var (
 	envDirName = envDirNameStatic
 )
 
+// TestArgs holds inputs and expectations for a single integration test scenario.
 type TestArgs struct {
 	specifiedFiles          map[fileFullName]*FieldsCheck
 	cfg                     internal.Config
@@ -39,6 +40,7 @@ type TestArgs struct {
 
 type fileFullName string
 
+// FieldsCheck records expected min/max appearances for an output file in a test run.
 type FieldsCheck struct {
 	isFileExpected     bool
 	minimumAppearances int
@@ -46,6 +48,7 @@ type FieldsCheck struct {
 	currentAppearances int
 }
 
+// IsWithinRange reports whether currentAppearances is between minimum and maximum inclusive.
 func (fc *FieldsCheck) IsWithinRange() bool {
 	return fc.currentAppearances >= fc.minimumAppearances &&
 		fc.currentAppearances <= fc.maximumAppearances
@@ -90,6 +93,7 @@ func createPackage(dir string) error {
 	return os.WriteFile(utilsPath, []byte(utilsTemplate), internal.PermFile)
 }
 
+// BenchmarkContent is embedded benchmark test source used when creating synthetic modules.
 //go:embed assets/benchmark_test.go.txt
 var BenchmarkContent string
 

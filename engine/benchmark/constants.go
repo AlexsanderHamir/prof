@@ -1,7 +1,9 @@
 package benchmark
 
+// SupportedProfiles lists profile kinds supported by the benchmark pipeline.
 var SupportedProfiles = []string{"cpu", "memory", "mutex", "block"}
 
+// ProfileFlags maps profile names to go test profiling flags.
 var ProfileFlags = map[string]string{
 	"cpu":    "-cpuprofile=cpu.out",
 	"memory": "-memprofile=memory.out",
@@ -9,6 +11,7 @@ var ProfileFlags = map[string]string{
 	"block":  "-blockprofile=block.out",
 }
 
+// ExpectedFiles maps profile names to expected pprof output filenames.
 var ExpectedFiles = map[string]string{
 	"cpu":    "cpu.out",
 	"memory": "memory.out",

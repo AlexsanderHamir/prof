@@ -7,9 +7,10 @@ var (
 	tag        string
 	count      int
 
-	// Track command flags.
-	Baseline            string
-	Current             string
+	// Baseline is the baseline tag name for track and tools commands.
+	Baseline string
+	// Current is the current tag name for track and tools commands.
+	Current string
 	benchmarkName       string
 	profileType         string
 	outputFormat        string

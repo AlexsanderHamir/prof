@@ -4,16 +4,19 @@ import (
 	"time"
 )
 
+// ProfileChangeReport aggregates per-function changes between two profile runs.
 type ProfileChangeReport struct {
 	FunctionChanges []*FunctionChangeResult
 }
 
+// AbsoluteChange captures before/after metric values and their delta.
 type AbsoluteChange struct {
 	Before float64 `json:"before"`
 	After  float64 `json:"after"`
 	Delta  float64 `json:"delta"`
 }
 
+// FunctionChangeResult describes one function's performance change between runs.
 type FunctionChangeResult struct {
 	FunctionName      string         `json:"function_name"`
 	ChangeType        string         `json:"change_type"`

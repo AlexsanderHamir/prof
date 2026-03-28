@@ -9,9 +9,7 @@ type Config struct {
 	CIConfig *CIConfig `json:"ci_config,omitempty"`
 }
 
-// FunctionCollectionFilter defines filters for a specific benchmark,
-// the filters are used when deciding which functions to collect
-// code line level information for.
+// FunctionFilter defines filters for a specific benchmark when collecting line-level data.
 type FunctionFilter struct {
 	// Prefixes: only collect functions starting with these prefixes
 	// Example: []string{"github.com/example/GenPool"}
@@ -55,12 +53,14 @@ type CITrackingConfig struct {
 
 // #2 - Function Arguments
 
+// LineFilterArgs holds profile line filters and ignore sets for collection.
 type LineFilterArgs struct {
 	ProfileFilters    map[int]float64
 	IgnoreFunctionSet map[string]struct{}
 	IgnorePrefixSet   map[string]struct{}
 }
 
+// CollectionArgs describes one benchmark collection run.
 type CollectionArgs struct {
 	Tag             string
 	Profiles        []string
@@ -68,6 +68,7 @@ type CollectionArgs struct {
 	BenchmarkConfig FunctionFilter
 }
 
+// BenchArgs holds arguments for the auto-benchmark command.
 type BenchArgs struct {
 	Benchmarks []string
 	Profiles   []string

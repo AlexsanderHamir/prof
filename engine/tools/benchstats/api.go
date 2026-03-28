@@ -14,6 +14,7 @@ const (
 	benchstatCommand = "benchstat"
 )
 
+// RunBenchStats runs benchstat on two collected benchmark text files.
 func RunBenchStats(baseTag, currentTag, benchName string) error {
 	// 1. Look for the bench directory created by our library under the current directory where this command will be run
 	benchDir := internal.MainDirOutput
