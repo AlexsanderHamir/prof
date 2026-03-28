@@ -1,5 +1,6 @@
 package parser
 
+// LineObj is one function row for tracker-style comparisons (flat/cum and percentages).
 type LineObj struct {
 	FnName         string
 	Flat           float64
@@ -9,7 +10,7 @@ type LineObj struct {
 	CumPercentage  float64
 }
 
-// PackageGroup represents a group of functions from the same package
+// PackageGroup is a module/package bucket for grouped report output.
 type PackageGroup struct {
 	Name           string
 	Functions      []*FunctionInfo
@@ -19,7 +20,7 @@ type PackageGroup struct {
 	CumPercentage  float64
 }
 
-// FunctionInfo represents a function with its performance metrics
+// FunctionInfo is one function inside a [PackageGroup].
 type FunctionInfo struct {
 	Name           string
 	FullName       string
@@ -28,4 +29,21 @@ type FunctionInfo struct {
 	Cum            float64
 	CumPercentage  float64
 	SumPercentage  float64
+}
+
+// ProfileData holds aggregated flat/cum counters and derived percentages after parsing a profile.
+type ProfileData struct {
+	Flat            map[string]int64
+	Cum             map[string]int64
+	Total           int64
+	FlatPercentages map[string]float64
+	CumPercentages  map[string]float64
+	SumPercentages  map[string]float64
+	SortedEntries   []FuncEntry
+}
+
+// FuncEntry is one symbol row sorted by flat cost (descending).
+type FuncEntry struct {
+	Name string
+	Flat int64
 }
