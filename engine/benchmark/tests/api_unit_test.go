@@ -87,6 +87,7 @@ func TestDiscoverBenchmarks(t *testing.T) {
 	tests := []struct {
 		name             string
 		scope            string
+		chdirToTemp      bool // empty scope uses FindGoModuleRoot; chdir so root is temp module
 		wantErr          bool
 		expectBenchmarks bool
 		expectedCount    int
@@ -94,6 +95,7 @@ func TestDiscoverBenchmarks(t *testing.T) {
 		{
 			name:             "discover benchmarks in specific scope",
 			scope:            tempDir,
+			chdirToTemp:      false,
 			wantErr:          false,
 			expectBenchmarks: true,
 			expectedCount:    3, // BenchmarkStringProcessor, BenchmarkNumberCruncher, BenchmarkSubProcessor
@@ -101,14 +103,25 @@ func TestDiscoverBenchmarks(t *testing.T) {
 		{
 			name:             "discover benchmarks in empty scope (module root)",
 			scope:            "",
+			chdirToTemp:      true,
 			wantErr:          false,
-			expectBenchmarks: false,
-			expectedCount:    0, // No benchmarks in actual module root
+			expectBenchmarks: true,
+			expectedCount:    3, // same module as tempDir when cwd is tempDir
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.chdirToTemp {
+				wd, err := os.Getwd()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Chdir(tempDir); err != nil {
+					t.Fatal(err)
+				}
+				defer func() { _ = os.Chdir(wd) }()
+			}
 			benchmarks, err := benchmark.DiscoverBenchmarks(tt.scope)
 
 			if tt.wantErr {
