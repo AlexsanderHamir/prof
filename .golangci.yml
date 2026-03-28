@@ -22,15 +22,7 @@ issues:
   exclude-files:
     - "_test\\.go$"
 
-  # The mode used to evaluate relative paths.
-  # It's used by exclusions, Go plugins, and some linters.
-  # The value can be:
-  # - `gomod`: the paths will be relative to the directory of the `go.mod` file.
-  # - `gitroot`: the paths will be relative to the git root (the parent directory of `.git`).
-  # - `cfg`: the paths will be relative to the configuration file.
-  # - `wd` (NOT recommended): the paths will be relative to the place where golangci-lint is run.
-  # Default: wd
-  relative-path-mode: gomod
+# Path mode for exclusions and linters is set under run.relative-path-mode above.
 
 # This file contains only configs which differ from defaults.
 # All possible options can be found here https://github.com/golangci/golangci-lint/blob/HEAD/.golangci.reference.yml
