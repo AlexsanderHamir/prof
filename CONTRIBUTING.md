@@ -68,12 +68,12 @@ go build -o prof ./cmd/prof
    go generate ./tests/...
    ```
 
-5. **Releases** — Releases are automated; you do not pick a semver bump by hand.
+5. **Releases** — Versioning and release notes are **automated**, but a release **never runs by itself**. You must **start it by hand** in GitHub each time you want to ship.
 
-   - In GitHub: **Actions → Release → Run workflow** (`workflow_dispatch`).
-   - The workflow computes the next **patch** version from the latest `v*` tag using [`svu`](https://github.com/caarlos0/svu) (e.g. `v1.2.3` → `v1.2.4`). If there is no tag yet, it publishes **`v0.1.0`**.
-   - It refuses to run when there are **no new commits** since the last tag, or when the computed tag **already exists**.
-   - It builds `prof` for common `GOOS`/`GOARCH` pairs, attaches checksums, pushes an **annotated tag** on the current `main` commit, and creates a GitHub release with **auto-generated release notes** (PRs and commits since the previous release).
+   - **Nothing triggers a release automatically** — not merging to `main`, not pushes, not schedules. Only **Actions → Release → Run workflow** (you click **Run workflow** and choose the branch, usually `main`).
+   - After you click **Run**, the workflow picks the next **patch** version from the latest `v*` tag using [`svu`](https://github.com/caarlos0/svu) (e.g. `v1.2.3` → `v1.2.4`). You do **not** type a version. If there is no tag yet, it publishes **`v0.1.0`**.
+   - It **stops with an error** if there are **no new commits** since the last tag, or if the computed tag **already exists**.
+   - On success it builds `prof` for common `GOOS`/`GOARCH` pairs, attaches checksums, pushes an **annotated tag** on the commit you ran the workflow from, and creates a GitHub release with **auto-generated release notes** (PRs and commits since the previous release).
 
    Install a released version with Go tooling, for example:
 

@@ -2,6 +2,9 @@
 # push an annotated tag on the current commit, and open a GitHub release with
 # auto-generated release notes (merged PRs + commits since the previous tag).
 #
+# MANUAL ONLY — not triggered on push, PR merge, or schedule. Someone must open
+# GitHub → Actions → this workflow → "Run workflow" each time you want a release.
+#
 # Trigger: Actions → Release → Run workflow (workflow_dispatch).
 #
 # Rules:
