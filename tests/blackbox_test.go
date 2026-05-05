@@ -25,17 +25,17 @@ func TestConfig(t *testing.T) { //nolint:funlen // scenario matrix
 	label := "WithFunctionFilter"
 	t.Run(label, func(t *testing.T) {
 		specifiedFiles := map[fileFullName]*FieldsCheck{
-			"BenchmarkStringProcessor.txt": newDefaultFieldsCheckExpected(),
-			"ProcessStrings.txt":           newDefaultFieldsCheckExpected(),
-			"GenerateStrings.txt":          newDefaultFieldsCheckExpected(),
-			"AddString.txt":                newDefaultFieldsCheckExpected(),
+			functionFile(benchName):     newDefaultFieldsCheckExpected(),
+			functionFile(funcProcess):   newDefaultFieldsCheckExpected(),
+			functionFile(funcGenerate):  newDefaultFieldsCheckExpected(),
+			functionFile(funcAddString): newDefaultFieldsCheckExpected(),
 		}
 
 		cfg := internal.Config{
 			FunctionFilter: map[string]internal.FunctionFilter{
 				benchName: {
 					// Prefer symbols under the synthetic module when present; also match package-qualified names when paths are trimmed (Linux CI).
-					IncludePrefixes: []string{"test-environment", "utils."},
+					IncludePrefixes: filterIncludePrefixes,
 				},
 			},
 		}
@@ -61,16 +61,16 @@ func TestConfig(t *testing.T) { //nolint:funlen // scenario matrix
 	label = "WithFunctionIgnore"
 	t.Run(label, func(t *testing.T) {
 		specifiedFiles := map[fileFullName]*FieldsCheck{
-			"GenerateStrings.txt":          newDefaultFieldsCheckExpected(),
-			"BenchmarkStringProcessor.txt": newDefaultFieldsCheckNotExpected(),
-			"ProcessStrings.txt":           newDefaultFieldsCheckNotExpected(),
-			"AddString.txt":                newDefaultFieldsCheckNotExpected(),
+			functionFile(funcGenerate):  newDefaultFieldsCheckExpected(),
+			functionFile(benchName):     newDefaultFieldsCheckNotExpected(),
+			functionFile(funcProcess):   newDefaultFieldsCheckNotExpected(),
+			functionFile(funcAddString): newDefaultFieldsCheckNotExpected(),
 		}
 
 		cfg := internal.Config{
 			FunctionFilter: map[string]internal.FunctionFilter{
 				benchName: {
-					IgnoreFunctions: []string{"BenchmarkStringProcessor", "ProcessStrings", "AddString"},
+					IgnoreFunctions: filterIgnoreFunctions,
 				},
 			},
 		}
@@ -96,17 +96,17 @@ func TestConfig(t *testing.T) { //nolint:funlen // scenario matrix
 	label = "WithFunctionFilterPlusIgnore"
 	t.Run(label, func(t *testing.T) {
 		specifiedFiles := map[fileFullName]*FieldsCheck{
-			"GenerateStrings.txt":          newDefaultFieldsCheckExpected(),
-			"BenchmarkStringProcessor.txt": newDefaultFieldsCheckNotExpected(),
-			"ProcessStrings.txt":           newDefaultFieldsCheckNotExpected(),
-			"AddString.txt":                newDefaultFieldsCheckNotExpected(),
+			functionFile(funcGenerate):  newDefaultFieldsCheckExpected(),
+			functionFile(benchName):     newDefaultFieldsCheckNotExpected(),
+			functionFile(funcProcess):   newDefaultFieldsCheckNotExpected(),
+			functionFile(funcAddString): newDefaultFieldsCheckNotExpected(),
 		}
 
 		cfg := internal.Config{
 			FunctionFilter: map[string]internal.FunctionFilter{
 				benchName: {
-					IncludePrefixes: []string{"test-environment", "utils."},
-					IgnoreFunctions: []string{"BenchmarkStringProcessor", "ProcessStrings", "AddString"},
+					IncludePrefixes: filterIncludePrefixes,
+					IgnoreFunctions: filterIgnoreFunctions,
 				},
 			},
 		}
@@ -381,7 +381,6 @@ func TestManualCommand(t *testing.T) {
 
 func TestTrackerBasicRun(t *testing.T) {
 	skipSlowIntegration(t)
-	// 1. Set up
 	label := "testing"
 	runs := "1"
 	tagName := "tag1"
@@ -407,7 +406,6 @@ func TestTrackerBasicRun(t *testing.T) {
 		}
 	})
 
-	// 2. Test Tracker
 	label = "Auto"
 	t.Run(label, func(t *testing.T) {
 		args := []string{
@@ -416,7 +414,7 @@ func TestTrackerBasicRun(t *testing.T) {
 			"--base", "tag1",
 			"--current", "tag2",
 			"--bench-name", benchName,
-			"--profile-type", "cpu",
+			"--profile-type", cpuProfile,
 			"--output-format", "summary",
 		}
 
@@ -433,8 +431,8 @@ func TestTrackerBasicRun(t *testing.T) {
 	})
 
 	label = "Manual"
-	baseTag := "bench/tag1/bin/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.out"
-	currentProfile := "bench/tag2/bin/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.out"
+	baseTag := "bench/tag1/bin/" + benchName + "/" + benchName + "_" + cpuProfile + ".out"
+	currentProfile := "bench/tag2/bin/" + benchName + "/" + benchName + "_" + cpuProfile + ".out"
 	outputFormat := "summary"
 	t.Run(label, func(t *testing.T) {
 		args := []string{
