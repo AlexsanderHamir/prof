@@ -80,15 +80,77 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 	}
 }
 
-func defaultRunCmd() []string {
+// runCmdWithCount returns the canonical `prof auto` argv for the synthetic
+// benchmark, parameterized by --count so callers can pick smokeCount,
+// validationCount, or count without rebuilding the rest of the command.
+func runCmdWithCount(countVal string) []string {
 	cmd := []string{
 		internal.AUTOCMD,
 		"--benchmarks", benchName,
 		"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
-		"--count", count,
+		"--count", countVal,
 		"--tag", tag,
 	}
 	return append(cmd, autoBenchSkipPNGArgs()...)
+}
+
+func defaultRunCmd() []string {
+	return runCmdWithCount(count)
+}
+
+// configWithFilter builds the FunctionFilter scenario that whitelists symbols
+// under the synthetic module + utils package prefixes.
+func configWithFilter() internal.Config {
+	return internal.Config{
+		FunctionFilter: map[string]internal.FunctionFilter{
+			benchName: {IncludePrefixes: filterIncludePrefixes},
+		},
+	}
+}
+
+// configWithIgnore builds the FunctionFilter scenario that drops the
+// canonical ignore set (Benchmark + ProcessStrings + AddString).
+func configWithIgnore() internal.Config {
+	return internal.Config{
+		FunctionFilter: map[string]internal.FunctionFilter{
+			benchName: {IgnoreFunctions: filterIgnoreFunctions},
+		},
+	}
+}
+
+// configWithFilterAndIgnore combines the two filter axes; only GenerateStrings
+// survives the include + ignore intersection.
+func configWithFilterAndIgnore() internal.Config {
+	return internal.Config{
+		FunctionFilter: map[string]internal.FunctionFilter{
+			benchName: {
+				IncludePrefixes: filterIncludePrefixes,
+				IgnoreFunctions: filterIgnoreFunctions,
+			},
+		},
+	}
+}
+
+// expectAllFunctionFiles marks every entry in expectedFunctionFiles as
+// expected — used when the filter whitelists the whole synthetic module.
+func expectAllFunctionFiles() map[fileFullName]*FieldsCheck {
+	m := make(map[fileFullName]*FieldsCheck, len(expectedFunctionFiles))
+	for _, name := range expectedFunctionFiles {
+		m[fileFullName(name)] = newDefaultFieldsCheckExpected()
+	}
+	return m
+}
+
+// expectOnlyGenerate marks GenerateStrings as expected and the other three
+// canonical functions as filtered-out — used by both ignore-only and
+// filter+ignore scenarios.
+func expectOnlyGenerate() map[fileFullName]*FieldsCheck {
+	return map[fileFullName]*FieldsCheck{
+		functionFile(funcGenerate):  newDefaultFieldsCheckExpected(),
+		functionFile(benchName):     newDefaultFieldsCheckNotExpected(),
+		functionFile(funcProcess):   newDefaultFieldsCheckNotExpected(),
+		functionFile(funcAddString): newDefaultFieldsCheckNotExpected(),
+	}
 }
 
 // autoBenchSkipPNGArgs avoids requiring Graphviz during integration tests while `prof auto`

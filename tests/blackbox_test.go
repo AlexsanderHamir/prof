@@ -20,154 +20,56 @@ func skipSlowIntegration(t *testing.T) {
 	}
 }
 
-func TestConfig(t *testing.T) { //nolint:funlen // scenario matrix
+// TestAutoEndToEnd validates the full `prof auto` pipeline once: build the
+// prof binary, run `go test -bench`, collect profiles, write the bench/<tag>/
+// layout. Runs at smokeCount because we're asserting wiring + layout, not
+// CPU sampling stability — filter behavior is covered by TestFunctionFilter
+// against deterministic committed fixtures.
+func TestAutoEndToEnd(t *testing.T) {
 	skipSlowIntegration(t)
-	label := "WithFunctionFilter"
-	t.Run(label, func(t *testing.T) {
-		specifiedFiles := map[fileFullName]*FieldsCheck{
-			functionFile(benchName):     newDefaultFieldsCheckExpected(),
-			functionFile(funcProcess):   newDefaultFieldsCheckExpected(),
-			functionFile(funcGenerate):  newDefaultFieldsCheckExpected(),
-			functionFile(funcAddString): newDefaultFieldsCheckExpected(),
-		}
 
-		cfg := internal.Config{
-			FunctionFilter: map[string]internal.FunctionFilter{
-				benchName: {
-					// Prefer symbols under the synthetic module when present; also match package-qualified names when paths are trimmed (Linux CI).
-					IncludePrefixes: filterIncludePrefixes,
-				},
-			},
-		}
+	label := "Smoke"
+	testArgs := &TestArgs{
+		cfg:                     internal.Config{},
+		withConfig:              false,
+		expectNonSpecifiedFiles: true,
+		noConfigFile:            true,
+		cmd:                     runCmdWithCount(smokeCount),
+		label:                   label,
+		expectedNumberOfFiles:   3,
+		withCleanUp:             true,
+		expectedProfiles:        []string{cpuProfile, memProfile},
+		checkSuccessMessage:     true,
+	}
+	testConfigScenario(t, testArgs)
+}
 
-		testArgs := &TestArgs{
-			specifiedFiles:          specifiedFiles,
-			cfg:                     cfg,
-			withConfig:              true,
-			expectNonSpecifiedFiles: false,
-			noConfigFile:            false,
-			cmd:                     defaultRunCmd(),
-			expectedErrorMessage:    "",
-			label:                   label,
-			expectedNumberOfFiles:   3,
-			withCleanUp:             true,
-			expectedProfiles:        []string{cpuProfile, memProfile},
-			checkSuccessMessage:     true,
-		}
+// TestFunctionFilter exercises every FunctionFilter combination the previous
+// TestConfig matrix covered, but in-process against committed pprof fixtures.
+// No subprocess, no `go test -bench`, no per-scenario synthetic Go module —
+// each subtest is a pure call into parser.GetAllFunctionNamesV2 +
+// collector.GetFunctionsOutput followed by directory assertions.
+func TestFunctionFilter(t *testing.T) {
+	cases := []struct {
+		name          string
+		cfg           internal.Config
+		expected      map[fileFullName]*FieldsCheck
+		expectNonSpec bool
+	}{
+		{"WithFunctionFilter", configWithFilter(), expectAllFunctionFiles(), false},
+		{"WithFunctionIgnore", configWithIgnore(), expectOnlyGenerate(), true},
+		{"WithFunctionFilterPlusIgnore", configWithFilterAndIgnore(), expectOnlyGenerate(), false},
+		{"WithoutAnyConfig", internal.Config{}, nil, true},
+	}
 
-		testConfigScenario(t, testArgs)
-	})
-
-	label = "WithFunctionIgnore"
-	t.Run(label, func(t *testing.T) {
-		specifiedFiles := map[fileFullName]*FieldsCheck{
-			functionFile(funcGenerate):  newDefaultFieldsCheckExpected(),
-			functionFile(benchName):     newDefaultFieldsCheckNotExpected(),
-			functionFile(funcProcess):   newDefaultFieldsCheckNotExpected(),
-			functionFile(funcAddString): newDefaultFieldsCheckNotExpected(),
-		}
-
-		cfg := internal.Config{
-			FunctionFilter: map[string]internal.FunctionFilter{
-				benchName: {
-					IgnoreFunctions: filterIgnoreFunctions,
-				},
-			},
-		}
-
-		testArgs := &TestArgs{
-			specifiedFiles:          specifiedFiles,
-			cfg:                     cfg,
-			withConfig:              true,
-			expectNonSpecifiedFiles: true,
-			noConfigFile:            false,
-			cmd:                     defaultRunCmd(),
-			expectedErrorMessage:    "",
-			label:                   label,
-			expectedNumberOfFiles:   3,
-			withCleanUp:             true,
-			expectedProfiles:        []string{cpuProfile, memProfile},
-			checkSuccessMessage:     true,
-		}
-
-		testConfigScenario(t, testArgs)
-	})
-
-	label = "WithFunctionFilterPlusIgnore"
-	t.Run(label, func(t *testing.T) {
-		specifiedFiles := map[fileFullName]*FieldsCheck{
-			functionFile(funcGenerate):  newDefaultFieldsCheckExpected(),
-			functionFile(benchName):     newDefaultFieldsCheckNotExpected(),
-			functionFile(funcProcess):   newDefaultFieldsCheckNotExpected(),
-			functionFile(funcAddString): newDefaultFieldsCheckNotExpected(),
-		}
-
-		cfg := internal.Config{
-			FunctionFilter: map[string]internal.FunctionFilter{
-				benchName: {
-					IncludePrefixes: filterIncludePrefixes,
-					IgnoreFunctions: filterIgnoreFunctions,
-				},
-			},
-		}
-
-		testArgs := &TestArgs{
-			specifiedFiles:          specifiedFiles,
-			cfg:                     cfg,
-			withConfig:              true,
-			expectNonSpecifiedFiles: false,
-			noConfigFile:            false,
-			cmd:                     defaultRunCmd(),
-			expectedErrorMessage:    "",
-			label:                   label,
-			expectedNumberOfFiles:   3,
-			withCleanUp:             true,
-			expectedProfiles:        []string{cpuProfile, memProfile},
-			checkSuccessMessage:     true,
-		}
-
-		testConfigScenario(t, testArgs)
-	})
-
-	label = "WithoutAnyConfig"
-	t.Run(label, func(t *testing.T) {
-		testArgs := &TestArgs{
-			specifiedFiles:          nil,
-			cfg:                     internal.Config{},
-			withConfig:              false,
-			expectNonSpecifiedFiles: true,
-			noConfigFile:            false,
-			cmd:                     defaultRunCmd(),
-			expectedErrorMessage:    "",
-			label:                   label,
-			expectedNumberOfFiles:   3,
-			withCleanUp:             true,
-			expectedProfiles:        []string{cpuProfile, memProfile},
-			checkSuccessMessage:     true,
-		}
-
-		testConfigScenario(t, testArgs)
-	})
-
-	label = "WithoutConfigFile"
-	t.Run(label, func(t *testing.T) {
-		testArgs := &TestArgs{
-			specifiedFiles:          nil,
-			cfg:                     internal.Config{},
-			withConfig:              false,
-			expectNonSpecifiedFiles: true,
-			noConfigFile:            true,
-			cmd:                     defaultRunCmd(),
-			expectedErrorMessage:    "",
-			label:                   label,
-			expectedNumberOfFiles:   3,
-			withCleanUp:             true,
-			expectedProfiles:        []string{cpuProfile, memProfile},
-			checkSuccessMessage:     true,
-		}
-
-		testConfigScenario(t, testArgs)
-	})
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			perProfileNames := runFilterInProcess(t, tc.cfg)
+			for _, names := range perProfileNames {
+				checkFilteredNamesAgainstSpec(t, names, tc.expected, tc.expectNonSpec)
+			}
+		})
+	}
 }
 
 func TestProfileValidation(t *testing.T) {
