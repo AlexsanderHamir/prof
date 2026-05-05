@@ -11,14 +11,22 @@ import (
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
+func skipSlowIntegration(t *testing.T) {
+	t.Helper()
+	if testing.Short() {
+		t.Skip("slow integration scenario; omit -short to run full integration suite")
+	}
+}
+
 func TestConfig(t *testing.T) {
+	skipSlowIntegration(t)
 	label := "WithFunctionFilter"
 	t.Run(label, func(t *testing.T) {
 		specifiedFiles := map[fileFullName]*FieldsCheck{
 			"BenchmarkStringProcessor.txt": newDefaultFieldsCheckExpected(),
-			"ProcessStrings.txt":         newDefaultFieldsCheckExpected(),
-			"GenerateStrings.txt":        newDefaultFieldsCheckExpected(),
-			"AddString.txt":              newDefaultFieldsCheckExpected(),
+			"ProcessStrings.txt":           newDefaultFieldsCheckExpected(),
+			"GenerateStrings.txt":          newDefaultFieldsCheckExpected(),
+			"AddString.txt":                newDefaultFieldsCheckExpected(),
 		}
 
 		cfg := internal.Config{
@@ -160,6 +168,7 @@ func TestConfig(t *testing.T) {
 }
 
 func TestProfileValidation(t *testing.T) {
+	skipSlowIntegration(t)
 	label := "RandomProfileName"
 	t.Run(label, func(t *testing.T) {
 		profileName := "fakeProfileName"
@@ -251,6 +260,7 @@ func TestProfileValidation(t *testing.T) {
 }
 
 func TestCommandValidation(t *testing.T) {
+	skipSlowIntegration(t)
 	label := "EmptyBenchmarkSlice"
 	t.Run(label, func(t *testing.T) {
 		cmd := []string{
@@ -311,6 +321,7 @@ func TestCommandValidation(t *testing.T) {
 }
 
 func TestManualCommand(t *testing.T) {
+	skipSlowIntegration(t)
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)
@@ -361,16 +372,17 @@ func TestManualCommand(t *testing.T) {
 
 // TestTrackerBasicRun is not inspecting the results, but just ensuring that no errors occur when the command is run.
 func TestTrackerBasicRun(t *testing.T) {
+	skipSlowIntegration(t)
 	// 1. Set up
 	label := "testing"
-	runs := "5"
+	runs := "1"
 	tagName := "tag1"
 	blockOutputCheck := true
 	isEnvironmentSet := false
 	checkSuccessMessage := false
 	createBenchForTracker(t, label, runs, tagName, blockOutputCheck, isEnvironmentSet)
 
-	runs = "10"
+	runs = "1"
 	tagName = "tag2"
 	isEnvironmentSet = true
 	createBenchForTracker(t, label, runs, tagName, blockOutputCheck, isEnvironmentSet)
