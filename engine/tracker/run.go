@@ -3,6 +3,8 @@ package tracker
 import (
 	"fmt"
 	"log/slog"
+	"slices"
+	"strings"
 )
 
 var validFormats = map[string]bool{
@@ -12,6 +14,15 @@ var validFormats = map[string]bool{
 	"detailed-html": true,
 	"summary-json":  true,
 	"detailed-json": true,
+}
+
+func validFormatNames() []string {
+	names := make([]string, 0, len(validFormats))
+	for k := range validFormats {
+		names = append(names, k)
+	}
+	slices.Sort(names)
+	return names
 }
 
 // RunTrackAuto compares runs collected via prof auto (tag layout).
@@ -26,7 +37,9 @@ func RunTrackManual(selections *Selections) error {
 
 func runTrack(selections *Selections) error {
 	if !validFormats[selections.OutputFormat] {
-		return fmt.Errorf("invalid output format '%s'. Valid formats: summary, detailed", selections.OutputFormat)
+		return fmt.Errorf("invalid output format %q (valid: %s)",
+			selections.OutputFormat,
+			strings.Join(validFormatNames(), ", "))
 	}
 
 	report, err := CheckPerformanceDifferences(selections)
@@ -39,6 +52,8 @@ func runTrack(selections *Selections) error {
 		return nil
 	}
 
-	report.ChooseOutputFormat(selections.OutputFormat)
+	if err := report.ChooseOutputFormat(selections.OutputFormat); err != nil {
+		return fmt.Errorf("write report (%s): %w", selections.OutputFormat, err)
+	}
 	return applyCIConfiguration(report, selections)
 }

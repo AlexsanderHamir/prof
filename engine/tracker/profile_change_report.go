@@ -445,28 +445,24 @@ func (r *ProfileChangeReport) generateDetailedJSONReport(outputPath string) erro
 }
 
 // ChooseOutputFormat dispatches to the appropriate report formatter for the given output name.
-func (r *ProfileChangeReport) ChooseOutputFormat(outputFormat string) {
+func (r *ProfileChangeReport) ChooseOutputFormat(outputFormat string) error {
 	switch outputFormat {
 	case "summary":
 		r.printSummary()
+		return nil
 	case "detailed":
 		r.printDetailedReport()
+		return nil
 	case "summary-html":
-		if err := r.generateHTMLSummary("summary.html"); err != nil {
-			slog.Info("summary-html failed", "err", err)
-		}
+		return r.generateHTMLSummary("summary.html")
 	case "detailed-html":
-		if err := r.generateDetailedHTMLReport("detailed.html"); err != nil {
-			slog.Info("detailed-html failed", "err", err)
-		}
+		return r.generateDetailedHTMLReport("detailed.html")
 	case "summary-json":
-		if err := r.generateJSONSummary("summary.json"); err != nil {
-			slog.Info("summary-json failed", "err", err)
-		}
+		return r.generateJSONSummary("summary.json")
 	case "detailed-json":
-		if err := r.generateDetailedJSONReport("detailed.json"); err != nil {
-			slog.Info("detailed-json failed", "err", err)
-		}
+		return r.generateDetailedJSONReport("detailed.json")
+	default:
+		return fmt.Errorf("unsupported output format %q", outputFormat)
 	}
 }
 
@@ -517,6 +513,7 @@ func (r *ProfileChangeReport) ApplyCIConfiguration(cicdConfig *internal.CIConfig
 	}
 
 	// Filter out ignored functions
+	originalCount := len(r.FunctionChanges)
 	var filteredChanges []*FunctionChangeResult
 	for _, change := range r.FunctionChanges {
 		if !shouldIgnoreFunctionByConfig(config, change.FunctionName) {
@@ -533,6 +530,6 @@ func (r *ProfileChangeReport) ApplyCIConfiguration(cicdConfig *internal.CIConfig
 
 	slog.Info("Applied CI/CD configuration filtering",
 		"benchmark", benchmarkName,
-		"original_functions", len(r.FunctionChanges),
+		"original_functions", originalCount,
 		"filtered_functions", len(filteredChanges))
 }
