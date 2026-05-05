@@ -76,8 +76,8 @@ const (
 	templateFile     = "config_template.json"
 	testDirName      = "tests"
 	tag              = "test_tag"
-	// One bench iteration is enough to exercise profiling, parsing, and collector output.
-	count        = "1"
+	// Multiple bench counts keep CPU sampling + filtering stable on CI (esp. WithFunctionFilterPlusIgnore).
+	count = "10"
 	cpuProfile   = "cpu"
 	memProfile   = "memory"
 	blockProfile = "block"

@@ -34,7 +34,8 @@ func TestConfig(t *testing.T) { //nolint:funlen // scenario matrix
 		cfg := internal.Config{
 			FunctionFilter: map[string]internal.FunctionFilter{
 				benchName: {
-					IncludePrefixes: []string{"test-environment"},
+					// Prefer symbols under the synthetic module when present; also match package-qualified names when paths are trimmed (Linux CI).
+					IncludePrefixes: []string{"test-environment", "utils."},
 				},
 			},
 		}
@@ -104,7 +105,7 @@ func TestConfig(t *testing.T) { //nolint:funlen // scenario matrix
 		cfg := internal.Config{
 			FunctionFilter: map[string]internal.FunctionFilter{
 				benchName: {
-					IncludePrefixes: []string{"test-environment"},
+					IncludePrefixes: []string{"test-environment", "utils."},
 					IgnoreFunctions: []string{"BenchmarkStringProcessor", "ProcessStrings", "AddString"},
 				},
 			},
@@ -366,8 +367,9 @@ func TestManualCommand(t *testing.T) {
 			t.Error(err)
 		}
 
-		if !strings.Contains(stderr.String(), internal.InfoCollectionSuccess) {
-			t.Fatalf("expected stderr to contain success message; stderr=%q", stderr.String())
+		// Manual collect logs per-function progress (collector), not InfoCollectionSuccess (auto benchmark pipeline only).
+		if !strings.Contains(stderr.String(), "Collected function") {
+			t.Fatalf("expected stderr to contain collector progress; stderr=%q", stderr.String())
 		}
 
 		benchRoot := filepath.Join(root, testDirName, internal.MainDirOutput, tag)
