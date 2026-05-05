@@ -19,7 +19,7 @@ func ModuleRoot() (string, error) {
 	}
 
 	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+		if _, statErr := os.Stat(filepath.Join(dir, "go.mod")); statErr == nil {
 			return filepath.Abs(dir)
 		}
 

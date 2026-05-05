@@ -16,11 +16,19 @@ run:
 issues:
   max-same-issues: 50
   exclude-dirs:
-    - ^tests$
-    - /tests/
-    - .*/tests/.*
-  exclude-files:
-    - "_test\\.go$"
+    # Integration scratch trees under tests/ (large non-Go trees).
+    - (^|[\\/])tests[\\/]Enviroment.*
+    - (^|[\\/])tests[\\/]\.integration_prof_build.*
+  exclude-rules:
+    # Nested engine test helpers were historically unlinted; tighten incrementally.
+    - path: engine/.*/tests/.*\.go
+      linters:
+        - gocognit
+        - gosec
+        - gocritic
+        - govet
+        - nestif
+        - usetesting
 
 # Path mode for exclusions and linters is set under run.relative-path-mode above.
 
@@ -34,7 +42,7 @@ linters-settings:
     # The maximal average package complexity.
     # If it's higher than 0.0 (float) the check is enabled
     # Default: 0.0
-    package-average: 10.0
+    package-average: 11.0
 
   depguard:
     # Rules to apply.

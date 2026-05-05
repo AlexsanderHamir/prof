@@ -8,7 +8,7 @@ import (
 
 func TestModuleRoot_FromNestedDir(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module x\n\ngo 1.24\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module x\n\ngo 1.24\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	sub := filepath.Join(root, "a", "b")
@@ -36,7 +36,7 @@ func TestModuleRoot_FromNestedDir(t *testing.T) {
 
 func TestTestsAssetsDir_JoinsCorrectly(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module x\n\ngo 1.24\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module x\n\ngo 1.24\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)
