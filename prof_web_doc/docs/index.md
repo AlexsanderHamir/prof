@@ -1,33 +1,30 @@
 # Prof documentation
 
-Prof is a command-line tool for Go benchmarks. It runs `go test` with the profiling flags you choose, writes artifacts under `bench/<tag>/`, and can compare two tagged runs to surface function-level changes—including optional CI failure when regressions exceed a threshold.
+Prof runs Go benchmarks with `go test` profiling, writes output under `bench/<tag>/`, and compares two tags for regressions. Use **`prof ui`** for menus; use **`prof auto`**, **`prof track`**, and flags when you need scripts or CI (`prof -h`).
 
-**You do not have to memorize subcommands or flags for everyday use.** Start with **[Interactive UI and TUI](tui.md)** (`prof ui`, or `prof tui` / `prof tui track` for a single workflow). Use `prof auto`, `prof track`, and the rest when you want stable, copy-pastable commands—for example in CI or Makefiles.
+## Terminology
 
-## When to use Prof
+| Term | Meaning |
+| ---- | ------- |
+| **Module root** | Directory with your `go.mod`; run Prof from here (same as for `go test`). |
+| **Tag** | Label for one run; data lives in `bench/<tag>/`. |
+| **Baseline / current** | Two tags you compare (before vs after). |
+| **Profile type** | One of `cpu`, `memory`, `mutex`, `block`. |
 
-Use Prof when you want repeatable benchmark runs, a fixed directory layout for binaries and reports, and diffs between baselines and candidates without scripting `pprof` yourself.
+## Articles
 
-## Interactive UI and TUI versus flags
+| Article | Purpose |
+| ------- | ------- |
+| [Install Prof](install.md) | Install binary, completion, try `prof ui`. |
+| [Quickstart](quickstart.md) | First successful collect and compare. |
+| [Working directory and paths](workspace.md) | Where benchmarks are found; where files go. |
+| [Collect profiling data](collect.md) | `prof auto`, `prof manual`. |
+| [Compare runs](compare.md) | `prof track auto`, `prof track manual`. |
+| [Configure collection](configure.md) | `prof setup`, `config_template.json`. |
+| [Interactive UI and TUI](tui.md) | `prof ui`, `prof tui`, `prof tui track`. |
+| [CI and regressions](ci.md) | Gates, exit codes, link to full CI config. |
+| [Optional tools](tools.md) | `prof tools` (also from **`prof ui`**). |
 
-- **Menus (default path):** Run **`prof ui`** for a full-screen main menu (Bubble Tea), then prompts for collect, compare, tools, or setup. Use **`prof tui`** for collect-only prompts or **`prof tui track`** for compare-only prompts. These require a normal interactive terminal (stdin and stdout must be TTYs).
-- **Flags (when you choose them):** Use **`prof auto`**, **`prof track`**, **`prof tools`**, and so on when you want scriptable, reproducible one-liners—not because they are the only way to use Prof. Run `prof -h` and `prof <command> -h` for flag reference.
-- **Completion:** Run **`prof completion <shell>`** to print a completion script for bash, zsh, fish, or PowerShell.
+## Source
 
-## In this documentation
-
-| Article | Description |
-| -------- | ----------- |
-| [Install](install.md) | Requirements, installation, completion scripts. |
-| [Quickstart](quickstart.md) | **`prof ui`** first, then the same workflow with flags for CI. |
-| [Working directory and paths](workspace.md) | Where Prof searches for tests and where files are written. |
-| [Collect profiling data](collect.md) | `prof auto`, `prof manual`, and package grouping (plus interactive collect via UI/TUI). |
-| [Configure collection](configure.md) | `prof setup` and `config_template.json`. |
-| [Compare runs](compare.md) | `prof track auto`, `prof track manual`, and report formats (plus interactive compare via UI/TUI). |
-| [Interactive UI and TUI](tui.md) | **`prof ui`**, **`prof tui`**, **`prof tui track`**, and how they map to flag commands. |
-| [CI and regressions](ci.md) | Thresholds, exit codes, and JSON configuration. |
-| [Optional tools](tools.md) | `prof tools benchstat` and `prof tools qcachegrind` (also available from **`prof ui`**). |
-
-## Source and issue tracking
-
-Product source and revision history live in the [Prof repository](https://github.com/AlexsanderHamir/prof). For deeper CI schema and examples, the repository also ships [CI/CD configuration](https://github.com/AlexsanderHamir/prof/blob/main/docs/cicd_configuration.md) alongside the code.
+[Prof on GitHub](https://github.com/AlexsanderHamir/prof). Full CI schema: [CI/CD configuration](https://github.com/AlexsanderHamir/prof/blob/main/docs/cicd_configuration.md).

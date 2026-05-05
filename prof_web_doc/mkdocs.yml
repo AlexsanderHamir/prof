@@ -1,5 +1,5 @@
 site_name: Prof documentation
-site_description: Go benchmark profiling with prof ui and TUI menus, organized bench output, and regression comparison—flags optional for CI.
+site_description: Go benchmark profiling with prof ui menus, bench output under bench/, compare runs; flags for CI when you want them.
 site_url: https://alexsanderhamir.github.io/prof/
 
 repo_url: https://github.com/AlexsanderHamir/prof
@@ -41,15 +41,15 @@ extra_css:
 
 nav:
   - Overview: index.md
-  - Install: install.md
+  - Install Prof: install.md
   - Quickstart: quickstart.md
-  - Working directory and paths: workspace.md
-  - Collect profiling data: collect.md
-  - Configure collection: configure.md
-  - Compare runs: compare.md
-  - Interactive UI and TUI: tui.md
-  - CI and regressions: ci.md
-  - Optional tools: tools.md
+  - Paths and cwd: workspace.md
+  - Collect: collect.md
+  - Configure: configure.md
+  - Compare: compare.md
+  - UI and TUI: tui.md
+  - CI: ci.md
+  - Tools: tools.md
 
 markdown_extensions:
   - tables

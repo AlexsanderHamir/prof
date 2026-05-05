@@ -1,12 +1,12 @@
-# Prof Codebase Design
+# Prof codebase design
 
-Prof is a Go benchmark profiling tool that automates performance analysis by wrapping Go's built-in benchmarking and pprof tools.
+Go benchmark profiling: wraps `go test` + pprof, writes `bench/<tag>/`, compares runs; interactive entry is `prof ui` / `prof tui` in [`cli`](cli) and [`internal/tui`](internal/tui).
 
 ## Purpose
 
-- **Automates profiling**: Runs Go benchmarks with profile types such as CPU, memory, mutex, and block (see `engine/benchmark` for supported flags).
-- **Organizes data**: Writes a predictable tree under `bench/<tag>/` (binaries, text, per-function snippets, optional package-grouped reports).
-- **Tracks performance**: Compares two runs (`track`) and optionally applies CI-style thresholds via JSON config.
+- **Profile:** CPU, memory, mutex, block (`engine/benchmark`).
+- **Layout:** `bench/<tag>/` (binaries, text, per-function snippets, optional package grouping).
+- **Compare / CI:** `track` + optional `ci_config` in `config_template.json`.
 
 ## Architecture
 
@@ -65,7 +65,7 @@ flowchart LR
 | [`internal/repofs`](internal/repofs) | **Module root lookup** (`go.mod`) and **tag dir** clean/create used by collectors and benchmarks |
 | [`internal/testpaths`](internal/testpaths) | Test-only helpers to resolve paths under **`tests/assets`** |
 
-There are **no** separate `internal/config`, `internal/args`, or `internal/shared` packages; primary shared types stay in **`internal`** as files.
+Shared types live in **`internal`** as files (no separate `internal/config` package).
 
 ## Contributor map (where to start)
 
@@ -74,6 +74,7 @@ There are **no** separate `internal/config`, `internal/args`, or `internal/share
 | `prof auto` | [`cli/cmd_collect.go`](cli/cmd_collect.go) → [`engine/benchmark/entry.go`](engine/benchmark/entry.go) | Validate flags → load optional `config_template.json` → layout → `runBenchAndGetProfiles` |
 | `prof manual` | [`cli/cmd_collect.go`](cli/cmd_collect.go) → [`engine/collector/manual_process.go`](engine/collector/manual_process.go) | Tag dir → per-file profile processing + function lists |
 | `prof track auto` / `manual` | [`cli/cmd_track.go`](cli/cmd_track.go) → [`engine/tracker/run.go`](engine/tracker/run.go) | Build [`Selections`](engine/tracker/types.go) → compare → format output → CI apply |
+| `prof ui` | [`cli/cmd_ui.go`](cli/cmd_ui.go), [`internal/tui/hub.go`](internal/tui/hub.go) | Bubble Tea menu → Survey / engines |
 | `prof tui` | [`cli/cmd_tui.go`](cli/cmd_tui.go), [`cli/tui.go`](cli/tui.go) | Survey → same engines as above |
 | `prof setup` | [`cli/cmd_setup.go`](cli/cmd_setup.go) → [`internal/api.go`](internal/api.go) `CreateTemplate` | Writes template JSON beside `go.mod` |
 | `prof tools …` | [`cli/cmd_tools.go`](cli/cmd_tools.go) → `engine/tools/*` | Benchstat / qcachegrind helpers |

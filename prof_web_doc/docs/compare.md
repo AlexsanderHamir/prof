@@ -1,17 +1,19 @@
 # Compare runs
 
-To compare two tags **without memorizing flags**, use **`prof ui`** (main menu → compare) or **`prof tui track`**. The sections below document **`prof track auto`** and **`prof track manual`** for scripts, CI, and file-based comparisons.
+Interactive compare: **`prof ui`** or **`prof tui track`**. Below: **`prof track`** for flags and CI.
 
 ## Commands
 
-| Command | When to use it |
-| -------- | ---------------- |
-| `prof track auto` | Both runs were collected with `prof auto` and stored under `bench/<tag>/`. |
-| `prof track manual` | You have two profile **files** on disk and want a report without the `bench/` tag layout. |
+| Command | Use when |
+| -------- | -------- |
+| `prof track auto` | Both runs live under `bench/<tag>/` from collect. |
+| `prof track manual` | You have two profile **file paths**; no tag layout required. |
 
 ## prof track auto
 
-Required flags: `--base`, `--current`, `--profile-type`, `--bench-name`. Optional: `--output-format`, `--fail-on-regression`, `--regression-threshold`.
+Required: `--base`, `--current`, `--profile-type`, `--bench-name`. Optional: `--output-format`, `--fail-on-regression`, `--regression-threshold`.
+
+`--base` / `--current` are **tag directory names** under `bench/`, not file paths.
 
 ```bash
 prof track auto --base "baseline" --current "optimized" \
@@ -19,19 +21,9 @@ prof track auto --base "baseline" --current "optimized" \
   --output-format "summary"
 ```
 
-```bash
-prof track auto --base "baseline" --current "optimized" \
-  --profile-type "cpu" --bench-name "BenchmarkGenPool" \
-  --output-format "detailed"
-```
-
-- `--base` and `--current` are **tag names** (directory names under `bench/`), not file paths.
-
 ## prof track manual
 
-Required flags: `--base`, `--current`, `--output-format`.
-
-Each of `--base` and `--current` must be a **filesystem path** to a profile file for that run (the same binary profile format `go test` produces, such as `.out` or `.prof`). Despite the flag names, these are not tag labels.
+Required: `--base`, `--current`, `--output-format`. Here `--base` / `--current` are **paths** to profile binaries (e.g. `.out`, `.prof`).
 
 ```bash
 prof track manual --base "path/to/baseline_cpu.out" \
@@ -39,25 +31,18 @@ prof track manual --base "path/to/baseline_cpu.out" \
   --output-format "summary"
 ```
 
-**Note:** The built-in command description may refer to “text files”; the implementation loads standard pprof profile binaries. Prefer the file types you captured with `go test` or `prof auto`.
-
 ## Output formats
 
 | Value | Description |
 | ----- | ----------- |
-| `summary` | High-level list of regressions, improvements, and stable functions. |
-| `detailed` | Per-function sections with flat and cumulative metrics. |
-| `summary-html` | Summary as HTML. |
-| `detailed-html` | Detailed report as HTML. |
-| `summary-json` | Summary as JSON. |
-| `detailed-json` | Detailed report as JSON. |
+| `summary` / `detailed` | Text; default for `track auto` is `detailed` if omitted (check `prof track auto -h`). |
+| `summary-html` / `detailed-html` | HTML. |
+| `summary-json` / `detailed-json` | JSON. |
 
-Default for `track auto` if omitted is `detailed` (see CLI help for your version).
+## Regression gate (short)
 
-## Regression gating (summary)
-
-To fail the process when the worst **flat-time** regression exceeds a percentage, use `--fail-on-regression` with `--regression-threshold`. Details and JSON-based CI rules are in [CI and regressions](ci.md).
+`--fail-on-regression` with `--regression-threshold` uses worst **flat-time** regression %. More rules: [CI and regressions](ci.md).
 
 ## Next article
 
-[Interactive TUI](tui.md)
+[Interactive UI and TUI](tui.md)
