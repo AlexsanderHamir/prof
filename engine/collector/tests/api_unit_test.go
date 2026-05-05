@@ -1,4 +1,4 @@
-package tests
+package collector_test
 
 import (
 	"os"

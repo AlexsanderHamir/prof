@@ -1,4 +1,4 @@
-package tests_test
+package tracker_test
 
 import (
 	"testing"
