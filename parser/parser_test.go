@@ -12,7 +12,7 @@ import (
 
 func testProfilePath(t *testing.T, name string) string {
 	t.Helper()
-	p := filepath.Join("tests", "testFilesV2", name)
+	p := filepath.Join("testdata", "testFilesV2", name)
 	if _, err := os.Stat(p); err != nil {
 		t.Skip("fixture not present:", p)
 	}
@@ -105,7 +105,7 @@ func TestOrganizeProfileByPackageFromProfileDataMarkdown(t *testing.T) {
 		},
 		FlatPercentages: map[string]float64{"github.com/a/b.Foo": 50},
 		CumPercentages:  map[string]float64{"github.com/a/b.Foo": 50},
-		SumPercentages:   map[string]float64{"github.com/a/b.Foo": 50},
+		SumPercentages:  map[string]float64{"github.com/a/b.Foo": 50},
 		Cum:             map[string]int64{"github.com/a/b.Foo": 50},
 	}
 	s := OrganizeProfileByPackageFromProfileData(d, internal.FunctionFilter{})
