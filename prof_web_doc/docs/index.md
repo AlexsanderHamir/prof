@@ -6,6 +6,12 @@ Prof is a command-line tool for Go benchmarks. It runs `go test` with the profil
 
 Use Prof when you want repeatable benchmark runs, a fixed directory layout for binaries and reports, and diffs between baselines and candidates without scripting `pprof` yourself.
 
+## Interactive menus versus flags
+
+- **Menus:** Run `prof ui` for a guided main menu (collect, compare, tools, setup). You can also use `prof tui` for collect-only prompts or `prof tui track` for compare-only prompts. These need a normal interactive terminal.
+- **Flags:** Use `prof auto`, `prof track`, `prof tools`, and so on when you want stable, scriptable commands (for example in CI). Run `prof -h` and `prof <command> -h` for flag reference.
+- **Completion:** Run `prof completion <shell>` to print a completion script for bash, zsh, fish, or PowerShell.
+
 ## In this documentation
 
 | Article | Description |
@@ -16,7 +22,7 @@ Use Prof when you want repeatable benchmark runs, a fixed directory layout for b
 | [Collect profiling data](collect.md) | `prof auto`, `prof manual`, and package grouping. |
 | [Configure collection](configure.md) | `prof setup` and `config_template.json`. |
 | [Compare runs](compare.md) | `prof track auto`, `prof track manual`, and report formats. |
-| [Interactive TUI](tui.md) | `prof tui` and `prof tui track`. |
+| [Interactive TUI](tui.md) | `prof ui`, `prof tui`, and `prof tui track`. |
 | [CI and regressions](ci.md) | Thresholds, exit codes, and JSON configuration. |
 | [Optional tools](tools.md) | `prof tools benchstat` and `prof tools qcachegrind`. |
 

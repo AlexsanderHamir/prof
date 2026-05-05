@@ -2,13 +2,25 @@
 
 This walkthrough assumes your module root is the current directory and benchmarks already exist under `_test.go` files.
 
-## 1. Collect a baseline
+## Option A: Interactive (recommended)
+
+From the module root:
+
+```bash
+prof ui
+```
+
+Choose **Run benchmarks and collect profiles** to capture a baseline, then run `prof ui` again after your code changes and collect with a new tag. Use **Compare two tagged runs** when you have at least two tags. The prompts match what `prof auto` and `prof track auto` do with flags.
+
+## Option B: Commands with flags (scripts and CI)
+
+### 1. Collect a baseline
 
 ```bash
 prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
 ```
 
-## 2. Collect a second run
+### 2. Collect a second run
 
 After you change code, collect again with a different tag:
 
@@ -16,7 +28,7 @@ After you change code, collect again with a different tag:
 prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --count 10 --tag "candidate"
 ```
 
-## 3. Compare the two tags
+### 3. Compare the two tags
 
 ```bash
 prof track auto --base "baseline" --current "candidate" --profile-type "cpu" --bench-name "BenchmarkExample" --output-format "summary"

@@ -24,7 +24,7 @@ Output is plain text and standard pprof binaries—easy to diff, archive, or fee
 | **Compare** | Diff two tagged runs (`prof track auto`) with several output formats. |
 | **CI** | Optional fail-on-regression with thresholds; function filters and JSON config—see [CI/CD configuration](docs/cicd_configuration.md). |
 | **Layout** | Artifacts under `bench/<tag>/`; optional `--group-by-package` for `*_grouped.txt` reports. |
-| **TUI** | `prof tui` discovers benchmarks and mirrors `prof auto` / `prof tui track` without memorizing flags. |
+| **TUI** | `prof ui` opens a menu (collect, compare, tools, setup); `prof tui` / `prof tui track` are focused prompts for collect and compare. |
 
 **Collect example:**
 
@@ -55,8 +55,9 @@ prof manual --tag "external-profiles" --group-by-package cpu.prof memory.prof
 ## Interactive TUI
 
 ```bash
-prof tui          # collect: pick benchmark, profiles, count, tag
-prof tui track    # compare existing runs
+prof ui             # recommended: main menu, then prompts
+prof tui            # collect only: benchmarks, profiles, count, tag
+prof tui track      # compare existing runs only
 ```
 
 Same engines and output layout as the non-interactive commands.
@@ -69,11 +70,21 @@ go install github.com/AlexsanderHamir/prof/cmd/prof@latest
 
 ## Quick start
 
+Interactive (from your module root, with benchmarks in `_test.go`):
+
+```bash
+prof ui
+```
+
+Same workflow with flags (for scripts and CI):
+
 ```bash
 prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
 prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "optimized"
 prof track auto --base "baseline" --current "optimized" --profile-type "cpu" --bench-name "BenchmarkName" --output-format "summary"
 ```
+
+Shell tab completion: `prof completion bash` (or `zsh`, `fish`, `powershell`) — see `prof completion -h`.
 
 ## Documentation
 

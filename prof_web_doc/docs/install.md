@@ -20,6 +20,16 @@ Verify:
 prof --help
 ```
 
+## Shell completion (optional)
+
+Prof can emit completion scripts for bash, zsh, fish, and PowerShell:
+
+```bash
+prof completion -h
+```
+
+Example (bash): save the script and `source` it from your shell config, following your platform’s conventions for completion files.
+
 ## Next step
 
 [Quickstart](quickstart.md)
