@@ -68,8 +68,21 @@ go build -o prof ./cmd/prof
    go generate ./tests/...
    ```
 
-5. **Documentation** — Update README, CODEBASE_DESIGN, or CLI help when user-visible behavior changes.
+5. **Releases** — Releases are automated; you do not pick a semver bump by hand.
 
-6. **Pull requests** — Clear summary; reference issues (`Closes #123`).
+   - In GitHub: **Actions → Release → Run workflow** (`workflow_dispatch`).
+   - The workflow computes the next **patch** version from the latest `v*` tag using [`svu`](https://github.com/caarlos0/svu) (e.g. `v1.2.3` → `v1.2.4`). If there is no tag yet, it publishes **`v0.1.0`**.
+   - It refuses to run when there are **no new commits** since the last tag, or when the computed tag **already exists**.
+   - It builds `prof` for common `GOOS`/`GOARCH` pairs, attaches checksums, pushes an **annotated tag** on the current `main` commit, and creates a GitHub release with **auto-generated release notes** (PRs and commits since the previous release).
 
-7. **Reviews** — Discussion and iterative feedback welcome.
+   Install a released version with Go tooling, for example:
+
+   ```bash
+   go install github.com/AlexsanderHamir/prof/cmd/prof@v1.2.4
+   ```
+
+6. **Documentation** — Update README, CODEBASE_DESIGN, or CLI help when user-visible behavior changes.
+
+7. **Pull requests** — Clear summary; reference issues (`Closes #123`).
+
+8. **Reviews** — Discussion and iterative feedback welcome.

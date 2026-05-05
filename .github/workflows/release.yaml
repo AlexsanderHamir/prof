@@ -1,0 +1,119 @@
+# Automated release: patch bump from the latest v* tag, cross-compile binaries,
+# push an annotated tag on the current commit, and open a GitHub release with
+# auto-generated release notes (merged PRs + commits since the previous tag).
+#
+# Trigger: Actions → Release → Run workflow (workflow_dispatch).
+#
+# Rules:
+# - No manual semver choice: next version is always patch bump (v1.2.3 → v1.2.4)
+#   using github.com/caarlos0/svu, or v0.1.0 when no prior tag exists.
+# - Fails fast if there are zero commits since the last tag (nothing to ship).
+# - Fails if the computed tag already exists (prevents accidental double release).
+#
+# Requires: repository default GITHUB_TOKEN with contents: write (default for
+# workflows in this repo).
+
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Tag, build, and publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.3"
+          cache: true
+
+      - name: Install svu
+        run: go install github.com/caarlos0/svu/v2@v2.3.0
+
+      - name: Determine next version
+        id: version
+        run: |
+          set -euo pipefail
+          export PATH="$(go env GOPATH)/bin:${PATH}"
+
+          if git describe --tags --abbrev=0 >/dev/null 2>&1; then
+            LAST="$(git describe --tags --abbrev=0)"
+            COMMITS="$(git rev-list "${LAST}"..HEAD --count)"
+            if [ "${COMMITS}" -eq 0 ]; then
+              echo "::error::No commits since ${LAST}. Nothing to release."
+              exit 1
+            fi
+            NEW="$(svu patch --prefix=v)"
+          else
+            NEW="v0.1.0"
+          fi
+
+          if git rev-parse -q --verify "refs/tags/${NEW}" >/dev/null 2>&1; then
+            echo "::error::Tag ${NEW} already exists. Delete it on the remote or pick a different branch state."
+            exit 1
+          fi
+
+          echo "version=${NEW}" >> "${GITHUB_OUTPUT}"
+          echo "Releasing ${NEW} (previous: ${LAST:-<none>})"
+
+      - name: Build release binaries
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          LDFLAGS="-s -w -X=github.com/AlexsanderHamir/prof/cli.Version=${VERSION}"
+
+          build_one() {
+            local goos="$1" goarch="$2" suffix=""
+            [ "${goos}" = windows ] && suffix=".exe" || true
+            local out="dist/prof_${goos}_${goarch}${suffix}"
+            echo "Building ${out}"
+            GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0 \
+              go build -trimpath -ldflags "${LDFLAGS}" -o "${out}" ./cmd/prof
+          }
+
+          build_one linux amd64
+          build_one linux arm64
+          build_one darwin amd64
+          build_one darwin arm64
+          build_one windows amd64
+          build_one windows arm64
+
+          ( cd dist && sha256sum prof_* > SHA256SUMS.txt )
+
+      - name: Create annotated tag and push
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${VERSION}" -m "Release ${VERSION}"
+          git push origin "refs/tags/${VERSION}"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          files: dist/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
