@@ -9,7 +9,6 @@
 //   - aggregate.go — sample → flat/cum maps and percentages.
 //   - symbol_name.go — function/package string parsing for filters and grouping.
 //   - package_report.go — markdown formatting for package groups.
-//   - facade.go — path-based API and [ProfileData]-based composition helpers.
-//
-// Exported functions ending in V2 are the stable path-based entry points retained for compatibility.
+//   - facade.go — path-based API: [TurnLinesIntoObjects], [GetAllFunctionNames], [OrganizeProfileByPackage],
+//     and *V2 equivalents kept for stable call sites.
 package parser
