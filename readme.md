@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="prof_logo_v0.0.1.png" alt="Prof" width="120" height="120" />
+</p>
+
 # Prof
 
 Go benchmark profiling: `go test` + pprof, output under `bench/<tag>/`, compare two runs.
