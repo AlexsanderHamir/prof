@@ -24,10 +24,10 @@ const (
 	funcGenerate  = "GenerateStrings"
 	funcAddString = "AddString"
 
-	// Run counts. count=10 was needed only because each filter scenario
-	// re-sampled CPU; with shared fixtures, smokeCount is plenty for
-	// wiring smoke tests and validationCount is enough for error-path checks.
-	count           = "10"
+	// Run counts. The legacy count=10 was needed only because each filter
+	// scenario re-sampled CPU; with committed fixtures driving the filter
+	// tests in-process, smokeCount=1 is plenty for wiring smoke and
+	// validationCount=1 is plenty for error-path checks.
 	smokeCount      = "1"
 	validationCount = "1"
 

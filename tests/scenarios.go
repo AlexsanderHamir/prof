@@ -26,6 +26,12 @@ type TestArgs struct {
 	blockOutputCheck        bool
 	isEnvironmentSet        bool
 	checkSuccessMessage     bool
+	// useSharedEnv routes the scenario to ensureSharedEnv() instead of
+	// building a per-label env under tests/Enviroment <label>/. The shared
+	// env is created on demand and cleaned up by TestMain. Setup-related
+	// flags (label, isEnvironmentSet, withCleanUp, noConfigFile) are
+	// ignored when useSharedEnv is true.
+	useSharedEnv bool
 }
 
 func createConfigFile(t *testing.T, envDir string, cfgTemplate *internal.Config) {
@@ -44,6 +50,28 @@ func createConfigFile(t *testing.T, envDir string, cfgTemplate *internal.Config)
 }
 
 func testConfigScenario(t *testing.T, testArgs *TestArgs) {
+	envFullPath := resolveScenarioEnv(t, testArgs)
+
+	shouldContinue := runProf(t, envFullPath, testArgs.cmd, testArgs.expectedErrorMessage, testArgs.checkSuccessMessage)
+	if !shouldContinue {
+		return
+	}
+
+	if !testArgs.blockOutputCheck {
+		checkOutput(t, envFullPath, testArgs)
+	}
+}
+
+// resolveScenarioEnv returns the env path the scenario should run in, either
+// from the shared env or a per-label one. Per-label envs are built on first
+// use and (when withCleanUp is set) torn down by t.Cleanup.
+func resolveScenarioEnv(t *testing.T, testArgs *TestArgs) string {
+	t.Helper()
+
+	if testArgs.useSharedEnv {
+		return ensureSharedEnv(t)
+	}
+
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)
@@ -54,8 +82,8 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 
 	if testArgs.withCleanUp {
 		t.Cleanup(func() {
-			if err = os.RemoveAll(envFullPath); err != nil {
-				t.Logf("Failed to clean up environment: %v", err)
+			if cleanupErr := os.RemoveAll(envFullPath); cleanupErr != nil {
+				t.Logf("Failed to clean up environment: %v", cleanupErr)
 			}
 		})
 	}
@@ -70,19 +98,12 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 		setUpProf(t, root, envDir)
 	}
 
-	shouldContinue := runProf(t, envFullPath, testArgs.cmd, testArgs.expectedErrorMessage, testArgs.checkSuccessMessage)
-	if !shouldContinue {
-		return
-	}
-
-	if !testArgs.blockOutputCheck {
-		checkOutput(t, envFullPath, testArgs)
-	}
+	return envFullPath
 }
 
 // runCmdWithCount returns the canonical `prof auto` argv for the synthetic
-// benchmark, parameterized by --count so callers can pick smokeCount,
-// validationCount, or count without rebuilding the rest of the command.
+// benchmark, parameterized by --count so callers can pick smokeCount or
+// validationCount without rebuilding the rest of the command.
 func runCmdWithCount(countVal string) []string {
 	cmd := []string{
 		internal.AUTOCMD,
@@ -92,10 +113,6 @@ func runCmdWithCount(countVal string) []string {
 		"--tag", tag,
 	}
 	return append(cmd, autoBenchSkipPNGArgs()...)
-}
-
-func defaultRunCmd() []string {
-	return runCmdWithCount(count)
 }
 
 // configWithFilter builds the FunctionFilter scenario that whitelists symbols

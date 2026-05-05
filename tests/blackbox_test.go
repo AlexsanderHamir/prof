@@ -28,18 +28,15 @@ func skipSlowIntegration(t *testing.T) {
 func TestAutoEndToEnd(t *testing.T) {
 	skipSlowIntegration(t)
 
-	label := "Smoke"
 	testArgs := &TestArgs{
 		cfg:                     internal.Config{},
 		withConfig:              false,
 		expectNonSpecifiedFiles: true,
-		noConfigFile:            true,
 		cmd:                     runCmdWithCount(smokeCount),
-		label:                   label,
 		expectedNumberOfFiles:   3,
-		withCleanUp:             true,
 		expectedProfiles:        []string{cpuProfile, memProfile},
 		checkSuccessMessage:     true,
+		useSharedEnv:            true,
 	}
 	testConfigScenario(t, testArgs)
 }
@@ -74,154 +71,106 @@ func TestFunctionFilter(t *testing.T) {
 
 func TestProfileValidation(t *testing.T) {
 	skipSlowIntegration(t)
-	label := "RandomProfileName"
-	t.Run(label, func(t *testing.T) {
+	t.Run("RandomProfileName", func(t *testing.T) {
 		profileName := "fakeProfileName"
 		cmd := []string{
 			internal.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", fmt.Sprintf("%s,%s,%s", cpuProfile, memProfile, profileName),
-			"--count", count,
+			"--count", validationCount,
 			"--tag", tag,
 		}
 		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
-		testArgs := &TestArgs{
-			specifiedFiles:          nil,
-			cfg:                     internal.Config{},
-			withConfig:              false,
-			expectNonSpecifiedFiles: true,
-			noConfigFile:            true,
-			cmd:                     cmd,
-			expectedErrorMessage:    fmt.Sprintf("failed to run %s: profile %s is not supported", benchName, profileName),
-			label:                   label,
-			expectedNumberOfFiles:   3,
-			withCleanUp:             true,
-			expectedProfiles:        nil,
-			checkSuccessMessage:     true,
-		}
-
-		testConfigScenario(t, testArgs)
+		testConfigScenario(t, &TestArgs{
+			cfg:                  internal.Config{},
+			cmd:                  cmd,
+			expectedErrorMessage: fmt.Sprintf("failed to run %s: profile %s is not supported", benchName, profileName),
+			checkSuccessMessage:  true,
+			useSharedEnv:         true,
+		})
 	})
 
-	label = "NonCollectedProfile"
-	t.Run(label, func(t *testing.T) {
+	t.Run("NonCollectedProfile", func(t *testing.T) {
 		profileName := "goroutine"
 		cmd := []string{
 			internal.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", profileName,
-			"--count", count,
+			"--count", validationCount,
 			"--tag", tag,
 		}
 		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
-		testArgs := &TestArgs{
-			specifiedFiles:          nil,
-			cfg:                     internal.Config{},
-			withConfig:              false,
-			expectNonSpecifiedFiles: true,
-			noConfigFile:            true,
-			cmd:                     cmd,
-			expectedErrorMessage:    fmt.Sprintf("failed to run %s: profile %s is not supported", benchName, profileName),
-			label:                   label,
-			expectedNumberOfFiles:   3,
-			withCleanUp:             true,
-			expectedProfiles:        nil,
-			checkSuccessMessage:     true,
-		}
-
-		testConfigScenario(t, testArgs)
+		testConfigScenario(t, &TestArgs{
+			cfg:                  internal.Config{},
+			cmd:                  cmd,
+			expectedErrorMessage: fmt.Sprintf("failed to run %s: profile %s is not supported", benchName, profileName),
+			checkSuccessMessage:  true,
+			useSharedEnv:         true,
+		})
 	})
 
-	label = "CollectedProfile"
-	t.Run(label, func(t *testing.T) {
+	t.Run("CollectedProfile", func(t *testing.T) {
 		cmd := []string{
 			internal.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", fmt.Sprintf("%s,%s,%s", cpuProfile, memProfile, blockProfile),
-			"--count", count,
+			"--count", validationCount,
 			"--tag", tag,
 		}
 		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
-		testArgs := &TestArgs{
-			specifiedFiles:          nil,
+		testConfigScenario(t, &TestArgs{
 			cfg:                     internal.Config{},
-			withConfig:              false,
 			expectNonSpecifiedFiles: true,
-			noConfigFile:            true,
 			cmd:                     cmd,
-			expectedErrorMessage:    "",
-			label:                   label,
 			expectedNumberOfFiles:   4, // cpu, mem, goroutine, block
-			withCleanUp:             true,
 			expectedProfiles:        []string{cpuProfile, memProfile, blockProfile},
 			checkSuccessMessage:     true,
-		}
-
-		testConfigScenario(t, testArgs)
+			useSharedEnv:            true,
+		})
 	})
 }
 
 func TestCommandValidation(t *testing.T) {
 	skipSlowIntegration(t)
-	label := "EmptyBenchmarkSlice"
-	t.Run(label, func(t *testing.T) {
+	t.Run("EmptyBenchmarkSlice", func(t *testing.T) {
 		cmd := []string{
 			internal.AUTOCMD,
 			"--benchmarks", "",
 			"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
-			"--count", count,
+			"--count", validationCount,
 			"--tag", tag,
 		}
 		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
-		testArgs := &TestArgs{
-			specifiedFiles:          nil,
-			cfg:                     internal.Config{},
-			withConfig:              false,
-			expectNonSpecifiedFiles: true,
-			noConfigFile:            true,
-			cmd:                     cmd,
-			expectedErrorMessage:    "benchmarks flag is empty",
-			label:                   label,
-			expectedNumberOfFiles:   3,
-			withCleanUp:             true,
-			expectedProfiles:        nil,
-			checkSuccessMessage:     true,
-		}
-
-		testConfigScenario(t, testArgs)
+		testConfigScenario(t, &TestArgs{
+			cfg:                  internal.Config{},
+			cmd:                  cmd,
+			expectedErrorMessage: "benchmarks flag is empty",
+			checkSuccessMessage:  true,
+			useSharedEnv:         true,
+		})
 	})
 
-	label = "EmptyProfileSlice"
-	t.Run(label, func(t *testing.T) {
+	t.Run("EmptyProfileSlice", func(t *testing.T) {
 		cmd := []string{
 			internal.AUTOCMD,
 			"--benchmarks", benchName,
 			"--profiles", "",
-			"--count", count,
+			"--count", validationCount,
 			"--tag", tag,
 		}
 		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
-		testArgs := &TestArgs{
-			specifiedFiles:          nil,
-			cfg:                     internal.Config{},
-			withConfig:              false,
-			expectNonSpecifiedFiles: true,
-			noConfigFile:            true,
-			cmd:                     cmd,
-			expectedErrorMessage:    "profiles flag is empty",
-			label:                   label,
-			expectedNumberOfFiles:   3,
-			withCleanUp:             true,
-			expectedProfiles:        nil,
-			checkSuccessMessage:     true,
-		}
-
-		testConfigScenario(t, testArgs)
+		testConfigScenario(t, &TestArgs{
+			cfg:                  internal.Config{},
+			cmd:                  cmd,
+			expectedErrorMessage: "profiles flag is empty",
+			checkSuccessMessage:  true,
+			useSharedEnv:         true,
+		})
 	})
 }
 

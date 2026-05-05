@@ -59,30 +59,40 @@ func getProjectRoot() (string, error) {
 	}
 }
 
-func setupEnviroment(t *testing.T, envDir string) {
-	t.Helper()
+// materializeSyntheticEnv writes the synthetic Go module + benchmark file to
+// envDir. Idempotent: skips `go mod init` if go.mod already exists, so it is
+// safe to call from both ensureSharedEnv (sync.Once) and setupEnviroment.
+func materializeSyntheticEnv(envDir string) error {
 	if err := os.Mkdir(envDir, internal.PermDir); err != nil && !os.IsExist(err) {
-		t.Fatalf("couldn't create environment dir: %v", err)
+		return fmt.Errorf("create environment dir: %w", err)
 	}
 
 	goModPath := filepath.Join(envDir, "go.mod")
 	if _, statErr := os.Stat(goModPath); statErr != nil {
 		if !os.IsNotExist(statErr) {
-			t.Fatalf("stat go.mod: %v", statErr)
+			return fmt.Errorf("stat go.mod: %w", statErr)
 		}
 		cmd := exec.Command("go", "mod", "init", moduleName)
 		cmd.Dir = envDir
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			t.Fatalf("failed to initialize Go module: %v\nOutput: %s", err, output)
+		if output, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("go mod init: %w (output: %s)", err, output)
 		}
 	}
 
 	if err := createPackage(envDir); err != nil {
-		t.Fatalf("failed to create package: %v", err)
+		return fmt.Errorf("create package: %w", err)
 	}
 
 	if err := createBenchmarkFile(envDir); err != nil {
-		t.Fatalf("failed to create benchmark file: %v", err)
+		return fmt.Errorf("create benchmark file: %w", err)
+	}
+
+	return nil
+}
+
+func setupEnviroment(t *testing.T, envDir string) {
+	t.Helper()
+	if err := materializeSyntheticEnv(envDir); err != nil {
+		t.Fatalf("setup synthetic env: %v", err)
 	}
 }
