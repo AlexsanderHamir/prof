@@ -1,33 +1,41 @@
 # Quickstart
 
-This walkthrough assumes your module root is the current directory and benchmarks already exist under `_test.go` files.
+Assume the [module root](index.md#terminology) as cwd and benchmarks in `*_test.go`. Terms: [index](index.md#terminology).
 
-## 1. Collect a baseline
+## Use menus (default)
+
+```bash
+prof ui
+```
+
+Collect with one tag, change code, run again with another tag, then **Compare two tagged runs**. Narrower flows: [Interactive UI and TUI](tui.md) (`prof tui`, `prof tui track`).
+
+## Use flags (CI or scripts)
+
+1. Baseline:
 
 ```bash
 prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
 ```
 
-## 2. Collect a second run
-
-After you change code, collect again with a different tag:
+2. After changes:
 
 ```bash
 prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --count 10 --tag "candidate"
 ```
 
-## 3. Compare the two tags
+3. Compare:
 
 ```bash
 prof track auto --base "baseline" --current "candidate" --profile-type "cpu" --bench-name "BenchmarkExample" --output-format "summary"
 ```
 
-## Results
+## Output
 
-- Profile binaries and text reports are under `bench/<tag>/`. See [Collect profiling data](collect.md) for the layout.
-- The track command prints a summary or detailed report to stdout (and optional HTML or JSON when you select those formats). See [Compare runs](compare.md).
+- Artifacts: `bench/<tag>/` — [Collect profiling data](collect.md).
+- Compare report: stdout (more formats in [Compare runs](compare.md)).
 
 ## Next steps
 
-- [Configure collection](configure.md) to limit which functions are extracted.
-- [CI and regressions](ci.md) to fail a pipeline on regressions.
+- [Configure collection](configure.md)
+- [CI and regressions](ci.md)

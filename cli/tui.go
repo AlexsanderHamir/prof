@@ -65,7 +65,31 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if err = svc.Benchmark.RunBenchmarks(selectedBenches, selectedProfiles, tagStr, runCount, false, false, true); err != nil {
+	var groupPkg bool
+	if err = survey.AskOne(&survey.Confirm{
+		Message: "Group profile output by Go package (writes additional *_grouped.txt style reports under the tag)?",
+		Default: false,
+	}, &groupPkg); err != nil {
+		return err
+	}
+
+	var lenient bool
+	if err = survey.AskOne(&survey.Confirm{
+		Message: "Lenient profiles: if a profile binary is missing after the bench run, skip it instead of failing?",
+		Default: false,
+	}, &lenient); err != nil {
+		return err
+	}
+
+	var skipPng bool
+	if err = survey.AskOne(&survey.Confirm{
+		Message: "Skip PNG generation failures (e.g. when Graphviz is not installed)? The run still succeeds if text profiles were produced.",
+		Default: false,
+	}, &skipPng); err != nil {
+		return err
+	}
+
+	if err = svc.Benchmark.RunBenchmarks(selectedBenches, selectedProfiles, tagStr, runCount, groupPkg, lenient, skipPng); err != nil {
 		return err
 	}
 
@@ -79,7 +103,7 @@ func runTUITrackAuto(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to discover available tags: %w", err)
 	}
 	if len(tags) < minTagsForComparison {
-		return errors.New("need at least 2 tags to compare (run 'prof tui' first to collect some data)")
+		return errors.New("need at least 2 tags to compare (run prof ui or prof tui to collect data first)")
 	}
 
 	// Get user selections
@@ -92,7 +116,7 @@ func runTUITrackAuto(svc *app.Services, _ *cobra.Command, _ []string) error {
 	setGlobalTrackingVariables(selections)
 
 	// Now run the actual tracking command
-	fmt.Printf("\n🚀 Running: prof track auto --base %s --current %s --bench-name %s --profile-type %s --output-format %s",
+	fmt.Printf("\nRunning: prof track auto --base %s --current %s --bench-name %s --profile-type %s --output-format %s",
 		selections.Baseline, selections.Current, selections.BenchmarkName, selections.ProfileType, selections.OutputFormat)
 	if selections.UseThreshold {
 		fmt.Printf(" --fail-on-regression --regression-threshold %.1f", selections.RegressionThreshold)

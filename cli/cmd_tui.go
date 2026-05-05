@@ -7,9 +7,10 @@ import (
 
 func newTuiCmd(svc *app.Services) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "tui",
-		Short: "Interactive selection of benchmarks and profiles, then runs prof auto",
-		RunE:  func(c *cobra.Command, args []string) error { return runTUI(svc, c, args) },
+		Use:     "tui",
+		Short:   "Interactive selection of benchmarks and profiles, then runs prof auto",
+		Example: "prof tui\nprof tui track",
+		RunE:    func(c *cobra.Command, args []string) error { return runTUI(svc, c, args) },
 	}
 	cmd.AddCommand(newTuiTrackCmd(svc))
 	return cmd

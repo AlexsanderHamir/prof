@@ -1,26 +1,10 @@
 # Working directory and paths
 
-## Benchmark discovery
+Prof uses the **current working directory** to find the Go module and to write `bench/`. Run from the same place you run `go test` for that module (usually the [module root](index.md#terminology)).
 
-Prof resolves the Go module from the working directory and discovers benchmarks from that context. Run commands from the directory that matches how you normally run `go test` for that module (often the module root).
-
-## Output location
-
-Collected data is written under a `bench/` directory relative to the **current working directory** when you invoke `prof`.
-
-Example:
-
-```text
-bench/<tag>/
-```
-
-Tags are arbitrary labels you pass with `--tag` (for example `baseline`, `pr-123`).
-
-## Configuration file
-
-`prof setup` writes `config_template.json` beside `go.mod` at the **module root**, not necessarily your shell’s current directory if they differ.
-
-**Recommendation:** run Prof from the module root so benchmark discovery, output paths, and configuration resolution stay aligned.
+- **Benchmark discovery:** module-relative to cwd.
+- **Output:** `bench/<tag>/` under cwd ([terminology](index.md#terminology)).
+- **Config:** `prof setup` writes `config_template.json` next to `go.mod` at the module root—keep cwd aligned with that root.
 
 ## Next article
 

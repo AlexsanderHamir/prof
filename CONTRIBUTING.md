@@ -81,8 +81,17 @@ go build -o prof ./cmd/prof
    go install github.com/AlexsanderHamir/prof/cmd/prof@v1.2.4
    ```
 
-6. **Documentation** — Update README, CODEBASE_DESIGN, or CLI help when user-visible behavior changes.
+6. **Documentation** — Update [readme.md](readme.md), [prof_web_doc/](prof_web_doc/), [CODEBASE_DESIGN.md](CODEBASE_DESIGN.md), or CLI help when user-visible behavior changes.
 
 7. **Pull requests** — Clear summary; reference issues (`Closes #123`).
 
 8. **Reviews** — Discussion and iterative feedback welcome.
+
+## Documentation style
+
+Goal: **maximum help, minimum words.** Follow [Microsoft Writing Style Guide](https://learn.microsoft.com/en-us/style-guide/welcome/) (you, active voice, sentence-case headings, descriptive links) without padding.
+
+- **Brevity first** — Cut sentences that do not answer a question, prevent a mistake, or remove duplication.
+- **Link, do not repeat** — Define terms and workflows once (usually [prof_web_doc/docs/index.md](prof_web_doc/docs/index.md)); other pages link there instead of restating.
+- **Shape** — Prefer tables and bullets over long prose; numbered steps only for real sequences; skip empty “Prerequisites” sections.
+- **Callouts** (`!!! note`, `!!! tip`, `!!! important`, `!!! warning` in MkDocs) — Only for high-signal cases (TTY required, CI exit codes, data loss risk). Few beats many.

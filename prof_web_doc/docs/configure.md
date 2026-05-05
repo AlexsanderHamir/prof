@@ -1,20 +1,14 @@
 # Configure collection
 
-## Create the template
-
-From the module root:
+Template: **`prof setup`** or **`prof ui`** → **Create configuration template** → writes `config_template.json` next to `go.mod`.
 
 ```bash
 prof setup
 ```
 
-This writes `config_template.json` next to `go.mod`.
-
 ## function_collection_filter
 
-Use this object to control which functions get per-function text extracts. Keys are **benchmark names** for `prof auto`, or **profile file base names** (no extension) for `prof manual`.
-
-Example:
+Controls per-function text extracts. Keys: **benchmark names** (`prof auto`) or **profile file base names** without extension (`prof manual`).
 
 ```json
 {
@@ -27,13 +21,13 @@ Example:
 }
 ```
 
-| Field | Description |
-| ----- | ----------- |
-| Key name | Benchmark function name, or `"*"` to apply one block to all benchmarks (`prof auto`). For `prof manual`, use the stem of the file (for example `BenchmarkGenPool_cpu` for `BenchmarkGenPool_cpu.out`). |
-| `include_prefixes` | If non-empty, only functions whose full name starts with one of these prefixes are collected. |
-| `ignore_functions` | Short names to exclude even when prefixes match. |
+| Field | Meaning |
+| ----- | ------- |
+| Key | Benchmark name, or `"*"` for all benchmarks (`prof auto`). For `prof manual`, use the file stem (e.g. `BenchmarkGenPool_cpu` for `BenchmarkGenPool_cpu.out`). |
+| `include_prefixes` | If set, only functions whose full name starts with one of these. |
+| `ignore_functions` | Short names excluded even when prefixes match. |
 
-**Note:** For `prof manual`, map keys to each profile file’s base name, not the Go benchmark name.
+For `prof manual`, keys are **profile file base names**, not the Go benchmark name.
 
 ## Next article
 

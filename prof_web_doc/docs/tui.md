@@ -1,34 +1,37 @@
-# Interactive TUI
+# Interactive UI and TUI
 
-Use the TUI when you prefer menus to typing benchmark names and flags. The TUI calls the same engines as the non-interactive commands and writes the same `bench/<tag>/` layout.
+Same engines as `prof auto` / `prof track`; output under `bench/<tag>/`. Details: [Collect profiling data](collect.md), [Compare runs](compare.md).
 
-## Collect: prof tui
+!!! important
+
+    **`prof ui`**, **`prof tui`**, and **`prof tui track`** need a normal terminal (stdin and stdout must be TTYs). For automation, use flag commands and `prof -h`.
+
+## prof ui (recommended)
+
+```bash
+prof ui
+```
+
+Bubble Tea full-screen menu; Survey prompts after you choose **Run benchmarks and collect profiles**, **Compare two tagged runs**, **Tools** (benchstat / qcachegrind), **Create configuration template**, **Show documentation URL**, or **Quit**.
+
+## prof tui (collect only)
 
 ```bash
 prof tui
 ```
 
-1. Discovers `Benchmark*` functions in the module.
-2. Lets you choose benchmarks (multi-select), profile types, run count, and tag.
-3. Runs collection equivalent to `prof auto` with your selections.
+Multi-select benchmarks and profiles, count, tag, then group-by-package, lenient profiles, skip PNG (same as `prof auto`).
 
-**Navigation (typical):**
+**Navigation:** arrows; Space toggles in multi-select; type to filter long lists.
 
-- Arrow keys move the selection.
-- Space toggles selection for multi-select lists.
-- Typing filters long benchmark lists (page size is capped for readability).
-
-## Compare: prof tui track
+## prof tui track (compare only)
 
 ```bash
 prof tui track
 ```
 
-1. Lists existing tags under `bench/`.
-2. Prompts for baseline tag, current tag, benchmark, profile type, output format, and optional regression options.
+Needs **two tags** under `bench/` (from any collect path). Prompts: baseline, current, benchmark, profile type, output format, optional regression gate.
 
-**Prerequisite:** at least two tags already exist from `prof auto` or `prof tui`.
+## Next steps
 
-## Next article
-
-[CI and regressions](ci.md)
+[Collect profiling data](collect.md) · [Compare runs](compare.md) · [CI and regressions](ci.md)

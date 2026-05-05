@@ -1,31 +1,21 @@
 # CI and regressions
 
-## Command-line gating
-
-`prof track auto` (and `prof track manual`) can exit with a non-zero status when regressions exceed a limit.
+`prof track auto` / `prof track manual` can exit **non-zero** when regressions exceed a threshold.
 
 | Flag | Purpose |
 | ---- | -------- |
-| `--fail-on-regression` | Enable failure based on thresholds. |
-| `--regression-threshold` | Maximum allowed **flat-time** regression percent for the worst offender before exit code is non-zero. |
+| `--fail-on-regression` | Turn on threshold-based failure. |
+| `--regression-threshold` | Max allowed **flat-time** regression % for the worst function before non-zero exit. |
 
-Flat time is time attributed directly to the function, not including callees.
+**Flat time** = time in the function itself, excluding callees. Example: baseline flat 100 ms, current 110 ms → about +10%.
 
-**Example calculation:** baseline flat 100 ms, current flat 110 ms → approximately +10% flat regression.
+## JSON in `config_template.json`
 
-## JSON configuration (recommended for pipelines)
+Add a `ci_config` section for ignores, noise floors, per-benchmark caps. **Precedence (tightest wins):** per-benchmark `max_regression_threshold`, then global `max_regression_threshold`, then `--regression-threshold`.
 
-For stable CI, add a `ci_config` section to `config_template.json` at the module root. You can set global ignores, minimum change noise floors, and per-benchmark regression caps. Command-line flags can be omitted or combined with file-based rules depending on your setup.
+Full schema and Actions examples: [CI/CD configuration](https://github.com/AlexsanderHamir/prof/blob/main/docs/cicd_configuration.md).
 
-**Priority (most restrictive wins for regression caps):** benchmark-specific `max_regression_threshold`, then global `max_regression_threshold`, then `--regression-threshold`.
-
-## Authoritative reference
-
-The repository maintains the full schema, worked examples, and GitHub Actions patterns:
-
-[CI/CD configuration (repository)](https://github.com/AlexsanderHamir/prof/blob/main/docs/cicd_configuration.md)
-
-## Minimal workflow example
+## Example
 
 ```bash
 prof track auto --base baseline --current pr-branch \

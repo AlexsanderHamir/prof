@@ -1,6 +1,6 @@
 # Prof
 
-CLI for Go benchmark profiling: run benchmarks with multiple pprof types in one shot, write a consistent `bench/<tag>/` layout, and compare runs for regressions or local iteration.
+Go benchmark profiling: `go test` + pprof, output under `bench/<tag>/`, compare two runs.
 
 [![GoDoc](https://godoc.org/github.com/AlexsanderHamir/prof?status.svg)](https://godoc.org/github.com/AlexsanderHamir/prof)
 [![Go Report Card](https://goreportcard.com/badge/github.com/AlexsanderHamir/prof)](https://goreportcard.com/badge/github.com/AlexsanderHamir/prof)
@@ -10,83 +10,31 @@ CLI for Go benchmark profiling: run benchmarks with multiple pprof types in one 
 
 [Documentation](https://alexsanderhamir.github.io/prof/) · [Demo (CLI)](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/output.mp4) · [Demo (TUI)](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/tui_prof.mp4)
 
-## What you get
+## Start here
 
-Without Prof, you chain `go test` with several profile flags, then repeat `go tool pprof` (and often per-function `-list`) for each artifact. Prof wraps that: one command drives collection, text summaries, and optional package-grouped views under a predictable directory tree.
-
-Output is plain text and standard pprof binaries—easy to diff, archive, or feed into editors and automation.
-
-## Features
-
-| Area | Summary |
-|------|---------|
-| **Collect** | CPU, memory, mutex, and block profiles in one command (`prof auto`). |
-| **Compare** | Diff two tagged runs (`prof track auto`) with several output formats. |
-| **CI** | Optional fail-on-regression with thresholds; function filters and JSON config—see [CI/CD configuration](docs/cicd_configuration.md). |
-| **Layout** | Artifacts under `bench/<tag>/`; optional `--group-by-package` for `*_grouped.txt` reports. |
-| **TUI** | `prof tui` discovers benchmarks and mirrors `prof auto` / `prof tui track` without memorizing flags. |
-
-**Collect example:**
+From your module root (`go.mod`):
 
 ```bash
-prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
+prof ui
 ```
 
-**Compare example:**
+Menus first; **`prof auto`**, **`prof track`**, and flags are for scripts and CI. Examples, flags, and layout: **[documentation site](https://alexsanderhamir.github.io/prof/)** ([Quickstart](https://alexsanderhamir.github.io/prof/quickstart/), [Collect](https://alexsanderhamir.github.io/prof/collect/), [Compare](https://alexsanderhamir.github.io/prof/compare/)).
 
-```bash
-prof track auto --base "baseline" --current "optimized" --profile-type "cpu" --bench-name "BenchmarkName"
-```
+Shell completion: `prof completion -h`.
 
-**Regression gate example:**
-
-```bash
-prof track auto --base "baseline" --current "PR" --profile-type "cpu" --bench-name "BenchmarkName" \
-  --fail-on-regression --regression-threshold 5.0
-```
-
-**Package grouping:**
-
-```bash
-prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory" --count 5 --tag "baseline" --group-by-package
-prof manual --tag "external-profiles" --group-by-package cpu.prof memory.prof
-```
-
-## Interactive TUI
-
-```bash
-prof tui          # collect: pick benchmark, profiles, count, tag
-prof tui track    # compare existing runs
-```
-
-Same engines and output layout as the non-interactive commands.
-
-## Installation
+## Install
 
 ```bash
 go install github.com/AlexsanderHamir/prof/cmd/prof@latest
 ```
 
-## Quick start
+## Repo links
 
-```bash
-prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
-prof auto --benchmarks "BenchmarkName" --profiles "cpu,memory,mutex,block" --count 10 --tag "optimized"
-prof track auto --base "baseline" --current "optimized" --profile-type "cpu" --bench-name "BenchmarkName" --output-format "summary"
-```
-
-## Documentation
-
-- [Full docs](https://alexsanderhamir.github.io/prof/) — API and guides  
-- [Contributing](CONTRIBUTING.md)  
-- [Code of conduct](CODE_OF_CONDUCT.md)  
-- [Codebase design](CODEBASE_DESIGN.md)  
+- [Contributing](CONTRIBUTING.md) · [Codebase design](CODEBASE_DESIGN.md) · [Code of conduct](CODE_OF_CONDUCT.md)
 
 ## Requirements
 
-- Go 1.24.3+
-- [Graphviz](https://graphviz.org/) (for pprof graph generation where used)
-- A `go.mod` at the repository root
+Go 1.24.3+, optional [Graphviz](https://graphviz.org/) for PNG call graphs, `go.mod` at project root.
 
 ## License
 

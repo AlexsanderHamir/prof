@@ -1,15 +1,12 @@
-# CI/CD Configuration Guide
+# CI/CD configuration reference
 
-This document explains how to configure Prof for CI/CD environments to reduce noise and make performance regression detection more reliable.
+Short guide (flags, gates, link here): [CI and regressions](https://alexsanderhamir.github.io/prof/ci/) in the Prof docs.
+
+This file is the **full** reference: `ci_config` shape in `config_template.json`, ignores, thresholds, and GitHub Actions examples.
 
 ## Overview
 
-Prof's CI/CD configuration allows you to:
-
-- **Filter out noisy functions** that shouldn't cause CI/CD failures
-- **Set different thresholds** for different benchmarks
-- **Override command-line settings** with configuration files
-- **Fail on unexpected improvements** if needed
+`ci_config` filters noisy functions, sets global and per-benchmark regression caps (stricter than `prof track` CLI wins), and can set `fail_on_improvement`.
 
 ## Configuration Structure
 

@@ -1,12 +1,12 @@
-# Install
+# Install Prof
 
 ## Prerequisites
 
 | Requirement | Notes |
 | ----------- | ----- |
-| Go | Version 1.24.3 or later (see the repository `go.mod`). |
-| Module root | A `go.mod` file at the repository root Prof runs against. |
-| Graphviz | Optional for some visualizations; install if you rely on PNG call graphs. Without Graphviz, consider `prof auto --skip-png` if generation fails. |
+| Go | 1.24.3+ (`go.mod` in repo). |
+| Module root | Your project’s `go.mod` when you run Prof. |
+| Graphviz | Optional; for PNG call graphs. If missing, use `prof auto --skip-png` or skip PNG in **`prof ui`** / **`prof tui`**. |
 
 ## Install the binary
 
@@ -14,11 +14,19 @@
 go install github.com/AlexsanderHamir/prof/cmd/prof@latest
 ```
 
-Verify:
-
 ```bash
 prof --help
 ```
+
+From the module root, run **`prof ui`** or follow [Quickstart](quickstart.md).
+
+## Shell completion (optional)
+
+```bash
+prof completion -h
+```
+
+Save the script for your shell and source it per your OS conventions.
 
 ## Next step
 
