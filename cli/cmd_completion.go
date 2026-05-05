@@ -31,8 +31,8 @@ Typical usage:
     prof completion powershell > prof.ps1
 
 Then install the script using your shell's completion conventions.`,
-		Args:      cobra.ExactArgs(1),
-		ValidArgs: []string{"bash", "zsh", "fish", "powershell"},
+		Args:                  cobra.ExactArgs(1),
+		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
 		DisableFlagsInUseLine: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w := cmd.OutOrStdout()

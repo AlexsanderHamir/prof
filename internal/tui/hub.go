@@ -86,41 +86,43 @@ func (m *hubModel) Init() tea.Cmd {
 }
 
 func (m *hubModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			m.result = MainQuit
-			return m, tea.Quit
+	key, ok := msg.(tea.KeyMsg)
+	if !ok {
+		return m, nil
+	}
 
-		case "esc":
-			if m.showHelp {
-				m.showHelp = false
-				return m, nil
-			}
-			m.result = MainQuit
-			return m, tea.Quit
+	switch key.String() {
+	case "ctrl+c", "q":
+		m.result = MainQuit
+		return m, tea.Quit
 
-		case "?":
-			m.showHelp = !m.showHelp
+	case "esc":
+		if m.showHelp {
+			m.showHelp = false
 			return m, nil
-
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-			return m, nil
-
-		case "down", "j":
-			if m.cursor < len(m.items)-1 {
-				m.cursor++
-			}
-			return m, nil
-
-		case "enter":
-			m.result = m.items[m.cursor].action
-			return m, tea.Quit
 		}
+		m.result = MainQuit
+		return m, tea.Quit
+
+	case "?":
+		m.showHelp = !m.showHelp
+		return m, nil
+
+	case "up", "k":
+		if m.cursor > 0 {
+			m.cursor--
+		}
+		return m, nil
+
+	case "down", "j":
+		if m.cursor < len(m.items)-1 {
+			m.cursor++
+		}
+		return m, nil
+
+	case "enter":
+		m.result = m.items[m.cursor].action
+		return m, tea.Quit
 	}
 
 	return m, nil

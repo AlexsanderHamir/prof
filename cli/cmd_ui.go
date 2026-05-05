@@ -81,9 +81,9 @@ func runUISetupWizard(svc *app.Services) error {
 
 func runUIToolsMenu(svc *app.Services) error {
 	const (
-		toolBenchstat    = "benchstat — compare benchmark text between two tags"
-		toolQcachegrind  = "qcachegrind — open a binary profile in qcachegrind"
-		toolBack         = "Back to main menu"
+		toolBenchstat   = "benchstat - compare benchmark text between two tags"
+		toolQcachegrind = "qcachegrind - open a binary profile in qcachegrind"
+		toolBack        = "Back to main menu"
 	)
 	var tool string
 	if err := survey.AskOne(&survey.Select{
@@ -115,7 +115,7 @@ func runUIBenchstat(svc *app.Services) error {
 	}
 
 	var base string
-	if err := survey.AskOne(&survey.Select{
+	if err = survey.AskOne(&survey.Select{
 		Message:  "Baseline tag:",
 		Options:  tags,
 		PageSize: tuiPageSize,
@@ -130,7 +130,7 @@ func runUIBenchstat(svc *app.Services) error {
 		}
 	}
 	var cur string
-	if err := survey.AskOne(&survey.Select{
+	if err = survey.AskOne(&survey.Select{
 		Message:  "Current tag:",
 		Options:  currentOpts,
 		PageSize: tuiPageSize,
@@ -138,7 +138,8 @@ func runUIBenchstat(svc *app.Services) error {
 		return err
 	}
 
-	benches, err := discoverAvailableBenchmarks(base)
+	var benches []string
+	benches, err = discoverAvailableBenchmarks(base)
 	if err != nil {
 		return err
 	}
@@ -147,7 +148,7 @@ func runUIBenchstat(svc *app.Services) error {
 	}
 
 	var bench string
-	if err := survey.AskOne(&survey.Select{
+	if err = survey.AskOne(&survey.Select{
 		Message:  "Benchmark name:",
 		Options:  benches,
 		PageSize: tuiPageSize,
@@ -164,11 +165,11 @@ func runUIQcachegrind(svc *app.Services) error {
 		return fmt.Errorf("discover tags: %w", err)
 	}
 	if len(tags) == 0 {
-		return errors.New("no tags under bench/ — collect profiles first (prof auto or prof tui)")
+		return errors.New("no tags under bench/ - collect profiles first (prof auto or prof tui)")
 	}
 
 	var tagChoice string
-	if err := survey.AskOne(&survey.Select{
+	if err = survey.AskOne(&survey.Select{
 		Message:  "Tag:",
 		Options:  tags,
 		PageSize: tuiPageSize,
@@ -176,7 +177,8 @@ func runUIQcachegrind(svc *app.Services) error {
 		return err
 	}
 
-	benches, err := discoverAvailableBenchmarks(tagChoice)
+	var benches []string
+	benches, err = discoverAvailableBenchmarks(tagChoice)
 	if err != nil {
 		return err
 	}
@@ -185,7 +187,7 @@ func runUIQcachegrind(svc *app.Services) error {
 	}
 
 	var bench string
-	if err := survey.AskOne(&survey.Select{
+	if err = survey.AskOne(&survey.Select{
 		Message:  "Benchmark name:",
 		Options:  benches,
 		PageSize: tuiPageSize,
@@ -193,7 +195,8 @@ func runUIQcachegrind(svc *app.Services) error {
 		return err
 	}
 
-	profiles, err := discoverAvailableProfiles(tagChoice, bench)
+	var profiles []string
+	profiles, err = discoverAvailableProfiles(tagChoice, bench)
 	if err != nil {
 		return err
 	}
@@ -202,7 +205,7 @@ func runUIQcachegrind(svc *app.Services) error {
 	}
 
 	var profName string
-	if err := survey.AskOne(&survey.Select{
+	if err = survey.AskOne(&survey.Select{
 		Message:  "Profile type:",
 		Options:  profiles,
 		PageSize: tuiPageSize,
