@@ -53,8 +53,13 @@ go build -o prof ./cmd/prof
 
    ```bash
    go test ./...
-   go test ./tests -count=1 -run '^TestEdge' # edge-case suite (also run in CI)
    golangci-lint run
+   ```
+
+   Optional — only edge-case tests (faster while editing them):
+
+   ```bash
+   go test ./tests -count=1 -run '^TestEdge'
    ```
 
 2. **Code style** — Idiomatic Go; small functions; exported symbols commented when non-obvious.

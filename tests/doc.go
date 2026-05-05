@@ -5,10 +5,8 @@
 // `//go:build ignore` regeneration tool fixtures_regen.go.
 //
 // Edge-case and invariant tests live in edgecases_*_test.go files (names
-// prefixed TestEdge). Run only those with: go test ./tests -run '^TestEdge' -count=1
-//
-// CI runs this subset explicitly (see .github/workflows/test.yaml) in addition
-// to go test ./..., so edge cases stay exercised even if defaults change.
+// prefixed TestEdge). They run with the rest of the package under go test ./tests
+// or go test ./.... To run only edge tests locally: go test ./tests -run '^TestEdge' -count=1
 package tests
 
 //go:generate go run fixtures_regen.go
