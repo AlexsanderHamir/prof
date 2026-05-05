@@ -1,7 +1,6 @@
 package benchmark
 
 import (
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -13,17 +12,18 @@ func scanForBenchmarks(root string) ([]string, error) {
 	seen := make(map[string]struct{})
 	var names []string
 
-	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
+	err := walkTestGoFiles(root, func(_ string, data []byte) error {
+		matches := pattern.FindAllSubmatch(data, -1)
+		for _, m := range matches {
+			if len(m) >= minCaptureGroups {
+				name := string(m[1])
+				if _, ok := seen[name]; !ok {
+					seen[name] = struct{}{}
+					names = append(names, name)
+				}
+			}
 		}
-		if d.IsDir() {
-			return handleDirectory(path)
-		}
-		if !strings.HasSuffix(path, "_test.go") {
-			return nil
-		}
-		return processTestFile(path, pattern, seen, &names)
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -37,26 +37,6 @@ func handleDirectory(path string) error {
 	base := filepath.Base(path)
 	if strings.HasPrefix(base, ".") || base == "vendor" {
 		return filepath.SkipDir
-	}
-	return nil
-}
-
-// processTestFile extracts benchmark function names from a test file
-func processTestFile(path string, pattern *regexp.Regexp, seen map[string]struct{}, names *[]string) error {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-
-	matches := pattern.FindAllSubmatch(data, -1)
-	for _, m := range matches {
-		if len(m) >= minCaptureGroups {
-			name := string(m[1])
-			if _, ok := seen[name]; !ok {
-				seen[name] = struct{}{}
-				*names = append(*names, name)
-			}
-		}
 	}
 	return nil
 }

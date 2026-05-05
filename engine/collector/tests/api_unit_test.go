@@ -1,4 +1,4 @@
-package tests
+package collector_test
 
 import (
 	"os"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/prof/engine/collector"
 	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/testpaths"
 )
 
 // cleanupBenchDirectory removes the bench directory if it exists
@@ -20,8 +21,7 @@ func cleanupBenchDirectory(t *testing.T) {
 }
 
 func TestGetProfileTextOutput(t *testing.T) {
-	// Use one of the binary files from tests/assets
-	binaryFile := "../../../tests/assets/cpu.out"
+	binaryFile := testpaths.MustAsset(t, "cpu.out")
 
 	// Check if the file exists
 	_, err := os.Stat(binaryFile)
@@ -65,8 +65,7 @@ func TestGetProfileTextOutput(t *testing.T) {
 }
 
 func TestGetPNGOutput(t *testing.T) {
-	// Use one of the binary files from tests/assets
-	binaryFile := "../../../tests/assets/memory.out"
+	binaryFile := testpaths.MustAsset(t, "memory.out")
 
 	// Check if the file exists
 	_, err := os.Stat(binaryFile)
@@ -114,8 +113,7 @@ func TestGetPNGOutput(t *testing.T) {
 }
 
 func TestGetFunctionsOutput(t *testing.T) {
-	// Use one of the binary files from tests/assets
-	binaryFile := "../../../tests/assets/cpu.out"
+	binaryFile := testpaths.MustAsset(t, "cpu.out")
 
 	// Check if the file exists
 	_, err := os.Stat(binaryFile)
@@ -156,10 +154,9 @@ func TestGetFunctionsOutput(t *testing.T) {
 }
 
 func TestRunCollector(t *testing.T) {
-	// Use binary files from tests/assets
 	binaryFiles := []string{
-		"../../../tests/assets/cpu.out",
-		"../../../tests/assets/memory.out",
+		testpaths.MustAsset(t, "cpu.out"),
+		testpaths.MustAsset(t, "memory.out"),
 	}
 
 	// Check if the files exist

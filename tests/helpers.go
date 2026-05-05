@@ -6,19 +6,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
-var (
-	envDirName = envDirNameStatic
-)
+// integrationEnvDir is the per-scenario directory name under tests/ (package cwd).
+func integrationEnvDir(label string) string {
+	return envDirNameStatic + " " + label
+}
 
 // TestArgs holds inputs and expectations for a single integration test scenario.
 type TestArgs struct {
@@ -73,11 +76,12 @@ const (
 	templateFile     = "config_template.json"
 	testDirName      = "tests"
 	tag              = "test_tag"
-	count            = "5"
-	cpuProfile       = "cpu"
-	memProfile       = "memory"
-	blockProfile     = "block"
-	benchName        = "BenchmarkStringProcessor"
+	// Multiple bench counts keep CPU sampling + filtering stable on CI (esp. WithFunctionFilterPlusIgnore).
+	count        = "10"
+	cpuProfile   = "cpu"
+	memProfile   = "memory"
+	blockProfile = "block"
+	benchName    = "BenchmarkStringProcessor"
 )
 
 // profBinaryName is the built prof executable filename. On Windows, os/exec
@@ -103,6 +107,7 @@ func createPackage(dir string) error {
 }
 
 // BenchmarkContent is embedded benchmark test source used when creating synthetic modules.
+//
 //go:embed assets/benchmark_test.go.txt
 var BenchmarkContent string
 
@@ -130,10 +135,10 @@ func getProjectRoot() (string, error) {
 	}
 }
 
-func createConfigFile(t *testing.T, cfgTemplate *internal.Config) {
+func createConfigFile(t *testing.T, envDir string, cfgTemplate *internal.Config) {
 	t.Helper()
 
-	configPath := filepath.Join(envDirName, templateFile)
+	configPath := filepath.Join(envDir, templateFile)
 
 	data, err := json.MarshalIndent(cfgTemplate, "", "    ")
 	if err != nil {
@@ -145,21 +150,21 @@ func createConfigFile(t *testing.T, cfgTemplate *internal.Config) {
 	}
 }
 
-func setupEnviroment(t *testing.T) {
+func setupEnviroment(t *testing.T, envDir string) {
 	t.Helper()
 	// 1. Create environment Directory.
-	if err := os.Mkdir(envDirName, internal.PermDir); err != nil && !os.IsExist(err) {
+	if err := os.Mkdir(envDir, internal.PermDir); err != nil && !os.IsExist(err) {
 		t.Fatalf("couldn't create environment dir: %v", err)
 	}
 
 	// 2. Initialize Go module (skip if go.mod already exists — e.g. committed fixture under tests/).
-	goModPath := filepath.Join(envDirName, "go.mod")
+	goModPath := filepath.Join(envDir, "go.mod")
 	if _, statErr := os.Stat(goModPath); statErr != nil {
 		if !os.IsNotExist(statErr) {
 			t.Fatalf("stat go.mod: %v", statErr)
 		}
 		cmd := exec.Command("go", "mod", "init", "test-environment")
-		cmd.Dir = envDirName
+		cmd.Dir = envDir
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			t.Fatalf("failed to initialize Go module: %v\nOutput: %s", err, output)
@@ -167,33 +172,86 @@ func setupEnviroment(t *testing.T) {
 	}
 
 	// 3. Create package and benchmark files.
-	if err := createPackage(envDirName); err != nil {
+	if err := createPackage(envDir); err != nil {
 		t.Fatalf("failed to create package: %v", err)
 	}
 
-	if err := createBenchmarkFile(envDirName); err != nil {
+	if err := createBenchmarkFile(envDir); err != nil {
 		t.Fatalf("failed to create benchmark file: %v", err)
 	}
 }
 
-func setUpProf(t *testing.T, projectRoot string) {
+var (
+	integrationProfOnce     sync.Once
+	integrationProfCached   string
+	errIntegrationProfBuild error
+)
+
+// profCacheDir is a single build output reused for all integration scenarios in one `go test` run.
+const profCacheDir = ".integration_prof_build"
+
+func copyProfBinary(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o755)
+	if err != nil {
+		return err
+	}
+	if _, err = io.Copy(out, in); err != nil {
+		out.Close()
+		return err
+	}
+	if err = out.Close(); err != nil {
+		return err
+	}
+	if runtime.GOOS != "windows" {
+		if st, statErr := os.Stat(src); statErr == nil {
+			_ = os.Chmod(dst, st.Mode()&0o777)
+		}
+	}
+	return nil
+}
+
+// ensureCachedProfBinary builds cmd/prof once per test process; callers copy into each env dir.
+func ensureCachedProfBinary(projectRoot string) (string, error) {
+	integrationProfOnce.Do(func() {
+		cacheDir := filepath.Join(projectRoot, testDirName, profCacheDir)
+		if err := os.MkdirAll(cacheDir, internal.PermDir); err != nil {
+			errIntegrationProfBuild = err
+			return
+		}
+		out := filepath.Join(cacheDir, profBinaryName())
+		cmdProfDir := filepath.Join(projectRoot, "cmd", "prof")
+		buildCmd := exec.Command("go", "build", "-o", out, ".")
+		buildCmd.Dir = cmdProfDir
+		buildOutput, err := buildCmd.CombinedOutput()
+		if err != nil {
+			errIntegrationProfBuild = fmt.Errorf("failed to build prof binary: %w\nOutput: %s", err, buildOutput)
+			return
+		}
+		integrationProfCached = out
+	})
+	return integrationProfCached, errIntegrationProfBuild
+}
+
+func setUpProf(t *testing.T, projectRoot, envDir string) {
 	t.Helper()
 
-	// Build prof binary directly to the environment directory
-	profBinary := filepath.Join(projectRoot, testDirName, envDirName, profBinaryName())
-
-	// Build from cmd/prof directory
-	cmdProfDir := filepath.Join(projectRoot, "cmd", "prof")
-	buildCmd := exec.Command("go", "build", "-o", profBinary, ".")
-	buildCmd.Dir = cmdProfDir // Run from cmd/prof directory
-
-	buildOutput, err := buildCmd.CombinedOutput()
+	dst := filepath.Join(projectRoot, testDirName, envDir, profBinaryName())
+	src, err := ensureCachedProfBinary(projectRoot)
 	if err != nil {
-		t.Fatalf("failed to build prof binary: %v\nOutput: %s", err, buildOutput)
+		t.Fatalf("prof cache build: %v", err)
+	}
+	if err = copyProfBinary(src, dst); err != nil {
+		t.Fatalf("failed to copy prof binary: %v", err)
 	}
 }
 
-func runProf(t *testing.T, envFullPath string, args []string, expectedErrMessage string, checkSuccessMessage bool) (shouldContinue bool) {
+func newProfCmd(t *testing.T, envFullPath string, args []string) *exec.Cmd {
 	t.Helper()
 
 	profBinary := filepath.Join(envFullPath, profBinaryName())
@@ -203,25 +261,36 @@ func runProf(t *testing.T, envFullPath string, args []string, expectedErrMessage
 
 	cmd := exec.Command(profBinary, args...)
 	cmd.Dir = envFullPath
+	return cmd
+}
 
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+// runProfCaptured runs prof like runProf but returns stdout/stderr for assertions.
+func runProfCaptured(t *testing.T, envFullPath string, args []string, expectedErrMessage string, checkSuccessMessage bool) (stdout, stderr string, shouldContinue bool) {
+	t.Helper()
+
+	var stdoutB, stderrB bytes.Buffer
+	cmd := newProfCmd(t, envFullPath, args)
+	cmd.Stdout = &stdoutB
+	cmd.Stderr = &stderrB
 
 	err := cmd.Run()
 	if err != nil {
-		shouldContinue = handleCommandError(t, err, &stdout, &stderr, expectedErrMessage)
-		if !shouldContinue {
-			return false
-		}
+		shouldContinue = handleCommandError(t, err, &stdoutB, &stderrB, expectedErrMessage)
+		return stdoutB.String(), stderrB.String(), shouldContinue
 	}
 
 	successMessage := internal.InfoCollectionSuccess
-	if checkSuccessMessage && !strings.Contains(stderr.String(), successMessage) {
+	if checkSuccessMessage && !strings.Contains(stderrB.String(), successMessage) {
 		t.Fatal("Expected success message not found")
 	}
 
-	return true
+	return stdoutB.String(), stderrB.String(), true
+}
+
+func runProf(t *testing.T, envFullPath string, args []string, expectedErrMessage string, checkSuccessMessage bool) (shouldContinue bool) {
+	t.Helper()
+	_, _, ok := runProfCaptured(t, envFullPath, args, expectedErrMessage, checkSuccessMessage)
+	return ok
 }
 
 func handleCommandError(t *testing.T, err error, stdout, stderr *bytes.Buffer, expectedErrMessage string) bool {
@@ -384,17 +453,13 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 }
 
 func testConfigScenario(t *testing.T, testArgs *TestArgs) {
-	defer func() {
-		envDirName = envDirNameStatic
-	}()
-
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)
 	}
 
-	envDirName = envDirName + " " + testArgs.label
-	envFullPath := filepath.Join(root, testDirName, envDirName)
+	envDir := integrationEnvDir(testArgs.label)
+	envFullPath := filepath.Join(root, testDirName, envDir)
 
 	if testArgs.withCleanUp {
 		t.Cleanup(func() {
@@ -406,14 +471,14 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 
 	if !testArgs.isEnvironmentSet {
 		// 1. Set up Environment
-		setupEnviroment(t)
+		setupEnviroment(t, envDir)
 
 		// 2. Build prof and move to Environment
 		if !testArgs.noConfigFile {
-			createConfigFile(t, &testArgs.cfg)
+			createConfigFile(t, envDir, &testArgs.cfg)
 		}
 
-		setUpProf(t, root)
+		setUpProf(t, root, envDir)
 	}
 
 	shouldContinue := runProf(t, envFullPath, testArgs.cmd, testArgs.expectedErrorMessage, testArgs.checkSuccessMessage)
@@ -429,23 +494,30 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 }
 
 func defaultRunCmd() []string {
-	return []string{
+	cmd := []string{
 		internal.AUTOCMD,
 		"--benchmarks", benchName,
 		"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
 		"--count", count,
 		"--tag", tag,
 	}
+	return append(cmd, autoBenchSkipPNGArgs()...)
+}
+
+// autoBenchSkipPNGArgs avoids requiring Graphviz during integration tests while `prof auto`
+// defaults to strict PNG generation.
+func autoBenchSkipPNGArgs() []string {
+	return []string{"--skip-png"}
 }
 
 func buildProf(t *testing.T, outputPath, root string) {
-	cmdProfDir := filepath.Join(root, "cmd", "prof")
-	buildCmd := exec.Command("go", "build", "-o", outputPath, ".")
-	buildCmd.Dir = cmdProfDir
-
-	buildOutput, err := buildCmd.CombinedOutput()
+	t.Helper()
+	src, err := ensureCachedProfBinary(root)
 	if err != nil {
-		t.Fatalf("failed to build prof binary: %v\nOutput: %s", err, buildOutput)
+		t.Fatalf("prof cache build: %v", err)
+	}
+	if err = copyProfBinary(src, outputPath); err != nil {
+		t.Fatalf("failed to copy prof binary: %v", err)
 	}
 }
 
@@ -457,6 +529,7 @@ func createBenchForTracker(t *testing.T, label, iterations, tagName string, bloc
 		"--count", iterations,
 		"--tag", tagName,
 	}
+	cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 	testArgs := &TestArgs{
 		specifiedFiles:          nil,

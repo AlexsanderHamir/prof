@@ -2,177 +2,146 @@
 
 Prof is a Go benchmark profiling tool that automates performance analysis by wrapping Go's built-in benchmarking and pprof tools.
 
-## 🎯 Purpose
+## Purpose
 
-Prof solves three core problems:
+- **Automates profiling**: Runs Go benchmarks with profile types such as CPU, memory, mutex, and block (see `engine/benchmark` for supported flags).
+- **Organizes data**: Writes a predictable tree under `bench/<tag>/` (binaries, text, per-function snippets, optional package-grouped reports).
+- **Tracks performance**: Compares two runs (`track`) and optionally applies CI-style thresholds via JSON config.
 
-- **Automates profiling**: Runs Go benchmarks with multiple profile types (CPU, memory, mutex, block)
-- **Organizes data**: Creates structured directory hierarchies for profiling outputs
-- **Tracks performance**: Compares benchmark runs to detect regressions and improvements
+## Architecture
 
-## 🏗️ Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   CLI Layer     │───▶│  Engine Layer   │───▶│  Parser Layer   │
-│   (User Input)  │    │ (Business Logic)│    │ (Data Processing)│
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Internal      │    │   Configuration │    │   File System   │
-│   (Utilities)   │    │   (JSON Config) │    │   (Output Org)  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-## 📦 Package Structure
-
-### `cmd/prof/main.go` - Entry Point
-
-Minimal main function that delegates to CLI:
-
-```go
-func main() {
-    if err := cli.Execute(); err != nil {
-        os.Exit(1)
-    }
-}
-```
-
-### `cli/` - Command Interface
-
-**Framework**: Cobra CLI  
-**Commands**:
-
-- `auto` - Automated benchmark execution with profiling
-- `manual` - Process existing profile files
-- `track` - Compare performance between runs
-- `setup` - Generate configuration templates
-- `tui` - Text-based user interface
-
-### `engine/` - Core Business Logic
-
-#### `engine/benchmark/` - Test Execution
-
-- Creates organized directory structures
-- Executes `go test -bench` with profiling flags
-- Manages profile file organization
-
-#### `engine/collector/` - Profile Processing
-
-- Converts binary profiles to text format
-- Generates PNG visualizations
-- Applies function filtering
-
-#### `engine/tracker/` - Performance Analysis
-
-- Compares benchmark runs
-- Detects performance changes
-- Generates detailed reports
-
-### `parser/` - Data Processing
-
-Converts pprof text output into structured data:
-
-```go
-type LineObj struct {
-    FnName         string
-    Flat           float64
-    FlatPercentage float64
-    SumPercentage  float64
-    Cum            float64
-    CumPercentage  float64
-}
+```mermaid
+flowchart LR
+  subgraph entry [Entry]
+    cmd[cmd/prof]
+  end
+  subgraph cli [CLI]
+    cobra[cli commands]
+    app[internal/app Services]
+  end
+  subgraph engines [Engines]
+    bench[engine/benchmark]
+    coll[engine/collector]
+    track[engine/tracker]
+    tools[engine/tools]
+  end
+  subgraph parsing [Parsing]
+    parser[parser]
+  end
+  subgraph shared [Shared]
+    internalPkg[internal]
+  end
+  cmd --> cobra
+  cobra --> app
+  app --> bench
+  app --> coll
+  app --> track
+  app --> tools
+  bench --> coll
+  bench --> parser
+  coll --> parser
+  track --> parser
+  bench --> internalPkg
+  coll --> internalPkg
+  track --> internalPkg
+  cobra --> internalPkg
 ```
 
-### `internal/` - Utilities
+**Composition root:** [`internal/app/services.go`](internal/app/services.go) defines narrow interfaces (`Benchmark`, `Collector`, `Tracker`, `Tools`, `Setup`) and wires defaults to `engine/*` in [`internal/app/defaults.go`](internal/app/defaults.go). Prefer adding behavior behind these interfaces when the CLI stays stable.
 
-#### `internal/config/` - Configuration Management
+### Package layout (actual directories)
 
-JSON-based function filtering:
+| Path | Role |
+|------|------|
+| [`cmd/prof`](cmd/prof) | `main`; delegates to `cli.Execute()` |
+| [`cli`](cli) | Cobra commands, flags, TUI glue; calls `app.Services` |
+| [`internal/app`](internal/app) | Composition root interfaces + default adapters |
+| [`engine/benchmark`](engine/benchmark) | Layout, `go test -bench`, run pipeline, delegates artifact helpers to collector |
+| [`engine/collector`](engine/collector) | `pprof` text/PNG/function list IO, manual ingest, package-grouped text |
+| [`engine/tracker`](engine/tracker) | Load two profiles, diff, reports, CI filter application |
+| [`engine/tools/benchstats`](engine/tools/benchstats), [`engine/tools/qcachegrind`](engine/tools/qcachegrind) | Optional tools on collected data |
+| [`parser`](parser) | Binary pprof → [`ProfileData`](parser/types.go) / line objects; `Pipeline` for swappable stages |
+| [`internal`](internal) | Shared **JSON config types** (in [`internal/types.go`](internal/types.go)), **wire args** (`BenchArgs`, `CollectionArgs`), **path constants** ([`internal/const.go`](internal/const.go)), **config/template helpers** ([`internal/api.go`](internal/api.go)) |
+| [`internal/repofs`](internal/repofs) | **Module root lookup** (`go.mod`) and **tag dir** clean/create used by collectors and benchmarks |
+| [`internal/testpaths`](internal/testpaths) | Test-only helpers to resolve paths under **`tests/assets`** |
 
-```json
-{
-  "function_collection_filter": {
-    "BenchmarkName": {
-      "include_prefixes": ["github.com/myorg/myproject"],
-      "ignore_functions": ["init", "TestMain"]
-    }
-  }
-}
-```
+There are **no** separate `internal/config`, `internal/args`, or `internal/shared` packages; primary shared types stay in **`internal`** as files.
 
-#### `internal/args/` - Data Structures
+## Contributor map (where to start)
 
-Shared parameter structures for component communication.
+| Command | First files | Flow |
+|---------|-------------|------|
+| `prof auto` | [`cli/cmd_collect.go`](cli/cmd_collect.go) → [`engine/benchmark/entry.go`](engine/benchmark/entry.go) | Validate flags → load optional `config_template.json` → layout → `runBenchAndGetProfiles` |
+| `prof manual` | [`cli/cmd_collect.go`](cli/cmd_collect.go) → [`engine/collector/manual_process.go`](engine/collector/manual_process.go) | Tag dir → per-file profile processing + function lists |
+| `prof track auto` / `manual` | [`cli/cmd_track.go`](cli/cmd_track.go) → [`engine/tracker/run.go`](engine/tracker/run.go) | Build [`Selections`](engine/tracker/types.go) → compare → format output → CI apply |
+| `prof tui` | [`cli/cmd_tui.go`](cli/cmd_tui.go), [`cli/tui.go`](cli/tui.go) | Survey → same engines as above |
+| `prof setup` | [`cli/cmd_setup.go`](cli/cmd_setup.go) → [`internal/api.go`](internal/api.go) `CreateTemplate` | Writes template JSON beside `go.mod` |
+| `prof tools …` | [`cli/cmd_tools.go`](cli/cmd_tools.go) → `engine/tools/*` | Benchstat / qcachegrind helpers |
 
-#### `internal/shared/` - Common Utilities
+[`cli/discovery.go`](cli/discovery.go) lists tags and benchmarks **from existing `bench/` output** for TUI/track prompts; benchmark **source** discovery (`BenchmarkXxx` in `_test.go` files) lives in [`engine/benchmark/discovery.go`](engine/benchmark/discovery.go).
 
-File system operations and shared constants.
+## Profile pipelines
 
-## 🔄 Workflows
+### Automated benchmark (`prof auto`)
 
-### Automated Benchmark Flow
+1. [`benchmark.RunBenchmarks`](engine/benchmark/entry.go) loads config via [`internal.LoadFromFile`](internal/api.go) (`config_template.json` at module root). Missing file → empty config; see logs in `entry.go`.
+2. Prepares directories under `bench/<tag>/` (`layout.go`).
+3. For each benchmark: run `go test` in the package directory that defines the benchmark ([`gotest.go`](engine/benchmark/gotest.go)), move profile binaries into `bench/<tag>/bin/<bench>/`.
+4. [`processProfiles`](engine/benchmark/profiles.go): text profiles, optional package-grouped text, PNGs (Graphviz `dot`), then [`collectProfileFunctions`](engine/benchmark/profiles.go) uses [`parser`](parser) + collector for per-function `pprof -list` output.
 
-```
-User → CLI → Benchmark Engine → Collector → Parser → Output Files
-```
+### Manual ingest (`prof manual`)
 
-### Performance Tracking Flow
+[`collector.RunCollector`](engine/collector/manual_process.go): cleans/creates tag dir, loads same JSON config, infers benchmark stem from filenames, emits text/grouped/function outputs. Does **not** run `go test`.
 
-```
-User → CLI → Tracker → Parser → Comparison → Report
-```
-
-## 📁 Output Structure
+## Output layout
 
 ```
 bench/
-├── {tag}/                         # Run identifier
-│   ├── bin/                       # Binary profiles
-│   ├── text/                      # Text reports
-│   ├── cpu_functions/             # Function-level data
-│   └── memory_functions/
+└── <tag>/
+    ├── description.txt
+    ├── bin/<BenchmarkName>/<BenchmarkName>_<profile>.out
+    ├── text/<BenchmarkName>/<BenchmarkName>_<profile>.txt
+    ├── <profile>_functions/<BenchmarkName>/<function>.txt (and optional .png under that tree when generated)
 ```
 
-## ⚙️ Configuration
+Exact names are centralized in [`internal/const.go`](internal/const.go) and path helpers in `engine/benchmark` / `engine/collector`.
 
-### Function Filtering
+## Configuration (`config_template.json`)
 
-- **`include_prefixes`**: Restrict to specific packages
-- **`ignore_functions`**: Skip specific functions (supports wildcards)
-- **Global filters**: Apply to all benchmarks using `*` key
+JSON shape is defined by [`internal.Config`](internal/types.go):
 
-## � Testing Strategy
+- **`function_collection_filter`**: Per-benchmark or global filter map entry using key `"*"` ([`internal.GlobalSign`](internal/const.go)). Each entry is a [`FunctionFilter`](internal/types.go) with `include_prefixes` and `ignore_functions` (short names after the last `.`).
+- **`ci_config`**: Optional thresholds and ignore lists for **`prof track`** ([`engine/tracker/ci_apply.go`](engine/tracker/ci_apply.go)).
 
-### Test Types
+Generate a starter file with **`prof setup`**.
 
-- **Integration Tests**: End-to-end workflow testing
-- **Unit Tests**: Component-specific testing
-- **Blackbox Tests**: CLI validation and output verification
+## Known sharp edges
 
-### Coverage Areas
+- **Grouped reports (`--group-by-package`)**: [`prof auto`](engine/benchmark/profiles.go) currently passes an **empty** filter into grouped markdown generation; **`prof manual`** uses the **resolved** filter from config ([`manual_process.go`](engine/collector/manual_process.go)). Outputs can differ between flows; intentional changes need tests + changelog.
+- **Optional config**: Absent `config_template.json` is allowed; collection uses unfiltered defaults where applicable.
+- **PNG**: Requires Graphviz **`dot`** on `PATH`. The CLI exposes **`--skip-png`** to treat PNG failure as non-fatal; default is strict.
+- **Profiles on disk**: With strict mode (default), missing expected `.out` files after a bench run fail the command; **`--lenient-profiles`** restores warn-and-continue for missing binaries.
 
-- CLI command validation
-- Benchmark execution
-- Profile parsing accuracy
-- Error handling scenarios
+## Error handling (project rules)
 
-## 🔌 Dependencies
+- Return **`error`** from operations that fail; wrap with **`fmt.Errorf("…: %w", err)`** so callers can use **`errors.Is` / `As`**.
+- Do not treat real failures as **`slog.Info`**; optional behavior must be **flag-driven** (see `--skip-png`, `--lenient-profiles`) or documented as explicitly best-effort.
+- The **`prof track`** HTML/JSON formatters propagate write failures to the CLI (non-zero exit).
 
-### External
+## Dependencies (high level)
 
-- **Cobra**: CLI framework
-- **Go Toolchain**: Built-in profiling tools
-- **Survey**: Interactive prompts
+- **spf13/cobra**: CLI structure
+- **AlecAivazis/survey/v2**: TUI prompts
+- **google/pprof**: Profile decode and tooling (via [`parser`](parser))
 
-### Internal
+## Testing
 
-Layered dependency structure with clear boundaries between components.
+- **`go test ./...`**: Unit tests under `cli`, `engine/*`, `parser`, `internal`, plus [`tests/blackbox_test.go`](tests/blackbox_test.go) for coarse integration checks.
+- Fixture-style environments sometimes live under `tests/` directories with spaces in names—run tests from repo root.
 
-## 🎨 Design Principles
+## Design principles
 
-1. **Single Responsibility**: Each package has one clear purpose
-2. **Interface Segregation**: Well-defined component interfaces
-3. **Configuration Over Code**: Behavior controlled through config files
-4. **Comprehensive Error Handling**: Descriptive errors and graceful degradation
+1. **Engines own orchestration**; **`cli` stays thin**.
+2. **Parser** stays toolkit-oriented (`Pipeline`, path facades).
+3. **Config over magic**: JSON drives filters and CI behavior.
+4. **Strict by default**: failures surface to the user unless an explicit flag opts into lenience.

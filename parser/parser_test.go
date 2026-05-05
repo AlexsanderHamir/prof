@@ -10,9 +10,9 @@ import (
 	pprofprofile "github.com/google/pprof/profile"
 )
 
-func testProfilePath(t *testing.T, name string) string {
+func benchmarkGenPoolCPUFixturePath(t *testing.T) string {
 	t.Helper()
-	p := filepath.Join("tests", "testFilesV2", name)
+	p := filepath.Join("testdata", "testFilesV2", "BenchmarkGenPool_cpu.out")
 	if _, err := os.Stat(p); err != nil {
 		t.Skip("fixture not present:", p)
 	}
@@ -20,7 +20,7 @@ func testProfilePath(t *testing.T, name string) string {
 }
 
 func TestProfileDataFromPath_CPUFixture(t *testing.T) {
-	path := testProfilePath(t, "BenchmarkGenPool_cpu.out")
+	path := benchmarkGenPoolCPUFixturePath(t)
 	d, err := profileDataFromPath(path)
 	if err != nil {
 		t.Fatal(err)
@@ -31,7 +31,7 @@ func TestProfileDataFromPath_CPUFixture(t *testing.T) {
 }
 
 func TestDefaultPipelineRunFromPath(t *testing.T) {
-	path := testProfilePath(t, "BenchmarkGenPool_cpu.out")
+	path := benchmarkGenPoolCPUFixturePath(t)
 	p := DefaultPipeline()
 	d, err := p.RunFromPath(path)
 	if err != nil {
@@ -105,7 +105,7 @@ func TestOrganizeProfileByPackageFromProfileDataMarkdown(t *testing.T) {
 		},
 		FlatPercentages: map[string]float64{"github.com/a/b.Foo": 50},
 		CumPercentages:  map[string]float64{"github.com/a/b.Foo": 50},
-		SumPercentages:   map[string]float64{"github.com/a/b.Foo": 50},
+		SumPercentages:  map[string]float64{"github.com/a/b.Foo": 50},
 		Cum:             map[string]int64{"github.com/a/b.Foo": 50},
 	}
 	s := OrganizeProfileByPackageFromProfileData(d, internal.FunctionFilter{})

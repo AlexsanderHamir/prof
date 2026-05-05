@@ -22,8 +22,8 @@ func Default() *Services {
 
 type defaultBenchmark struct{}
 
-func (defaultBenchmark) RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupByPackage bool) error {
-	return benchmark.RunBenchmarks(benchmarks, profiles, tag, count, groupByPackage)
+func (defaultBenchmark) RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupByPackage bool, lenientProfiles bool, skipPNG bool) error {
+	return benchmark.RunBenchmarks(benchmarks, profiles, tag, count, groupByPackage, lenientProfiles, skipPNG)
 }
 
 func (defaultBenchmark) DiscoverBenchmarks(scope string) ([]string, error) {

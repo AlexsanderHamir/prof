@@ -9,7 +9,7 @@ import (
 )
 
 // RunBenchmarks validates flags, loads optional repo config, prepares bench layout, then runs the full pipeline.
-func RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupByPackage bool) error {
+func RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupByPackage bool, lenientProfiles bool, skipPNG bool) error {
 	if len(benchmarks) == 0 {
 		return errors.New("benchmarks flag is empty")
 	}
@@ -37,7 +37,7 @@ func RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupBy
 
 	internal.PrintConfiguration(benchArgs, cfg.FunctionFilter)
 
-	if err = runBenchAndGetProfiles(benchArgs, cfg.FunctionFilter, groupByPackage); err != nil {
+	if err = runBenchAndGetProfiles(benchArgs, cfg.FunctionFilter, groupByPackage, lenientProfiles, skipPNG); err != nil {
 		return err
 	}
 	return nil

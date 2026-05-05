@@ -11,7 +11,7 @@ import (
 
 func writeTempGoMod(t *testing.T, dir string) {
 	t.Helper()
-	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module discmod\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module discmod\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -109,7 +109,7 @@ func TestDiscoverAvailableProfilesParsesTxt(t *testing.T) {
 			}
 			continue
 		}
-		if err := os.WriteFile(path, []byte("x"), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte("x"), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -1,6 +1,7 @@
-package test
+package parser_test
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -9,8 +10,17 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
-func TestLinesIntoObjsV2(t *testing.T) {
-	profilePath := filepath.Join("testFilesV2", "BenchmarkGenPool_cpu.out")
+func fixtureV2Path(t *testing.T, name string) string {
+	t.Helper()
+	p := filepath.Join("testdata", "testFilesV2", name)
+	if _, err := os.Stat(p); err != nil {
+		t.Skip("fixture not present:", p)
+	}
+	return p
+}
+
+func TestLinesIntoObjsV2(t *testing.T) { //nolint:gocognit // assertion-heavy fixture test
+	profilePath := fixtureV2Path(t, "BenchmarkGenPool_cpu.out")
 
 	lineObjs, err := parser.TurnLinesIntoObjectsV2(profilePath)
 	if err != nil {
@@ -74,7 +84,7 @@ func TestLinesIntoObjsV2(t *testing.T) {
 	}
 
 	// Test with a different profile file to ensure it works with different types
-	profilePath2 := filepath.Join("testFilesV2", "BenchmarkGenPool_memory.out")
+	profilePath2 := fixtureV2Path(t, "BenchmarkGenPool_memory.out")
 	lineObjs2, err := parser.TurnLinesIntoObjectsV2(profilePath2)
 	if err != nil {
 		t.Fatalf("TurnLinesIntoObjectsV2() failed with memory profile: %v", err)
@@ -91,9 +101,9 @@ func TestLinesIntoObjsV2(t *testing.T) {
 	}
 }
 
-func TestGetAllFunctionNamesV2(t *testing.T) {
+func TestGetAllFunctionNamesV2(t *testing.T) { //nolint:gocognit,funlen // table-driven subtests
 	// Test with CPU profile
-	profilePath := filepath.Join("testFilesV2", "BenchmarkGenPool_cpu.out")
+	profilePath := fixtureV2Path(t, "BenchmarkGenPool_cpu.out")
 
 	t.Run("no filters", func(t *testing.T) {
 		filter := internal.FunctionFilter{}
@@ -208,7 +218,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) {
 	})
 
 	t.Run("with memory profile", func(t *testing.T) {
-		memoryProfilePath := filepath.Join("testFilesV2", "BenchmarkGenPool_memory.out")
+		memoryProfilePath := fixtureV2Path(t, "BenchmarkGenPool_memory.out")
 		filter := internal.FunctionFilter{}
 		names, err := parser.GetAllFunctionNamesV2(memoryProfilePath, filter)
 		if err != nil {
@@ -230,7 +240,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) {
 	})
 
 	t.Run("with block profile", func(t *testing.T) {
-		blockProfilePath := filepath.Join("testFilesV2", "BenchmarkGenPool_block.out")
+		blockProfilePath := fixtureV2Path(t, "BenchmarkGenPool_block.out")
 		filter := internal.FunctionFilter{}
 		names, err := parser.GetAllFunctionNamesV2(blockProfilePath, filter)
 		if err != nil {
@@ -244,7 +254,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) {
 	})
 
 	t.Run("with mutex profile", func(t *testing.T) {
-		mutexProfilePath := filepath.Join("testFilesV2", "BenchmarkGenPool_mutex.out")
+		mutexProfilePath := fixtureV2Path(t, "BenchmarkGenPool_mutex.out")
 		filter := internal.FunctionFilter{}
 		names, err := parser.GetAllFunctionNamesV2(mutexProfilePath, filter)
 		if err != nil {
@@ -260,7 +270,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) {
 
 func TestOrganizeProfileByPackageV2(t *testing.T) {
 	// Use existing test profile file
-	profilePath := filepath.Join("testFilesV2", "BenchmarkGenPool_cpu.out")
+	profilePath := fixtureV2Path(t, "BenchmarkGenPool_cpu.out")
 
 	// Test with empty filter
 	filter := internal.FunctionFilter{}
@@ -294,7 +304,7 @@ func TestOrganizeProfileByPackageV2(t *testing.T) {
 
 func TestOrganizeProfileByPackageV2WithFilter(t *testing.T) {
 	// Use existing test profile file
-	profilePath := filepath.Join("testFilesV2", "BenchmarkGenPool_cpu.out")
+	profilePath := fixtureV2Path(t, "BenchmarkGenPool_cpu.out")
 
 	// Test with include prefix filter
 	filter := internal.FunctionFilter{
@@ -314,7 +324,7 @@ func TestOrganizeProfileByPackageV2WithFilter(t *testing.T) {
 
 func TestOrganizeProfileByPackageV2WithIgnoreFunctions(t *testing.T) {
 	// Use existing test profile file
-	profilePath := filepath.Join("testFilesV2", "BenchmarkGenPool_cpu.out")
+	profilePath := fixtureV2Path(t, "BenchmarkGenPool_cpu.out")
 
 	// Test with ignore functions filter
 	filter := internal.FunctionFilter{

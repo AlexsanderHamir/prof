@@ -15,27 +15,9 @@ func findBenchmarkPackageDir(moduleRoot, benchmarkName string) (string, error) {
 	pattern := regexp.MustCompile(`(?m)^\s*func\s+` + regexp.QuoteMeta(benchmarkName) + `\s*\(\s*b\s*\*\s*testing\.B\s*\)\s*{`)
 
 	var foundDir string
-	err := filepath.WalkDir(moduleRoot, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			base := filepath.Base(path)
-			if strings.HasPrefix(base, ".") || base == "vendor" {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if !strings.HasSuffix(path, "_test.go") {
-			return nil
-		}
-		data, readErr := os.ReadFile(path)
-		if readErr != nil {
-			return readErr
-		}
+	err := walkTestGoFiles(moduleRoot, func(path string, data []byte) error {
 		if pattern.Find(data) != nil {
 			foundDir = filepath.Dir(path)
-			return nil
 		}
 		return nil
 	})

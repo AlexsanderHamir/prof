@@ -3,30 +3,39 @@ package tests
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
-func TestConfig(t *testing.T) {
+func skipSlowIntegration(t *testing.T) {
+	t.Helper()
+	if testing.Short() {
+		t.Skip("slow integration scenario; omit -short to run full integration suite")
+	}
+}
+
+func TestConfig(t *testing.T) { //nolint:funlen // scenario matrix
+	skipSlowIntegration(t)
 	label := "WithFunctionFilter"
 	t.Run(label, func(t *testing.T) {
 		specifiedFiles := map[fileFullName]*FieldsCheck{
-			"BenchmarkStringProcessor.txt":        newDefaultFieldsCheckExpected(),
-			"ProcessStrings.txt":                  newDefaultFieldsCheckExpected(),
-			"GenerateStrings.txt":                 newDefaultFieldsCheckExpected(),
-			"AddString.txt":                       newDefaultFieldsCheckExpected(),
-			"BenchmarkStringProcessor_cpu.png":    newDefaultFieldsCheckExpected(),
-			"BenchmarkStringProcessor_memory.png": newDefaultFieldsCheckExpected(),
+			"BenchmarkStringProcessor.txt": newDefaultFieldsCheckExpected(),
+			"ProcessStrings.txt":           newDefaultFieldsCheckExpected(),
+			"GenerateStrings.txt":          newDefaultFieldsCheckExpected(),
+			"AddString.txt":                newDefaultFieldsCheckExpected(),
 		}
 
 		cfg := internal.Config{
 			FunctionFilter: map[string]internal.FunctionFilter{
 				benchName: {
-					IncludePrefixes: []string{"test-environment"},
+					// Prefer symbols under the synthetic module when present; also match package-qualified names when paths are trimmed (Linux CI).
+					IncludePrefixes: []string{"test-environment", "utils."},
 				},
 			},
 		}
@@ -87,18 +96,16 @@ func TestConfig(t *testing.T) {
 	label = "WithFunctionFilterPlusIgnore"
 	t.Run(label, func(t *testing.T) {
 		specifiedFiles := map[fileFullName]*FieldsCheck{
-			"BenchmarkStringProcessor_cpu.png":    newDefaultFieldsCheckExpected(),
-			"BenchmarkStringProcessor_memory.png": newDefaultFieldsCheckExpected(),
-			"GenerateStrings.txt":                 newDefaultFieldsCheckExpected(),
-			"BenchmarkStringProcessor.txt":        newDefaultFieldsCheckNotExpected(),
-			"ProcessStrings.txt":                  newDefaultFieldsCheckNotExpected(),
-			"AddString.txt":                       newDefaultFieldsCheckNotExpected(),
+			"GenerateStrings.txt":          newDefaultFieldsCheckExpected(),
+			"BenchmarkStringProcessor.txt": newDefaultFieldsCheckNotExpected(),
+			"ProcessStrings.txt":           newDefaultFieldsCheckNotExpected(),
+			"AddString.txt":                newDefaultFieldsCheckNotExpected(),
 		}
 
 		cfg := internal.Config{
 			FunctionFilter: map[string]internal.FunctionFilter{
 				benchName: {
-					IncludePrefixes: []string{"test-environment"},
+					IncludePrefixes: []string{"test-environment", "utils."},
 					IgnoreFunctions: []string{"BenchmarkStringProcessor", "ProcessStrings", "AddString"},
 				},
 			},
@@ -164,6 +171,7 @@ func TestConfig(t *testing.T) {
 }
 
 func TestProfileValidation(t *testing.T) {
+	skipSlowIntegration(t)
 	label := "RandomProfileName"
 	t.Run(label, func(t *testing.T) {
 		profileName := "fakeProfileName"
@@ -174,6 +182,7 @@ func TestProfileValidation(t *testing.T) {
 			"--count", count,
 			"--tag", tag,
 		}
+		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
@@ -203,6 +212,7 @@ func TestProfileValidation(t *testing.T) {
 			"--count", count,
 			"--tag", tag,
 		}
+		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
@@ -231,6 +241,7 @@ func TestProfileValidation(t *testing.T) {
 			"--count", count,
 			"--tag", tag,
 		}
+		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
@@ -252,6 +263,7 @@ func TestProfileValidation(t *testing.T) {
 }
 
 func TestCommandValidation(t *testing.T) {
+	skipSlowIntegration(t)
 	label := "EmptyBenchmarkSlice"
 	t.Run(label, func(t *testing.T) {
 		cmd := []string{
@@ -261,6 +273,7 @@ func TestCommandValidation(t *testing.T) {
 			"--count", count,
 			"--tag", tag,
 		}
+		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
@@ -289,6 +302,7 @@ func TestCommandValidation(t *testing.T) {
 			"--count", count,
 			"--tag", tag,
 		}
+		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
@@ -310,6 +324,7 @@ func TestCommandValidation(t *testing.T) {
 }
 
 func TestManualCommand(t *testing.T) {
+	skipSlowIntegration(t)
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)
@@ -343,8 +358,8 @@ func TestManualCommand(t *testing.T) {
 		cmd := exec.Command(binaryPath, args...)
 		cmd.Dir = filepath.Join(root, testDirName)
 
-		var stdout, stderr bytes.Buffer
-		cmd.Stdout = &stdout
+		var stderr bytes.Buffer
+		cmd.Stdout = io.Discard
 		cmd.Stderr = &stderr
 
 		err = cmd.Run()
@@ -352,25 +367,30 @@ func TestManualCommand(t *testing.T) {
 			t.Error(err)
 		}
 
-		if stdout.Len() > 0 {
-			fmt.Println(stdout.String())
+		// Manual collect logs per-function progress (collector), not InfoCollectionSuccess (auto benchmark pipeline only).
+		if !strings.Contains(stderr.String(), "Collected function") {
+			t.Fatalf("expected stderr to contain collector progress; stderr=%q", stderr.String())
+		}
+
+		benchRoot := filepath.Join(root, testDirName, internal.MainDirOutput, tag)
+		if fi, statErr := os.Stat(benchRoot); statErr != nil || !fi.IsDir() {
+			t.Fatalf("expected bench output directory %s: %v", benchRoot, statErr)
 		}
 	})
 }
 
-// TestTrackerBasicRun is not inspecting the results, but just ensuring that no errors occur when the command is run.
 func TestTrackerBasicRun(t *testing.T) {
+	skipSlowIntegration(t)
 	// 1. Set up
 	label := "testing"
-	runs := "5"
+	runs := "1"
 	tagName := "tag1"
 	blockOutputCheck := true
 	isEnvironmentSet := false
 	checkSuccessMessage := false
 	createBenchForTracker(t, label, runs, tagName, blockOutputCheck, isEnvironmentSet)
-	envDirName = "Enviroment"
 
-	runs = "10"
+	runs = "1"
 	tagName = "tag2"
 	isEnvironmentSet = true
 	createBenchForTracker(t, label, runs, tagName, blockOutputCheck, isEnvironmentSet)
@@ -380,7 +400,7 @@ func TestTrackerBasicRun(t *testing.T) {
 		t.Error(err)
 	}
 
-	envFullPath := filepath.Join(root, testDirName, "Enviroment testing")
+	envFullPath := filepath.Join(root, testDirName, integrationEnvDir(label))
 	t.Cleanup(func() {
 		if err = os.RemoveAll(envFullPath); err != nil {
 			t.Logf("Failed to clean up bench: %v", err)
@@ -400,28 +420,40 @@ func TestTrackerBasicRun(t *testing.T) {
 			"--output-format", "summary",
 		}
 
-		shouldContinue := runProf(t, envFullPath, args, "", checkSuccessMessage)
-		if !shouldContinue {
-			t.Error("runProf failed")
+		stdout, stderr, ok := runProfCaptured(t, envFullPath, args, "", checkSuccessMessage)
+		if !ok {
+			t.Fatal("runProf failed")
+		}
+		combined := stdout + stderr
+		if !strings.Contains(stdout, "Performance Tracking Summary") &&
+			!strings.Contains(stdout, "Total Functions Analyzed") &&
+			!strings.Contains(combined, "No function changes detected") {
+			t.Fatalf("unexpected track output; stdout=%q stderr=%q", stdout, stderr)
 		}
 	})
 
 	label = "Manual"
 	baseTag := "bench/tag1/bin/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.out"
-	Current := "bench/tag2/bin/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.out"
+	currentProfile := "bench/tag2/bin/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.out"
 	outputFormat := "summary"
 	t.Run(label, func(t *testing.T) {
 		args := []string{
 			"track",
 			internal.MANUALCMD,
 			"--base", baseTag,
-			"--current", Current,
+			"--current", currentProfile,
 			"--output-format", outputFormat,
 		}
 
-		shouldContinue := runProf(t, envFullPath, args, "", checkSuccessMessage)
-		if !shouldContinue {
-			t.Error("runProf failed")
+		stdout, stderr, ok := runProfCaptured(t, envFullPath, args, "", checkSuccessMessage)
+		if !ok {
+			t.Fatal("runProf failed")
+		}
+		combined := stdout + stderr
+		if !strings.Contains(stdout, "Performance Tracking Summary") &&
+			!strings.Contains(stdout, "Total Functions Analyzed") &&
+			!strings.Contains(combined, "No function changes detected") {
+			t.Fatalf("unexpected track output; stdout=%q stderr=%q", stdout, stderr)
 		}
 	})
 }

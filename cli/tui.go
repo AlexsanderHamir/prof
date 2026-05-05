@@ -65,7 +65,7 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if err = svc.Benchmark.RunBenchmarks(selectedBenches, selectedProfiles, tagStr, runCount, false); err != nil {
+	if err = svc.Benchmark.RunBenchmarks(selectedBenches, selectedProfiles, tagStr, runCount, false, false, true); err != nil {
 		return err
 	}
 

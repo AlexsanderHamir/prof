@@ -10,9 +10,9 @@ import (
 
 type stubBenchmark struct{}
 
-func (stubBenchmark) RunBenchmarks(_, _ []string, _ string, _ int, _ bool) error { return nil }
-func (stubBenchmark) DiscoverBenchmarks(_ string) ([]string, error)             { return nil, nil }
-func (stubBenchmark) SupportedProfiles() []string                               { return nil }
+func (stubBenchmark) RunBenchmarks(_, _ []string, _ string, _ int, _, _, _ bool) error { return nil }
+func (stubBenchmark) DiscoverBenchmarks(_ string) ([]string, error)                    { return nil, nil }
+func (stubBenchmark) SupportedProfiles() []string                                      { return nil }
 
 type stubCollector struct{}
 
@@ -25,8 +25,8 @@ func (stubTracker) RunTrackManual(_ *tracker.Selections) error { return nil }
 
 type stubTools struct{}
 
-func (stubTools) RunBenchStats(_, _, _ string) error              { return nil }
-func (stubTools) RunQcacheGrind(_, _, _ string) error             { return nil }
+func (stubTools) RunBenchStats(_, _, _ string) error  { return nil }
+func (stubTools) RunQcacheGrind(_, _, _ string) error { return nil }
 
 type stubSetup struct{}
 
@@ -84,10 +84,10 @@ func TestDefaultNonNil(t *testing.T) {
 
 func TestDefaultBenchmarkDelegates(t *testing.T) {
 	d := Default()
-	if d.Benchmark.RunBenchmarks(nil, nil, "", 0, false) == nil {
+	if d.Benchmark.RunBenchmarks(nil, nil, "", 0, false, false, false) == nil {
 		t.Fatal("expected error for empty benchmarks")
 	}
-	if d.Benchmark.RunBenchmarks([]string{"B"}, nil, "", 0, false) == nil {
+	if d.Benchmark.RunBenchmarks([]string{"B"}, nil, "", 0, false, false, false) == nil {
 		t.Fatal("expected error for empty profiles")
 	}
 	if p := d.Benchmark.SupportedProfiles(); p == nil {
@@ -130,7 +130,7 @@ func TestDefaultToolsEarlyErrors(t *testing.T) {
 
 func TestDefaultSetupCreateTemplate(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module tmpmod\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module tmpmod\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)

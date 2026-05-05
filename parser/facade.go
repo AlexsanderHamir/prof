@@ -126,3 +126,18 @@ func OrganizeProfileByPackageV2(profilePath string, filter internal.FunctionFilt
 	}
 	return OrganizeProfileByPackageFromProfileData(d, filter), nil
 }
+
+// TurnLinesIntoObjects is a convenience name for [TurnLinesIntoObjectsV2].
+func TurnLinesIntoObjects(profilePath string) ([]*LineObj, error) {
+	return TurnLinesIntoObjectsV2(profilePath)
+}
+
+// GetAllFunctionNames extracts function names from a profile path; equivalent to [GetAllFunctionNamesV2].
+func GetAllFunctionNames(profilePath string, filter internal.FunctionFilter) ([]string, error) {
+	return GetAllFunctionNamesV2(profilePath, filter)
+}
+
+// OrganizeProfileByPackage loads a profile and builds the package-grouped report; equivalent to [OrganizeProfileByPackageV2].
+func OrganizeProfileByPackage(profilePath string, filter internal.FunctionFilter) (string, error) {
+	return OrganizeProfileByPackageV2(profilePath, filter)
+}

@@ -20,7 +20,7 @@ func TestLoadProfileAndParseWrappers(t *testing.T) {
 	if _, err := ParseProfileFromReader(strings.NewReader("not protobuf profile data")); err == nil {
 		t.Fatal("expected parse error")
 	}
-	path := testProfilePath(t, "BenchmarkGenPool_cpu.out")
+	path := benchmarkGenPoolCPUFixturePath(t)
 	if _, err := ParseProfileFromPath(filepath.Join(t.TempDir(), "missing")); err == nil {
 		t.Fatal("expected error")
 	}
@@ -33,13 +33,15 @@ func TestLoadProfileAndParseWrappers(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	if _, err := ProfileDataFromReader(f); err != nil {
-		t.Fatal(err)
+	pd, rErr := ProfileDataFromReader(f)
+	if rErr != nil {
+		t.Fatal(rErr)
 	}
+	_ = pd
 }
 
 func TestPathBasedFacadeFuncs(t *testing.T) {
-	path := testProfilePath(t, "BenchmarkGenPool_cpu.out")
+	path := benchmarkGenPoolCPUFixturePath(t)
 	if _, err := TurnLinesIntoObjectsV2(filepath.Join(t.TempDir(), "nope")); err == nil {
 		t.Fatal("expected error")
 	}
@@ -47,14 +49,14 @@ func TestPathBasedFacadeFuncs(t *testing.T) {
 	if err != nil || len(objs) == 0 {
 		t.Fatal(err, len(objs))
 	}
-	if _, err := GetAllFunctionNamesV2(filepath.Join(t.TempDir(), "nope"), internal.FunctionFilter{}); err == nil {
+	if _, missingErr := GetAllFunctionNamesV2(filepath.Join(t.TempDir(), "nope"), internal.FunctionFilter{}); missingErr == nil {
 		t.Fatal()
 	}
 	names, err := GetAllFunctionNamesV2(path, internal.FunctionFilter{})
 	if err != nil || len(names) == 0 {
 		t.Fatal(err, len(names))
 	}
-	if _, err := OrganizeProfileByPackageV2(filepath.Join(t.TempDir(), "nope"), internal.FunctionFilter{}); err == nil {
+	if _, missingErr := OrganizeProfileByPackageV2(filepath.Join(t.TempDir(), "nope"), internal.FunctionFilter{}); missingErr == nil {
 		t.Fatal()
 	}
 	s, err := OrganizeProfileByPackageV2(path, internal.FunctionFilter{})
@@ -65,10 +67,10 @@ func TestPathBasedFacadeFuncs(t *testing.T) {
 
 func TestLineObjsFromProfileDataNonNil(t *testing.T) {
 	d := &ProfileData{
-		SortedEntries: []FuncEntry{{Name: "a.B", Flat: 1}},
+		SortedEntries:   []FuncEntry{{Name: "a.B", Flat: 1}},
 		FlatPercentages: map[string]float64{"a.B": 100},
 		CumPercentages:  map[string]float64{"a.B": 100},
-		SumPercentages:   map[string]float64{"a.B": 100},
+		SumPercentages:  map[string]float64{"a.B": 100},
 		Cum:             map[string]int64{"a.B": 1},
 	}
 	objs := LineObjsFromProfileData(d)
@@ -86,7 +88,7 @@ func TestValidateProfileCheckValidAndSampleTypes(t *testing.T) {
 	if err == nil && ok != nil {
 		_ = ValidateProfile(ok)
 	}
-	path := testProfilePath(t, "BenchmarkGenPool_cpu.out")
+	path := benchmarkGenPoolCPUFixturePath(t)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -96,8 +98,8 @@ func TestValidateProfileCheckValidAndSampleTypes(t *testing.T) {
 		t.Fatal(err)
 	}
 	p2.SampleType = nil
-	if err := ValidateProfile(p2); err == nil || !strings.Contains(err.Error(), "sample") {
-		t.Fatalf("got %v", err)
+	if validateErr := ValidateProfile(p2); validateErr == nil || !strings.Contains(validateErr.Error(), "sample") {
+		t.Fatalf("got %v", validateErr)
 	}
 }
 
@@ -143,7 +145,7 @@ func TestAccumulateSampleBranches(t *testing.T) {
 	}
 }
 
-func TestAggregateEmptySamples(t *testing.T) {
+func TestAggregateEmptySamples(_ *testing.T) {
 	p := &pprofprofile.Profile{SampleType: []*pprofprofile.ValueType{{Type: "t", Unit: "u"}}}
 	_ = AggregateProfileData(p, 0)
 }
@@ -201,7 +203,7 @@ func TestOrganizeUnknownPackageFormatting(t *testing.T) {
 		},
 		FlatPercentages: map[string]float64{"orphanSymbolWithoutEnoughDots": 100},
 		CumPercentages:  map[string]float64{"orphanSymbolWithoutEnoughDots": 100},
-		SumPercentages:   map[string]float64{"orphanSymbolWithoutEnoughDots": 100},
+		SumPercentages:  map[string]float64{"orphanSymbolWithoutEnoughDots": 100},
 		Cum:             map[string]int64{"orphanSymbolWithoutEnoughDots": 10},
 	}
 	s := OrganizeProfileByPackageFromProfileData(d, internal.FunctionFilter{})
@@ -247,7 +249,7 @@ func TestPipelineRunFromReaderErrors(t *testing.T) {
 	if err == nil {
 		t.Fatal()
 	}
-	data, err := os.ReadFile(testProfilePath(t, "BenchmarkGenPool_cpu.out"))
+	data, err := os.ReadFile(benchmarkGenPoolCPUFixturePath(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,7 +352,7 @@ func TestOrganizeProfileByPackageFromProfileDataNilAndFilters(t *testing.T) {
 		SortedEntries:   []FuncEntry{{Name: "p.X", Flat: 1}, {Name: "p.Y", Flat: 1}},
 		FlatPercentages: map[string]float64{"p.X": 50, "p.Y": 50},
 		CumPercentages:  map[string]float64{"p.X": 1, "p.Y": 1},
-		SumPercentages:   map[string]float64{"p.X": 50, "p.Y": 100},
+		SumPercentages:  map[string]float64{"p.X": 50, "p.Y": 100},
 		Cum:             map[string]int64{"p.X": 1, "p.Y": 1},
 	}
 	if s := OrganizeProfileByPackageFromProfileData(d, internal.FunctionFilter{IgnoreFunctions: []string{"X"}}); !strings.Contains(s, "Y") || strings.Contains(s, "X") {
@@ -361,7 +363,7 @@ func TestOrganizeProfileByPackageFromProfileDataNilAndFilters(t *testing.T) {
 		SortedEntries:   []FuncEntry{{Name: "keep.M", Flat: 1}},
 		FlatPercentages: map[string]float64{"keep.M": 100},
 		CumPercentages:  map[string]float64{"keep.M": 1},
-		SumPercentages:   map[string]float64{"keep.M": 100},
+		SumPercentages:  map[string]float64{"keep.M": 100},
 		Cum:             map[string]int64{"keep.M": 1},
 	}
 	if s := OrganizeProfileByPackageFromProfileData(d2, internal.FunctionFilter{IncludePrefixes: []string{"nomatch"}}); s != "" {
@@ -372,7 +374,7 @@ func TestOrganizeProfileByPackageFromProfileDataNilAndFilters(t *testing.T) {
 		SortedEntries:   []FuncEntry{{Name: "NoDotSymbol", Flat: 1}},
 		FlatPercentages: map[string]float64{"NoDotSymbol": 100},
 		CumPercentages:  map[string]float64{"NoDotSymbol": 1},
-		SumPercentages:   map[string]float64{"NoDotSymbol": 100},
+		SumPercentages:  map[string]float64{"NoDotSymbol": 100},
 		Cum:             map[string]int64{"NoDotSymbol": 1},
 	}
 	if s := OrganizeProfileByPackageFromProfileData(d3, internal.FunctionFilter{}); !strings.Contains(s, "unknown") {
@@ -383,7 +385,7 @@ func TestOrganizeProfileByPackageFromProfileDataNilAndFilters(t *testing.T) {
 		SortedEntries:   []FuncEntry{{Name: ".", Flat: 1}},
 		FlatPercentages: map[string]float64{".": 100},
 		CumPercentages:  map[string]float64{".": 1},
-		SumPercentages:   map[string]float64{".": 100},
+		SumPercentages:  map[string]float64{".": 100},
 		Cum:             map[string]int64{".": 1},
 	}
 	if s := OrganizeProfileByPackageFromProfileData(d4, internal.FunctionFilter{}); s != "" {
