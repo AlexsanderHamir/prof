@@ -14,8 +14,12 @@ func pprofTextListArgs() []string {
 	}
 }
 
+// stemFromPath returns the filename without extension. fullPath may come from
+// another OS (e.g. Windows-style paths in tests or copied paths); normalize
+// '\' to '/' before filepath.Base so Linux CI agrees with Windows.
 func stemFromPath(fullPath string) string {
-	file := filepath.Base(fullPath)
+	normalized := strings.ReplaceAll(fullPath, `\`, "/")
+	file := filepath.Base(normalized)
 	return strings.TrimSuffix(file, filepath.Ext(file))
 }
 
