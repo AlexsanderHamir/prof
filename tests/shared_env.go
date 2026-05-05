@@ -19,7 +19,7 @@ import (
 var (
 	sharedEnvOnce sync.Once
 	sharedEnvDir  string
-	sharedEnvErr  error
+	errSharedEnv  error
 )
 
 // ensureSharedEnv builds the synthetic env once and returns its absolute path.
@@ -30,7 +30,7 @@ func ensureSharedEnv(t *testing.T) string {
 	sharedEnvOnce.Do(func() {
 		root, err := getProjectRoot()
 		if err != nil {
-			sharedEnvErr = fmt.Errorf("getProjectRoot: %w", err)
+			errSharedEnv = fmt.Errorf("getProjectRoot: %w", err)
 			return
 		}
 
@@ -38,26 +38,26 @@ func ensureSharedEnv(t *testing.T) string {
 		envFullPath := filepath.Join(root, testDirName, envDir)
 
 		if err = materializeSyntheticEnv(envFullPath); err != nil {
-			sharedEnvErr = err
+			errSharedEnv = err
 			return
 		}
 
 		src, err := ensureCachedProfBinary(root)
 		if err != nil {
-			sharedEnvErr = fmt.Errorf("prof cache build: %w", err)
+			errSharedEnv = fmt.Errorf("prof cache build: %w", err)
 			return
 		}
 		dst := filepath.Join(envFullPath, profBinaryName())
 		if err = copyProfBinary(src, dst); err != nil {
-			sharedEnvErr = fmt.Errorf("copy prof binary: %w", err)
+			errSharedEnv = fmt.Errorf("copy prof binary: %w", err)
 			return
 		}
 
 		sharedEnvDir = envFullPath
 	})
 
-	if sharedEnvErr != nil {
-		t.Fatalf("shared env: %v", sharedEnvErr)
+	if errSharedEnv != nil {
+		t.Fatalf("shared env: %v", errSharedEnv)
 	}
 	return sharedEnvDir
 }
