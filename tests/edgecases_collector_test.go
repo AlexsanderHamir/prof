@@ -13,15 +13,59 @@ import (
 	pprofprofile "github.com/google/pprof/profile"
 )
 
+// edgecasesRenameFirstNamedFunction sets the first non-nil function name in p.
+func edgecasesRenameFirstNamedFunction(p *pprofprofile.Profile, name string) bool {
+	for _, s := range p.Sample {
+		for _, loc := range s.Location {
+			if loc == nil {
+				continue
+			}
+			for i := range loc.Line {
+				if loc.Line[i].Function != nil {
+					loc.Line[i].Function.Name = name
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// edgecasesWriteProfileRoundTrip writes p to a temp file after verifying parse round-trip.
+func edgecasesWriteProfileRoundTrip(t *testing.T, p *pprofprofile.Profile, fileName string) string {
+	t.Helper()
+	var buf bytes.Buffer
+	if werr := p.Write(&buf); werr != nil {
+		t.Fatalf("Write: %v", werr)
+	}
+	if _, rerr := pprofprofile.Parse(bytes.NewReader(buf.Bytes())); rerr != nil {
+		t.Fatalf("round-trip parse after rename: %v", rerr)
+	}
+	tmp := filepath.Join(t.TempDir(), fileName)
+	if wferr := os.WriteFile(tmp, buf.Bytes(), internal.PermFile); wferr != nil {
+		t.Fatalf("WriteFile: %v", wferr)
+	}
+	return tmp
+}
+
+func edgecasesFindEntryByFullSymbol(entries []parser.FunctionListEntry, full string) (parser.FunctionListEntry, bool) {
+	for _, e := range entries {
+		if e.FullSymbol == full {
+			return e, true
+		}
+	}
+	return parser.FunctionListEntry{}, false
+}
+
 // TestEdge_functionListCollection_fixture exercises collector.GetFunctionsOutput
 // against the committed CPU fixture using a real profile symbol whose FullSymbol
 // contains regexp metacharacters (parentheses from pointer receiver syntax). That
 // path relies on regexp.QuoteMeta in the collector.
 func TestEdge_functionListCollection_fixture(t *testing.T) {
 	cpuPath := edgecasesFixturePath(t, fixtureCPUFile)
-	entries, err := parser.GetFunctionListEntriesV2(cpuPath, internal.FunctionFilter{})
-	if err != nil {
-		t.Fatalf("GetFunctionListEntriesV2: %v", err)
+	entries, listErr := parser.GetFunctionListEntriesV2(cpuPath, internal.FunctionFilter{})
+	if listErr != nil {
+		t.Fatalf("GetFunctionListEntriesV2: %v", listErr)
 	}
 
 	var pick parser.FunctionListEntry
@@ -36,13 +80,13 @@ func TestEdge_functionListCollection_fixture(t *testing.T) {
 	}
 
 	dir := t.TempDir()
-	if err := collector.GetFunctionsOutput([]parser.FunctionListEntry{pick}, cpuPath, dir); err != nil {
-		t.Fatalf("GetFunctionsOutput: %v", err)
+	if outErr := collector.GetFunctionsOutput([]parser.FunctionListEntry{pick}, cpuPath, dir); outErr != nil {
+		t.Fatalf("GetFunctionsOutput: %v", outErr)
 	}
 	out := filepath.Join(dir, pick.OutputStem+"."+internal.TextExtension)
-	st, err := os.Stat(out)
-	if err != nil {
-		t.Fatalf("expected per-function list file %s: %v", out, err)
+	st, statErr := os.Stat(out)
+	if statErr != nil {
+		t.Fatalf("expected per-function list file %s: %v", out, statErr)
 	}
 	if st.Size() == 0 {
 		t.Fatalf("expected non-empty list output for %q", pick.FullSymbol)
@@ -57,63 +101,28 @@ func TestEdge_functionListCollection_fixture(t *testing.T) {
 func TestEdge_functionListCollection_renamedFixtureSymbol(t *testing.T) {
 	const weirdName = `edge/syn.(*Re[go.shape.string]).Method`
 	cpuPath := edgecasesFixturePath(t, fixtureCPUFile)
-	raw, err := os.ReadFile(cpuPath)
-	if err != nil {
-		t.Fatalf("ReadFile: %v", err)
+	raw, readErr := os.ReadFile(cpuPath)
+	if readErr != nil {
+		t.Fatalf("ReadFile: %v", readErr)
 	}
-	p, err := pprofprofile.Parse(bytes.NewReader(raw))
-	if err != nil {
-		t.Fatalf("Parse fixture: %v", err)
+	p, parseErr := pprofprofile.Parse(bytes.NewReader(raw))
+	if parseErr != nil {
+		t.Fatalf("Parse fixture: %v", parseErr)
 	}
-
-	renamed := false
-outer:
-	for _, s := range p.Sample {
-		for _, loc := range s.Location {
-			if loc == nil {
-				continue
-			}
-			for i := range loc.Line {
-				if loc.Line[i].Function != nil {
-					loc.Line[i].Function.Name = weirdName
-					renamed = true
-					break outer
-				}
-			}
-		}
-	}
-	if !renamed {
+	if !edgecasesRenameFirstNamedFunction(p, weirdName) {
 		t.Fatal("could not find a function line to rename")
 	}
 
-	var buf bytes.Buffer
-	if err := p.Write(&buf); err != nil {
-		t.Fatalf("Write: %v", err)
+	tmp := edgecasesWriteProfileRoundTrip(t, p, "mutated_edge.out")
+	entries, listErr := parser.GetFunctionListEntriesV2(tmp, internal.FunctionFilter{})
+	if listErr != nil {
+		t.Fatalf("GetFunctionListEntriesV2: %v", listErr)
 	}
-	if _, err := pprofprofile.Parse(bytes.NewReader(buf.Bytes())); err != nil {
-		t.Fatalf("round-trip parse after rename: %v", err)
-	}
-
-	tmp := filepath.Join(t.TempDir(), "mutated_edge.out")
-	if err := os.WriteFile(tmp, buf.Bytes(), internal.PermFile); err != nil {
-		t.Fatalf("WriteFile: %v", err)
-	}
-
-	entries, err := parser.GetFunctionListEntriesV2(tmp, internal.FunctionFilter{})
-	if err != nil {
-		t.Fatalf("GetFunctionListEntriesV2: %v", err)
-	}
-	var found bool
-	for _, e := range entries {
-		if e.FullSymbol == weirdName {
-			found = true
-			if got, want := e.OutputStem, "Method"; got != want {
-				t.Fatalf("OutputStem: got %q want %q", got, want)
-			}
-			break
-		}
-	}
-	if !found {
+	e, ok := edgecasesFindEntryByFullSymbol(entries, weirdName)
+	if !ok {
 		t.Fatalf("renamed symbol %q not present in entries", weirdName)
+	}
+	if got, want := e.OutputStem, "Method"; got != want {
+		t.Fatalf("OutputStem: got %q want %q", got, want)
 	}
 }
