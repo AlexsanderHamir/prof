@@ -14,11 +14,17 @@ type MainAction int
 const (
 	// MainNone means no selection (should not be returned from RunMainMenu on success).
 	MainNone MainAction = iota
+	// MainQuit means the user exited without running a workflow.
 	MainQuit
+	// MainCollect runs interactive benchmark collection.
 	MainCollect
+	// MainCompare runs interactive compare between two tags.
 	MainCompare
+	// MainTools opens the tools submenu (benchstat, qcachegrind).
 	MainTools
+	// MainSetup runs the configuration template step.
 	MainSetup
+	// MainDocs prints the documentation URL only.
 	MainDocs
 )
 
