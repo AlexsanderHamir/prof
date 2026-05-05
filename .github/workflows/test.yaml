@@ -38,3 +38,8 @@ jobs:
 
       - name: Run tests
         run: go test -v ./...
+
+      # Explicit edge suite so `TestEdge_*` stays visible in CI logs and cannot be
+      # dropped accidentally if the main job gains `-short` or other filters later.
+      - name: Run edge-case tests
+        run: go test -v ./tests -count=1 -run '^TestEdge'

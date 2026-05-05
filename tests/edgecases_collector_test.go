@@ -55,10 +55,6 @@ func TestEdge_functionListCollection_fixture(t *testing.T) {
 // complements TestEdge_functionListCollection_fixture without requiring a
 // hand-built protobuf profile (which is easy to get subtly wrong).
 func TestEdge_functionListCollection_renamedFixtureSymbol(t *testing.T) {
-	if testing.Short() {
-		t.Skip("reads and rewrites a fixture-derived profile")
-	}
-
 	const weirdName = `edge/syn.(*Re[go.shape.string]).Method`
 	cpuPath := edgecasesFixturePath(t, fixtureCPUFile)
 	raw, err := os.ReadFile(cpuPath)
