@@ -51,11 +51,15 @@ func writeFunctionListPprof(function, binaryFile, outputFile string) error {
 }
 
 // GetFunctionsOutput runs pprof -list for each function name into basePath.
+// If pprof -list fails for a symbol (e.g. some runtime internals or short-name
+// ambiguity across Go versions), that function is skipped and a warning is logged
+// so the rest of the profile can still be collected.
 func GetFunctionsOutput(functions []string, binaryPath, basePath string) error {
 	for _, name := range functions {
 		out := filepath.Join(basePath, name+"."+internal.TextExtension)
 		if err := writeFunctionListPprof(name, binaryPath, out); err != nil {
-			return fmt.Errorf("extract function %s: %w", name, err)
+			slog.Warn("skipping per-function pprof list", "function", name, "binary", binaryPath, "err", err)
+			continue
 		}
 	}
 	return nil
