@@ -15,12 +15,10 @@ func TestConfig(t *testing.T) {
 	label := "WithFunctionFilter"
 	t.Run(label, func(t *testing.T) {
 		specifiedFiles := map[fileFullName]*FieldsCheck{
-			"BenchmarkStringProcessor.txt":        newDefaultFieldsCheckExpected(),
-			"ProcessStrings.txt":                  newDefaultFieldsCheckExpected(),
-			"GenerateStrings.txt":                 newDefaultFieldsCheckExpected(),
-			"AddString.txt":                       newDefaultFieldsCheckExpected(),
-			"BenchmarkStringProcessor_cpu.png":    newDefaultFieldsCheckExpected(),
-			"BenchmarkStringProcessor_memory.png": newDefaultFieldsCheckExpected(),
+			"BenchmarkStringProcessor.txt": newDefaultFieldsCheckExpected(),
+			"ProcessStrings.txt":         newDefaultFieldsCheckExpected(),
+			"GenerateStrings.txt":        newDefaultFieldsCheckExpected(),
+			"AddString.txt":              newDefaultFieldsCheckExpected(),
 		}
 
 		cfg := internal.Config{
@@ -87,12 +85,10 @@ func TestConfig(t *testing.T) {
 	label = "WithFunctionFilterPlusIgnore"
 	t.Run(label, func(t *testing.T) {
 		specifiedFiles := map[fileFullName]*FieldsCheck{
-			"BenchmarkStringProcessor_cpu.png":    newDefaultFieldsCheckExpected(),
-			"BenchmarkStringProcessor_memory.png": newDefaultFieldsCheckExpected(),
-			"GenerateStrings.txt":                 newDefaultFieldsCheckExpected(),
-			"BenchmarkStringProcessor.txt":        newDefaultFieldsCheckNotExpected(),
-			"ProcessStrings.txt":                  newDefaultFieldsCheckNotExpected(),
-			"AddString.txt":                       newDefaultFieldsCheckNotExpected(),
+			"GenerateStrings.txt":          newDefaultFieldsCheckExpected(),
+			"BenchmarkStringProcessor.txt": newDefaultFieldsCheckNotExpected(),
+			"ProcessStrings.txt":           newDefaultFieldsCheckNotExpected(),
+			"AddString.txt":                newDefaultFieldsCheckNotExpected(),
 		}
 
 		cfg := internal.Config{
@@ -174,6 +170,7 @@ func TestProfileValidation(t *testing.T) {
 			"--count", count,
 			"--tag", tag,
 		}
+		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
@@ -203,6 +200,7 @@ func TestProfileValidation(t *testing.T) {
 			"--count", count,
 			"--tag", tag,
 		}
+		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
@@ -231,6 +229,7 @@ func TestProfileValidation(t *testing.T) {
 			"--count", count,
 			"--tag", tag,
 		}
+		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
@@ -261,6 +260,7 @@ func TestCommandValidation(t *testing.T) {
 			"--count", count,
 			"--tag", tag,
 		}
+		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
@@ -289,6 +289,7 @@ func TestCommandValidation(t *testing.T) {
 			"--count", count,
 			"--tag", tag,
 		}
+		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testArgs := &TestArgs{
 			specifiedFiles:          nil,
@@ -368,7 +369,6 @@ func TestTrackerBasicRun(t *testing.T) {
 	isEnvironmentSet := false
 	checkSuccessMessage := false
 	createBenchForTracker(t, label, runs, tagName, blockOutputCheck, isEnvironmentSet)
-	envDirName = "Enviroment"
 
 	runs = "10"
 	tagName = "tag2"
@@ -380,7 +380,7 @@ func TestTrackerBasicRun(t *testing.T) {
 		t.Error(err)
 	}
 
-	envFullPath := filepath.Join(root, testDirName, "Enviroment testing")
+	envFullPath := filepath.Join(root, testDirName, integrationEnvDir(label))
 	t.Cleanup(func() {
 		if err = os.RemoveAll(envFullPath); err != nil {
 			t.Logf("Failed to clean up bench: %v", err)

@@ -16,9 +16,10 @@ import (
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
-var (
-	envDirName = envDirNameStatic
-)
+// integrationEnvDir is the per-scenario directory name under tests/ (package cwd).
+func integrationEnvDir(label string) string {
+	return envDirNameStatic + " " + label
+}
 
 // TestArgs holds inputs and expectations for a single integration test scenario.
 type TestArgs struct {
@@ -130,10 +131,10 @@ func getProjectRoot() (string, error) {
 	}
 }
 
-func createConfigFile(t *testing.T, cfgTemplate *internal.Config) {
+func createConfigFile(t *testing.T, envDir string, cfgTemplate *internal.Config) {
 	t.Helper()
 
-	configPath := filepath.Join(envDirName, templateFile)
+	configPath := filepath.Join(envDir, templateFile)
 
 	data, err := json.MarshalIndent(cfgTemplate, "", "    ")
 	if err != nil {
@@ -145,21 +146,21 @@ func createConfigFile(t *testing.T, cfgTemplate *internal.Config) {
 	}
 }
 
-func setupEnviroment(t *testing.T) {
+func setupEnviroment(t *testing.T, envDir string) {
 	t.Helper()
 	// 1. Create environment Directory.
-	if err := os.Mkdir(envDirName, internal.PermDir); err != nil && !os.IsExist(err) {
+	if err := os.Mkdir(envDir, internal.PermDir); err != nil && !os.IsExist(err) {
 		t.Fatalf("couldn't create environment dir: %v", err)
 	}
 
 	// 2. Initialize Go module (skip if go.mod already exists — e.g. committed fixture under tests/).
-	goModPath := filepath.Join(envDirName, "go.mod")
+	goModPath := filepath.Join(envDir, "go.mod")
 	if _, statErr := os.Stat(goModPath); statErr != nil {
 		if !os.IsNotExist(statErr) {
 			t.Fatalf("stat go.mod: %v", statErr)
 		}
 		cmd := exec.Command("go", "mod", "init", "test-environment")
-		cmd.Dir = envDirName
+		cmd.Dir = envDir
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			t.Fatalf("failed to initialize Go module: %v\nOutput: %s", err, output)
@@ -167,20 +168,20 @@ func setupEnviroment(t *testing.T) {
 	}
 
 	// 3. Create package and benchmark files.
-	if err := createPackage(envDirName); err != nil {
+	if err := createPackage(envDir); err != nil {
 		t.Fatalf("failed to create package: %v", err)
 	}
 
-	if err := createBenchmarkFile(envDirName); err != nil {
+	if err := createBenchmarkFile(envDir); err != nil {
 		t.Fatalf("failed to create benchmark file: %v", err)
 	}
 }
 
-func setUpProf(t *testing.T, projectRoot string) {
+func setUpProf(t *testing.T, projectRoot, envDir string) {
 	t.Helper()
 
 	// Build prof binary directly to the environment directory
-	profBinary := filepath.Join(projectRoot, testDirName, envDirName, profBinaryName())
+	profBinary := filepath.Join(projectRoot, testDirName, envDir, profBinaryName())
 
 	// Build from cmd/prof directory
 	cmdProfDir := filepath.Join(projectRoot, "cmd", "prof")
@@ -384,17 +385,13 @@ func checkFileNotEmpty(t *testing.T, filePath, fileName string) {
 }
 
 func testConfigScenario(t *testing.T, testArgs *TestArgs) {
-	defer func() {
-		envDirName = envDirNameStatic
-	}()
-
 	root, err := getProjectRoot()
 	if err != nil {
 		t.Log(err)
 	}
 
-	envDirName = envDirName + " " + testArgs.label
-	envFullPath := filepath.Join(root, testDirName, envDirName)
+	envDir := integrationEnvDir(testArgs.label)
+	envFullPath := filepath.Join(root, testDirName, envDir)
 
 	if testArgs.withCleanUp {
 		t.Cleanup(func() {
@@ -406,14 +403,14 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 
 	if !testArgs.isEnvironmentSet {
 		// 1. Set up Environment
-		setupEnviroment(t)
+		setupEnviroment(t, envDir)
 
 		// 2. Build prof and move to Environment
 		if !testArgs.noConfigFile {
-			createConfigFile(t, &testArgs.cfg)
+			createConfigFile(t, envDir, &testArgs.cfg)
 		}
 
-		setUpProf(t, root)
+		setUpProf(t, root, envDir)
 	}
 
 	shouldContinue := runProf(t, envFullPath, testArgs.cmd, testArgs.expectedErrorMessage, testArgs.checkSuccessMessage)
@@ -429,13 +426,20 @@ func testConfigScenario(t *testing.T, testArgs *TestArgs) {
 }
 
 func defaultRunCmd() []string {
-	return []string{
+	cmd := []string{
 		internal.AUTOCMD,
 		"--benchmarks", benchName,
 		"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
 		"--count", count,
 		"--tag", tag,
 	}
+	return append(cmd, autoBenchSkipPNGArgs()...)
+}
+
+// autoBenchSkipPNGArgs avoids requiring Graphviz during integration tests while `prof auto`
+// defaults to strict PNG generation.
+func autoBenchSkipPNGArgs() []string {
+	return []string{"--skip-png"}
 }
 
 func buildProf(t *testing.T, outputPath, root string) {
@@ -457,6 +461,7 @@ func createBenchForTracker(t *testing.T, label, iterations, tagName string, bloc
 		"--count", iterations,
 		"--tag", tagName,
 	}
+	cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 	testArgs := &TestArgs{
 		specifiedFiles:          nil,
