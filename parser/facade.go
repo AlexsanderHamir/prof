@@ -31,13 +31,14 @@ func TurnLinesIntoObjectsV2(profilePath string) ([]*LineObj, error) {
 	return LineObjsFromProfileData(d), nil
 }
 
-// GetAllFunctionNamesFromProfileData applies filters to [ProfileData] the same way as [GetAllFunctionNamesV2].
-func GetAllFunctionNamesFromProfileData(d *ProfileData, filter internal.FunctionFilter) []string {
+// GetFunctionListEntriesFromProfileData returns per-function list targets after the same
+// filtering as [GetAllFunctionNamesFromProfileData].
+func GetFunctionListEntriesFromProfileData(d *ProfileData, filter internal.FunctionFilter) []FunctionListEntry {
 	if d == nil {
 		return nil
 	}
 	ign := ignoreSet(filter.IgnoreFunctions)
-	var names []string
+	var entries []FunctionListEntry
 	for _, entry := range d.SortedEntries {
 		fn := entry.Name
 		short := simpleFunctionName(fn)
@@ -50,18 +51,44 @@ func GetAllFunctionNamesFromProfileData(d *ProfileData, filter internal.Function
 		if len(filter.IncludePrefixes) > 0 && !matchPrefix(fn, filter.IncludePrefixes) {
 			continue
 		}
-		names = append(names, short)
+		entries = append(entries, FunctionListEntry{OutputStem: short, FullSymbol: fn})
+	}
+	return entries
+}
+
+// GetAllFunctionNamesFromProfileData applies filters to [ProfileData] the same way as [GetAllFunctionNamesV2].
+func GetAllFunctionNamesFromProfileData(d *ProfileData, filter internal.FunctionFilter) []string {
+	if d == nil {
+		return nil
+	}
+	entries := GetFunctionListEntriesFromProfileData(d, filter)
+	names := make([]string, len(entries))
+	for i, e := range entries {
+		names[i] = e.OutputStem
 	}
 	return names
 }
 
-// GetAllFunctionNamesV2 extracts short function names from a profile path using filter rules.
-func GetAllFunctionNamesV2(profilePath string, filter internal.FunctionFilter) ([]string, error) {
+// GetFunctionListEntriesV2 loads a profile path and returns [FunctionListEntry] values using filter rules.
+func GetFunctionListEntriesV2(profilePath string, filter internal.FunctionFilter) ([]FunctionListEntry, error) {
 	d, err := profileDataFromPath(profilePath)
 	if err != nil {
 		return nil, err
 	}
-	return GetAllFunctionNamesFromProfileData(d, filter), nil
+	return GetFunctionListEntriesFromProfileData(d, filter), nil
+}
+
+// GetAllFunctionNamesV2 extracts short function names from a profile path using filter rules.
+func GetAllFunctionNamesV2(profilePath string, filter internal.FunctionFilter) ([]string, error) {
+	entries, err := GetFunctionListEntriesV2(profilePath, filter)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, len(entries))
+	for i, e := range entries {
+		names[i] = e.OutputStem
+	}
+	return names, nil
 }
 
 // OrganizeProfileByPackageFromProfileData builds the package-grouped markdown report from [ProfileData].

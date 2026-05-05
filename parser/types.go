@@ -47,3 +47,13 @@ type FuncEntry struct {
 	Name string
 	Flat int64
 }
+
+// FunctionListEntry drives one per-function `go tool pprof -list` export.
+// OutputStem is the basename for "<stem>.txt" (short name, same as ignore_functions).
+// FullSymbol is the package-qualified name from the profile; it is used to build a
+// robust -list pattern (see collector) because short names alone can fail to match
+// pprof's graph node names.
+type FunctionListEntry struct {
+	OutputStem string
+	FullSymbol string
+}

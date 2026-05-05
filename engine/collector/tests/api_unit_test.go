@@ -9,6 +9,7 @@ import (
 	"github.com/AlexsanderHamir/prof/engine/collector"
 	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/internal/testpaths"
+	"github.com/AlexsanderHamir/prof/parser"
 )
 
 // cleanupBenchDirectory removes the bench directory if it exists
@@ -128,11 +129,17 @@ func TestGetFunctionsOutput(t *testing.T) {
 	}
 	defer os.RemoveAll(tempDir)
 
-	// Test with sample function names
-	functions := []string{"cpuIntensiveWorkload", "func1"}
+	entries, parseErr := parser.GetFunctionListEntriesV2(binaryFile, internal.FunctionFilter{})
+	if parseErr != nil {
+		t.Fatalf("GetFunctionListEntriesV2: %v", parseErr)
+	}
+	if len(entries) < 2 {
+		t.Fatalf("fixture cpu.out should yield at least 2 list entries, got %d", len(entries))
+	}
+	entries = entries[:2]
 
 	// Test the function
-	err = collector.GetFunctionsOutput(functions, binaryFile, tempDir)
+	err = collector.GetFunctionsOutput(entries, binaryFile, tempDir)
 
 	// The function might fail if go tool pprof is not available
 	// or if the binary file is not a valid profile
@@ -144,10 +151,10 @@ func TestGetFunctionsOutput(t *testing.T) {
 		t.Errorf("GetFunctionsOutput failed: %v", err)
 	} else {
 		// If successful, check if output files were created
-		for _, function := range functions {
-			outputFile := filepath.Join(tempDir, function+"."+internal.TextExtension)
+		for _, e := range entries {
+			outputFile := filepath.Join(tempDir, e.OutputStem+"."+internal.TextExtension)
 			if _, err := os.Stat(outputFile); os.IsNotExist(err) {
-				t.Errorf("Output file was not created for function %s: %s", function, outputFile)
+				t.Errorf("Output file was not created for function %s: %s", e.OutputStem, outputFile)
 			}
 		}
 	}

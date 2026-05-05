@@ -63,7 +63,7 @@ func emitProfileArtifacts(fullBinaryPath, profileDir, fileName string, filter in
 }
 
 func collectPerFunctionLists(profileDirPath, fullBinaryPath string, functionFilter internal.FunctionFilter) error {
-	functions, err := parser.GetAllFunctionNamesV2(fullBinaryPath, functionFilter)
+	listEntries, err := parser.GetFunctionListEntriesV2(fullBinaryPath, functionFilter)
 	if err != nil {
 		return fmt.Errorf("extract function names: %w", err)
 	}
@@ -72,7 +72,7 @@ func collectPerFunctionLists(profileDirPath, fullBinaryPath string, functionFilt
 	if err = ensureDirExists(functionDir); err != nil {
 		return err
 	}
-	if err = GetFunctionsOutput(functions, fullBinaryPath, functionDir); err != nil {
+	if err = GetFunctionsOutput(listEntries, fullBinaryPath, functionDir); err != nil {
 		return fmt.Errorf("per-function pprof: %w", err)
 	}
 	return nil
