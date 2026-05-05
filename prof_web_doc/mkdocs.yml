@@ -1,3 +1,71 @@
-site_name: Prof Docs
+site_name: Prof documentation
+site_description: Command-line reference for Go benchmark profiling, organized output, and regression comparison.
+site_url: https://alexsanderhamir.github.io/prof/
+
 repo_url: https://github.com/AlexsanderHamir/prof
+repo_name: prof
 edit_uri: ""
+
+theme:
+  name: material
+  language: en
+  icon:
+    logo: material/console-line
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Overview: index.md
+  - Install: install.md
+  - Quickstart: quickstart.md
+  - Working directory and paths: workspace.md
+  - Collect profiling data: collect.md
+  - Configure collection: configure.md
+  - Compare runs: compare.md
+  - Interactive TUI: tui.md
+  - CI and regressions: ci.md
+  - Optional tools: tools.md
+
+markdown_extensions:
+  - tables
+  - fenced_code
+  - attr_list
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+
+plugins:
+  - search:
+      lang: en

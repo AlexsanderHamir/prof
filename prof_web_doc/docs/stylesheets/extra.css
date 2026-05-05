@@ -1,0 +1,29 @@
+/* Layout: comfortable reading width on ultrawide displays */
+.md-grid {
+  max-width: 70rem;
+}
+
+/* Slightly tighter body rhythm */
+.md-typeset {
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.md-typeset h1 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Code: subtle rounding, avoid harsh boxes */
+.md-typeset code {
+  border-radius: 0.25rem;
+}
+
+.md-typeset pre > code {
+  border-radius: 0.35rem;
+}
+
+/* Sidebar: clearer active state (Material defaults + tweak) */
+.md-nav__link--active {
+  font-weight: 600;
+}
