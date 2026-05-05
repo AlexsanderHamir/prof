@@ -26,7 +26,7 @@ func absEq(t *testing.T, a, b string) {
 
 func TestFindGoModuleRoot_FromNestedDirectory(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module nest\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module nest\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	sub := filepath.Join(root, "pkg", "deep")
@@ -65,7 +65,7 @@ func TestCleanOrCreateTagCleansExistingDir(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(dir, "nested"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, "nested", "f.txt"), []byte("x"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "nested", "f.txt"), []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := repofs.CleanOrCreateTag(dir, 0o755); err != nil {
@@ -82,7 +82,7 @@ func TestCleanOrCreateTagCleansExistingDir(t *testing.T) {
 
 func TestCleanOrCreateTagRejectsFile(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "notdir")
-	if err := os.WriteFile(p, []byte("x"), 0o644); err != nil {
+	if err := os.WriteFile(p, []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := repofs.CleanOrCreateTag(p, 0o755); err == nil || !strings.Contains(err.Error(), "not a directory") {

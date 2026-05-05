@@ -1,6 +1,7 @@
 package benchmark
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,7 +18,7 @@ func BenchmarkHello(b *testing.B) {
 	for i := 0; i < b.N; i++ {}
 }
 `
-	if err := os.WriteFile(p, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(p, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	names, err := scanForBenchmarks(dir)
@@ -30,7 +31,7 @@ func BenchmarkHello(b *testing.B) {
 }
 
 func TestHandleDirectorySkipsDot(t *testing.T) {
-	if err := handleDirectory(filepath.Join("a", ".git")); err != filepath.SkipDir {
+	if err := handleDirectory(filepath.Join("a", ".git")); !errors.Is(err, filepath.SkipDir) {
 		t.Fatalf("got %v", err)
 	}
 	if err := handleDirectory("normal"); err != nil {

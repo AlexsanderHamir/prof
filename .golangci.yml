@@ -29,6 +29,9 @@ issues:
         - govet
         - nestif
         - usetesting
+    - path: cli/commands_test\.go
+      linters:
+        - reassign
 
 # Path mode for exclusions and linters is set under run.relative-path-mode above.
 

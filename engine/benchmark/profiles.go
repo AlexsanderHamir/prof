@@ -50,7 +50,7 @@ func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 // processProfiles collects all pprof info for a specific benchmark and its specified profiles.
 // It returns profile kinds successfully processed—when lenientProfiles is true, missing binaries are omitted
 // from this slice so downstream collection skips them consistently.
-func processProfiles(benchmarkName string, profiles []string, tag string, groupByPackage bool, lenientProfiles bool, skipPNG bool) ([]string, error) {
+func processProfiles(benchmarkName string, profiles []string, tag string, groupByPackage bool, lenientProfiles bool, skipPNG bool) ([]string, error) { //nolint:gocognit // sequential profile stages
 	tagDir := filepath.Join(internal.MainDirOutput, tag)
 	binDir := filepath.Join(tagDir, internal.ProfileBinDir, benchmarkName)
 	textDir := filepath.Join(tagDir, internal.ProfileTextDir, benchmarkName)

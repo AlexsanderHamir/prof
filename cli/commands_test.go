@@ -12,6 +12,11 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/app"
 )
 
+const (
+	testProfCPU    = "cpu"
+	testProfMemory = "memory"
+)
+
 func resetCLIPackageGlobals(t *testing.T) {
 	t.Helper()
 	benchmarks = nil
@@ -33,8 +38,8 @@ func resetCLIPackageGlobals(t *testing.T) {
 type noopBench struct{}
 
 func (noopBench) RunBenchmarks(_, _ []string, _ string, _ int, _, _, _ bool) error { return nil }
-func (noopBench) DiscoverBenchmarks(_ string) ([]string, error)              { return nil, nil }
-func (noopBench) SupportedProfiles() []string                                { return nil }
+func (noopBench) DiscoverBenchmarks(_ string) ([]string, error)                    { return nil, nil }
+func (noopBench) SupportedProfiles() []string                                      { return nil }
 
 type noopColl struct{}
 
@@ -91,7 +96,7 @@ type captureBench struct {
 	group       bool
 }
 
-func (c *captureBench) RunBenchmarks(bench, prof []string, tag string, count int, groupByPackage bool, lenientProfiles bool, skipPNG bool) error {
+func (c *captureBench) RunBenchmarks(bench, prof []string, tag string, count int, groupByPackage bool, _, _ bool) error {
 	c.bench = append([]string(nil), bench...)
 	c.prof = append([]string(nil), prof...)
 	c.tag = tag
@@ -100,8 +105,8 @@ func (c *captureBench) RunBenchmarks(bench, prof []string, tag string, count int
 	return nil
 }
 
-func (captureBench) DiscoverBenchmarks(_ string) ([]string, error) { return nil, nil }
-func (captureBench) SupportedProfiles() []string                   { return nil }
+func (*captureBench) DiscoverBenchmarks(_ string) ([]string, error) { return nil, nil }
+func (*captureBench) SupportedProfiles() []string                   { return nil }
 
 type errDiscoverBench struct{ noopBench }
 
@@ -146,7 +151,7 @@ func (c *captureTools) RunQcacheGrind(tag, bench, profile string) error {
 func TestExecuteWithNilUsesOSArgs(t *testing.T) {
 	resetCLIPackageGlobals(t)
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module cliexec\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module cliexec\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)
@@ -167,7 +172,7 @@ func TestExecuteWithNilUsesOSArgs(t *testing.T) {
 func TestExecuteDelegatesToExecuteWithNil(t *testing.T) {
 	resetCLIPackageGlobals(t)
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module cliexec2\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module cliexec2\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)
@@ -225,30 +230,30 @@ func TestCmdSetupRunE(t *testing.T) {
 func TestCmdManualCollectRunE(t *testing.T) {
 	resetCLIPackageGlobals(t)
 	t.Cleanup(func() { resetCLIPackageGlobals(t) })
-	cap := &captureColl{}
+	capturedColl := &captureColl{}
 	root := CreateRootCmd(&app.Services{
-		Benchmark: noopBench{}, Collector: cap, Tracker: noopTrack{}, Tools: noopTools{}, Setup: noopSetup{},
+		Benchmark: noopBench{}, Collector: capturedColl, Tracker: noopTrack{}, Tools: noopTools{}, Setup: noopSetup{},
 	})
 	root.SetArgs([]string{internal.MANUALCMD, "--tag", "t1", "--group-by-package", "a.prof", "b.prof"})
 	if err := root.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if cap.tag != "t1" || !cap.group || len(cap.files) != 2 || cap.files[0] != "a.prof" {
-		t.Fatalf("%+v", cap)
+	if capturedColl.tag != "t1" || !capturedColl.group || len(capturedColl.files) != 2 || capturedColl.files[0] != "a.prof" {
+		t.Fatalf("%+v", capturedColl)
 	}
 }
 
 func TestCmdAutoBenchmarkRunE(t *testing.T) {
 	resetCLIPackageGlobals(t)
 	t.Cleanup(func() { resetCLIPackageGlobals(t) })
-	cap := &captureBench{}
+	capturedBench := &captureBench{}
 	root := CreateRootCmd(&app.Services{
-		Benchmark: cap, Collector: noopColl{}, Tracker: noopTrack{}, Tools: noopTools{}, Setup: noopSetup{},
+		Benchmark: capturedBench, Collector: noopColl{}, Tracker: noopTrack{}, Tools: noopTools{}, Setup: noopSetup{},
 	})
 	root.SetArgs([]string{
 		internal.AUTOCMD,
 		"--benchmarks", "B1",
-		"--profiles", "cpu,memory",
+		"--profiles", testProfCPU + "," + testProfMemory,
 		"--tag", "tg",
 		"--count", "2",
 		"--group-by-package",
@@ -256,27 +261,27 @@ func TestCmdAutoBenchmarkRunE(t *testing.T) {
 	if err := root.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if cap.tag != "tg" || cap.count != 2 || !cap.group || len(cap.bench) != 1 || cap.bench[0] != "B1" {
-		t.Fatalf("%+v", cap)
+	if capturedBench.tag != "tg" || capturedBench.count != 2 || !capturedBench.group || len(capturedBench.bench) != 1 || capturedBench.bench[0] != "B1" {
+		t.Fatalf("%+v", capturedBench)
 	}
-	if len(cap.prof) != 2 || cap.prof[0] != "cpu" || cap.prof[1] != "memory" {
-		t.Fatalf("%+v", cap)
+	if len(capturedBench.prof) != 2 || capturedBench.prof[0] != testProfCPU || capturedBench.prof[1] != testProfMemory {
+		t.Fatalf("%+v", capturedBench)
 	}
 }
 
 func TestCmdTrackAutoRunE(t *testing.T) {
 	resetCLIPackageGlobals(t)
 	t.Cleanup(func() { resetCLIPackageGlobals(t) })
-	cap := &captureTrack{}
+	capturedTrack := &captureTrack{}
 	root := CreateRootCmd(&app.Services{
-		Benchmark: noopBench{}, Collector: noopColl{}, Tracker: cap, Tools: noopTools{}, Setup: noopSetup{},
+		Benchmark: noopBench{}, Collector: noopColl{}, Tracker: capturedTrack, Tools: noopTools{}, Setup: noopSetup{},
 	})
 	root.SetArgs([]string{
 		"track", internal.TrackAutoCMD,
 		"--" + baseTagFlag, "base1",
 		"--" + currentTagFlag, "cur1",
 		"--" + benchNameFlag, "BenchX",
-		"--profile-type", "cpu",
+		"--profile-type", testProfCPU,
 		"--output-format", "summary",
 		"--fail-on-regression",
 		"--regression-threshold", "5",
@@ -284,11 +289,11 @@ func TestCmdTrackAutoRunE(t *testing.T) {
 	if err := root.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	s := cap.auto
+	s := capturedTrack.auto
 	if s == nil {
 		t.Fatal("nil selections")
 	}
-	if s.Baseline != "base1" || s.Current != "cur1" || s.BenchmarkName != "BenchX" || s.ProfileType != "cpu" ||
+	if s.Baseline != "base1" || s.Current != "cur1" || s.BenchmarkName != "BenchX" || s.ProfileType != testProfCPU ||
 		s.OutputFormat != "summary" || !s.UseThreshold || s.RegressionThreshold != 5 || s.IsManual {
 		t.Fatalf("%+v", s)
 	}
@@ -297,9 +302,9 @@ func TestCmdTrackAutoRunE(t *testing.T) {
 func TestCmdTrackManualRunE(t *testing.T) {
 	resetCLIPackageGlobals(t)
 	t.Cleanup(func() { resetCLIPackageGlobals(t) })
-	cap := &captureTrack{}
+	capturedTrack := &captureTrack{}
 	root := CreateRootCmd(&app.Services{
-		Benchmark: noopBench{}, Collector: noopColl{}, Tracker: cap, Tools: noopTools{}, Setup: noopSetup{},
+		Benchmark: noopBench{}, Collector: noopColl{}, Tracker: capturedTrack, Tools: noopTools{}, Setup: noopSetup{},
 	})
 	root.SetArgs([]string{
 		"track", internal.TrackManualCMD,
@@ -310,7 +315,7 @@ func TestCmdTrackManualRunE(t *testing.T) {
 	if err := root.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	s := cap.manual
+	s := capturedTrack.manual
 	if s == nil || !s.IsManual || s.OutputFormat != "detailed-json" {
 		t.Fatalf("%+v", s)
 	}
@@ -319,29 +324,29 @@ func TestCmdTrackManualRunE(t *testing.T) {
 func TestCmdToolsBenchstatAndQcachegrindRunE(t *testing.T) {
 	resetCLIPackageGlobals(t)
 	t.Cleanup(func() { resetCLIPackageGlobals(t) })
-	cap := &captureTools{}
+	capturedTools := &captureTools{}
 	root := CreateRootCmd(&app.Services{
-		Benchmark: noopBench{}, Collector: noopColl{}, Tracker: noopTrack{}, Tools: cap, Setup: noopSetup{},
+		Benchmark: noopBench{}, Collector: noopColl{}, Tracker: noopTrack{}, Tools: capturedTools, Setup: noopSetup{},
 	})
 	root.SetArgs([]string{"tools", "benchstat", "--" + baseTagFlag, "a", "--" + currentTagFlag, "b", "--" + benchNameFlag, "B"})
 	if err := root.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if cap.base != "a" || cap.cur != "b" || cap.bench != "B" {
-		t.Fatalf("%+v", cap)
+	if capturedTools.base != "a" || capturedTools.cur != "b" || capturedTools.bench != "B" {
+		t.Fatalf("%+v", capturedTools)
 	}
 
 	resetCLIPackageGlobals(t)
-	cap2 := &captureTools{}
+	capturedTools2 := &captureTools{}
 	root2 := CreateRootCmd(&app.Services{
-		Benchmark: noopBench{}, Collector: noopColl{}, Tracker: noopTrack{}, Tools: cap2, Setup: noopSetup{},
+		Benchmark: noopBench{}, Collector: noopColl{}, Tracker: noopTrack{}, Tools: capturedTools2, Setup: noopSetup{},
 	})
 	root2.SetArgs([]string{"tools", "qcachegrind", "--" + tagFlag, "t9", "--" + benchNameFlag, "BB", "--profiles", "mutex"})
 	if err := root2.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if cap2.qTag != "t9" || cap2.qBench != "BB" || cap2.qProf != "mutex" {
-		t.Fatalf("%+v", cap2)
+	if capturedTools2.qTag != "t9" || capturedTools2.qBench != "BB" || capturedTools2.qProf != "mutex" {
+		t.Fatalf("%+v", capturedTools2)
 	}
 }
 
@@ -349,7 +354,7 @@ func TestCmdTuiRunEDiscoverError(t *testing.T) {
 	resetCLIPackageGlobals(t)
 	t.Cleanup(func() { resetCLIPackageGlobals(t) })
 	rootMod := t.TempDir()
-	if err := os.WriteFile(filepath.Join(rootMod, "go.mod"), []byte("module tuierr\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(rootMod, "go.mod"), []byte("module tuierr\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(rootMod)
@@ -366,7 +371,7 @@ func TestCmdTuiRunENoBenchmarks(t *testing.T) {
 	resetCLIPackageGlobals(t)
 	t.Cleanup(func() { resetCLIPackageGlobals(t) })
 	rootMod := t.TempDir()
-	if err := os.WriteFile(filepath.Join(rootMod, "go.mod"), []byte("module tuiempty\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(rootMod, "go.mod"), []byte("module tuiempty\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(rootMod)
@@ -383,7 +388,7 @@ func TestCmdTuiTrackRunENeedsTwoTags(t *testing.T) {
 	resetCLIPackageGlobals(t)
 	t.Cleanup(func() { resetCLIPackageGlobals(t) })
 	rootMod := t.TempDir()
-	if err := os.WriteFile(filepath.Join(rootMod, "go.mod"), []byte("module tuitrack\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(rootMod, "go.mod"), []byte("module tuitrack\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(rootMod)
@@ -401,12 +406,12 @@ func TestSetGlobalTrackingVariables(t *testing.T) {
 		Baseline:            "b",
 		Current:             "c",
 		BenchmarkName:       "bn",
-		ProfileType:         "cpu",
+		ProfileType:         testProfCPU,
 		OutputFormat:        "summary-json",
 		UseThreshold:        true,
 		RegressionThreshold: 4.5,
 	})
-	if Baseline != "b" || Current != "c" || benchmarkName != "bn" || profileType != "cpu" ||
+	if Baseline != "b" || Current != "c" || benchmarkName != "bn" || profileType != testProfCPU ||
 		outputFormat != "summary-json" || !failOnRegression || regressionThreshold != 4.5 {
 		t.Fatal()
 	}

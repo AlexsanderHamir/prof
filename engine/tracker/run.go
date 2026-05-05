@@ -52,8 +52,8 @@ func runTrack(selections *Selections) error {
 		return nil
 	}
 
-	if err := report.ChooseOutputFormat(selections.OutputFormat); err != nil {
-		return fmt.Errorf("write report (%s): %w", selections.OutputFormat, err)
+	if formatErr := report.ChooseOutputFormat(selections.OutputFormat); formatErr != nil {
+		return fmt.Errorf("write report (%s): %w", selections.OutputFormat, formatErr)
 	}
 	return applyCIConfiguration(report, selections)
 }

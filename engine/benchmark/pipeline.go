@@ -41,8 +41,8 @@ func runBenchAndGetProfiles(benchArgs *internal.BenchArgs, benchmarkConfigs map[
 			BenchmarkConfig: functionFilter,
 		}
 
-		if err := collectProfileFunctions(args); err != nil {
-			return fmt.Errorf("failed to analyze profile functions for %s: %w", benchmarkName, err)
+		if collErr := collectProfileFunctions(args); collErr != nil {
+			return fmt.Errorf("failed to analyze profile functions for %s: %w", benchmarkName, collErr)
 		}
 
 		slog.Info("Completed pipeline for benchmark", "Benchmark", benchmarkName)

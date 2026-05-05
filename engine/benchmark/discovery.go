@@ -12,7 +12,7 @@ func scanForBenchmarks(root string) ([]string, error) {
 	seen := make(map[string]struct{})
 	var names []string
 
-	err := walkTestGoFiles(root, func(path string, data []byte) error {
+	err := walkTestGoFiles(root, func(_ string, data []byte) error {
 		matches := pattern.FindAllSubmatch(data, -1)
 		for _, m := range matches {
 			if len(m) >= minCaptureGroups {
@@ -40,4 +40,3 @@ func handleDirectory(path string) error {
 	}
 	return nil
 }
-

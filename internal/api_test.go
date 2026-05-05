@@ -16,7 +16,7 @@ func TestGetScannerMissingFile(t *testing.T) {
 
 func TestGetScannerReadsFile(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "x.txt")
-	if err := os.WriteFile(p, []byte("line1\nline2\n"), 0o644); err != nil {
+	if err := os.WriteFile(p, []byte("line1\nline2\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	sc, f, err := GetScanner(p)
@@ -29,7 +29,7 @@ func TestGetScannerReadsFile(t *testing.T) {
 	}
 }
 
-func TestPrintConfigurationWithAndWithoutFilters(t *testing.T) {
+func TestPrintConfigurationWithAndWithoutFilters(_ *testing.T) {
 	PrintConfiguration(&BenchArgs{
 		Benchmarks: []string{"B"},
 		Profiles:   []string{"cpu"},
@@ -43,11 +43,11 @@ func TestPrintConfigurationWithAndWithoutFilters(t *testing.T) {
 
 func TestLoadFromFileSuccess(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module cfg\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module cfg\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	cfgJSON := `{"function_collection_filter":{"B":{"include_prefixes":["x"]}}}`
-	if err := os.WriteFile(filepath.Join(root, ConfigFilename), []byte(cfgJSON), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, ConfigFilename), []byte(cfgJSON), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)
@@ -70,7 +70,7 @@ func TestLoadFromFileModuleRootFailure(t *testing.T) {
 
 func TestLoadFromFileMissingConfig(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module mc\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module mc\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)
@@ -82,10 +82,10 @@ func TestLoadFromFileMissingConfig(t *testing.T) {
 
 func TestLoadFromFileInvalidJSON(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module badjson\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module badjson\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, ConfigFilename), []byte("{not json"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, ConfigFilename), []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)
@@ -97,7 +97,7 @@ func TestLoadFromFileInvalidJSON(t *testing.T) {
 
 func TestCreateTemplateWritesFile(t *testing.T) {
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module tmpl\n\ngo 1.24.3\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module tmpl\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)
