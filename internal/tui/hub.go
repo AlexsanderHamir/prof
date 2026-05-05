@@ -33,8 +33,6 @@ type hubModel struct {
 	result   MainAction
 	items    []mainItem
 	showHelp bool
-	width    int
-	height   int
 }
 
 var (
@@ -83,11 +81,6 @@ func (m *hubModel) Init() tea.Cmd {
 
 func (m *hubModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		return m, nil
-
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
