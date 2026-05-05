@@ -3,9 +3,11 @@ package tests
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/internal"
@@ -18,7 +20,7 @@ func skipSlowIntegration(t *testing.T) {
 	}
 }
 
-func TestConfig(t *testing.T) {
+func TestConfig(t *testing.T) { //nolint:funlen // scenario matrix
 	skipSlowIntegration(t)
 	label := "WithFunctionFilter"
 	t.Run(label, func(t *testing.T) {
@@ -355,8 +357,8 @@ func TestManualCommand(t *testing.T) {
 		cmd := exec.Command(binaryPath, args...)
 		cmd.Dir = filepath.Join(root, testDirName)
 
-		var stdout, stderr bytes.Buffer
-		cmd.Stdout = &stdout
+		var stderr bytes.Buffer
+		cmd.Stdout = io.Discard
 		cmd.Stderr = &stderr
 
 		err = cmd.Run()
@@ -364,13 +366,17 @@ func TestManualCommand(t *testing.T) {
 			t.Error(err)
 		}
 
-		if stdout.Len() > 0 {
-			fmt.Println(stdout.String())
+		if !strings.Contains(stderr.String(), internal.InfoCollectionSuccess) {
+			t.Fatalf("expected stderr to contain success message; stderr=%q", stderr.String())
+		}
+
+		benchRoot := filepath.Join(root, testDirName, internal.MainDirOutput, tag)
+		if fi, statErr := os.Stat(benchRoot); statErr != nil || !fi.IsDir() {
+			t.Fatalf("expected bench output directory %s: %v", benchRoot, statErr)
 		}
 	})
 }
 
-// TestTrackerBasicRun is not inspecting the results, but just ensuring that no errors occur when the command is run.
 func TestTrackerBasicRun(t *testing.T) {
 	skipSlowIntegration(t)
 	// 1. Set up
@@ -412,28 +418,40 @@ func TestTrackerBasicRun(t *testing.T) {
 			"--output-format", "summary",
 		}
 
-		shouldContinue := runProf(t, envFullPath, args, "", checkSuccessMessage)
-		if !shouldContinue {
-			t.Error("runProf failed")
+		stdout, stderr, ok := runProfCaptured(t, envFullPath, args, "", checkSuccessMessage)
+		if !ok {
+			t.Fatal("runProf failed")
+		}
+		combined := stdout + stderr
+		if !strings.Contains(stdout, "Performance Tracking Summary") &&
+			!strings.Contains(stdout, "Total Functions Analyzed") &&
+			!strings.Contains(combined, "No function changes detected") {
+			t.Fatalf("unexpected track output; stdout=%q stderr=%q", stdout, stderr)
 		}
 	})
 
 	label = "Manual"
 	baseTag := "bench/tag1/bin/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.out"
-	Current := "bench/tag2/bin/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.out"
+	currentProfile := "bench/tag2/bin/BenchmarkStringProcessor/BenchmarkStringProcessor_cpu.out"
 	outputFormat := "summary"
 	t.Run(label, func(t *testing.T) {
 		args := []string{
 			"track",
 			internal.MANUALCMD,
 			"--base", baseTag,
-			"--current", Current,
+			"--current", currentProfile,
 			"--output-format", outputFormat,
 		}
 
-		shouldContinue := runProf(t, envFullPath, args, "", checkSuccessMessage)
-		if !shouldContinue {
-			t.Error("runProf failed")
+		stdout, stderr, ok := runProfCaptured(t, envFullPath, args, "", checkSuccessMessage)
+		if !ok {
+			t.Fatal("runProf failed")
+		}
+		combined := stdout + stderr
+		if !strings.Contains(stdout, "Performance Tracking Summary") &&
+			!strings.Contains(stdout, "Total Functions Analyzed") &&
+			!strings.Contains(combined, "No function changes detected") {
+			t.Fatalf("unexpected track output; stdout=%q stderr=%q", stdout, stderr)
 		}
 	})
 }

@@ -107,6 +107,7 @@ func createPackage(dir string) error {
 }
 
 // BenchmarkContent is embedded benchmark test source used when creating synthetic modules.
+//
 //go:embed assets/benchmark_test.go.txt
 var BenchmarkContent string
 
@@ -181,9 +182,9 @@ func setupEnviroment(t *testing.T, envDir string) {
 }
 
 var (
-	integrationProfOnce   sync.Once
-	integrationProfCached string
-	integrationProfErr    error
+	integrationProfOnce     sync.Once
+	integrationProfCached   string
+	errIntegrationProfBuild error
 )
 
 // profCacheDir is a single build output reused for all integration scenarios in one `go test` run.
@@ -208,7 +209,7 @@ func copyProfBinary(src, dst string) error {
 		return err
 	}
 	if runtime.GOOS != "windows" {
-		if st, err := os.Stat(src); err == nil {
+		if st, statErr := os.Stat(src); statErr == nil {
 			_ = os.Chmod(dst, st.Mode()&0o777)
 		}
 	}
@@ -220,7 +221,7 @@ func ensureCachedProfBinary(projectRoot string) (string, error) {
 	integrationProfOnce.Do(func() {
 		cacheDir := filepath.Join(projectRoot, testDirName, profCacheDir)
 		if err := os.MkdirAll(cacheDir, internal.PermDir); err != nil {
-			integrationProfErr = err
+			errIntegrationProfBuild = err
 			return
 		}
 		out := filepath.Join(cacheDir, profBinaryName())
@@ -229,12 +230,12 @@ func ensureCachedProfBinary(projectRoot string) (string, error) {
 		buildCmd.Dir = cmdProfDir
 		buildOutput, err := buildCmd.CombinedOutput()
 		if err != nil {
-			integrationProfErr = fmt.Errorf("failed to build prof binary: %w\nOutput: %s", err, buildOutput)
+			errIntegrationProfBuild = fmt.Errorf("failed to build prof binary: %w\nOutput: %s", err, buildOutput)
 			return
 		}
 		integrationProfCached = out
 	})
-	return integrationProfCached, integrationProfErr
+	return integrationProfCached, errIntegrationProfBuild
 }
 
 func setUpProf(t *testing.T, projectRoot, envDir string) {
@@ -250,7 +251,7 @@ func setUpProf(t *testing.T, projectRoot, envDir string) {
 	}
 }
 
-func runProf(t *testing.T, envFullPath string, args []string, expectedErrMessage string, checkSuccessMessage bool) (shouldContinue bool) {
+func newProfCmd(t *testing.T, envFullPath string, args []string) *exec.Cmd {
 	t.Helper()
 
 	profBinary := filepath.Join(envFullPath, profBinaryName())
@@ -260,25 +261,36 @@ func runProf(t *testing.T, envFullPath string, args []string, expectedErrMessage
 
 	cmd := exec.Command(profBinary, args...)
 	cmd.Dir = envFullPath
+	return cmd
+}
 
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+// runProfCaptured runs prof like runProf but returns stdout/stderr for assertions.
+func runProfCaptured(t *testing.T, envFullPath string, args []string, expectedErrMessage string, checkSuccessMessage bool) (stdout, stderr string, shouldContinue bool) {
+	t.Helper()
+
+	var stdoutB, stderrB bytes.Buffer
+	cmd := newProfCmd(t, envFullPath, args)
+	cmd.Stdout = &stdoutB
+	cmd.Stderr = &stderrB
 
 	err := cmd.Run()
 	if err != nil {
-		shouldContinue = handleCommandError(t, err, &stdout, &stderr, expectedErrMessage)
-		if !shouldContinue {
-			return false
-		}
+		shouldContinue = handleCommandError(t, err, &stdoutB, &stderrB, expectedErrMessage)
+		return stdoutB.String(), stderrB.String(), shouldContinue
 	}
 
 	successMessage := internal.InfoCollectionSuccess
-	if checkSuccessMessage && !strings.Contains(stderr.String(), successMessage) {
+	if checkSuccessMessage && !strings.Contains(stderrB.String(), successMessage) {
 		t.Fatal("Expected success message not found")
 	}
 
-	return true
+	return stdoutB.String(), stderrB.String(), true
+}
+
+func runProf(t *testing.T, envFullPath string, args []string, expectedErrMessage string, checkSuccessMessage bool) (shouldContinue bool) {
+	t.Helper()
+	_, _, ok := runProfCaptured(t, envFullPath, args, expectedErrMessage, checkSuccessMessage)
+	return ok
 }
 
 func handleCommandError(t *testing.T, err error, stdout, stderr *bytes.Buffer, expectedErrMessage string) bool {
