@@ -62,6 +62,12 @@ go build -o prof ./cmd/prof
 
 4. **Tests** — Prefer tests for bug fixes and new behavior; integration tests when touching CLI/output layout.
 
+   The integration suite under `tests/` reads committed pprof binaries from `tests/assets/fixtures/` to keep filter-behavior tests deterministic and fast. When you change `tests/assets/utils.go.txt` or `tests/assets/benchmark_test.go.txt`, regenerate the fixtures with:
+
+   ```bash
+   go generate ./tests/...
+   ```
+
 5. **Documentation** — Update README, CODEBASE_DESIGN, or CLI help when user-visible behavior changes.
 
 6. **Pull requests** — Clear summary; reference issues (`Closes #123`).
