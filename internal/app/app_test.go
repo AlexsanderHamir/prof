@@ -10,7 +10,7 @@ import (
 
 type stubBenchmark struct{}
 
-func (stubBenchmark) RunBenchmarks(_, _ []string, _ string, _ int, _ bool) error { return nil }
+func (stubBenchmark) RunBenchmarks(_, _ []string, _ string, _ int, _, _, _ bool) error { return nil }
 func (stubBenchmark) DiscoverBenchmarks(_ string) ([]string, error)             { return nil, nil }
 func (stubBenchmark) SupportedProfiles() []string                               { return nil }
 
@@ -84,10 +84,10 @@ func TestDefaultNonNil(t *testing.T) {
 
 func TestDefaultBenchmarkDelegates(t *testing.T) {
 	d := Default()
-	if d.Benchmark.RunBenchmarks(nil, nil, "", 0, false) == nil {
+	if d.Benchmark.RunBenchmarks(nil, nil, "", 0, false, false, false) == nil {
 		t.Fatal("expected error for empty benchmarks")
 	}
-	if d.Benchmark.RunBenchmarks([]string{"B"}, nil, "", 0, false) == nil {
+	if d.Benchmark.RunBenchmarks([]string{"B"}, nil, "", 0, false, false, false) == nil {
 		t.Fatal("expected error for empty profiles")
 	}
 	if p := d.Benchmark.SupportedProfiles(); p == nil {

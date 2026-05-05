@@ -4,7 +4,7 @@ import "github.com/AlexsanderHamir/prof/engine/tracker"
 
 // Benchmark runs the auto benchmark pipeline and discovers benchmarks in the module.
 type Benchmark interface {
-	RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupByPackage bool) error
+	RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupByPackage bool, lenientProfiles bool, skipPNG bool) error
 	DiscoverBenchmarks(scope string) ([]string, error)
 	SupportedProfiles() []string
 }

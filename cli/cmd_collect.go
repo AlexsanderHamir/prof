@@ -36,7 +36,7 @@ func newAutoBenchmarkCmd(svc *app.Services) *cobra.Command {
 		Short:   "Wraps `go test` and `pprof` to benchmark code and gather profiling data for performance investigations.",
 		Example: example,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			return svc.Benchmark.RunBenchmarks(benchmarks, profiles, tag, count, groupByPackage)
+			return svc.Benchmark.RunBenchmarks(benchmarks, profiles, tag, count, groupByPackage, lenientProfiles, skipPNG)
 		},
 	}
 	cmd.Flags().StringSliceVar(&benchmarks, benchFlag, []string{}, `Benchmarks to run (e.g., "BenchmarkGenPool")"`)
@@ -44,6 +44,8 @@ func newAutoBenchmarkCmd(svc *app.Services) *cobra.Command {
 	cmd.Flags().StringVar(&tag, tagFlag, "", "The tag is used to organize the results")
 	cmd.Flags().IntVar(&count, countFlag, 0, "Number of runs")
 	cmd.Flags().BoolVar(&groupByPackage, "group-by-package", false, "Group profile data by package/module and save as organized text file")
+	cmd.Flags().BoolVar(&lenientProfiles, "lenient-profiles", false, "If a profile binary is missing after bench, skip it instead of failing (later steps run only for profiles present on disk)")
+	cmd.Flags().BoolVar(&skipPNG, "skip-png", false, "Allow the run to succeed even when PNG generation fails (e.g. Graphviz dot not installed); default fails on PNG errors")
 	_ = cmd.MarkFlagRequired(benchFlag)
 	_ = cmd.MarkFlagRequired(profileFlag)
 	_ = cmd.MarkFlagRequired(tagFlag)

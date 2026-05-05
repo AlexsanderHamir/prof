@@ -26,11 +26,13 @@ func resetCLIPackageGlobals(t *testing.T) {
 	failOnRegression = false
 	regressionThreshold = 0
 	groupByPackage = false
+	lenientProfiles = false
+	skipPNG = false
 }
 
 type noopBench struct{}
 
-func (noopBench) RunBenchmarks(_, _ []string, _ string, _ int, _ bool) error { return nil }
+func (noopBench) RunBenchmarks(_, _ []string, _ string, _ int, _, _, _ bool) error { return nil }
 func (noopBench) DiscoverBenchmarks(_ string) ([]string, error)              { return nil, nil }
 func (noopBench) SupportedProfiles() []string                                { return nil }
 
@@ -89,7 +91,7 @@ type captureBench struct {
 	group       bool
 }
 
-func (c *captureBench) RunBenchmarks(bench, prof []string, tag string, count int, groupByPackage bool) error {
+func (c *captureBench) RunBenchmarks(bench, prof []string, tag string, count int, groupByPackage bool, lenientProfiles bool, skipPNG bool) error {
 	c.bench = append([]string(nil), bench...)
 	c.prof = append([]string(nil), prof...)
 	c.tag = tag

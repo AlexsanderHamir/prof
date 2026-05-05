@@ -7,7 +7,7 @@ import (
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
-func runBenchAndGetProfiles(benchArgs *internal.BenchArgs, benchmarkConfigs map[string]internal.FunctionFilter, groupByPackage bool) error {
+func runBenchAndGetProfiles(benchArgs *internal.BenchArgs, benchmarkConfigs map[string]internal.FunctionFilter, groupByPackage bool, lenientProfiles bool, skipPNG bool) error {
 	slog.Info("Starting benchmark pipeline...")
 
 	var functionFilter internal.FunctionFilter
@@ -23,7 +23,8 @@ func runBenchAndGetProfiles(benchArgs *internal.BenchArgs, benchmarkConfigs map[
 		}
 
 		slog.Info("Processing profiles", "Benchmark", benchmarkName)
-		if err := processProfiles(benchmarkName, benchArgs.Profiles, benchArgs.Tag, groupByPackage); err != nil {
+		profilesReady, err := processProfiles(benchmarkName, benchArgs.Profiles, benchArgs.Tag, groupByPackage, lenientProfiles, skipPNG)
+		if err != nil {
 			return fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err)
 		}
 
@@ -35,7 +36,7 @@ func runBenchAndGetProfiles(benchArgs *internal.BenchArgs, benchmarkConfigs map[
 
 		args := &internal.CollectionArgs{
 			Tag:             benchArgs.Tag,
-			Profiles:        benchArgs.Profiles,
+			Profiles:        profilesReady,
 			BenchmarkName:   benchmarkName,
 			BenchmarkConfig: functionFilter,
 		}

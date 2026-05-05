@@ -17,8 +17,12 @@ var (
 	failOnRegression    bool
 	regressionThreshold float64
 
-	// Profile organization flags.
+	// Profile organization flags (also used by manual collect for group-by-package).
 	groupByPackage bool
+
+	// auto Benchmark-only flags (see cmd_collect.go).
+	lenientProfiles bool
+	skipPNG         bool
 )
 
 const (
