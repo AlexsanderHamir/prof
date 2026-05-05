@@ -77,7 +77,7 @@ const (
 	testDirName      = "tests"
 	tag              = "test_tag"
 	// Multiple bench counts keep CPU sampling + filtering stable on CI (esp. WithFunctionFilterPlusIgnore).
-	count = "10"
+	count        = "10"
 	cpuProfile   = "cpu"
 	memProfile   = "memory"
 	blockProfile = "block"
