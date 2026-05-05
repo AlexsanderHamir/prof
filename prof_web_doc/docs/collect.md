@@ -1,5 +1,7 @@
 # Collect profiling data
 
+To collect **without memorizing flags**, use **`prof ui`** (main menu → collect) or **`prof tui`** (collect-only prompts). The sections below document **`prof auto`** and **`prof manual`** for scripts, CI, and advanced cases.
+
 ## Commands
 
 | Command | Purpose |

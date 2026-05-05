@@ -1,5 +1,7 @@
 # Compare runs
 
+To compare two tags **without memorizing flags**, use **`prof ui`** (main menu → compare) or **`prof tui track`**. The sections below document **`prof track auto`** and **`prof track manual`** for scripts, CI, and file-based comparisons.
+
 ## Commands
 
 | Command | When to use it |

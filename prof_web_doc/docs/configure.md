@@ -1,5 +1,7 @@
 # Configure collection
 
+You can create the template with **`prof setup`** or from **`prof ui`** → **Create configuration template** (same result).
+
 ## Create the template
 
 From the module root:

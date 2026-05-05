@@ -1,6 +1,8 @@
-# Interactive TUI
+# Interactive UI and TUI
 
-Use the interactive commands when you prefer menus to typing benchmark names and flags. They call the same engines as the non-interactive commands and write the same `bench/<tag>/` layout.
+Prof is designed so **menus are the default path** and **memorizing flags is optional**. Use the commands in this article from a normal interactive terminal; for automation, use `prof auto`, `prof track`, and the other subcommands directly (see [Collect profiling data](collect.md), [Compare runs](compare.md), and the root help: `prof -h`).
+
+The interactive flows call the **same engines** as the flag commands and write the same `bench/<tag>/` layout.
 
 ## Main menu: prof ui (recommended)
 
@@ -9,6 +11,8 @@ prof ui
 ```
 
 Requires an interactive terminal (stdin and stdout must be TTYs). If you are automating Prof, use `prof auto`, `prof track`, and other subcommands instead.
+
+The **main menu** is a **Bubble Tea** full-screen UI (arrow keys, Enter, `?` for help, `q` or Esc to quit). After you pick an action, Prof uses **prompted questions** (Survey) for details—same information you would pass as flags.
 
 The menu offers:
 

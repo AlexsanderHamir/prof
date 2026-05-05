@@ -1,6 +1,6 @@
 # Optional tools
 
-Subcommands under `prof tools` operate on data you already collected.
+Subcommands under `prof tools` operate on data you already collected. You can also run **benchstat** and **qcachegrind** from **`prof ui`** → **Tools** without typing these commands or flags.
 
 ## prof tools benchstat
 

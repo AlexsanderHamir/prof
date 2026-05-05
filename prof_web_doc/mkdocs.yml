@@ -1,5 +1,5 @@
 site_name: Prof documentation
-site_description: Command-line reference for Go benchmark profiling, organized output, and regression comparison.
+site_description: Go benchmark profiling with prof ui and TUI menus, organized bench output, and regression comparison—flags optional for CI.
 site_url: https://alexsanderhamir.github.io/prof/
 
 repo_url: https://github.com/AlexsanderHamir/prof
@@ -47,7 +47,7 @@ nav:
   - Collect profiling data: collect.md
   - Configure collection: configure.md
   - Compare runs: compare.md
-  - Interactive TUI: tui.md
+  - Interactive UI and TUI: tui.md
   - CI and regressions: ci.md
   - Optional tools: tools.md
 

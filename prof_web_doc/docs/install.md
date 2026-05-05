@@ -20,6 +20,12 @@ Verify:
 prof --help
 ```
 
+Try interactive mode from your module root (see [Quickstart](quickstart.md) and [Interactive UI and TUI](tui.md)):
+
+```bash
+prof ui
+```
+
 ## Shell completion (optional)
 
 Prof can emit completion scripts for bash, zsh, fish, and PowerShell:
