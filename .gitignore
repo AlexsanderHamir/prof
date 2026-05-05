@@ -1,4 +1,6 @@
 tasks.md
 *prof
-/Enviroment*\ /   
-
+/Enviroment*\ /
+tests/.integration_prof_build/
+tests/prof.exe
+tests/bench/
