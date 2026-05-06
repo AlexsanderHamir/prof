@@ -75,88 +75,119 @@ func textContent(parts []progressContent) string {
 	return b.String()
 }
 
+// streamAccum tracks NDJSON stream-json state while scanning stdout.
+type streamAccum struct {
+	out               parsedOutput
+	gotResult         bool
+	lastDecErr        error
+	lastAssistantText string
+	lastSessionID     string
+	openToolCalls     map[string]struct{}
+	openAnonymous     int
+}
+
+func trySingleResultJSON(stdout []byte) (parsedOutput, bool) {
+	var single parsedOutput
+	if err := json.Unmarshal(stdout, &single); err == nil && single.Type == eventResult {
+		return single, true
+	}
+	return parsedOutput{}, false
+}
+
+func (a *streamAccum) noteSessionID(head streamEventHead) {
+	if a.lastSessionID == "" {
+		a.lastSessionID = strings.TrimSpace(head.SessionID)
+	}
+}
+
+func (a *streamAccum) ingestSystem(head streamEventHead) {
+	if head.Subtype == subtypeInit && a.out.ResolvedModel == "" {
+		a.out.ResolvedModel = strings.TrimSpace(head.Model)
+	}
+	a.noteSessionID(head)
+}
+
+func (a *streamAccum) ingestAssistant(head streamEventHead) {
+	if msg := strings.TrimSpace(textContent(head.Message.Content)); msg != "" {
+		a.lastAssistantText = msg
+	}
+	a.noteSessionID(head)
+}
+
+func (a *streamAccum) ingestToolCall(head streamEventHead) {
+	updateOpenToolCalls(a.openToolCalls, &a.openAnonymous, head)
+	a.noteSessionID(head)
+}
+
+func (a *streamAccum) ingestResult(raw []byte) {
+	var evt parsedOutput
+	if err := json.Unmarshal(raw, &evt); err != nil {
+		a.lastDecErr = err
+		return
+	}
+	resolved := a.out.ResolvedModel
+	a.out = evt
+	a.out.ResolvedModel = resolved
+	a.gotResult = true
+}
+
+func (a *streamAccum) ingest(raw []byte) {
+	var head streamEventHead
+	if err := json.Unmarshal(raw, &head); err != nil {
+		a.lastDecErr = err
+		return
+	}
+	switch head.Type {
+	case eventSystem:
+		a.ingestSystem(head)
+	case eventAssistant:
+		a.ingestAssistant(head)
+	case eventToolCall:
+		a.ingestToolCall(head)
+	case eventResult:
+		a.ingestResult(raw)
+	}
+}
+
+func (a *streamAccum) finishWithoutResult() (parsedOutput, error) {
+	if a.lastDecErr != nil {
+		return parsedOutput{}, fmt.Errorf("decode stdout: %w", a.lastDecErr)
+	}
+	if open := openToolCallCount(a.openToolCalls, a.openAnonymous); open > 0 {
+		return parsedOutput{}, fmt.Errorf("stream-json: no terminal result event; %d open tool call(s)", open)
+	}
+	if a.lastAssistantText != "" {
+		return parsedOutput{
+			Type:                  eventResult,
+			Subtype:               subtypeSuccess,
+			Result:                a.lastAssistantText,
+			SessionID:             a.lastSessionID,
+			ResolvedModel:         a.out.ResolvedModel,
+			MissingTerminalResult: true,
+		}, nil
+	}
+	return parsedOutput{}, errors.New("stream-json: no terminal result event")
+}
+
 func parseStdout(stdout []byte) (parsedOutput, error) {
 	stdout = bytes.TrimSpace(stdout)
 	if len(stdout) == 0 {
 		return parsedOutput{}, errors.New("empty stdout")
 	}
-
-	var single parsedOutput
-	if err := json.Unmarshal(stdout, &single); err == nil && single.Type == eventResult {
+	if single, ok := trySingleResultJSON(stdout); ok {
 		return single, nil
 	}
-
-	var (
-		out               parsedOutput
-		gotResult         bool
-		lastDecErr        error
-		lastAssistantText string
-		lastSessionID     string
-		openToolCalls     = map[string]struct{}{}
-		openAnonymous     int
-	)
+	a := &streamAccum{openToolCalls: map[string]struct{}{}}
 	for _, raw := range splitNDJSON(stdout) {
 		if len(raw) == 0 {
 			continue
 		}
-		var head streamEventHead
-		if err := json.Unmarshal(raw, &head); err != nil {
-			lastDecErr = err
-			continue
-		}
-		switch head.Type {
-		case eventSystem:
-			if head.Subtype == subtypeInit && out.ResolvedModel == "" {
-				out.ResolvedModel = strings.TrimSpace(head.Model)
-			}
-			if lastSessionID == "" {
-				lastSessionID = strings.TrimSpace(head.SessionID)
-			}
-		case eventAssistant:
-			if msg := strings.TrimSpace(textContent(head.Message.Content)); msg != "" {
-				lastAssistantText = msg
-			}
-			if lastSessionID == "" {
-				lastSessionID = strings.TrimSpace(head.SessionID)
-			}
-		case eventToolCall:
-			updateOpenToolCalls(openToolCalls, &openAnonymous, head)
-			if lastSessionID == "" {
-				lastSessionID = strings.TrimSpace(head.SessionID)
-			}
-		case eventResult:
-			var evt parsedOutput
-			if err := json.Unmarshal(raw, &evt); err != nil {
-				lastDecErr = err
-				continue
-			}
-			resolved := out.ResolvedModel
-			out = evt
-			out.ResolvedModel = resolved
-			gotResult = true
-		}
+		a.ingest(raw)
 	}
-
-	if !gotResult {
-		if lastDecErr != nil {
-			return parsedOutput{}, fmt.Errorf("decode stdout: %w", lastDecErr)
-		}
-		if open := openToolCallCount(openToolCalls, openAnonymous); open > 0 {
-			return parsedOutput{}, fmt.Errorf("stream-json: no terminal result event; %d open tool call(s)", open)
-		}
-		if lastAssistantText != "" {
-			return parsedOutput{
-				Type:                  eventResult,
-				Subtype:               subtypeSuccess,
-				Result:                lastAssistantText,
-				SessionID:             lastSessionID,
-				ResolvedModel:         out.ResolvedModel,
-				MissingTerminalResult: true,
-			}, nil
-		}
-		return parsedOutput{}, errors.New("stream-json: no terminal result event")
+	if !a.gotResult {
+		return a.finishWithoutResult()
 	}
-	return out, nil
+	return a.out, nil
 }
 
 func updateOpenToolCalls(open map[string]struct{}, openAnonymous *int, head streamEventHead) {
@@ -189,7 +220,7 @@ func splitNDJSON(b []byte) [][]byte {
 	}
 	out := make([][]byte, 0, 8)
 	start := 0
-	for i := 0; i < len(b); i++ {
+	for i := range b {
 		if b[i] != '\n' {
 			continue
 		}

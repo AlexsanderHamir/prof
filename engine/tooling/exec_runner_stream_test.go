@@ -45,8 +45,8 @@ func TestRunWithStdinStreamStdout_multiLineProgram(t *testing.T) {
 		t.Skip("go not on PATH")
 	}
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module streamtest\n\ngo 1.24\n"), 0o644); err != nil {
-		t.Fatal(err)
+	if wfErr := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module streamtest\n\ngo 1.24\n"), 0o600); wfErr != nil {
+		t.Fatal(wfErr)
 	}
 	mainGo := `package main
 
@@ -57,8 +57,8 @@ func main() {
 	fmt.Println("L2")
 }
 `
-	if err := os.WriteFile(filepath.Join(dir, "main.go"), []byte(mainGo), 0o644); err != nil {
-		t.Fatal(err)
+	if wfErr := os.WriteFile(filepath.Join(dir, "main.go"), []byte(mainGo), 0o600); wfErr != nil {
+		t.Fatal(wfErr)
 	}
 
 	var got []string
@@ -90,8 +90,8 @@ func TestRunWithStdinStreamStdout_stdin(t *testing.T) {
 		t.Skip("go not on PATH")
 	}
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module stdinmod\n\ngo 1.24\n"), 0o644); err != nil {
-		t.Fatal(err)
+	if wfErr := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module stdinmod\n\ngo 1.24\n"), 0o600); wfErr != nil {
+		t.Fatal(wfErr)
 	}
 	mainGo := `package main
 
@@ -108,8 +108,8 @@ func main() {
 	}
 }
 `
-	if err := os.WriteFile(filepath.Join(dir, "main.go"), []byte(mainGo), 0o644); err != nil {
-		t.Fatal(err)
+	if wfErr := os.WriteFile(filepath.Join(dir, "main.go"), []byte(mainGo), 0o600); wfErr != nil {
+		t.Fatal(wfErr)
 	}
 	stdin := []byte("hello\n")
 	stdout, stderr, code, err := RunWithStdinStreamStdout(t.Context(), []string{goExe, "run", "."}, StreamRunOpts{

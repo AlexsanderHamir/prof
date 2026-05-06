@@ -12,12 +12,12 @@ import (
 func TestClient_Run_fakeStreamExec(t *testing.T) {
 	dir := t.TempDir()
 	bin := filepath.Join(dir, "cursor-agent-fake")
-	if err := os.WriteFile(bin, []byte{}, 0o644); err != nil {
+	if err := os.WriteFile(bin, []byte{}, 0o600); err != nil {
 		t.Fatal(err)
 	}
 	wantDir := dir
 	resultLine := `{"type":"result","subtype":"success","result":"analysis done"}`
-	fake := func(ctx context.Context, dir string, env []string, stdin []byte, name string, onStdoutLine func([]byte), args ...string) ([]byte, []byte, int, error) {
+	fake := func(_ context.Context, dir string, _ []string, stdin []byte, _ string, onStdoutLine func([]byte), _ ...string) ([]byte, []byte, int, error) {
 		if dir != wantDir {
 			t.Fatalf("dir=%q want %q", dir, wantDir)
 		}
@@ -65,7 +65,7 @@ func TestClient_Run_badWorkingDir(t *testing.T) {
 }
 
 func TestClient_Probe_fake(t *testing.T) {
-	fakeProbe := func(ctx context.Context, name string, args ...string) ([]byte, []byte, int, error) {
+	fakeProbe := func(_ context.Context, _ string, args ...string) ([]byte, []byte, int, error) {
 		if len(args) != 1 || args[0] != "--version" {
 			t.Fatalf("args=%v", args)
 		}
@@ -73,7 +73,7 @@ func TestClient_Probe_fake(t *testing.T) {
 	}
 	dir := t.TempDir()
 	p := filepath.Join(dir, "fake-agent")
-	if err := os.WriteFile(p, []byte("x"), 0o644); err != nil {
+	if err := os.WriteFile(p, []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	c := NewClient(Options{
@@ -98,7 +98,7 @@ func TestClient_Run_nonZeroExit(t *testing.T) {
 		return nil, []byte("boom"), 7, nil
 	}
 	c := NewClient(Options{BinaryPath: filepath.Join(dir, "x"), StreamExec: fake})
-	_ = os.WriteFile(filepath.Join(dir, "x"), []byte("x"), 0o644)
+	_ = os.WriteFile(filepath.Join(dir, "x"), []byte("x"), 0o600)
 
 	_, err := c.Run(t.Context(), RunRequest{
 		Prompt:     []byte("p"),

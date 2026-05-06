@@ -82,12 +82,12 @@ func RunWithStdinStreamStdout(ctx context.Context, argv []string, opts StreamRun
 	if err != nil {
 		return nil, nil, 0, err
 	}
-	stderrPipe, err := cmd.StderrPipe()
-	if err != nil {
-		return nil, nil, 0, err
+	stderrPipe, pipeErr := cmd.StderrPipe()
+	if pipeErr != nil {
+		return nil, nil, 0, pipeErr
 	}
-	if err := cmd.Start(); err != nil {
-		return nil, nil, 0, err
+	if startErr := cmd.Start(); startErr != nil {
+		return nil, nil, 0, startErr
 	}
 
 	var stdoutBuf, stderrBuf bytes.Buffer

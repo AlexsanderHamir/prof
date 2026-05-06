@@ -61,10 +61,10 @@ func NewClient(opts Options) *Client {
 func defaultStreamExec(ctx context.Context, dir string, env []string, stdin []byte, name string, onStdoutLine func([]byte), args ...string) ([]byte, []byte, int, error) {
 	argv := append([]string{name}, args...)
 	return tooling.RunWithStdinStreamStdout(ctx, argv, tooling.StreamRunOpts{
-		Dir:            dir,
-		Env:            env,
-		Stdin:          stdin,
-		OnStdoutLine:   onStdoutLine,
+		Dir:          dir,
+		Env:          env,
+		Stdin:        stdin,
+		OnStdoutLine: onStdoutLine,
 	})
 }
 
@@ -102,13 +102,13 @@ func (c *Client) resolvedBinaryForExec() (string, error) {
 		name = DefaultBinaryName
 	}
 	if strings.ContainsAny(name, `/\`) {
-		if _, err := os.Stat(name); err != nil {
-			return "", fmt.Errorf("%w: %v\n\n%s", ErrBinaryNotFound, err, FixBinaryHelpBlock())
+		if _, statErr := os.Stat(name); statErr != nil {
+			return "", fmt.Errorf("%w: %w\n\n%s", ErrBinaryNotFound, statErr, FixBinaryHelpBlock())
 		}
 		return name, nil
 	}
-	if _, err := exec.LookPath(name); err != nil {
-		return "", fmt.Errorf("%w: %v\n\n%s", ErrBinaryNotFound, err, FixBinaryHelpBlock())
+	if _, lookErr := exec.LookPath(name); lookErr != nil {
+		return "", fmt.Errorf("%w: %w\n\n%s", ErrBinaryNotFound, lookErr, FixBinaryHelpBlock())
 	}
 	return ResolveBinaryPath(name), nil
 }
@@ -163,7 +163,7 @@ func (c *Client) Probe(ctx context.Context) (resolvedPath, version string, err e
 	stdout, stderr, code, probeErr := c.streamExec(probeCtx, "", env, nil, resolved, nil, "--version")
 	if probeErr != nil {
 		if errors.Is(probeErr, context.DeadlineExceeded) || errors.Is(probeErr, context.Canceled) {
-			return resolved, "", fmt.Errorf("%w: %v\n\n%s", ErrTimeout, probeErr, FixBinaryHelpBlock())
+			return resolved, "", fmt.Errorf("%w: %w\n\n%s", ErrTimeout, probeErr, FixBinaryHelpBlock())
 		}
 		return resolved, "", fmt.Errorf("cursoragent: probe exec: %w\n\n%s", probeErr, FixBinaryHelpBlock())
 	}
@@ -211,9 +211,9 @@ func (c *Client) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 
 	if execErr != nil {
 		if errors.Is(runCtx.Err(), context.DeadlineExceeded) || errors.Is(runCtx.Err(), context.Canceled) {
-			return RunResult{ExitCode: code, StderrTail: clipTail(stderrStr, MaxStderrTailRunes)}, fmt.Errorf("%w: %v", ErrTimeout, execErr)
+			return RunResult{ExitCode: code, StderrTail: clipTail(stderrStr, MaxStderrTailRunes)}, fmt.Errorf("%w: %w", ErrTimeout, execErr)
 		}
-		return RunResult{ExitCode: code, StderrTail: clipTail(stderrStr, MaxStderrTailRunes)}, fmt.Errorf("%w: %v\n\n%s", ErrInvalidOutput, execErr, FixBinaryHelpBlock())
+		return RunResult{ExitCode: code, StderrTail: clipTail(stderrStr, MaxStderrTailRunes)}, fmt.Errorf("%w: %w\n\n%s", ErrInvalidOutput, execErr, FixBinaryHelpBlock())
 	}
 	if code != 0 {
 		return RunResult{
@@ -228,7 +228,7 @@ func (c *Client) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 		return RunResult{
 			ExitCode:   code,
 			StderrTail: clipTail(stderrStr, MaxStderrTailRunes),
-		}, fmt.Errorf("%w: %v\n%s", ErrInvalidOutput, parseErr, clipTail(hint, MaxStderrTailRunes))
+		}, fmt.Errorf("%w: %w\n%s", ErrInvalidOutput, parseErr, clipTail(hint, MaxStderrTailRunes))
 	}
 
 	text := Redact(strings.TrimSpace(parsed.Result), c.homePaths)
