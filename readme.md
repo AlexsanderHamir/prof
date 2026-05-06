@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="prof_logo_v0.0.1.png" alt="Prof" width="120" height="120" />
+  <img src="assets/prof_logo_v0.0.1.png" alt="Prof" width="120" height="120" />
 </p>
 
 # Prof
@@ -23,7 +23,7 @@ prof ui
 ```
 
 <p align="center">
-  <img src="prof_ui_example.gif" alt="prof ui: terminal and graphical UI" />
+  <img src="assets/prof_ui_example.gif" alt="prof ui: terminal and graphical UI" />
 </p>
 
 Menus first; **`prof auto`**, **`prof track`**, and flags are for scripts and CI. Examples, flags, and layout: **[documentation site](https://alexsanderhamir.github.io/prof/)** ([Quickstart](https://alexsanderhamir.github.io/prof/quickstart/), [Collect](https://alexsanderhamir.github.io/prof/collect/), [Compare](https://alexsanderhamir.github.io/prof/compare/)).

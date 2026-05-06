@@ -9,8 +9,8 @@ edit_uri: ""
 theme:
   name: material
   language: en
-  logo: assets/prof_logo.png
-  favicon: assets/prof_logo.png
+  logo: ../assets/prof_logo_v0.0.1.png
+  favicon: ../assets/prof_logo_v0.0.1.png
   icon:
     repo: fontawesome/brands/github
   palette:
