@@ -1,12 +1,12 @@
 # Optional tools
 
-This guide covers **`prof tools`**: commands that read **`bench/<tag>/`** and produce extra artifacts such as **`benchstat`** summaries or **QCacheGrind** callgrind files. The same flows are available from **`prof ui` → Tools**.
+This guide covers `prof tools`: commands that read `bench/<tag>/` and produce extra artifacts such as `benchstat` summaries or QCacheGrind callgrind files. The same flows are available from `prof ui` (Tools menu).
 
 ## Before you begin
 
 - You have already collected data into `bench/` ([Collect profiling data](collect.md)).
-- For **`benchstat`**, the `benchstat` binary is on your `PATH` ([Troubleshooting](troubleshooting.md#benchstat-not-found)).
-- For **QCacheGrind**, the GUI is installed ([Troubleshooting](troubleshooting.md#qcachegrind-not-installed)).
+- For `benchstat`, the `benchstat` binary is on your `PATH` ([Troubleshooting](troubleshooting.md#benchstat-not-found)).
+- For QCacheGrind, the GUI is installed ([Troubleshooting](troubleshooting.md#qcachegrind-not-installed)).
 
 ## `prof tools benchstat`
 
@@ -22,13 +22,13 @@ Install helper:
 go install golang.org/x/perf/cmd/benchstat@latest
 ```
 
-**Output:** `bench/tools/benchstat/<BenchmarkName>_results.txt`
+Output path: `bench/tools/benchstat/<BenchmarkName>_results.txt`
 
 | Flag | Type | Required | Default | Description |
 | ---- | ---- | --------- | ------- | ----------- |
-| `--base` | string | Yes | — | Baseline tag under `bench/`. |
-| `--current` | string | Yes | — | Current tag. |
-| `--bench-name` | string | Yes | — | Benchmark name. |
+| `--base` | string | Yes | n/a | Baseline tag under `bench/`. |
+| `--current` | string | Yes | n/a | Current tag. |
+| `--bench-name` | string | Yes | n/a | Benchmark name. |
 
 ## `prof tools qcachegrind`
 
@@ -38,18 +38,18 @@ Generates Callgrind input for [QCacheGrind](https://kcachegrind.github.io/html/H
 prof tools qcachegrind --tag optimized --profiles cpu --bench-name BenchmarkGenPool
 ```
 
-**Output:** `bench/tools/qcachegrind/<BenchmarkName>_<profile>.callgrind`
+Output path: `bench/tools/qcachegrind/<BenchmarkName>_<profile>.callgrind`
 
 | Flag | Type | Required | Default | Description |
 | ---- | ---- | --------- | ------- | ----------- |
-| `--tag` | string | Yes | — | Tag to read from. |
-| `--profiles` | strings | Yes | — | Profile IDs; the command uses the **first** ID you pass—pass a single profile such as `cpu` when unsure. |
-| `--bench-name` | string | Yes | — | Benchmark name. |
+| `--tag` | string | Yes | n/a | Tag to read from. |
+| `--profiles` | strings | Yes | n/a | Profile IDs; the command uses the first ID you pass. Pass a single profile such as `cpu` when unsure. |
+| `--bench-name` | string | Yes | n/a | Benchmark name. |
 
 ## Testing / verify
 
-- After **`benchstat`**, open `bench/tools/benchstat/<BenchmarkName>_results.txt` and confirm it references both tags.
-- After **`qcachegrind`**, confirm `.callgrind` files exist and open in QCacheGrind.
+- After `benchstat`, open `bench/tools/benchstat/<BenchmarkName>_results.txt` and confirm it references both tags.
+- After `qcachegrind`, confirm `.callgrind` files exist and open in QCacheGrind.
 
 ## Next steps
 

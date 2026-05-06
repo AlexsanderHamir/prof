@@ -1,8 +1,8 @@
 # Prof
 
-**Prof is a command-line tool for Go** that runs benchmarks with `go test`, captures **CPU, memory, mutex, and block** profiles, stores everything under a predictable `bench/<tag>/` tree, and **compares two tags** so you can see *where* performance changed—not only the `benchstat` headline.
+Prof is a command-line tool for Go that runs benchmarks with `go test`, captures CPU, memory, mutex, and block profiles, stores everything under a predictable `bench/<tag>/` tree, and compares two tags so you can see *where* performance changed, not only the `benchstat` headline.
 
-Use it when you already trust `ns/op` but need **comparable profiles** across experiments, a stable layout for `pprof`, and optional **CI regression gates** on flat-time change.
+Use it when you already trust `ns/op` but need comparable profiles across experiments, a stable layout for `pprof`, and optional CI regression gates on flat-time change.
 
 ## What you can do
 
@@ -31,7 +31,7 @@ flowchart LR
   bench --> analyze
 ```
 
-You **label each run with a tag**. Prof writes `bench/<tag>/`. [Compare runs](compare.md) pairs two tags (baseline vs current) for the same benchmark and profile type, or you can point [Optional tools](tools.md) at those directories.
+You label each run with a tag. Prof writes `bench/<tag>/`. [Compare runs](compare.md) pairs two tags (baseline vs current) for the same benchmark and profile type, or you can point [Optional tools](tools.md) at those directories.
 
 ## Terminology
 

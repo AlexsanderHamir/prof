@@ -1,6 +1,6 @@
 # Install Prof
 
-This page explains **how to install the `prof` binary**, what you need on your machine first, and **how to confirm the install**.
+This page explains how to install the `prof` binary, what you need on your machine first, and how to confirm the install.
 
 ## Before you begin
 
@@ -8,7 +8,7 @@ This page explains **how to install the `prof` binary**, what you need on your m
 | ----------- | ----- |
 | Go | 1.24.3 or newer (matches the `go.mod` in this project). |
 | Module root | Your project’s `go.mod` directory when you run Prof. |
-| Graphviz | Optional; for PNG call graphs. If missing, use `prof auto --skip-png` or skip PNG in `prof ui` / `prof tui`. |
+| Graphviz | Optional; for PNG call graphs. If missing, use `prof auto --skip-png` or skip PNG in `prof ui` or `prof tui`. |
 
 ## Install the binary
 
@@ -28,7 +28,7 @@ From the module root, run `prof ui` or follow [Quickstart](quickstart.md).
 
 ## Testing / verify
 
-- `prof --help` exits **0** and prints usage.
+- `prof --help` exits with code `0` and prints usage.
 - `prof --version` (if supported by your build) shows a version string; development builds may show `devel`.
 
 ## Next steps

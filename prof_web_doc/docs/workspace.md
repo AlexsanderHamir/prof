@@ -1,19 +1,19 @@
 # Working directory and paths
 
-This page explains **where Prof reads your module**, **where it writes `bench/`**, and **how paths are laid out** under each tag so compare and tools can find data.
+This page explains where Prof reads your module, where it writes `bench/`, and how paths are laid out under each tag so compare and tools can find data.
 
 ## Before you begin
 
-- You have a `go.mod` at the directory you treat as the **module root** (usually the repo root for the module).
-- You run Prof with that directory as your **current working directory** (`cwd`), the same way you run `go test ./...` for that module.
+- You have a `go.mod` at the directory you treat as the module root (usually the repo root for the module).
+- You run Prof with that directory as your current working directory (`cwd`), the same way you run `go test ./...` for that module.
 
 ## What Prof uses from cwd
 
-Prof uses your **current working directory** to find the Go module and to write `bench/`. Run from the same place you run `go test` for that module (usually the [module root](index.md#terminology)).
+Prof uses your current working directory to find the Go module and to write `bench/`. Run from the same place you run `go test` for that module (usually the [module root](index.md#terminology)).
 
-- **Benchmark discovery** is relative to cwd (same rules as `go test`).
-- **Output** goes to `bench/<tag>/` under cwd ([terminology](index.md#terminology)).
-- **`prof setup`** writes `config_template.json` next to `go.mod` at the module root—keep cwd aligned with that root when you expect that file to be found.
+- Benchmark discovery is relative to cwd (same rules as `go test`).
+- Output goes to `bench/<tag>/` under cwd ([terminology](index.md#terminology)).
+- `prof setup` writes `config_template.json` next to `go.mod` at the module root. Keep cwd aligned with that root when you expect that file to be found.
 
 ## Directory layout under `bench/<tag>/`
 
@@ -22,7 +22,7 @@ Using Prof creates a `bench/` tree next to your module, one folder per run (tag)
 | Path | What it is |
 | ---- | ---------- |
 | `bench/<tag>/` | One labeled run: profiles, text extracts, and optional PNGs for that tag. |
-| `bench/<tag>/bin/<BenchmarkName>/` | Binary profiles (`.out`)—the durable source for `go tool pprof`. |
+| `bench/<tag>/bin/<BenchmarkName>/` | Binary profiles (`.out`), the durable source for `go tool pprof`. |
 | `bench/<tag>/text/<BenchmarkName>/` | Human-readable profile listings (flat and optional package-grouped). |
 | `bench/<tag>/<profile>_functions/<BenchmarkName>/` | Per-function extracts when configured; optional call-graph PNGs if Graphviz is installed. |
 | `config_template.json` | Next to `go.mod` after `prof setup` or the template action in `prof ui`; filters which functions get extra extracts. |

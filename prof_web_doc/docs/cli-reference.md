@@ -1,6 +1,6 @@
 # CLI reference
 
-This page lists **supported commands**, **profile and output identifiers**, and **flag-level defaults** so you can script Prof without guessing. Subcommands also print `prof <cmd> -h`.
+This page lists supported commands, profile and output identifiers, and flag-level defaults so you can script Prof without guessing. Subcommands also print `prof <cmd> -h`.
 
 ## Local documentation build
 
@@ -46,7 +46,7 @@ Values accepted by `prof track auto`, `prof track manual`, and the TUI compare f
 | Value | Output |
 | ----- | ------ |
 | `summary` | Short text report |
-| `detailed` | Full text report (**default** for `prof track auto` when the flag is omitted) |
+| `detailed` | Full text report (default for `prof track auto` when the flag is omitted) |
 | `summary-html` | HTML summary |
 | `detailed-html` | HTML detailed |
 | `summary-json` | JSON summary |
@@ -58,44 +58,44 @@ Values accepted by `prof track auto`, `prof track manual`, and the TUI compare f
 
 | Flag | Type | Required | Default | Description |
 | ---- | ---- | --------- | ------- | ----------- |
-| `--benchmarks` | strings (repeatable / comma slice) | Yes | — | Benchmark names to run (for example `BenchmarkGenPool`). |
-| `--profiles` | strings | Yes | — | Profile IDs, comma-separated (for example `cpu,memory,mutex,block`). |
-| `--tag` | string | Yes | — | Tag directory name under `bench/`. |
-| `--count` | int | Yes | — | Number of benchmark iterations / runs `go test` should perform (must be positive). |
+| `--benchmarks` | strings (repeatable, comma-separated) | Yes | n/a | Benchmark names to run (for example `BenchmarkGenPool`). |
+| `--profiles` | strings | Yes | n/a | Profile IDs, comma-separated (for example `cpu,memory,mutex,block`). |
+| `--tag` | string | Yes | n/a | Tag directory name under `bench/`. |
+| `--count` | int | Yes | n/a | Number of benchmark iterations or runs `go test` should perform (must be positive). |
 | `--group-by-package` | bool | No | `false` | Also write package-grouped text listings. |
 | `--lenient-profiles` | bool | No | `false` | Skip missing profile binaries instead of failing the run. |
 | `--skip-png` | bool | No | `false` | Succeed even when PNG generation fails (for example Graphviz missing). |
 
 ## `prof manual`
 
-Positional arguments are **one or more profile file paths** to ingest.
+Positional arguments are one or more profile file paths to ingest.
 
 | Flag | Type | Required | Default | Description |
 | ---- | ---- | --------- | ------- | ----------- |
-| `--tag` | string | Yes | — | Tag directory name under `bench/`. |
+| `--tag` | string | Yes | n/a | Tag directory name under `bench/`. |
 | `--group-by-package` | bool | No | `false` | Same as `prof auto`. |
 
 ## `prof track auto`
 
 | Flag | Type | Required | Default | Description |
 | ---- | ---- | --------- | ------- | ----------- |
-| `--base` | string | Yes | — | Baseline **tag** name (directory under `bench/`). |
-| `--current` | string | Yes | — | Current **tag** name. |
-| `--bench-name` | string | Yes | — | Benchmark name (must match collect). |
-| `--profile-type` | string | Yes | — | One of `cpu`, `memory`, `mutex`, `block`. |
+| `--base` | string | Yes | n/a | Baseline tag name (directory under `bench/`). |
+| `--current` | string | Yes | n/a | Current tag name. |
+| `--bench-name` | string | Yes | n/a | Benchmark name (must match collect). |
+| `--profile-type` | string | Yes | n/a | One of `cpu`, `memory`, `mutex`, `block`. |
 | `--output-format` | string | No | `detailed` | See [Compare output formats](#compare-output-formats). |
-| `--fail-on-regression` | bool | No | `false` | When combined with a **positive** `--regression-threshold`, exit with an error if the worst flat-time regression meets or exceeds the threshold. |
-| `--regression-threshold` | float | No | `0` | Maximum allowed worst flat regression (**percent**). Values `≤ 0` do not enable the CLI gate unless CI config applies—set a positive value when using `--fail-on-regression`. |
+| `--fail-on-regression` | bool | No | `false` | When combined with a positive `--regression-threshold`, exit with an error if the worst flat-time regression meets or exceeds the threshold. |
+| `--regression-threshold` | float | No | `0` | Maximum allowed worst flat regression (percent). Values at or below `0` do not enable the CLI gate unless CI config applies. Set a positive value when using `--fail-on-regression`. |
 
 ## `prof track manual`
 
-`--base` and `--current` are **filesystem paths** to the two profiles to compare (not tag names).
+`--base` and `--current` are filesystem paths to the two profiles to compare (not tag names).
 
 | Flag | Type | Required | Default | Description |
 | ---- | ---- | --------- | ------- | ----------- |
-| `--base` | string | Yes | — | Path to baseline profile file. |
-| `--current` | string | Yes | — | Path to current profile file. |
-| `--output-format` | string | Yes | — | See [Compare output formats](#compare-output-formats). |
+| `--base` | string | Yes | n/a | Path to baseline profile file. |
+| `--current` | string | Yes | n/a | Path to current profile file. |
+| `--output-format` | string | Yes | n/a | See [Compare output formats](#compare-output-formats). |
 | `--fail-on-regression` | bool | No | `false` | Same semantics as `prof track auto`. |
 | `--regression-threshold` | float | No | `0` | Same semantics as `prof track auto`. |
 
@@ -103,9 +103,9 @@ Positional arguments are **one or more profile file paths** to ingest.
 
 | Flag | Type | Required | Default | Description |
 | ---- | ---- | --------- | ------- | ----------- |
-| `--base` | string | Yes | — | Baseline tag under `bench/`. |
-| `--current` | string | Yes | — | Current tag. |
-| `--bench-name` | string | Yes | — | Benchmark name. |
+| `--base` | string | Yes | n/a | Baseline tag under `bench/`. |
+| `--current` | string | Yes | n/a | Current tag. |
+| `--bench-name` | string | Yes | n/a | Benchmark name. |
 
 Requires `benchstat` on `PATH` (`go install golang.org/x/perf/cmd/benchstat@latest`).
 
@@ -113,15 +113,15 @@ Requires `benchstat` on `PATH` (`go install golang.org/x/perf/cmd/benchstat@late
 
 | Flag | Type | Required | Default | Description |
 | ---- | ---- | --------- | ------- | ----------- |
-| `--tag` | string | Yes | — | Tag to read binaries from. |
-| `--profiles` | strings | Yes | — | Profile IDs (command uses the first for generation—pass one such as `cpu` when unsure). |
-| `--bench-name` | string | Yes | — | Benchmark name. |
+| `--tag` | string | Yes | n/a | Tag to read binaries from. |
+| `--profiles` | strings | Yes | n/a | Profile IDs (command uses the first for generation). Pass one such as `cpu` when unsure. |
+| `--bench-name` | string | Yes | n/a | Benchmark name. |
 
 ## Exit codes
 
-Prof follows normal Go CLI conventions: **exit code 0** on success, **non-zero** when a command returns an error (invalid flags, failed `go test`, missing `bench/` tags, parser errors, or a **regression gate** failure when configured).
+Prof follows normal Go CLI conventions: exit code `0` on success, non-zero when a command returns an error (invalid flags, failed `go test`, missing `bench/` tags, parser errors, or a regression gate failure when configured).
 
-There is no stable assignment of distinct integers per error type today—treat any non-zero exit as failure and read stderr.
+There is no stable assignment of distinct integers per error type today. Treat any non-zero exit as failure and read stderr.
 
 ## Next steps
 

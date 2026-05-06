@@ -1,11 +1,11 @@
 # Configure collection
 
-This guide explains **`config_template.json`**: how to generate it with **`prof setup`**, how **`function_collection_filter`** selects per-function extracts, and where **`ci_config`** fits for regression rules in CI.
+This guide explains `config_template.json`: how to generate it with `prof setup`, how `function_collection_filter` selects per-function extracts, and where `ci_config` fits for regression rules in CI.
 
 ## Before you begin
 
-- You run commands from the **module root** (next to `go.mod`).
-- You understand what a **tag** and **benchmark name** are ([Home](index.md#terminology)).
+- You run commands from the module root (next to `go.mod`).
+- You understand what a tag and benchmark name are ([Home](index.md#terminology)).
 
 ## Create the template
 
@@ -13,7 +13,7 @@ This guide explains **`config_template.json`**: how to generate it with **`prof 
 prof setup
 ```
 
-Or in `prof ui`, choose **Create configuration template**. That writes `config_template.json` next to `go.mod`.
+Or in `prof ui`, choose Create configuration template. That writes `config_template.json` next to `go.mod`.
 
 ## `function_collection_filter`
 
@@ -40,13 +40,13 @@ For `prof manual`, keys are profile file base names, not the Go benchmark name.
 
 ## `ci_config` (regression and CI behavior)
 
-Prof can read regression thresholds, ignores, noise floors, and per-benchmark caps from **`ci_config`** inside the same JSON file. That keeps CI policy next to your extract filters.
+Prof can read regression thresholds, ignores, noise floors, and per-benchmark caps from `ci_config` inside the same JSON file. That keeps CI policy next to your extract filters.
 
-**Do not duplicate the full schema here**—it evolves with releases. Use the canonical document on GitHub:
+Do not duplicate the full schema here; it evolves with releases. Use the canonical document on GitHub:
 
-- **[CI/CD configuration](https://github.com/AlexsanderHamir/prof/blob/main/docs/cicd_configuration.md)** — full JSON schema, field semantics, and GitHub Actions examples.
+- [CI/CD configuration](https://github.com/AlexsanderHamir/prof/blob/main/docs/cicd_configuration.md) (full JSON schema, field semantics, and GitHub Actions examples)
 
-This site’s [CI and regressions](ci.md) explains how **`prof track`** flags interact with `ci_config` at runtime.
+This site’s [CI and regressions](ci.md) explains how `prof track` flags interact with `ci_config` at runtime.
 
 ## Testing / verify
 
