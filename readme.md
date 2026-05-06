@@ -12,7 +12,7 @@ Go benchmark profiling: `go test` + pprof, output under `bench/<tag>/`, compare 
 [![Version](https://img.shields.io/github/v/tag/AlexsanderHamir/prof?sort=semver)](https://github.com/AlexsanderHamir/prof/releases)
 ![Go Version](https://img.shields.io/badge/Go-1.24.3%2B-blue)
 
-[Documentation](https://alexsanderhamir.github.io/prof/) · [Demo (CLI)](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/output.mp4) · [Demo (TUI)](https://cdn.jsdelivr.net/gh/AlexsanderHamir/assets@main/tui_prof.mp4)
+[Documentation](https://alexsanderhamir.github.io/prof/)
 
 ## Start here
 
