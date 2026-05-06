@@ -8,6 +8,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/internal/app"
+	"github.com/AlexsanderHamir/prof/internal/intent"
 	"github.com/AlexsanderHamir/prof/internal/tui"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -77,7 +78,7 @@ func runUISetupWizard(svc *app.Services) error {
 	if !confirm {
 		return nil
 	}
-	return svc.Setup.CreateTemplate()
+	return intent.RunValidated(&intent.SetupIntent{}, svc)
 }
 
 func runUIToolsMenu(svc *app.Services) error {
@@ -157,7 +158,9 @@ func runUIBenchstat(svc *app.Services) error {
 		return err
 	}
 
-	return svc.Tools.RunBenchStats(base, cur, bench)
+	return intent.RunValidated(&intent.ToolsBenchstatIntent{
+		BaseTag: base, CurrentTag: cur, BenchName: bench,
+	}, svc)
 }
 
 func runUIQcachegrind(svc *app.Services) error {
@@ -214,5 +217,7 @@ func runUIQcachegrind(svc *app.Services) error {
 		return err
 	}
 
-	return svc.Tools.RunQcacheGrind(tagChoice, bench, profName)
+	return intent.RunValidated(&intent.ToolsQcachegrindIntent{
+		Tag: tagChoice, BenchName: bench, ProfileType: profName,
+	}, svc)
 }

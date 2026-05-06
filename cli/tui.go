@@ -8,6 +8,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlexsanderHamir/prof/internal/app"
+	"github.com/AlexsanderHamir/prof/internal/intent"
 	"github.com/spf13/cobra"
 )
 
@@ -89,11 +90,17 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if err = svc.Benchmark.RunBenchmarks(selectedBenches, selectedProfiles, tagStr, runCount, groupPkg, lenient, skipPng); err != nil {
-		return err
+	collect := &intent.CollectIntent{
+		Benchmarks:      selectedBenches,
+		Profiles:        selectedProfiles,
+		Tag:             tagStr,
+		Count:           runCount,
+		GroupByPackage:  groupPkg,
+		LenientProfiles: lenient,
+		SkipPNG:         skipPng,
 	}
-
-	return nil
+	collect.Normalize()
+	return intent.RunValidated(collect, svc)
 }
 
 func runTUITrackAuto(svc *app.Services, _ *cobra.Command, _ []string) error {
@@ -123,5 +130,6 @@ func runTUITrackAuto(svc *app.Services, _ *cobra.Command, _ []string) error {
 	}
 	fmt.Println()
 
-	return svc.Tracker.RunTrackAuto(selections)
+	cmp := &intent.CompareIntent{Selections: selections}
+	return intent.RunValidated(cmp, svc)
 }

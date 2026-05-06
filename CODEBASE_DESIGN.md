@@ -10,7 +10,8 @@ This document maps the Prof repository: entrypoints, packages, data flow through
 - [`engine/tooling`](engine/tooling): subprocess [`Runner`](engine/tooling/runner.go), profile [`Catalog`](engine/tooling/catalog.go), `go tool pprof` argv construction.
 - [`parser`](parser): decode profile binaries into structured data; pipeline stages for comparisons.
 - [`internal`](internal): JSON config types, path constants, `BenchArgs` / collection wiring, template IO ([`internal/api.go`](internal/api.go)).
-- [`cli`](cli) and [`internal/tui`](internal/tui): Cobra commands, flags, Bubble Tea and Survey UIs; call [`internal/app`](internal/app) services.
+- [`cli`](cli) and [`internal/tui`](internal/tui): Cobra commands, flags, Bubble Tea and Survey UIs; call [`internal/app`](internal/app) services (often via [`internal/intent`](internal/intent) for `prof ui` / `prof tui` workflows).
+- [`internal/intent`](internal/intent): Validates and maps guided-flow inputs to `app.Services` (translation layer).
 
 ## Architecture
 
@@ -21,6 +22,7 @@ flowchart LR
   end
   subgraph cli [CLI]
     cobra[cli commands]
+    intentPkg[internal/intent]
     app[internal/app Services]
   end
   subgraph engines [Engines]
@@ -37,7 +39,9 @@ flowchart LR
     internalPkg[internal]
   end
   cmd --> cobra
+  cobra --> intentPkg
   cobra --> app
+  intentPkg --> app
   app --> bench
   app --> coll
   app --> track
@@ -67,6 +71,7 @@ The installable binary is `go install …/cmd/prof@latest`; that `main` package 
 | `cmd/prof` | `main`; delegates to [`cli.Execute`](cli/api.go) |
 | [`cli`](cli) | Cobra commands, flags, TUI glue; calls `app.Services` |
 | [`internal/app`](internal/app) | Composition root interfaces and default adapters; holds [`tooling.Runner`](engine/tooling/runner.go) |
+| [`internal/intent`](internal/intent) | Translation: validated UI/CLI-shaped inputs → [`app.Services`](internal/app/services.go) (`CollectIntent`, `CompareIntent`, tools, setup); see package `doc.go` |
 | [`engine/tooling`](engine/tooling) | Subprocess [`Runner`](engine/tooling/runner.go), profile [`Catalog`](engine/tooling/catalog.go), `go tool pprof` argv helpers; in-process parsing stays in [`parser`](parser) |
 | [`engine/benchmark`](engine/benchmark) | Layout, `go test -bench`, run pipeline, delegates artifact helpers to collector |
 | [`engine/collector`](engine/collector) | pprof text, PNG, function list IO (via runner and tooling argv), manual ingest, package-grouped text |
@@ -86,12 +91,28 @@ Shared types live in `internal` as files (no separate `internal/config` package)
 | `prof auto` | [`cli/cmd_collect.go`](cli/cmd_collect.go) to [`engine/benchmark/entry.go`](engine/benchmark/entry.go) | Validate flags, load optional `config_template.json`, layout, `runBenchAndGetProfiles` |
 | `prof manual` | [`cli/cmd_collect.go`](cli/cmd_collect.go) to [`engine/collector/manual_process.go`](engine/collector/manual_process.go) | Tag dir, per-file profile processing and function lists |
 | `prof track auto` / `manual` | [`cli/cmd_track.go`](cli/cmd_track.go) to [`engine/tracker/run.go`](engine/tracker/run.go) | Build [`Selections`](engine/tracker/types.go), compare, format output, CI apply |
-| `prof ui` | [`cli/cmd_ui.go`](cli/cmd_ui.go), [`internal/tui/hub.go`](internal/tui/hub.go) | Bubble Tea menu, Survey prompts, engines |
+| `prof ui` | [`cli/cmd_ui.go`](cli/cmd_ui.go), [`internal/tui/hub.go`](internal/tui/hub.go), [`internal/intent`](internal/intent) | Bubble Tea menu, Survey prompts; workflows run through **intents** into `app.Services` |
 | `prof tui` | [`cli/cmd_tui.go`](cli/cmd_tui.go), [`cli/tui.go`](cli/tui.go) | Survey-driven flow, same engines as `prof auto` / track |
 | `prof setup` | [`cli/cmd_setup.go`](cli/cmd_setup.go) to [`internal/api.go`](internal/api.go) `CreateTemplate` | Writes template JSON beside `go.mod` |
 | `prof tools …` | [`cli/cmd_tools.go`](cli/cmd_tools.go) to `engine/tools/*` | Benchstat and qcachegrind helpers |
 
 [`cli/discovery.go`](cli/discovery.go) lists tags and benchmarks from existing `bench/` output for TUI and track prompts; known profile names come from [`tooling.DefaultCatalog`](engine/tooling/catalog.go). Benchmark name discovery (`BenchmarkXxx` in `_test.go` files) lives in [`engine/benchmark/discovery.go`](engine/benchmark/discovery.go).
+
+### `prof ui` vs CLI parity (automation-only gaps)
+
+Interactive [`prof ui`](cli/cmd_ui.go) is intended to cover day-to-day flows without memorizing subcommands. The table below lists **CLI-only** or **different** surfaces so contributors know what remains flag-driven or non-interactive.
+
+| Capability | CLI / TUI entry | In `prof ui`? | Notes |
+|------------|-----------------|---------------|--------|
+| Automated benchmark collect (`RunBenchmarks`) | `prof auto`, `prof tui`, hub “Run benchmarks…” | Yes | Surveys mirror `prof auto` flags: benchmarks, profiles, tag, count, group-by-package, lenient-profiles, skip-png. Translation: [`internal/intent`](internal/intent) `CollectIntent` → `Benchmark.RunBenchmarks`. |
+| Compare two tagged runs (`RunTrackAuto`) | `prof track auto`, `prof tui` / hub compare | Yes | Same prompts as `prof tui` (`getTrackSelections`). Translation: `CompareIntent` → `Tracker.RunTrackAuto`. |
+| Manual profile ingest (`RunCollector`) | `prof manual <files> --tag …` | **No** | Requires arbitrary file paths as args; use **`prof manual`** (CI/scripts or advanced). |
+| Compare arbitrary profile text files (`RunTrackManual`) | `prof track manual …` | **No** | Path-based; use **`prof track manual`**. |
+| Benchstat | `prof tools benchstat …` | Yes | Via tools submenu. `ToolsBenchstatIntent` → `Tools.RunBenchStats`. |
+| Qcachegrind | `prof tools qcachegrind …` | Yes | Via tools submenu. `ToolsQcachegrindIntent` → `Tools.RunQcacheGrind`. |
+| Write config template | `prof setup` | Yes | Confirm dialog then `SetupIntent` → `Setup.CreateTemplate`. |
+
+When adding a new hub action, extend [`internal/intent`](internal/intent) (see package `doc.go` catalog) so **translation** stays centralized.
 
 ## Profile pipelines
 
