@@ -4,7 +4,7 @@
 
 # Prof
 
-Go benchmark profiling: `go test` + pprof, output under `bench/<tag>/`, compare two runs.
+Profiling eats time. Learning tools, running commands, hunting down output. Torch automates the whole process: one command collects everything and organizes it for analysis.
 
 [![GoDoc](https://godoc.org/github.com/AlexsanderHamir/prof?status.svg)](https://godoc.org/github.com/AlexsanderHamir/prof)
 [![Go Report Card](https://goreportcard.com/badge/github.com/AlexsanderHamir/prof)](https://goreportcard.com/badge/github.com/AlexsanderHamir/prof)
