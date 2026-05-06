@@ -60,7 +60,7 @@ func lineObjByShortName(lineobjects []*parser.LineObj) map[string]*parser.LineOb
 }
 
 func getBinFilesLocations(selections *Selections) (string, string) {
-	fileName := fmt.Sprintf("%s_%s.out", selections.BenchmarkName, selections.ProfileType)
+	fileName := fmt.Sprintf("%s_%s.%s", selections.BenchmarkName, selections.ProfileType, internal.ProfileArtifactExtension)
 	base := filepath.Join(internal.MainDirOutput, selections.Baseline, internal.ProfileBinDir, selections.BenchmarkName, fileName)
 	cur := filepath.Join(internal.MainDirOutput, selections.Current, internal.ProfileBinDir, selections.BenchmarkName, fileName)
 	return base, cur

@@ -12,7 +12,7 @@ import (
 func createBenchDirectories(tagDir string, benchmarks []string) error {
 	binDir := filepath.Join(tagDir, internal.ProfileBinDir)
 	textDir := filepath.Join(tagDir, internal.ProfileTextDir)
-	descFile := filepath.Join(tagDir, descriptionFileName)
+	descFile := filepath.Join(tagDir, internal.BenchDescriptionFileName)
 
 	if err := os.Mkdir(binDir, internal.PermDir); err != nil {
 		return fmt.Errorf("failed to create bin directory: %w", err)
@@ -30,7 +30,7 @@ func createBenchDirectories(tagDir string, benchmarks []string) error {
 		}
 	}
 
-	if err := os.WriteFile(descFile, []byte(descriptionFileMessage), internal.PermFile); err != nil {
+	if err := os.WriteFile(descFile, []byte(internal.BenchDescriptionPlaceholder), internal.PermFile); err != nil {
 		return fmt.Errorf("failed to create description file: %w", err)
 	}
 

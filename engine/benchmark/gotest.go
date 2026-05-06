@@ -34,7 +34,7 @@ func findBenchmarkPackageDir(moduleRoot, benchmarkName string) (string, error) {
 
 func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) ([]string, error) {
 	cmd := []string{
-		"go", "test", "-run=^$",
+		internal.GoBinaryName, internal.GoTestSubcommand, "-run=^$",
 		fmt.Sprintf("-bench=^%s$", benchmarkName),
 		"-benchmem",
 		fmt.Sprintf("-count=%d", count),

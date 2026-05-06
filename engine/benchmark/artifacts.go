@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/AlexsanderHamir/prof/internal"
 )
 
 func getExpectedProfileFileName(profile string) (string, bool) {
@@ -67,7 +69,7 @@ func moveProfileFiles(benchmarkName string, profiles []string, rootDir string, b
 		if latestPath == "" {
 			continue
 		}
-		destPath := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
+		destPath := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, internal.ProfileArtifactExtension))
 		if err = os.Rename(latestPath, destPath); err != nil {
 			return fmt.Errorf("failed to move profile file %s: %w", latestPath, err)
 		}

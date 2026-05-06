@@ -17,14 +17,14 @@ func RunQcacheGrind(runner tooling.Runner, tag, benchName, profileName string) e
 		return errors.New("tooling runner is nil")
 	}
 	// 1. find the binary file given the parameters of the function, it will be located under bench/tag/bin/benchName/{benchmarkName}_{profileName}.out
-	binaryFilePath := filepath.Join(internal.MainDirOutput, tag, internal.ProfileBinDir, benchName, fmt.Sprintf("%s_%s.out", benchName, profileName))
+	binaryFilePath := filepath.Join(internal.MainDirOutput, tag, internal.ProfileBinDir, benchName, fmt.Sprintf("%s_%s.%s", benchName, profileName, internal.ProfileArtifactExtension))
 
 	if _, err := os.Stat(binaryFilePath); os.IsNotExist(err) {
 		return fmt.Errorf("binary file not found: %s", binaryFilePath)
 	}
 
 	// Create the output directory for qcachegrind results
-	outputDir := filepath.Join(internal.MainDirOutput, internal.ToolDir, "qcachegrind")
+	outputDir := filepath.Join(internal.MainDirOutput, internal.ToolDir, internal.ToolNameQcachegrind)
 	if err := os.MkdirAll(outputDir, internal.PermDir); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
@@ -46,13 +46,13 @@ func RunQcacheGrind(runner tooling.Runner, tag, benchName, profileName string) e
 
 	fmt.Printf("Generated callgrind file: %s\n", callgrindOutputPath)
 
-	if _, err = tooling.LookPath("qcachegrind"); err != nil {
+	if _, err = tooling.LookPath(internal.ToolNameQcachegrind); err != nil {
 		return errors.New("qcachegrind command not found. Please install it first: sudo apt-get install qcachegrind (Ubuntu/Debian) or brew install qcachegrind (macOS)")
 	}
 
 	fmt.Printf("Launching qcachegrind with file: %s\n", callgrindOutputPath)
 
-	if err = tooling.StartDetached(ctx, []string{"qcachegrind", callgrindOutputPath}, tooling.RunOpts{}); err != nil {
+	if err = tooling.StartDetached(ctx, []string{internal.ToolNameQcachegrind, callgrindOutputPath}, tooling.RunOpts{}); err != nil {
 		return fmt.Errorf("failed to launch qcachegrind: %w", err)
 	}
 

@@ -11,10 +11,6 @@ import (
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
-const (
-	benchstatCommand = "benchstat"
-)
-
 // RunBenchStats runs benchstat on two collected benchmark text files.
 func RunBenchStats(runner tooling.Runner, baseTag, currentTag, benchName string) error {
 	if runner == nil {
@@ -51,12 +47,12 @@ func RunBenchStats(runner tooling.Runner, baseTag, currentTag, benchName string)
 	}
 
 	// 4. Run benchstats programmatically, if benchstats is not installed on the machine return an error.
-	if _, err := tooling.LookPath(benchstatCommand); err != nil {
+	if _, err := tooling.LookPath(internal.ToolNameBenchstat); err != nil {
 		return errors.New("benchstat command not found. Please install it first: go install golang.org/x/perf/cmd/benchstat@latest")
 	}
 
 	// Run benchstat command
-	output, runErr := runner.Run(context.Background(), []string{benchstatCommand, baseTextPath, currentTextPath}, tooling.RunOpts{Combined: true})
+	output, runErr := runner.Run(context.Background(), []string{internal.ToolNameBenchstat, baseTextPath, currentTextPath}, tooling.RunOpts{Combined: true})
 	if runErr != nil {
 		return fmt.Errorf("failed to run benchstat: %w, output: %s", runErr, string(output))
 	}
@@ -66,7 +62,7 @@ func RunBenchStats(runner tooling.Runner, baseTag, currentTag, benchName string)
 	fmt.Println(string(output))
 
 	// Save results to file
-	resultsDir := filepath.Join(benchDir, internal.ToolDir, benchstatCommand)
+	resultsDir := filepath.Join(benchDir, internal.ToolDir, internal.ToolNameBenchstat)
 	if mkErr := os.MkdirAll(resultsDir, internal.PermDir); mkErr != nil {
 		return fmt.Errorf("failed to create results directory: %w", mkErr)
 	}

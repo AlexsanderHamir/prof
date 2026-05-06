@@ -38,7 +38,7 @@ type ProfilePaths struct {
 func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 	tagDir := filepath.Join(internal.MainDirOutput, tag)
 	profileTextFile := fmt.Sprintf("%s_%s.%s", benchmarkName, profile, internal.TextExtension)
-	profileBinFile := fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension)
+	profileBinFile := fmt.Sprintf("%s_%s.%s", benchmarkName, profile, internal.ProfileArtifactExtension)
 
 	return ProfilePaths{
 		ProfileTextFile:   filepath.Join(tagDir, internal.ProfileTextDir, benchmarkName, profileTextFile),
@@ -60,7 +60,7 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 	var processed []string
 
 	for _, profile := range profiles {
-		profileFile := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, binExtension))
+		profileFile := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, internal.ProfileArtifactExtension))
 		if _, err := os.Stat(profileFile); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				if lenientProfiles {

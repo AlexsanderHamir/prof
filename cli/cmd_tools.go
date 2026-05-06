@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/internal/app"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +19,7 @@ func newToolsCmd(svc *app.Services) *cobra.Command {
 func newQCacheGrindCmd(svc *app.Services) *cobra.Command {
 	profilesFlag := "profiles"
 	cmd := &cobra.Command{
-		Use:     "qcachegrind",
+		Use:     internal.ToolNameQcachegrind,
 		Short:   "Generate callgrind output and open qcachegrind for a collected binary profile.",
 		Example: "prof  tools qcachegrind --tag `current` --profiles `cpu` --bench-name `BenchmarkGenPool`",
 		RunE: func(_ *cobra.Command, _ []string) error {
@@ -36,7 +37,7 @@ func newQCacheGrindCmd(svc *app.Services) *cobra.Command {
 
 func newBenchStatCmd(svc *app.Services) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "benchstat",
+		Use:     internal.ToolNameBenchstat,
 		Short:   "runs benchstat on txt collected data.",
 		Example: "prof tools benchstat --base `baseline` --current `current` --bench-name `BenchmarkGenPool`",
 		RunE: func(_ *cobra.Command, _ []string) error {

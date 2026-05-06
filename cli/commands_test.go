@@ -328,7 +328,7 @@ func TestCmdToolsBenchstatAndQcachegrindRunE(t *testing.T) {
 	root := CreateRootCmd(&app.Services{
 		Benchmark: noopBench{}, Collector: noopColl{}, Tracker: noopTrack{}, Tools: capturedTools, Setup: noopSetup{},
 	})
-	root.SetArgs([]string{"tools", "benchstat", "--" + baseTagFlag, "a", "--" + currentTagFlag, "b", "--" + benchNameFlag, "B"})
+	root.SetArgs([]string{"tools", internal.ToolNameBenchstat, "--" + baseTagFlag, "a", "--" + currentTagFlag, "b", "--" + benchNameFlag, "B"})
 	if err := root.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -341,7 +341,7 @@ func TestCmdToolsBenchstatAndQcachegrindRunE(t *testing.T) {
 	root2 := CreateRootCmd(&app.Services{
 		Benchmark: noopBench{}, Collector: noopColl{}, Tracker: noopTrack{}, Tools: capturedTools2, Setup: noopSetup{},
 	})
-	root2.SetArgs([]string{"tools", "qcachegrind", "--" + tagFlag, "t9", "--" + benchNameFlag, "BB", "--profiles", "mutex"})
+	root2.SetArgs([]string{"tools", internal.ToolNameQcachegrind, "--" + tagFlag, "t9", "--" + benchNameFlag, "BB", "--profiles", "mutex"})
 	if err := root2.Execute(); err != nil {
 		t.Fatal(err)
 	}
