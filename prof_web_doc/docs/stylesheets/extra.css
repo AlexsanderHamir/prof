@@ -53,3 +53,69 @@ body {
 .md-nav__link--active {
   font-weight: 600;
 }
+
+/*
+ * Header and tabs: the stock indigo app bar hides the pale logo. Use a light
+ * bar in the default (light) scheme only; slate/dark scheme keeps the theme.
+ */
+[data-md-color-scheme="default"] .md-header {
+  background-color: #e8eaf6;
+  color: #161b33;
+  box-shadow: 0 0 0.2rem rgba(16, 22, 51, 0.1);
+}
+
+[data-md-color-scheme="default"] .md-header__button {
+  color: currentColor;
+}
+
+[data-md-color-scheme="default"] .md-search__form {
+  background-color: rgba(16, 22, 51, 0.08);
+}
+
+[data-md-color-scheme="default"] .md-search__input {
+  color: #161b33;
+}
+
+[data-md-color-scheme="default"] .md-search__input::placeholder {
+  color: rgba(22, 27, 51, 0.48);
+}
+
+[data-md-color-scheme="default"] .md-search__icon {
+  color: rgba(22, 27, 51, 0.55);
+}
+
+[data-md-color-scheme="default"] .md-source {
+  color: #161b33;
+}
+
+[data-md-color-scheme="default"] .md-source__repository,
+[data-md-color-scheme="default"] .md-source__facts {
+  color: rgba(22, 27, 51, 0.75);
+}
+
+[data-md-color-scheme="default"] .md-tabs {
+  background-color: #dde2f5;
+  color: #161b33;
+}
+
+[data-md-color-scheme="default"] .md-tabs__link {
+  color: rgba(22, 27, 51, 0.78);
+}
+
+[data-md-color-scheme="default"] .md-tabs__link--active,
+[data-md-color-scheme="default"] .md-tabs__link:hover {
+  color: #161b33;
+}
+
+[data-md-color-scheme="default"] .md-tabs__indicator {
+  background-color: #3949ab;
+}
+
+/* Slate scheme: slightly lift header from body so the logo does not sit on near-black */
+[data-md-color-scheme="slate"] .md-header {
+  background-color: #3f4a6b;
+}
+
+[data-md-color-scheme="slate"] .md-tabs {
+  background-color: #38405c;
+}
