@@ -14,21 +14,21 @@ Collect with one tag, change code, run again with another tag, then **Compare tw
 
 1. Baseline:
 
-```bash
-prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
-```
+   ```bash
+   prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
+   ```
 
 2. After changes:
 
-```bash
-prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --count 10 --tag "candidate"
-```
+   ```bash
+   prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --count 10 --tag "candidate"
+   ```
 
 3. Compare:
 
-```bash
-prof track auto --base "baseline" --current "candidate" --profile-type "cpu" --bench-name "BenchmarkExample" --output-format "summary"
-```
+   ```bash
+   prof track auto --base "baseline" --current "candidate" --profile-type "cpu" --bench-name "BenchmarkExample" --output-format "summary"
+   ```
 
 ## Output
 
