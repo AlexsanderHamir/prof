@@ -5,6 +5,18 @@ import (
 	"io"
 )
 
+// StreamRunOpts configures [RunWithStdinStreamStdout].
+type StreamRunOpts struct {
+	// Dir is the working directory for the child process. Empty means the current process directory.
+	Dir string
+	// Env is the environment for the child. When nil, the child inherits the current process environment ([os.Environ]).
+	Env []string
+	// Stdin is optional input written to the child's standard input.
+	Stdin []byte
+	// OnStdoutLine, when non-nil, is called with each complete stdout line (without the trailing newline) as the process runs.
+	OnStdoutLine func([]byte)
+}
+
 // RunOpts configures a single [Runner.Run] invocation.
 type RunOpts struct {
 	// Dir is the working directory for the child process. Empty means the current process directory.
