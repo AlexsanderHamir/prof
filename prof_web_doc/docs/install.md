@@ -20,14 +20,6 @@ prof --help
 
 From the module root, run **`prof ui`** or follow [Quickstart](quickstart.md).
 
-## Shell completion (optional)
-
-```bash
-prof completion -h
-```
-
-Save the script for your shell and source it per your OS conventions.
-
 ## Next step
 
 [Quickstart](quickstart.md)

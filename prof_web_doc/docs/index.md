@@ -15,7 +15,7 @@ Prof runs Go benchmarks with `go test` profiling, writes output under `bench/<ta
 
 | Article | Purpose |
 | ------- | ------- |
-| [Install Prof](install.md) | Install binary, completion, try `prof ui`. |
+| [Install Prof](install.md) | Install binary, try `prof ui`. |
 | [Quickstart](quickstart.md) | First successful collect and compare. |
 | [Working directory and paths](workspace.md) | Where benchmarks are found; where files go. |
 | [Collect profiling data](collect.md) | `prof auto`, `prof manual`. |

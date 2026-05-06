@@ -28,8 +28,6 @@ prof ui
 
 Menus first; **`prof auto`**, **`prof track`**, and flags are for scripts and CI. Examples, flags, and layout: **[documentation site](https://alexsanderhamir.github.io/prof/)** ([Quickstart](https://alexsanderhamir.github.io/prof/quickstart/), [Collect](https://alexsanderhamir.github.io/prof/collect/), [Compare](https://alexsanderhamir.github.io/prof/compare/)).
 
-Shell completion: `prof completion -h`.
-
 ## Install
 
 ```bash
