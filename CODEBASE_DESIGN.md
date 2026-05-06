@@ -7,7 +7,8 @@ This document maps the Prof repository: entrypoints, packages, data flow through
 - [`engine/benchmark`](engine/benchmark): `go test` orchestration, profile collection pipeline, layout under `bench/<tag>/`.
 - [`engine/collector`](engine/collector): pprof text, PNG, grouped text, manual file ingest, per-function list output (via shared runner and argv helpers).
 - [`engine/tracker`](engine/tracker): load two profiles, diff, report formats, apply `ci_config` rules.
-- [`engine/tooling`](engine/tooling): subprocess [`Runner`](engine/tooling/runner.go), profile [`Catalog`](engine/tooling/catalog.go), `go tool pprof` argv construction.
+- [`engine/tooling`](engine/tooling): subprocess [`Runner`](engine/tooling/runner.go), [`RunWithStdinStreamStdout`](engine/tooling/exec_runner.go) for stdin + line-streamed stdout, profile [`Catalog`](engine/tooling/catalog.go), `go tool pprof` argv construction.
+- [`engine/cursoragent`](engine/cursoragent): non-interactive **`cursor-agent`** driver ([`Client.Probe`](engine/cursoragent/client.go), [`Client.Run`](engine/cursoragent/client.go)) for future LLM-backed analysis; not wired into the `prof` CLI yet.
 - [`parser`](parser): decode profile binaries into structured data; pipeline stages for comparisons.
 - [`internal`](internal): JSON config types, path constants, `BenchArgs` / collection wiring, template IO ([`internal/api.go`](internal/api.go)).
 - [`cli`](cli) and [`internal/tui`](internal/tui): Cobra commands, flags, Bubble Tea and Survey UIs; call [`internal/app`](internal/app) services (often via [`internal/intent`](internal/intent) for `prof ui` / `prof tui` workflows).
@@ -72,7 +73,8 @@ The installable binary is `go install …/cmd/prof@latest`; that `main` package 
 | [`cli`](cli) | Cobra commands, flags, TUI glue; calls `app.Services` |
 | [`internal/app`](internal/app) | Composition root interfaces and default adapters; holds [`tooling.Runner`](engine/tooling/runner.go) |
 | [`internal/intent`](internal/intent) | Translation: validated UI/CLI-shaped inputs → [`app.Services`](internal/app/services.go) (`CollectIntent`, `CompareIntent`, tools, setup); see package `doc.go` |
-| [`engine/tooling`](engine/tooling) | Subprocess [`Runner`](engine/tooling/runner.go), profile [`Catalog`](engine/tooling/catalog.go), `go tool pprof` argv helpers; in-process parsing stays in [`parser`](parser) |
+| [`engine/tooling`](engine/tooling) | Subprocess [`Runner`](engine/tooling/runner.go), [`RunWithStdinStreamStdout`](engine/tooling/exec_runner.go), profile [`Catalog`](engine/tooling/catalog.go), `go tool pprof` argv helpers; in-process parsing stays in [`parser`](parser) |
+| [`engine/cursoragent`](engine/cursoragent) | Cursor **`cursor-agent`** wrapper ([`Client`](engine/cursoragent/client.go)); stream-json parse, curated child env, redaction; for LLM features built on top of the CLI |
 | [`engine/benchmark`](engine/benchmark) | Layout, `go test -bench`, run pipeline, delegates artifact helpers to collector |
 | [`engine/collector`](engine/collector) | pprof text, PNG, function list IO (via runner and tooling argv), manual ingest, package-grouped text |
 | [`engine/tracker`](engine/tracker) | Load two profiles, diff, reports, CI filter application |
