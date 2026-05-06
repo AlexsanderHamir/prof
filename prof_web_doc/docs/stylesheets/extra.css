@@ -1,12 +1,29 @@
+/* Typography: docs-style UI stack (Segoe on Windows; system UI elsewhere). font: false in mkdocs.yml avoids Google Fonts. */
+:root {
+  --md-text-font: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --md-code-font: "Cascadia Code", "Cascadia Mono", Consolas, "Segoe UI Mono", ui-monospace,
+    "Liberation Mono", Menlo, Monaco, "Courier New", monospace;
+}
+
+body {
+  font-family: var(--md-text-font);
+}
+
 /* Layout: comfortable reading width on ultrawide displays */
 .md-grid {
   max-width: 70rem;
 }
 
-/* Slightly tighter body rhythm */
 .md-typeset {
-  font-size: 0.92rem;
+  font-size: 0.9375rem;
   line-height: 1.65;
+  font-weight: 400;
+}
+
+/* Use weight, not bold spam, for emphasis in prose */
+.md-typeset strong {
+  font-weight: 600;
 }
 
 .md-typeset h1 {
@@ -14,13 +31,22 @@
   letter-spacing: -0.02em;
 }
 
+.md-typeset h2,
+.md-typeset h3 {
+  font-weight: 600;
+}
+
 /* Code: subtle rounding, avoid harsh boxes */
 .md-typeset code {
   border-radius: 0.25rem;
+  font-family: var(--md-code-font);
+  font-weight: 500;
 }
 
 .md-typeset pre > code {
   border-radius: 0.35rem;
+  font-family: var(--md-code-font);
+  font-weight: 400;
 }
 
 /* Sidebar: clearer active state (Material defaults + tweak) */

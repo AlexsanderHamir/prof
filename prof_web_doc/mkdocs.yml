@@ -4,10 +4,11 @@ site_url: https://alexsanderhamir.github.io/prof/
 
 repo_url: https://github.com/AlexsanderHamir/prof
 repo_name: prof
-edit_uri: ""
+edit_uri: edit/main/prof_web_doc/docs/
 
 theme:
   name: material
+  font: false
   language: en
   logo: ../assets/prof_logo_v0.0.1.png
   favicon: ../assets/prof_logo_v0.0.1.png
@@ -41,16 +42,21 @@ extra_css:
   - stylesheets/extra.css
 
 nav:
-  - Overview: index.md
-  - Install Prof: install.md
-  - Quickstart: quickstart.md
-  - Paths and cwd: workspace.md
-  - Collect: collect.md
-  - Configure: configure.md
-  - Compare: compare.md
-  - UI and TUI: tui.md
-  - CI: ci.md
-  - Tools: tools.md
+  - Home: index.md
+  - Getting started:
+      - Install Prof: install.md
+      - Quickstart: quickstart.md
+  - Guides:
+      - Working directory and paths: workspace.md
+      - Collect profiling data: collect.md
+      - Compare runs: compare.md
+      - Configure collection: configure.md
+      - Interactive UI and TUI: tui.md
+      - CI and regressions: ci.md
+      - Optional tools: tools.md
+  - Reference:
+      - CLI reference: cli-reference.md
+      - Troubleshooting: troubleshooting.md
 
 markdown_extensions:
   - tables
@@ -63,7 +69,11 @@ markdown_extensions:
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_div_format
   - toc:
       permalink: true
 
