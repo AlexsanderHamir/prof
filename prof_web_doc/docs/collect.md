@@ -9,6 +9,8 @@ Interactive collect: **`prof ui`** or **`prof tui`**. Below: **`prof auto`** and
 | `prof auto` | Run benchmarks; collect profile types you list. |
 | `prof manual` | Ingest existing profile binaries; same layout style. |
 
+`prof auto` and `prof manual` run **`go`** and **`go tool pprof`** on your machine. The implementation centralizes those commands in **`engine/tooling`** so argv and supported profile names stay consistent.
+
 ## prof auto
 
 Required: `--benchmarks`, `--profiles`, `--count`, `--tag`.

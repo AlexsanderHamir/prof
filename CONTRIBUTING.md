@@ -21,6 +21,7 @@ Before starting, check [issues](https://github.com/AlexsanderHamir/prof/issues) 
 - `cli/` – Cobra commands, flags, interactive TUI
 - `internal/app/` – Interfaces and default wiring into engines
 - `engine/benchmark/` – `go test` orchestration and `bench/<tag>/` layout
+- `engine/tooling/` – Subprocess [`Runner`](engine/tooling/runner.go), profile [`Catalog`](engine/tooling/catalog.go), and `go tool pprof` argv helpers used by benchmark, collector, and optional tools
 - `engine/collector/` – Profile ingestion, text/PNG/function outputs, manual flow
 - `engine/tracker/` – Compare runs, reports, CI-style filtering
 - `engine/tools/` – Optional tooling (benchstat, qcachegrind)
@@ -29,6 +30,12 @@ Before starting, check [issues](https://github.com/AlexsanderHamir/prof/issues) 
 - `tests/` – Integration and blackbox checks
 
 📖 Diagrams, command → file map, and sharp edges: [CODEBASE_DESIGN.md](CODEBASE_DESIGN.md).
+
+## Add a profile kind or change `pprof` / `go test` flags
+
+1. Register the profile in [`engine/tooling/catalog.go`](engine/tooling/catalog.go) (`DefaultCatalog`). [`engine/benchmark/constants.go`](engine/benchmark/constants.go) rebuilds `ProfileFlags` and `ExpectedFiles` from that catalog in `init`, and [`cli/discovery.go`](cli/discovery.go) uses the same catalog for known profile names.
+2. Run `go test ./...` and update tests under [`engine/tooling`](engine/tooling) or [`engine/benchmark`](engine/benchmark) if behavior or argv changes.
+3. External commands must go through [`tooling.Runner`](engine/tooling/runner.go) in production code so tests can inject [`tooling.FakeRunner`](engine/tooling/fake_runner.go).
 
 ## Quick Start
 

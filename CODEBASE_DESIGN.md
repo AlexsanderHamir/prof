@@ -24,6 +24,7 @@ flowchart LR
     coll[engine/collector]
     track[engine/tracker]
     tools[engine/tools]
+    ttool[engine/tooling]
   end
   subgraph parsing [Parsing]
     parser[parser]
@@ -37,6 +38,10 @@ flowchart LR
   app --> coll
   app --> track
   app --> tools
+  app --> ttool
+  bench --> ttool
+  coll --> ttool
+  tools --> ttool
   bench --> coll
   bench --> parser
   coll --> parser
@@ -47,7 +52,7 @@ flowchart LR
   cobra --> internalPkg
 ```
 
-**Composition root:** [`internal/app/services.go`](internal/app/services.go) defines narrow interfaces (`Benchmark`, `Collector`, `Tracker`, `Tools`, `Setup`) and wires defaults to `engine/*` in [`internal/app/defaults.go`](internal/app/defaults.go). Prefer adding behavior behind these interfaces when the CLI stays stable.
+**Composition root:** [`internal/app/services.go`](internal/app/services.go) defines narrow interfaces (`Benchmark`, `Collector`, `Tracker`, `Tools`, `Setup`) plus a shared [`tooling.Runner`](engine/tooling/runner.go) for subprocess execution. Defaults wire into `engine/*` in [`internal/app/defaults.go`](internal/app/defaults.go). Prefer adding behavior behind these interfaces when the CLI stays stable.
 
 ### Package layout (actual directories)
 
@@ -55,9 +60,10 @@ flowchart LR
 |------|------|
 | [`cmd/prof`](cmd/prof) | `main`; delegates to `cli.Execute()` |
 | [`cli`](cli) | Cobra commands, flags, TUI glue; calls `app.Services` |
-| [`internal/app`](internal/app) | Composition root interfaces + default adapters |
+| [`internal/app`](internal/app) | Composition root interfaces + default adapters; holds [`tooling.Runner`](engine/tooling/runner.go) |
+| [`engine/tooling`](engine/tooling) | Subprocess [`Runner`](engine/tooling/runner.go), profile [`Catalog`](engine/tooling/catalog.go), `go tool pprof` argv helpers; in-process parsing stays in [`parser`](parser) |
 | [`engine/benchmark`](engine/benchmark) | Layout, `go test -bench`, run pipeline, delegates artifact helpers to collector |
-| [`engine/collector`](engine/collector) | `pprof` text/PNG/function list IO, manual ingest, package-grouped text |
+| [`engine/collector`](engine/collector) | `pprof` text/PNG/function list IO (via runner + tooling argv), manual ingest, package-grouped text |
 | [`engine/tracker`](engine/tracker) | Load two profiles, diff, reports, CI filter application |
 | [`engine/tools/benchstats`](engine/tools/benchstats), [`engine/tools/qcachegrind`](engine/tools/qcachegrind) | Optional tools on collected data |
 | [`parser`](parser) | Binary pprof → [`ProfileData`](parser/types.go) / line objects; `Pipeline` for swappable stages |
@@ -79,7 +85,7 @@ Shared types live in **`internal`** as files (no separate `internal/config` pack
 | `prof setup` | [`cli/cmd_setup.go`](cli/cmd_setup.go) → [`internal/api.go`](internal/api.go) `CreateTemplate` | Writes template JSON beside `go.mod` |
 | `prof tools …` | [`cli/cmd_tools.go`](cli/cmd_tools.go) → `engine/tools/*` | Benchstat / qcachegrind helpers |
 
-[`cli/discovery.go`](cli/discovery.go) lists tags and benchmarks **from existing `bench/` output** for TUI/track prompts; benchmark **source** discovery (`BenchmarkXxx` in `_test.go` files) lives in [`engine/benchmark/discovery.go`](engine/benchmark/discovery.go).
+[`cli/discovery.go`](cli/discovery.go) lists tags and benchmarks **from existing `bench/` output** for TUI/track prompts; known profile names come from [`tooling.DefaultCatalog`](engine/tooling/catalog.go). Benchmark **source** discovery (`BenchmarkXxx` in `_test.go` files) lives in [`engine/benchmark/discovery.go`](engine/benchmark/discovery.go).
 
 ## Profile pipelines
 
@@ -88,7 +94,7 @@ Shared types live in **`internal`** as files (no separate `internal/config` pack
 1. [`benchmark.RunBenchmarks`](engine/benchmark/entry.go) loads config via [`internal.LoadFromFile`](internal/api.go) (`config_template.json` at module root). Missing file → empty config; see logs in `entry.go`.
 2. Prepares directories under `bench/<tag>/` (`layout.go`).
 3. For each benchmark: run `go test` in the package directory that defines the benchmark ([`gotest.go`](engine/benchmark/gotest.go)), move profile binaries into `bench/<tag>/bin/<bench>/`.
-4. [`processProfiles`](engine/benchmark/profiles.go): text profiles, optional package-grouped text, PNGs (Graphviz `dot`), then [`collectProfileFunctions`](engine/benchmark/profiles.go) uses [`parser`](parser) + collector for per-function `pprof -list` output.
+4. [`processProfiles`](engine/benchmark/profiles.go) runs in order: text listing, optional package-grouped text, then PNG (Graphviz `dot`). Each step uses the shared [`tooling.Runner`](engine/tooling/runner.go). Then [`collectProfileFunctions`](engine/benchmark/pipeline.go) uses [`parser`](parser) + collector for per-function `pprof -list` output.
 
 ### Manual ingest (`prof manual`)
 
@@ -133,7 +139,7 @@ Generate a starter file with **`prof setup`**.
 
 - **spf13/cobra**: CLI structure
 - **AlecAivazis/survey/v2**: TUI prompts
-- **google/pprof**: Profile decode and tooling (via [`parser`](parser))
+- **google/pprof**: Profile decode (via [`parser`](parser)); external `go tool pprof` invocations are argv-built in [`engine/tooling`](engine/tooling) and executed through [`tooling.Runner`](engine/tooling/runner.go)
 
 ## Testing
 
