@@ -12,7 +12,7 @@ Profiling eats time. Learning tools, running commands, hunting down output. Prof
 [![Version](https://img.shields.io/github/v/tag/AlexsanderHamir/prof?sort=semver)](https://github.com/AlexsanderHamir/prof/releases)
 ![Go Version](https://img.shields.io/badge/Go-1.24.3%2B-blue)
 
-[Documentation](https://alexsanderhamir.github.io/prof/)
+[Documentation Site](https://alexsanderhamir.github.io/prof/)
 
 ## Start here
 
@@ -25,8 +25,6 @@ prof ui
 <p align="center">
   <img src="assets/prof_ui_example.gif" alt="prof ui: terminal and graphical UI" />
 </p>
-
-Menus first; **`prof auto`**, **`prof track`**, and flags are for scripts and CI. Examples, flags, and layout: **[documentation site](https://alexsanderhamir.github.io/prof/)** ([Quickstart](https://alexsanderhamir.github.io/prof/quickstart/), [Collect](https://alexsanderhamir.github.io/prof/collect/), [Compare](https://alexsanderhamir.github.io/prof/compare/)).
 
 ## Install
 
