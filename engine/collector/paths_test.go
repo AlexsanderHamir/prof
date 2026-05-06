@@ -10,10 +10,3 @@ func TestStemFromPath(t *testing.T) {
 		t.Fatalf("stemFromPath windows-ish: got %q", got)
 	}
 }
-
-func TestPprofTextListArgsNonEmpty(t *testing.T) {
-	args := pprofTextListArgs()
-	if len(args) < 2 {
-		t.Fatal(args)
-	}
-}

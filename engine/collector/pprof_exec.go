@@ -1,24 +1,26 @@
 package collector
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
 // GetProfileTextOutput runs go tool pprof text listing and writes output to outputFile.
-func GetProfileTextOutput(binaryFile, outputFile string) error {
-	cmd := append([]string{"go", "tool", "pprof"}, pprofTextListArgs()...)
-	cmd = append(cmd, binaryFile)
-	// #nosec G204 -- argv built here, binary path only
-	execCmd := exec.Command(cmd[0], cmd[1:]...)
-	out, err := execCmd.Output()
+func GetProfileTextOutput(runner tooling.Runner, binaryFile, outputFile string) error {
+	if runner == nil {
+		return errors.New("tooling runner is nil")
+	}
+	ctx := context.Background()
+	out, err := runner.Run(ctx, tooling.PprofTextTopArgs(binaryFile), tooling.RunOpts{})
 	if err != nil {
 		return fmt.Errorf("pprof command failed: %w", err)
 	}
@@ -26,11 +28,12 @@ func GetProfileTextOutput(binaryFile, outputFile string) error {
 }
 
 // GetPNGOutput renders a PNG flame-style view via go tool pprof -png.
-func GetPNGOutput(binaryFile, outputFile string) error {
-	cmd := []string{"go", "tool", "pprof", "-png", binaryFile}
-	// #nosec G204
-	execCmd := exec.Command(cmd[0], cmd[1:]...)
-	out, err := execCmd.Output()
+func GetPNGOutput(runner tooling.Runner, binaryFile, outputFile string) error {
+	if runner == nil {
+		return errors.New("tooling runner is nil")
+	}
+	ctx := context.Background()
+	out, err := runner.Run(ctx, tooling.PprofPNGArgs(binaryFile), tooling.RunOpts{})
 	if err != nil {
 		return fmt.Errorf("pprof PNG generation failed: %w", err)
 	}
@@ -60,13 +63,14 @@ func listPatternCandidates(shortStem, fullSymbol string) []string {
 	return out
 }
 
-func writeFunctionListPprof(shortStem, fullSymbol, binaryFile, outputFile string) error {
+func writeFunctionListPprof(runner tooling.Runner, shortStem, fullSymbol, binaryFile, outputFile string) error {
+	if runner == nil {
+		return errors.New("tooling runner is nil")
+	}
+	ctx := context.Background()
 	var lastErr error
 	for _, pattern := range listPatternCandidates(shortStem, fullSymbol) {
-		cmd := []string{"go", "tool", "pprof", "-list=" + pattern, binaryFile}
-		// #nosec G204
-		execCmd := exec.Command(cmd[0], cmd[1:]...)
-		out, err := execCmd.CombinedOutput()
+		out, err := runner.Run(ctx, tooling.PprofListArgs(binaryFile, pattern), tooling.RunOpts{Combined: true})
 		if err != nil {
 			lastErr = fmt.Errorf("pprof list (pattern %q): %w: %s", pattern, err, string(out))
 			continue
@@ -83,10 +87,10 @@ func writeFunctionListPprof(shortStem, fullSymbol, binaryFile, outputFile string
 // GetFunctionsOutput runs pprof -list for each [parser.FunctionListEntry] into basePath.
 // If every -list pattern fails for a symbol, that function is skipped and a warning is logged
 // so the rest of the profile can still be collected.
-func GetFunctionsOutput(entries []parser.FunctionListEntry, binaryPath, basePath string) error {
+func GetFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string) error {
 	for _, e := range entries {
 		out := filepath.Join(basePath, e.OutputStem+"."+internal.TextExtension)
-		if err := writeFunctionListPprof(e.OutputStem, e.FullSymbol, binaryPath, out); err != nil {
+		if err := writeFunctionListPprof(runner, e.OutputStem, e.FullSymbol, binaryPath, out); err != nil {
 			slog.Warn("skipping per-function pprof list", "function", e.OutputStem, "binary", binaryPath, "err", err)
 			continue
 		}

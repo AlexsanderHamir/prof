@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/AlexsanderHamir/prof/engine/collector"
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal"
-	"github.com/AlexsanderHamir/prof/parser"
 )
 
 // ProfilePaths holds paths for profile text, binary, and output directories.
@@ -50,7 +50,9 @@ func getProfilePaths(tag, benchmarkName, profile string) ProfilePaths {
 // processProfiles collects all pprof info for a specific benchmark and its specified profiles.
 // It returns profile kinds successfully processed—when lenientProfiles is true, missing binaries are omitted
 // from this slice so downstream collection skips them consistently.
-func processProfiles(benchmarkName string, profiles []string, tag string, groupByPackage bool, lenientProfiles bool, skipPNG bool) ([]string, error) { //nolint:gocognit // sequential profile stages
+//
+// Processing runs in order: text listing, optional package-grouped text, then PNG (optional when skipPNG is true).
+func processProfiles(runner tooling.Runner, benchmarkName string, profiles []string, tag string, groupByPackage bool, lenientProfiles bool, skipPNG bool) ([]string, error) { //nolint:gocognit // sequential profile stages
 	tagDir := filepath.Join(internal.MainDirOutput, tag)
 	binDir := filepath.Join(tagDir, internal.ProfileBinDir, benchmarkName)
 	textDir := filepath.Join(tagDir, internal.ProfileTextDir, benchmarkName)
@@ -73,7 +75,7 @@ func processProfiles(benchmarkName string, profiles []string, tag string, groupB
 		outputFile := filepath.Join(textDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, internal.TextExtension))
 		profileFunctionsDir := filepath.Join(tagDir, profile+internal.FunctionsDirSuffix, benchmarkName)
 
-		if err := collector.GetProfileTextOutput(profileFile, outputFile); err != nil {
+		if err := collector.GetProfileTextOutput(runner, profileFile, outputFile); err != nil {
 			return nil, fmt.Errorf("failed to generate text profile for %s: %w", profile, err)
 		}
 
@@ -84,8 +86,12 @@ func processProfiles(benchmarkName string, profiles []string, tag string, groupB
 			}
 		}
 
+		if err := os.MkdirAll(profileFunctionsDir, internal.PermDir); err != nil {
+			return nil, fmt.Errorf("failed to create profile functions directory: %w", err)
+		}
+
 		pngDesiredFilePath := filepath.Join(profileFunctionsDir, fmt.Sprintf("%s_%s.png", benchmarkName, profile))
-		if err := collector.GetPNGOutput(profileFile, pngDesiredFilePath); err != nil {
+		if err := collector.GetPNGOutput(runner, profileFile, pngDesiredFilePath); err != nil {
 			if skipPNG {
 				slog.Warn("PNG visualization skipped", "profile", profile, "benchmark", benchmarkName, "err", err)
 			} else {
@@ -102,25 +108,4 @@ func processProfiles(benchmarkName string, profiles []string, tag string, groupB
 	}
 
 	return processed, nil
-}
-
-// CollectProfileFunctions collects all pprof information for each function, according to configurations.
-func collectProfileFunctions(args *internal.CollectionArgs) error {
-	for _, profile := range args.Profiles {
-		paths := getProfilePaths(args.Tag, args.BenchmarkName, profile)
-		if err := os.MkdirAll(paths.FunctionDirectory, internal.PermDir); err != nil {
-			return fmt.Errorf("failed to create output directory: %w", err)
-		}
-
-		listEntries, err := parser.GetFunctionListEntriesV2(paths.ProfileBinaryFile, args.BenchmarkConfig)
-		if err != nil {
-			return fmt.Errorf("failed to extract function names: %w", err)
-		}
-
-		if err = collector.GetFunctionsOutput(listEntries, paths.ProfileBinaryFile, paths.FunctionDirectory); err != nil {
-			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", err)
-		}
-	}
-
-	return nil
 }

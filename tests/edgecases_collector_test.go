@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/engine/collector"
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/parser"
 	pprofprofile "github.com/google/pprof/profile"
@@ -80,7 +81,7 @@ func TestEdge_functionListCollection_fixture(t *testing.T) {
 	}
 
 	dir := t.TempDir()
-	if outErr := collector.GetFunctionsOutput([]parser.FunctionListEntry{pick}, cpuPath, dir); outErr != nil {
+	if outErr := collector.GetFunctionsOutput(tooling.NewExecRunner(), []parser.FunctionListEntry{pick}, cpuPath, dir); outErr != nil {
 		t.Fatalf("GetFunctionsOutput: %v", outErr)
 	}
 	out := filepath.Join(dir, pick.OutputStem+"."+internal.TextExtension)

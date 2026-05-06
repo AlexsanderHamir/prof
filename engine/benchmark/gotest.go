@@ -1,13 +1,15 @@
 package benchmark
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
@@ -37,14 +39,11 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) (
 		"-benchmem",
 		fmt.Sprintf("-count=%d", count),
 	}
-	for _, profile := range profiles {
-		flag, exists := ProfileFlags[profile]
-		if !exists {
-			return nil, fmt.Errorf("profile %s is not supported", profile)
-		}
-		cmd = append(cmd, flag)
+	flags, err := benchmarkCatalog.GoTestProfileArgs(profiles)
+	if err != nil {
+		return nil, err
 	}
-	return cmd, nil
+	return append(cmd, flags...), nil
 }
 
 func getOutputDirectoriesPath(benchmarkName, tag string) (textDir string, binDir string) {
@@ -54,13 +53,12 @@ func getOutputDirectoriesPath(benchmarkName, tag string) (textDir string, binDir
 	return textDir, binDir
 }
 
-func runBenchmarkCommand(cmd []string, outputFile string, rootDir string) error {
-	// #nosec G204 -- argv from buildBenchmarkCommand
-	execCmd := exec.Command(cmd[0], cmd[1:]...)
-	if rootDir != "" {
-		execCmd.Dir = rootDir
+func runBenchmarkCommand(runner tooling.Runner, cmd []string, outputFile string, rootDir string) error {
+	if runner == nil {
+		return errors.New("tooling runner is nil")
 	}
-	output, err := execCmd.CombinedOutput()
+	ctx := context.Background()
+	output, err := runner.Run(ctx, cmd, tooling.RunOpts{Dir: rootDir, Combined: true})
 	fmt.Println("🚀 ==================== BENCHMARK OUTPUT ==================== 🚀")
 	fmt.Println(string(output))
 	fmt.Println("📊 ========================================================== 📊")
@@ -73,7 +71,7 @@ func runBenchmarkCommand(cmd []string, outputFile string, rootDir string) error 
 	return os.WriteFile(outputFile, output, internal.PermFile)
 }
 
-func runBenchmark(benchmarkName string, profiles []string, count int, tag string) error {
+func runBenchmark(runner tooling.Runner, benchmarkName string, profiles []string, count int, tag string) error {
 	cmd, err := buildBenchmarkCommand(benchmarkName, profiles, count)
 	if err != nil {
 		return err
@@ -88,7 +86,7 @@ func runBenchmark(benchmarkName string, profiles []string, count int, tag string
 		return fmt.Errorf("failed to locate benchmark %s: %w", benchmarkName, err)
 	}
 	outputFile := filepath.Join(textDir, fmt.Sprintf("%s.%s", benchmarkName, internal.TextExtension))
-	if err = runBenchmarkCommand(cmd, outputFile, pkgDir); err != nil {
+	if err = runBenchmarkCommand(runner, cmd, outputFile, pkgDir); err != nil {
 		return err
 	}
 	if err = moveProfileFiles(benchmarkName, profiles, pkgDir, binDir); err != nil {

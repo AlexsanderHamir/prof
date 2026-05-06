@@ -1,23 +1,6 @@
 package benchmark
 
-// SupportedProfiles lists profile kinds supported by the benchmark pipeline.
-var SupportedProfiles = []string{"cpu", "memory", "mutex", "block"}
-
-// ProfileFlags maps profile names to go test profiling flags.
-var ProfileFlags = map[string]string{
-	"cpu":    "-cpuprofile=cpu.out",
-	"memory": "-memprofile=memory.out",
-	"mutex":  "-mutexprofile=mutex.out",
-	"block":  "-blockprofile=block.out",
-}
-
-// ExpectedFiles maps profile names to expected pprof output filenames.
-var ExpectedFiles = map[string]string{
-	"cpu":    "cpu.out",
-	"memory": "memory.out",
-	"mutex":  "mutex.out",
-	"block":  "block.out",
-}
+import "github.com/AlexsanderHamir/prof/engine/tooling"
 
 const (
 	binExtension           = "out"
@@ -28,3 +11,31 @@ const (
 	// Minimum number of regex capture groups expected for benchmark function
 	minCaptureGroups = 2
 )
+
+// benchmarkCatalog is the default profile catalog for the benchmark pipeline.
+var benchmarkCatalog = tooling.DefaultCatalog()
+
+// SupportedProfiles lists profile kinds supported by the benchmark pipeline (declaration order).
+var SupportedProfiles = benchmarkCatalog.ProfileIDsSorted()
+
+// ProfileFlags maps profile names to go test profiling flags.
+var ProfileFlags = buildProfileFlags(benchmarkCatalog)
+
+// ExpectedFiles maps profile names to expected pprof output filenames in the package directory before moves.
+var ExpectedFiles = buildExpectedFiles(benchmarkCatalog)
+
+func buildProfileFlags(c *tooling.Catalog) map[string]string {
+	m := make(map[string]string)
+	for _, k := range c.ProfileKinds() {
+		m[k.ID] = k.GoTestFlag
+	}
+	return m
+}
+
+func buildExpectedFiles(c *tooling.Catalog) map[string]string {
+	m := make(map[string]string)
+	for _, k := range c.ProfileKinds() {
+		m[k.ID] = k.OutFileName
+	}
+	return m
+}

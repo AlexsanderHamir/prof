@@ -1,12 +1,14 @@
 package benchstats
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
@@ -15,7 +17,10 @@ const (
 )
 
 // RunBenchStats runs benchstat on two collected benchmark text files.
-func RunBenchStats(baseTag, currentTag, benchName string) error {
+func RunBenchStats(runner tooling.Runner, baseTag, currentTag, benchName string) error {
+	if runner == nil {
+		return errors.New("tooling runner is nil")
+	}
 	// 1. Look for the bench directory created by our library under the current directory where this command will be run
 	benchDir := internal.MainDirOutput
 	if _, err := os.Stat(benchDir); os.IsNotExist(err) {
@@ -53,10 +58,9 @@ func RunBenchStats(baseTag, currentTag, benchName string) error {
 	}
 
 	// Run benchstat command
-	cmd := exec.Command(benchstatCommand, baseTextPath, currentTextPath)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to run benchstat: %w, output: %s", err, string(output))
+	output, runErr := runner.Run(context.Background(), []string{benchstatCommand, baseTextPath, currentTextPath}, tooling.RunOpts{Combined: true})
+	if runErr != nil {
+		return fmt.Errorf("failed to run benchstat: %w, output: %s", runErr, string(output))
 	}
 
 	// 5. Print the output to the terminal and save it under bench/tools/benchstats/{benchmarkname}_results.txt
@@ -65,13 +69,13 @@ func RunBenchStats(baseTag, currentTag, benchName string) error {
 
 	// Save results to file
 	resultsDir := filepath.Join(benchDir, internal.ToolDir, benchstatCommand)
-	if err = os.MkdirAll(resultsDir, internal.PermDir); err != nil {
-		return fmt.Errorf("failed to create results directory: %w", err)
+	if mkErr := os.MkdirAll(resultsDir, internal.PermDir); mkErr != nil {
+		return fmt.Errorf("failed to create results directory: %w", mkErr)
 	}
 
 	resultsFile := filepath.Join(resultsDir, benchName+internal.ToolsResultsSuffix)
-	if err = os.WriteFile(resultsFile, output, internal.PermFile); err != nil {
-		return fmt.Errorf("failed to save results to file: %w", err)
+	if werr := os.WriteFile(resultsFile, output, internal.PermFile); werr != nil {
+		return fmt.Errorf("failed to save results to file: %w", werr)
 	}
 
 	fmt.Printf("Results saved to: %s\n", resultsFile)

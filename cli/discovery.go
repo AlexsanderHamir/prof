@@ -6,13 +6,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal"
 )
 
-// Known pprof profile kinds (matches benchmark/collect layout).
-var knownProfileTypeNames = map[string]struct{}{
-	"cpu": {}, "memory": {}, "mutex": {}, "block": {},
-}
+// profileCatalog matches the benchmark pipeline supported profile kinds.
+var profileCatalog = tooling.DefaultCatalog()
 
 // discoverAvailableTags scans the bench directory for existing tags
 func discoverAvailableTags() ([]string, error) {
@@ -89,7 +88,7 @@ func discoverAvailableProfiles(tag, benchmarkName string) ([]string, error) {
 			name := entry.Name()
 			if strings.HasPrefix(name, benchmarkName+"_") {
 				profileTypeName := strings.TrimSuffix(strings.TrimPrefix(name, benchmarkName+"_"), ".txt")
-				if _, ok := knownProfileTypeNames[profileTypeName]; ok {
+				if profileCatalog.IsKnownProfile(profileTypeName) {
 					availableProfiles = append(availableProfiles, profileTypeName)
 				}
 			}

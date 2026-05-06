@@ -1,15 +1,20 @@
 package collector
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
 // RunCollector organizes manual profile files under bench/<tag>/.
-func RunCollector(files []string, tag string, groupByPackage bool) error {
+func RunCollector(runner tooling.Runner, files []string, tag string, groupByPackage bool) error {
+	if runner == nil {
+		return errors.New("tooling runner is nil")
+	}
 	if err := ensureDirExists(internal.MainDirOutput); err != nil {
 		return err
 	}
@@ -27,14 +32,14 @@ func RunCollector(files []string, tag string, groupByPackage bool) error {
 	globalFilter, _ := globalFilterFromConfig(cfg)
 
 	for _, fullBinaryPath := range files {
-		if err = processOneManualFile(fullBinaryPath, tagDir, cfg, globalFilter, groupByPackage); err != nil {
+		if err = processOneManualFile(runner, fullBinaryPath, tagDir, cfg, globalFilter, groupByPackage); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func processOneManualFile(fullBinaryPath, tagDir string, cfg *internal.Config, globalFilter internal.FunctionFilter, groupByPackage bool) error {
+func processOneManualFile(runner tooling.Runner, fullBinaryPath, tagDir string, cfg *internal.Config, globalFilter internal.FunctionFilter, groupByPackage bool) error {
 	name := stemFromPath(fullBinaryPath)
 	profileDir, err := profileSubdir(tagDir, name)
 	if err != nil {
@@ -42,15 +47,15 @@ func processOneManualFile(fullBinaryPath, tagDir string, cfg *internal.Config, g
 	}
 
 	filter := resolveFunctionFilter(cfg, name, globalFilter)
-	if err = emitProfileArtifacts(fullBinaryPath, profileDir, name, filter, groupByPackage); err != nil {
+	if err = emitProfileArtifacts(runner, fullBinaryPath, profileDir, name, filter, groupByPackage); err != nil {
 		return err
 	}
-	return collectPerFunctionLists(profileDir, fullBinaryPath, filter)
+	return collectPerFunctionLists(runner, profileDir, fullBinaryPath, filter)
 }
 
-func emitProfileArtifacts(fullBinaryPath, profileDir, fileName string, filter internal.FunctionFilter, groupByPackage bool) error {
+func emitProfileArtifacts(runner tooling.Runner, fullBinaryPath, profileDir, fileName string, filter internal.FunctionFilter, groupByPackage bool) error {
 	textOut := filepath.Join(profileDir, fileName+"."+internal.TextExtension)
-	if err := GetProfileTextOutput(fullBinaryPath, textOut); err != nil {
+	if err := GetProfileTextOutput(runner, fullBinaryPath, textOut); err != nil {
 		return err
 	}
 	if groupByPackage {
@@ -62,7 +67,7 @@ func emitProfileArtifacts(fullBinaryPath, profileDir, fileName string, filter in
 	return nil
 }
 
-func collectPerFunctionLists(profileDirPath, fullBinaryPath string, functionFilter internal.FunctionFilter) error {
+func collectPerFunctionLists(runner tooling.Runner, profileDirPath, fullBinaryPath string, functionFilter internal.FunctionFilter) error {
 	listEntries, err := parser.GetFunctionListEntriesV2(fullBinaryPath, functionFilter)
 	if err != nil {
 		return fmt.Errorf("extract function names: %w", err)
@@ -72,7 +77,7 @@ func collectPerFunctionLists(profileDirPath, fullBinaryPath string, functionFilt
 	if err = ensureDirExists(functionDir); err != nil {
 		return err
 	}
-	if err = GetFunctionsOutput(listEntries, fullBinaryPath, functionDir); err != nil {
+	if err = GetFunctionsOutput(runner, listEntries, fullBinaryPath, functionDir); err != nil {
 		return fmt.Errorf("per-function pprof: %w", err)
 	}
 	return nil

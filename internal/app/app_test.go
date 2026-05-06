@@ -35,7 +35,7 @@ func (stubSetup) CreateTemplate() error { return nil }
 func TestWithDefaultsNilReceiver(t *testing.T) {
 	var s *Services
 	out := s.WithDefaults()
-	if out == nil || out.Benchmark == nil || out.Collector == nil || out.Tracker == nil || out.Tools == nil || out.Setup == nil {
+	if out == nil || out.Runner == nil || out.Benchmark == nil || out.Collector == nil || out.Tracker == nil || out.Tools == nil || out.Setup == nil {
 		t.Fatalf("expected all fields set: %#v", out)
 	}
 }

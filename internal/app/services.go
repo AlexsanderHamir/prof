@@ -1,6 +1,9 @@
 package app
 
-import "github.com/AlexsanderHamir/prof/engine/tracker"
+import (
+	"github.com/AlexsanderHamir/prof/engine/tooling"
+	"github.com/AlexsanderHamir/prof/engine/tracker"
+)
 
 // Benchmark runs the auto benchmark pipeline and discovers benchmarks in the module.
 type Benchmark interface {
@@ -33,6 +36,8 @@ type Setup interface {
 
 // Services is the composition root: inject alternate implementations for tests or custom backends.
 type Services struct {
+	// Runner executes external commands (go, go tool pprof, benchstat). When nil, [Services.WithDefaults] supplies [tooling.NewExecRunner].
+	Runner    tooling.Runner
 	Benchmark Benchmark
 	Collector Collector
 	Tracker   Tracker
@@ -46,17 +51,20 @@ func (s *Services) WithDefaults() *Services {
 		return Default()
 	}
 	out := *s
+	if out.Runner == nil {
+		out.Runner = tooling.NewExecRunner()
+	}
 	if out.Benchmark == nil {
-		out.Benchmark = defaultBenchmark{}
+		out.Benchmark = defaultBenchmark{runner: out.Runner}
 	}
 	if out.Collector == nil {
-		out.Collector = defaultCollector{}
+		out.Collector = defaultCollector{runner: out.Runner}
 	}
 	if out.Tracker == nil {
 		out.Tracker = defaultTracker{}
 	}
 	if out.Tools == nil {
-		out.Tools = defaultTools{}
+		out.Tools = defaultTools{runner: out.Runner}
 	}
 	if out.Setup == nil {
 		out.Setup = defaultSetup{}

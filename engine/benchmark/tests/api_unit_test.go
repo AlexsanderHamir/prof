@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/engine/benchmark"
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 )
 
 func TestRunBenchmarks(t *testing.T) {
@@ -52,7 +53,7 @@ func TestRunBenchmarks(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			defer cleanupBenchDirectories()
 
-			err := benchmark.RunBenchmarks(tt.benchmarks, tt.profiles, tt.tag, tt.count, false, false, false)
+			err := benchmark.RunBenchmarks(tooling.NewExecRunner(), tt.benchmarks, tt.profiles, tt.tag, tt.count, false, false, false)
 
 			if tt.wantErr {
 				if err == nil {

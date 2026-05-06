@@ -5,15 +5,6 @@ import (
 	"strings"
 )
 
-func pprofTextListArgs() []string {
-	return []string{
-		"-cum",
-		"-edgefraction=0",
-		"-nodefraction=0",
-		"-top",
-	}
-}
-
 // stemFromPath returns the filename without extension. fullPath may come from
 // another OS (e.g. Windows-style paths in tests or copied paths); normalize
 // '\' to '/' before filepath.Base so Linux CI agrees with Windows.

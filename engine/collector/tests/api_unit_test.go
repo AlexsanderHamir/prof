@@ -1,12 +1,14 @@
 package collector_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/engine/collector"
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/internal/testpaths"
 	"github.com/AlexsanderHamir/prof/parser"
@@ -40,7 +42,7 @@ func TestGetProfileTextOutput(t *testing.T) {
 	outputFile := filepath.Join(tempDir, "cpu_profile.txt")
 
 	// Test the function
-	err = collector.GetProfileTextOutput(binaryFile, outputFile)
+	err = collector.GetProfileTextOutput(tooling.NewExecRunner(), binaryFile, outputFile)
 
 	// The function might fail if go tool pprof is not available
 	// or if the binary file is not a valid profile
@@ -84,7 +86,7 @@ func TestGetPNGOutput(t *testing.T) {
 	outputFile := filepath.Join(tempDir, "memory_profile.png")
 
 	// Test the function
-	err = collector.GetPNGOutput(binaryFile, outputFile)
+	err = collector.GetPNGOutput(tooling.NewExecRunner(), binaryFile, outputFile)
 
 	// The function might fail if go tool pprof is not available,
 	// or if graphviz is missing (pprof -png needs dot on many platforms).
@@ -139,7 +141,7 @@ func TestGetFunctionsOutput(t *testing.T) {
 	entries = entries[:2]
 
 	// Test the function
-	err = collector.GetFunctionsOutput(entries, binaryFile, tempDir)
+	err = collector.GetFunctionsOutput(tooling.NewExecRunner(), entries, binaryFile, tempDir)
 
 	// The function might fail if go tool pprof is not available
 	// or if the binary file is not a valid profile
@@ -185,7 +187,7 @@ func TestRunCollector(t *testing.T) {
 	defer cleanupBenchDirectory(t)
 
 	// Test the function
-	err = collector.RunCollector(binaryFiles, "test_tag", false)
+	err = collector.RunCollector(tooling.NewExecRunner(), binaryFiles, "test_tag", false)
 
 	// The function might fail if go tool pprof is not available
 	// or if the binary files are not valid profiles
@@ -241,7 +243,8 @@ func TestRunCollectorWithInvalidFiles(t *testing.T) {
 	defer cleanupBenchDirectory(t)
 
 	// Test the function - it should fail
-	err = collector.RunCollector(invalidFiles, "test_tag", false)
+	fr := &tooling.FakeRunner{Err: []error{errors.New("exit status 1")}}
+	err = collector.RunCollector(fr, invalidFiles, "test_tag", false)
 	if err == nil {
 		t.Error("Expected error when running collector with invalid files, got nil")
 	} else if !strings.Contains(err.Error(), "pprof command failed") {
@@ -264,7 +267,7 @@ func TestRunCollectorWithEmptyFileList(t *testing.T) {
 	defer cleanupBenchDirectory(t)
 
 	// Test the function - it should succeed with no files to process
-	err = collector.RunCollector(emptyFiles, "test_tag", false)
+	err = collector.RunCollector(tooling.NewExecRunner(), emptyFiles, "test_tag", false)
 	if err != nil {
 		t.Errorf("Expected no error when running collector with empty file list, got: %v", err)
 	}
@@ -294,7 +297,8 @@ func TestRunCollectorWithMockFiles(t *testing.T) {
 	}
 
 	// Test the function - it should fail due to invalid binary files
-	err = collector.RunCollector(mockFiles, "test_tag", false)
+	fr := &tooling.FakeRunner{Err: []error{errors.New("exit status 1")}}
+	err = collector.RunCollector(fr, mockFiles, "test_tag", false)
 
 	// The function should fail because the mock files are not valid Go profiles
 	if err == nil {
