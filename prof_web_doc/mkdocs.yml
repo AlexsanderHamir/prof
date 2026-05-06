@@ -10,8 +10,8 @@ theme:
   name: material
   font: false
   language: en
-  logo: ../assets/prof_logo_v0.0.1.png
-  favicon: ../assets/prof_logo_v0.0.1.png
+  logo: assets/prof_logo_v0.0.1.png
+  favicon: assets/prof_logo_v0.0.1.png
   icon:
     repo: fontawesome/brands/github
   palette:
