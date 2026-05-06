@@ -144,6 +144,7 @@ Generate a starter file with **`prof setup`**.
 ## Testing
 
 - **`go test ./...`**: Unit tests under `cli`, `engine/*`, `parser`, `internal`, plus [`tests/blackbox_test.go`](tests/blackbox_test.go) for coarse integration checks.
+- **Lint:** **`forbidigo`** (see [`.golangci.yml`](.golangci.yml)) blocks `exec.Command` / `exec.CommandContext` outside [`engine/tooling/exec_runner.go`](engine/tooling/exec_runner.go), [`engine/tooling/exec_spawn.go`](engine/tooling/exec_spawn.go), and the **`tests/`** package so subprocess policy stays enforceable.
 - Fixture-style environments sometimes live under `tests/` directories with spaces in names—run tests from repo root.
 
 ## Design principles

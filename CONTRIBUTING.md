@@ -69,7 +69,7 @@ go build -o prof ./cmd/prof
    go test ./tests -count=1 -run '^TestEdge'
    ```
 
-2. **Code style** — Idiomatic Go; small functions; exported symbols commented when non-obvious.
+2. **Code style** — Idiomatic Go; small functions; exported symbols commented when non-obvious. **Subprocesses:** do not call `exec.Command` or `exec.CommandContext` outside `engine/tooling` (`exec_runner.go`, `exec_spawn.go`) or the `tests/` tree — **golangci-lint forbidigo** enforces this; use [`tooling.ExecRunner`](engine/tooling/exec_runner.go), [`tooling.StartDetached`](engine/tooling/exec_spawn.go), and [`tooling.LookPath`](engine/tooling/exec_spawn.go) instead.
 
 3. **Commits** — One logical change per commit; descriptive messages (`feat:`, `fix:`, `docs:`, `refactor:`).
 

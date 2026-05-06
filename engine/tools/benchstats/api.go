@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
@@ -52,8 +51,7 @@ func RunBenchStats(runner tooling.Runner, baseTag, currentTag, benchName string)
 	}
 
 	// 4. Run benchstats programmatically, if benchstats is not installed on the machine return an error.
-	// Check if benchstats is installed
-	if _, err := exec.LookPath(benchstatCommand); err != nil {
+	if _, err := tooling.LookPath(benchstatCommand); err != nil {
 		return errors.New("benchstat command not found. Please install it first: go install golang.org/x/perf/cmd/benchstat@latest")
 	}
 

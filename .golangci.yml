@@ -20,6 +20,14 @@ issues:
     - (^|[\\/])tests[\\/]Enviroment.*
     - (^|[\\/])tests[\\/]\.integration_prof_build.*
   exclude-rules:
+    # forbidigo: subprocess harnesses outside engine/tooling (blackbox, fixture builders).
+    - path: (^|[\\/])tests[\\/].*\.go$
+      linters: [forbidigo]
+    # forbidigo: only exec_runner.go and exec_spawn.go may call exec.Command / exec.CommandContext.
+    - path: (^|[\\/])engine[\\/]tooling[\\/]exec_runner\.go$
+      linters: [forbidigo]
+    - path: (^|[\\/])engine[\\/]tooling[\\/]exec_spawn\.go$
+      linters: [forbidigo]
     # Nested engine test helpers were historically unlinted; tighten incrementally.
     - path: engine/.*/tests/.*\.go
       linters:
@@ -133,6 +141,14 @@ linters-settings:
       - "^golang.org/x/tools/go/analysis.Analyzer$"
       - "^google.golang.org/protobuf/.+Options$"
       - "^gopkg.in/yaml.v3.Node$"
+
+  # Subprocess policy: product code uses engine/tooling; raw exec.* is limited to exec_runner.go, exec_spawn.go, and tests/.
+  forbidigo:
+    forbid:
+      - p: ^exec\.Command$
+        msg: Use engine/tooling.ExecRunner, tooling.StartDetached, or tests-only harness code — not exec.Command.
+      - p: ^exec\.CommandContext$
+        msg: Use engine/tooling.ExecRunner — not exec.CommandContext outside engine/tooling/exec_*.go.
 
   funlen:
     # Checks the number of lines in a function.
@@ -258,6 +274,7 @@ linters:
     - exhaustive # checks exhaustiveness of enum switch statements
     - exptostd # detects functions from golang.org/x/exp/ that can be replaced by std functions
     - fatcontext # detects nested contexts in loops
+    - forbidigo # forbids raw exec.Command* outside sanctioned engine/tooling files and tests/
     - funlen # tool for detection of long functions
     - gocheckcompilerdirectives # validates go compiler directive comments (//go:)
     - gochecknoinits # checks that no init functions are present in Go code
