@@ -1,12 +1,16 @@
 # Prof codebase design
 
-Go benchmark profiling: wraps `go test` and pprof, writes `bench/<tag>/`, compares runs. Interactive entry is `prof ui` and `prof tui` in [`cli`](cli) and [`internal/tui`](internal/tui). User-facing docs live in [`prof_web_doc`](prof_web_doc).
+This document maps the Prof repository: entrypoints, packages, data flow through `cli` into `engine/*`, on-disk layout under `bench/`, configuration types, and conventions for tests and errors. It is for contributors changing the code, not for learning what Prof does from a user perspective.
 
-## Purpose
+## Responsibilities by area
 
-- Profile: CPU, memory, mutex, block ([`engine/benchmark`](engine/benchmark)).
-- Layout: `bench/<tag>/` (binaries, text, per-function snippets, optional package grouping).
-- Compare and CI: `prof track` plus optional `ci_config` in `config_template.json`.
+- [`engine/benchmark`](engine/benchmark): `go test` orchestration, profile collection pipeline, layout under `bench/<tag>/`.
+- [`engine/collector`](engine/collector): pprof text, PNG, grouped text, manual file ingest, per-function list output (via shared runner and argv helpers).
+- [`engine/tracker`](engine/tracker): load two profiles, diff, report formats, apply `ci_config` rules.
+- [`engine/tooling`](engine/tooling): subprocess [`Runner`](engine/tooling/runner.go), profile [`Catalog`](engine/tooling/catalog.go), `go tool pprof` argv construction.
+- [`parser`](parser): decode profile binaries into structured data; pipeline stages for comparisons.
+- [`internal`](internal): JSON config types, path constants, `BenchArgs` / collection wiring, template IO ([`internal/api.go`](internal/api.go)).
+- [`cli`](cli) and [`internal/tui`](internal/tui): Cobra commands, flags, Bubble Tea and Survey UIs; call [`internal/app`](internal/app) services.
 
 ## Architecture
 
@@ -54,7 +58,7 @@ flowchart LR
 
 Composition root: [`internal/app/services.go`](internal/app/services.go) defines narrow interfaces (`Benchmark`, `Collector`, `Tracker`, `Tools`, `Setup`) plus a shared [`tooling.Runner`](engine/tooling/runner.go) for subprocess execution. Defaults wire into `engine/*` in [`internal/app/defaults.go`](internal/app/defaults.go). Prefer adding behavior behind these interfaces when the CLI surface stays stable.
 
-The installable binary is `go install …/cmd/prof@latest`; that `main` package calls `cli.Execute()` (see module path in [`go.mod`](go.mod)).
+The installable binary is `go install …/cmd/prof@latest`; that `main` package calls [`cli.Execute`](cli/api.go) (module path in [`go.mod`](go.mod)).
 
 ### Package layout (actual directories)
 
@@ -122,7 +126,7 @@ JSON shape is defined by [`internal.Config`](internal/types.go):
 - `function_collection_filter`: per-benchmark or global filter map; global key is [`internal.GlobalSign`](internal/const.go) (`"*"`). Each entry is a [`FunctionFilter`](internal/types.go) with `include_prefixes` and `ignore_functions` (short names after the last `.`).
 - `ci_config`: optional thresholds and ignore lists for `prof track` ([`engine/tracker/ci_apply.go`](engine/tracker/ci_apply.go)).
 
-Generate a starter file with `prof setup`. Full CI schema and examples: [docs/cicd_configuration.md](docs/cicd_configuration.md) on the repo, mirrored in spirit by [prof_web_doc/docs/configure.md](prof_web_doc/docs/configure.md).
+Template creation is implemented from [`cli/cmd_setup.go`](cli/cmd_setup.go) through [`internal/api.go`](internal/api.go). Machine-readable CI schema and examples for operators live in [docs/cicd_configuration.md](docs/cicd_configuration.md).
 
 ## Known sharp edges
 
@@ -155,4 +159,10 @@ Generate a starter file with `prof setup`. Full CI schema and examples: [docs/ci
 1. Engines own orchestration; `cli` stays thin.
 2. `parser` stays toolkit-oriented (`Pipeline`, path facades).
 3. Config over magic: JSON drives filters and CI behavior.
-4. Strict by default: failures surface to the user unless an explicit flag opts into lenience.
+4. Strict by default: failures surface at the CLI unless an explicit flag opts into lenience.
+
+## Related material (not codebase design)
+
+- [readme.md](readme.md) for what Prof is and how to run it
+- [prof_web_doc/](prof_web_doc/) for the published documentation site source
+- [CONTRIBUTING.md](CONTRIBUTING.md) for patch workflow and review expectations
