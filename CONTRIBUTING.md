@@ -54,6 +54,17 @@ golangci-lint run
 go build -o prof ./cmd/prof
 ```
 
+### Run the CLI while you edit (no `go build` each time)
+
+From the repo root, run the entrypoint directly with `go run`. Put CLI flags and subcommands **after** `--` so they are not parsed as `go run` flags:
+
+```bash
+go run ./cmd/prof -- version
+go run ./cmd/prof -- benchmark --help
+```
+
+The Go toolchain keeps a build cache, so after the first compile, most edits only trigger a small incremental rebuild. Use `go build -o prof ./cmd/prof` when you need a fixed binary (for example to copy elsewhere, add to `PATH`, or compare against an installed release).
+
 ## Contribution guidelines
 
 1. **Tests and linting** — Run before pushing:
