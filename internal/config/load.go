@@ -193,18 +193,3 @@ func PrintAutoConfiguration(args *AutoArgs, cfg *Config) {
 		slog.Info("Benchmark filter", "Benchmark", benchmark, "Prefixes", filter.IncludePrefixes, "Ignore", filter.IgnoreFunctions)
 	}
 }
-
-// ApplyRecommendedIgnores sets common stdlib/runtime ignores on collection and track defaults.
-func ApplyRecommendedIgnores(cfg *Config) {
-	if cfg == nil {
-		return
-	}
-	cfg.Collection.Defaults.IgnoreFunctions = dedupeStrings(append(
-		trimStrings(cfg.Collection.Defaults.IgnoreFunctions),
-		"init", "TestMain", "BenchmarkMain",
-	))
-	cfg.Track.Defaults.IgnorePrefixes = dedupeStrings(append(
-		trimStrings(cfg.Track.Defaults.IgnorePrefixes),
-		"runtime.", "reflect.", "testing.",
-	))
-}

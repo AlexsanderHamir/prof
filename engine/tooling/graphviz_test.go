@@ -10,20 +10,20 @@ func TestGraphvizAvailable(t *testing.T) {
 		if name == "dot" {
 			return "/usr/bin/dot", nil
 		}
-		return "", execErr("not found")
+		return "", pathLookupError("not found")
 	}
 	if !GraphvizAvailable() {
 		t.Fatal("expected available when dot is on PATH")
 	}
 
 	LookPathForTests = func(string) (string, error) {
-		return "", execErr("not found")
+		return "", pathLookupError("not found")
 	}
 	if GraphvizAvailable() {
 		t.Fatal("expected unavailable when dot is missing")
 	}
 }
 
-type execErr string
+type pathLookupError string
 
-func (e execErr) Error() string { return string(e) }
+func (e pathLookupError) Error() string { return string(e) }

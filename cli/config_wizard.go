@@ -15,12 +15,11 @@ import (
 )
 
 const (
-	cfgOverviewCollection  = "Collection — function extracts"
-	cfgOverviewTrack       = "Track — regression gates"
-	cfgOverviewRecommended = "Apply recommended ignores to both sections"
-	cfgOverviewViewPath    = "View file path"
-	cfgOverviewSave        = "Save and exit"
-	cfgOverviewDiscard     = "Discard and exit"
+	cfgOverviewCollection = "Collection — function extracts"
+	cfgOverviewTrack      = "Track — regression gates"
+	cfgOverviewViewPath   = "View file path"
+	cfgOverviewSave       = "Save and exit"
+	cfgOverviewDiscard    = "Discard and exit"
 )
 
 func runUIConfigWizard(svc *app.Services) error {
@@ -49,9 +48,6 @@ func runUIConfigWizard(svc *app.Services) error {
 			if err = runTrackSubmenu(svc, cfg); err != nil {
 				return err
 			}
-		case cfgOverviewRecommended:
-			config.ApplyRecommendedIgnores(cfg)
-			fmt.Fprintln(os.Stdout, "Applied recommended ignores to collection and track defaults.")
 		case cfgOverviewViewPath:
 			fmt.Fprintf(os.Stdout, "Configuration file:\n  %s\n", path)
 		case cfgOverviewSave:
@@ -150,7 +146,6 @@ func configOverviewMenu(cfg *config.Config) (string, error) {
 	options := []string{
 		fmt.Sprintf("%s (defaults + %d benchmarks + %d manual profiles)", cfgOverviewCollection, nBench, nManual),
 		fmt.Sprintf("%s (defaults + %d benchmark overrides)", cfgOverviewTrack, nTrack),
-		cfgOverviewRecommended,
 		cfgOverviewViewPath,
 		cfgOverviewSave,
 		cfgOverviewDiscard,
