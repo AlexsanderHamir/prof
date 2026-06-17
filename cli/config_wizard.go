@@ -46,7 +46,7 @@ func runUIConfigWizard(svc *app.Services) error {
 				return err
 			}
 		case cfgOverviewTrack:
-			if err = runTrackSubmenu(cfg); err != nil {
+			if err = runTrackSubmenu(svc, cfg); err != nil {
 				return err
 			}
 		case cfgOverviewRecommended:
@@ -201,7 +201,7 @@ func runCollectionSubmenu(svc *app.Services, cfg *config.Config) error {
 				return err
 			}
 		case editManual:
-			if err := editCollectionManualRule(cfg); err != nil {
+			if err := editCollectionManualRule(svc, cfg); err != nil {
 				return err
 			}
 		case removeRule:
@@ -214,7 +214,7 @@ func runCollectionSubmenu(svc *app.Services, cfg *config.Config) error {
 	}
 }
 
-func runTrackSubmenu(cfg *config.Config) error {
+func runTrackSubmenu(svc *app.Services, cfg *config.Config) error {
 	const (
 		editDefaults = "Edit defaults (global regression policy)"
 		editBench    = "Add or edit benchmark override"
@@ -236,7 +236,7 @@ func runTrackSubmenu(cfg *config.Config) error {
 				return err
 			}
 		case editBench:
-			if err := editTrackBenchmarkOverride(cfg); err != nil {
+			if err := editTrackBenchmarkOverride(svc, cfg); err != nil {
 				return err
 			}
 		case removeBench:
@@ -276,13 +276,28 @@ func editCollectionBenchmarkRule(svc *app.Services, cfg *config.Config) error {
 	return nil
 }
 
-func editCollectionManualRule(cfg *config.Config) error {
-	fmt.Fprintln(os.Stdout, "Manual profile keys match the file stem, e.g. BenchmarkFoo_cpu for BenchmarkFoo_cpu.out")
-	var key string
-	if err := survey.AskOne(&survey.Input{
-		Message: "Manual profile key:",
-	}, &key, survey.WithValidator(survey.Required)); err != nil {
+func editCollectionManualRule(svc *app.Services, cfg *config.Config) error {
+	const customKey = "Custom key (type manually)…"
+	keys := manualProfileKeyOptions(svc)
+	options := make([]string, 0, len(keys)+1)
+	options = append(options, keys...)
+	options = append(options, customKey)
+	var pick string
+	if err := survey.AskOne(&survey.Select{
+		Message:  "Manual profile key:",
+		Options:  options,
+		PageSize: tuiPageSize,
+	}, &pick, survey.WithValidator(survey.Required)); err != nil {
 		return err
+	}
+	key := pick
+	if pick == customKey {
+		fmt.Fprintln(os.Stdout, "Keys match the file stem, e.g. BenchmarkFoo_cpu for BenchmarkFoo_cpu.out")
+		if err := survey.AskOne(&survey.Input{
+			Message: "Manual profile key:",
+		}, &key, survey.WithValidator(survey.Required)); err != nil {
+			return err
+		}
 	}
 	key = strings.TrimSpace(key)
 	if cfg.Collection.ManualProfiles == nil {
@@ -294,6 +309,21 @@ func editCollectionManualRule(cfg *config.Config) error {
 	}
 	cfg.Collection.ManualProfiles[key] = f
 	return nil
+}
+
+func manualProfileKeyOptions(svc *app.Services) []string {
+	benches, err := svc.Collect.DiscoverBenchmarks("")
+	if err != nil || len(benches) == 0 {
+		return nil
+	}
+	profiles := svc.Collect.SupportedProfiles()
+	var keys []string
+	for _, bench := range benches {
+		for _, profile := range profiles {
+			keys = append(keys, bench+"_"+profile)
+		}
+	}
+	return keys
 }
 
 func removeCollectionRule(cfg *config.Config) error {
@@ -332,20 +362,28 @@ func removeCollectionRule(cfg *config.Config) error {
 	return nil
 }
 
-func editTrackBenchmarkOverride(cfg *config.Config) error {
+func editTrackBenchmarkOverride(svc *app.Services, cfg *config.Config) error {
+	names, err := svc.Collect.DiscoverBenchmarks("")
+	if err != nil {
+		return err
+	}
+	if len(names) == 0 {
+		return errors.New("no benchmarks found in module (look for func BenchmarkXxx in *_test.go)")
+	}
 	var bench string
-	if err := survey.AskOne(&survey.Input{
-		Message: "Benchmark name to override:",
+	if err = survey.AskOne(&survey.Select{
+		Message:  "Benchmark name to override:",
+		Options:  names,
+		PageSize: tuiPageSize,
 	}, &bench, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
-	bench = strings.TrimSpace(bench)
 	if cfg.Track.Benchmarks == nil {
 		cfg.Track.Benchmarks = map[string]config.TrackPolicy{}
 	}
 	p := cfg.Track.Benchmarks[bench]
-	if err := editTrackPolicy("Benchmark override "+bench, &p); err != nil {
-		return err
+	if editErr := editTrackPolicy("Benchmark override "+bench, &p); editErr != nil {
+		return editErr
 	}
 	cfg.Track.Benchmarks[bench] = p
 	return nil
