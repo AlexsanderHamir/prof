@@ -12,7 +12,7 @@ import (
 func newConfigCmd(svc *app.Services) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config",
-		Short: "Manage prof.json configuration beside go.mod.",
+		Short: "Create or inspect prof.json beside go.mod.",
 	}
 	cmd.AddCommand(newConfigInitCmd(svc))
 	cmd.AddCommand(newConfigPathCmd(svc))

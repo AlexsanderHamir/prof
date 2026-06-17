@@ -31,7 +31,7 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Info("No config file found at repository root; proceeding without function filters.", "expected", config.Filename)
-		slog.Info("You can generate one with 'prof config init' or prof ui → Manage configuration.")
+		slog.Info("You can generate one with 'prof config init' or Create prof.json in prof ui.")
 		cfg = &config.Config{}
 	}
 

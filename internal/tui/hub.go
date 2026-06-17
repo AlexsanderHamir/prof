@@ -24,9 +24,9 @@ const (
 	MainCompare
 	// MainTools opens the tools submenu (benchstat, qcachegrind).
 	MainTools
-	// MainSetup runs the configuration wizard (deprecated alias).
+	// MainSetup is a deprecated alias for MainConfig.
 	MainSetup
-	// MainConfig manages prof.json interactively.
+	// MainConfig creates prof.json when missing.
 	MainConfig
 	// MainDocs prints the documentation URL only.
 	MainDocs
@@ -61,7 +61,7 @@ func newHubModel() *hubModel {
 			{"Run benchmarks and save profiles (pick a name for this run)", MainCollect},
 			{"Built-in regression check — compare two runs, function by function", MainCompare},
 			{fmt.Sprintf("External tools — %s or %s", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind), MainTools},
-			{"Settings — filters, ignores, and regression limits", MainConfig},
+			{"Create prof.json — commented template (edit file yourself)", MainConfig},
 			{"Help — print link to online documentation", MainDocs},
 			{"Quit", MainQuit},
 		},
@@ -149,10 +149,10 @@ func (m *hubModel) View() string {
 
 	if m.showHelp {
 		b.WriteString(helpStyle.Render(
-			"Save profiles: runs benchmarks and stores output under bench/<name>/.\n"+
-				"Built-in regression check: prof compares two saved runs and lists which functions got slower or faster; can fail the run using Settings limits (for CI).\n"+
-				fmt.Sprintf("External tools: run %s or %s (separate programs, not prof's built-in regression check).\n", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind)+
-				"Settings: edits prof.json — which functions to include, skip, and when to fail.\n"+
+			"Save profiles: runs benchmarks and stores output under bench/<name>/.\n" +
+				"Built-in regression check: prof compares two saved runs and lists which functions got slower or faster; can fail the run using limits in prof.json (for CI).\n" +
+				fmt.Sprintf("External tools: run %s or %s (separate programs, not prof's built-in regression check).\n", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind) +
+				"Create prof.json: writes a commented template beside go.mod if missing; edit the file in your editor.\n" +
 				"Press ? again to hide this help.",
 		))
 		b.WriteString("\n")

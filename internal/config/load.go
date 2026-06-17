@@ -30,7 +30,7 @@ func LoadFromFile(filename string) (*Config, error) {
 	}
 
 	var c Config
-	if err = json.Unmarshal(data, &c); err != nil {
+	if err = json.Unmarshal(stripJSONComments(data), &c); err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
@@ -151,8 +151,19 @@ func CreateDefaultFile() error {
 	if err != nil {
 		return err
 	}
-	if err = Save(cfg); err != nil {
-		return err
+	modulePath := ""
+	if len(cfg.Collection.Defaults.IncludePrefixes) > 0 {
+		modulePath = cfg.Collection.Defaults.IncludePrefixes[0]
+	}
+	content := DefaultTemplate(modulePath)
+
+	tmp := path + ".tmp"
+	if err = os.WriteFile(tmp, []byte(content), workspace.PermFile); err != nil {
+		return fmt.Errorf("failed to write config temp file: %w", err)
+	}
+	if err = os.Rename(tmp, path); err != nil {
+		_ = os.Remove(tmp)
+		return fmt.Errorf("failed to replace config file: %w", err)
 	}
 
 	slog.Info("Configuration file created", "path", path)

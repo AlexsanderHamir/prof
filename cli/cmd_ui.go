@@ -20,7 +20,7 @@ const profDocumentationURL = "https://alexsanderhamir.github.io/prof/"
 func newUICmd(svc *app.Services) *cobra.Command {
 	return &cobra.Command{
 		Use:   "ui",
-		Short: "Interactive menu: collect, compare, tools, or setup without memorizing subcommands.",
+		Short: "Interactive menu: collect, compare, tools, or create prof.json without memorizing subcommands.",
 		Long: `Open a guided menu for the most common prof workflows.
 
 Use this when you prefer prompts to typing flags. For scripts and CI, use prof auto, prof track, and other subcommands directly.
@@ -68,10 +68,8 @@ func runUILauncherOnce(svc *app.Services) error {
 		runErr = runTUITrackAuto(svc, nil, nil)
 	case tui.MainTools:
 		return runUIToolsMenu(svc)
-	case tui.MainConfig:
-		runErr = runUIConfigWizard(svc)
-	case tui.MainSetup:
-		runErr = runUIConfigWizard(svc)
+	case tui.MainConfig, tui.MainSetup:
+		runErr = runUIConfigCreate(svc)
 	case tui.MainDocs:
 		fmt.Fprintf(os.Stdout, "Prof documentation:\n  %s\n", profDocumentationURL)
 		runErr = nil
