@@ -1,6 +1,11 @@
 # Local scratch
 tasks.md
 
+# Local prof config (generated beside go.mod when developing this repo)
+/prof.json
+/prof.json.example
+/prof.json.tmp
+
 # Built prof binary
 /prof
 /prof.exe

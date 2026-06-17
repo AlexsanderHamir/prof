@@ -75,9 +75,11 @@ prof track manual --base "path/to/baseline_cpu.out" \
 | `summary-html` or `detailed-html` | HTML files |
 | `summary-json` or `detailed-json` | JSON files |
 
-## Regression gate
+## Regression gate { #regression-gate }
 
 `--fail-on-regression` with a positive `--regression-threshold` compares the worst flat-time regression percent against your cap. Flat time is time in the function itself excluding callees.
+
+Without those CLI flags, prof uses the `track` section in `prof.json` when present. See [Configure — track](configure.md#track).
 
 Full rules, `prof.json` integration, and links to the CI schema: [CI and regressions](ci.md).
 

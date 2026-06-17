@@ -19,6 +19,14 @@ func Normalize(cfg *Config) {
 	cfg.Track.Benchmarks = normalizeTrackPolicyMap(cfg.Track.Benchmarks)
 }
 
+func collectionEmpty(c Collection) bool {
+	return functionFilterEmpty(c.Defaults) && c.Benchmarks == nil && c.ManualProfiles == nil
+}
+
+func trackSectionEmpty(t Track) bool {
+	return trackPolicyEmpty(t.Defaults) && t.Benchmarks == nil
+}
+
 func normalizeFunctionFilterMap(m map[string]FunctionFilter) map[string]FunctionFilter {
 	if len(m) == 0 {
 		return nil

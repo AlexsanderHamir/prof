@@ -59,7 +59,7 @@ Each run writes a single tag directory, `bench/<tag>/`, under your [module root]
 - Share context: zip `bench/<tag>/` or attach key `text/` files to an issue or PR so others see the same profile view you did.
 - Re-open in pprof: point `go tool pprof` at `bin/<BenchmarkName>/<BenchmarkName>_<profile>.out` for ad-hoc queries on the stored binary.
 
-### Artifact layout under `bench/<tag>/`
+### Artifact layout under `bench/<tag>/` { #artifact-layout-under-benchtag }
 
 | Location | What you get | Typical use |
 | -------- | ------------- | ----------- |
@@ -70,7 +70,7 @@ Each run writes a single tag directory, `bench/<tag>/`, under your [module root]
 
 Exact names and suffixes are defined in the implementation (`internal` constants and `engine/benchmark` path helpers); the table above matches the usual `prof auto` and `prof manual` layout.
 
-## `prof manual`
+## `prof manual` { #prof-manual }
 
 Requires `--tag` and one or more profile file paths as positional arguments. Does not run `go test`.
 
@@ -86,6 +86,8 @@ prof manual --tag "external-profiles" --group-by-package cpu.prof memory.prof
 | ---- | ---- | --------- | ------- | ----------- |
 | `--tag` | string | Yes | n/a | Output directory `bench/<tag>/`. |
 | `--group-by-package` | bool | No | `false` | Same as `prof auto`. |
+
+Per-file collection filters use `collection.manual_profiles` in `prof.json`. Keys are profile file stems (e.g. `BenchmarkFoo_cpu` for `BenchmarkFoo_cpu.out`). See [Configure — manual profile overrides](configure.md#collection-manual-profiles).
 
 ## Testing / verify
 

@@ -24,7 +24,7 @@ Static site output is written to `prof_web_doc/site/` when you run `mkdocs build
 | `prof manual` | Ingest existing profile files into the same layout style (no `go test`). |
 | `prof track auto` | Compare two tags created by `prof auto` (or compatible layout). |
 | `prof track manual` | Compare two profile files by filesystem path. |
-| `prof config init` | Create `prof.json` next to `go.mod`. |
+| `prof config init` | Create minimal `prof.json` and commented `prof.json.example` next to `go.mod`. |
 | `prof config validate` | Load and validate `prof.json`; exit non-zero on error. |
 | `prof config path` | Print resolved `prof.json` path. |
 | `prof setup` | Hidden alias for `prof config init`. |

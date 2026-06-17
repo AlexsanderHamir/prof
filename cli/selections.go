@@ -114,7 +114,7 @@ func selectOutputFormat(selections *app.TrackOptions) error {
 
 // selectRegressionThreshold handles regression threshold selection
 func selectRegressionThreshold(selections *app.TrackOptions) error {
-	fmt.Fprintln(os.Stdout, "By default, regression limits come from prof.json (create with prof config init or Create prof.json in prof ui).")
+	fmt.Fprintln(os.Stdout, "Regression limits can be set in prof.json (`track` section) or overridden below for this run only.")
 	fmt.Fprintln(os.Stdout, "Enable below to override with a one-run CLI threshold for this comparison only.")
 
 	thresholdPrompt := &survey.Confirm{

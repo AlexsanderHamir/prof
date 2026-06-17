@@ -28,9 +28,13 @@ prof track auto --base baseline --current pr-branch \
 
 If you pass `--fail-on-regression` but leave the threshold at `0`, the CLI gate does not activate. See [Troubleshooting](troubleshooting.md#regression-gate-always-passes-or-does-not-fail-the-build).
 
-## JSON in `prof.json`
+## JSON in `prof.json` { #json-in-profjson }
 
-Add a `track` section for ignores, noise floors, per-benchmark caps, and related policy. When CLI gate flags are omitted, track config applies. CLI flags override when provided. See the canonical schema:
+`prof config init` creates a minimal file (`{ "version": 1 }` only). Copy a `track` section from `prof.json.example` into `prof.json` when you want config-only regression gates (no `--fail-on-regression` flags in CI).
+
+Field reference: [Configure — track](configure.md#track). When **both** `--fail-on-regression` and a positive `--regression-threshold` are set, CLI overrides `track` for that run. When those flags are omitted, the merged `track` policy applies.
+
+Full schema and GitHub Actions examples:
 
 - [CI/CD configuration](https://github.com/AlexsanderHamir/prof/blob/main/docs/cicd_configuration.md)
 

@@ -2,13 +2,15 @@
 
 Short guide (flags, gates, link here): [CI and regressions](https://alexsanderhamir.github.io/prof/ci/) in the Prof docs.
 
+Field reference for the `track` section: [Configure collection — track](https://alexsanderhamir.github.io/prof/configure/#track).
+
 This file is the **full** reference: `track` section in `prof.json`, ignores, thresholds, and GitHub Actions examples.
 
 ## Overview
 
 The `track` section filters noisy functions, sets global and per-benchmark regression caps (`prof track` CLI flags win when provided), and can set `fail_on_improvement`.
 
-Create or edit via `prof ui` → Manage configuration, or `prof config init`.
+Create or edit via `prof ui` → Manage configuration, or `prof config init` (writes minimal `prof.json` plus commented `prof.json.example`; add a `track` section to enable config-only gates).
 
 ## Configuration Structure
 
@@ -77,7 +79,7 @@ You can override global settings for specific benchmarks:
     "ignore_functions": ["BenchmarkMyFunction"],
     "min_change_percent": 3.0,
     "max_regression_percent": 10.0,
-    "fail_on_improvement": true,
+    "fail_on_improvement": true
   }
 }
 ```
@@ -116,31 +118,34 @@ This will ignore all functions from the `runtime`, `reflect`, `testing`, `syscal
 
 ### Minimum Change Threshold
 
-Only functions with changes ≥ this threshold will cause CI/CD failures:
+Regressions below this percent do not fail the run (noise floor). When `fail_on_improvement` is true, improvements must exceed this magnitude to fail:
 
 ```json
 "min_change_percent": 5.0
 ```
 
-This prevents CI/CD from failing on minor fluctuations (e.g., 1-2% changes).
+This prevents CI/CD from failing on minor fluctuations (e.g., 1–2% changes).
 
 ### Maximum Regression Threshold
 
-This overrides command-line `--regression-threshold` settings:
+When CLI regression flags are **not** set, the merged `track` policy uses this cap:
 
 ```json
 "max_regression_percent": 15.0
 ```
 
-If a function regresses by 15%, CI/CD will fail regardless of command-line settings.
+If the worst flat regression meets or exceeds this percent (and the function is not ignored), the run fails.
 
-### Command-Line Override Priority
+### CLI vs configuration precedence
 
-1. Benchmark-specific `max_regression_percent`
-2. Global `max_regression_percent`
-3. Command-line `--regression-threshold`
+When **both** `--fail-on-regression` and a positive `--regression-threshold` are passed, the CLI threshold applies for that run and `track` thresholds are not used for the gate.
 
-The most restrictive (lowest) threshold wins.
+When those CLI flags are omitted, prof loads `prof.json` and applies the merged `track` policy (`track.defaults` plus `track.benchmarks[<name>]` overrides).
+
+**Within `track` config**, benchmark-specific fields override `track.defaults` field-by-field (not “lowest threshold wins” across unrelated sources):
+
+1. Start from `track.defaults`
+2. Overlay non-empty fields from `track.benchmarks[<benchmark-name>]`
 
 ## Failing on Improvements
 
@@ -279,14 +284,17 @@ Notice that no `--fail-on-regression` or `--regression-threshold` flags are need
 
 ## Best Practices
 
-### 1. Start with Global Configuration
+### 1. Start with track.defaults
 
-Begin with global settings that apply to all benchmarks:
+Begin with defaults that apply to all benchmarks:
 
 ```json
-"global": {
-  "ignore_prefixes": ["runtime.", "reflect.", "testing."],
-  "min_change_percent": 5.0
+"track": {
+  "defaults": {
+    "ignore_prefixes": ["runtime.", "reflect.", "testing."],
+    "min_change_percent": 5.0,
+    "max_regression_percent": 15.0
+  }
 }
 ```
 
@@ -294,7 +302,7 @@ Begin with global settings that apply to all benchmarks:
 
 When using CI/CD configuration, the `--fail-on-regression` and `--regression-threshold` flags become optional:
 
-**With CLI flags (overrides config):**
+**With CLI flags (overrides config for that run):**
 
 ```bash
 prof track auto --base baseline --current PR \
@@ -312,14 +320,16 @@ prof track auto --base baseline --current PR \
 
 The second approach will use the thresholds defined in your `prof.json` file. This makes CI/CD pipelines cleaner and more maintainable.
 
-### 3. Add Benchmark-Specific Overrides
+### 3. Add benchmark-specific overrides
 
-Only override global settings when necessary:
+Only override `track.defaults` when necessary:
 
 ```json
-"benchmarks": {
-  "BenchmarkCriticalPath": {
-    "min_change_percent": 1.0  // More sensitive for critical paths
+"track": {
+  "benchmarks": {
+    "BenchmarkCriticalPath": {
+      "min_change_percent": 1.0
+    }
   }
 }
 ```
@@ -356,26 +366,25 @@ Review CI/CD failures and adjust thresholds based on:
 1. **Configuration not loaded**: Ensure `prof.json` is at project root
 2. **Functions still causing failures**: Check `ignore_functions` and `ignore_prefixes`
 3. **Thresholds not working**: Verify `min_change_percent` and `max_regression_percent`
-4. **Global vs benchmark settings**: Benchmark-specific settings override global
-5. **CLI flags vs config**: When using CI/CD config, `--fail-on-regression` and `--regression-threshold` are optional
+4. **Defaults vs benchmark settings**: `track.benchmarks[name]` overrides `track.defaults` field-by-field
+5. **CLI flags vs config**: CLI gate applies only when `--fail-on-regression` and a positive `--regression-threshold` are both set; otherwise use `track` in `prof.json`
 
 ### Debug Information
 
-Prof logs configuration loading and filtering decisions:
+Run `prof track auto` with logging enabled and inspect whether config loaded:
 
 ```bash
 prof track auto --base baseline --current PR --bench-name "BenchmarkMyFunction"
 ```
 
-Look for logs like:
+When CLI gate flags are omitted, look for logs such as:
 
-- "Applied CI/CD configuration filtering"
-- "Function ignored by CI/CD config"
-- "Performance regression below minimum threshold"
+- "No CLI regression flags provided, using track configuration settings"
+- "Performance regression below minimum threshold, not failing"
 
 ### Validation
 
-Prof validates configuration on startup. Common validation errors:
+Prof validates `prof.json` on load (`prof config validate`). Common validation errors:
 
 - Negative thresholds
 - Malformed JSON

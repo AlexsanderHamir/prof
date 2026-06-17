@@ -66,7 +66,7 @@ func Save(cfg *Config) error {
 		return err
 	}
 
-	data, err := json.MarshalIndent(&c, "", "    ")
+	data, err := json.MarshalIndent(configForJSON(c), "", "    ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
@@ -83,20 +83,32 @@ func Save(cfg *Config) error {
 	return nil
 }
 
-// Default returns a starter config with track defaults only; collection filters are opt-in.
+// Default returns a minimal starter config; collection and track settings are opt-in.
 func Default() *Config {
 	cfg := &Config{
 		Version: CurrentVersion,
-		Track: Track{
-			Defaults: TrackPolicy{
-				IgnorePrefixes:       []string{"runtime.", "reflect.", "testing."},
-				MinChangePercent:     5.0,
-				MaxRegressionPercent: 15.0,
-			},
-		},
 	}
 	Normalize(cfg)
 	return cfg
+}
+
+// configForJSON omits empty collection/track sections so minimal prof.json stays version-only.
+func configForJSON(cfg Config) any {
+	type fileConfig struct {
+		Version    int         `json:"version"`
+		Collection *Collection `json:"collection,omitempty"`
+		Track      *Track      `json:"track,omitempty"`
+	}
+	out := fileConfig{Version: cfg.Version}
+	if !collectionEmpty(cfg.Collection) {
+		col := cfg.Collection
+		out.Collection = &col
+	}
+	if !trackSectionEmpty(cfg.Track) {
+		tr := cfg.Track
+		out.Track = &tr
+	}
+	return out
 }
 
 func readModulePath(goModPath string) (string, error) {
