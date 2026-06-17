@@ -1,6 +1,7 @@
 package collect
 
 import (
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -11,7 +12,7 @@ func scanForBenchmarks(root string) ([]string, error) {
 	seen := make(map[string]struct{})
 	var names []string
 
-	err := walkTestGoFiles(root, func(_ string, data []byte) error {
+	err := walkTestGoFiles(root, root, func(_ string, data []byte) error {
 		matches := pattern.FindAllSubmatch(data, -1)
 		for _, m := range matches {
 			if len(m) >= minCaptureGroups {
@@ -31,10 +32,15 @@ func scanForBenchmarks(root string) ([]string, error) {
 	return names, nil
 }
 
-func handleDirectory(path string) error {
+func handleDirectory(path, moduleRoot string) error {
 	base := filepath.Base(path)
-	if strings.HasPrefix(base, ".") || base == "vendor" {
+	if strings.HasPrefix(base, ".") || base == "vendor" || base == "tests" || base == "bench" {
 		return filepath.SkipDir
+	}
+	if path != moduleRoot {
+		if _, err := os.Stat(filepath.Join(path, "go.mod")); err == nil {
+			return filepath.SkipDir
+		}
 	}
 	return nil
 }

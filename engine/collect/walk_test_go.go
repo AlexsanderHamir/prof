@@ -9,13 +9,13 @@ import (
 
 // walkTestGoFiles walks root like scanForBenchmarks / findBenchmarkPackageDir: skip hidden dirs and vendor,
 // then invokes fn for each *_test.go file body.
-func walkTestGoFiles(root string, fn func(path string, data []byte) error) error {
+func walkTestGoFiles(root, moduleRoot string, fn func(path string, data []byte) error) error {
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
 		if d.IsDir() {
-			return handleDirectory(path)
+			return handleDirectory(path, moduleRoot)
 		}
 		if !strings.HasSuffix(path, "_test.go") {
 			return nil

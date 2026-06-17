@@ -13,7 +13,11 @@ This guide explains `prof.json`: how to create it, how `collection` selects per-
 prof config init
 ```
 
-Or in `prof ui`, choose **Manage configuration**. That creates or edits `prof.json` next to `go.mod`.
+Or in `prof ui`, choose **Manage prof.json configuration**. That creates or edits `prof.json` next to `go.mod`.
+
+## Benchmark discovery
+
+`prof auto` and `prof ui` discover benchmarks by scanning `*_test.go` files under your module root. Directories named `tests/`, `bench/`, and `vendor/`, plus nested directories that contain their own `go.mod` (separate Go modules), are skipped so fixtures and QA sandboxes under `tests/` do not appear in your benchmark list.
 
 `prof setup` is a hidden alias for `prof config init`.
 
