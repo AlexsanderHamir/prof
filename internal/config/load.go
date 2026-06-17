@@ -2,23 +2,29 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
-// LoadFromFile loads and validates config from a JSON file beside go.mod.
+// Load reads and parses prof.json beside go.mod.
+func Load() (*Config, error) {
+	return LoadFromFile(Filename)
+}
+
+// LoadFromFile loads config from filename relative to the module root.
 func LoadFromFile(filename string) (*Config, error) {
-	root, err := workspace.FindModuleRoot()
+	path, err := Path(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to locate module root for config: %w", err)
+		return nil, err
 	}
 
-	configPath := filepath.Join(root, filename)
-	data, err := os.ReadFile(configPath)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
@@ -28,73 +34,139 @@ func LoadFromFile(filename string) (*Config, error) {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
+	Normalize(&c)
+	if err = Validate(&c); err != nil {
+		return nil, err
+	}
 	return &c, nil
 }
 
-// CreateTemplate writes config_template.json beside go.mod with examples.
-func CreateTemplate() error {
+// Path returns the absolute path to filename beside go.mod.
+func Path(filename string) (string, error) {
 	root, err := workspace.FindModuleRoot()
 	if err != nil {
-		return fmt.Errorf("failed to locate module root for template: %w", err)
+		return "", fmt.Errorf("failed to locate module root for config: %w", err)
+	}
+	return filepath.Join(root, filename), nil
+}
+
+// Save writes cfg to prof.json using an atomic replace.
+func Save(cfg *Config) error {
+	if cfg == nil {
+		return errors.New("config: cannot save nil")
+	}
+	c := *cfg
+	Normalize(&c)
+	if err := Validate(&c); err != nil {
+		return err
 	}
 
-	outputPath := filepath.Join(root, Filename)
-
-	template := Config{
-		FunctionFilter: map[string]FunctionFilter{
-			"BenchmarkGenPool": {
-				IncludePrefixes: []string{
-					"github.com/example/GenPool",
-					"github.com/example/GenPool/internal",
-					"github.com/example/GenPool/pkg",
-				},
-				IgnoreFunctions: []string{"init", "TestMain", "BenchmarkMain"},
-			},
-		},
-		CIConfig: &CIConfig{
-			Global: &CITrackingConfig{
-				IgnoreFunctions: []string{
-					"runtime.gcBgMarkWorker",
-					"runtime.systemstack",
-					"runtime.mallocgc",
-					"reflect.ValueOf",
-					"testing.(*B).launch",
-				},
-				IgnorePrefixes:         []string{"runtime.", "reflect.", "testing."},
-				MinChangeThreshold:     5.0,
-				MaxRegressionThreshold: 15.0,
-				FailOnImprovement:      false,
-			},
-			Benchmarks: map[string]CITrackingConfig{
-				"BenchmarkGenPool": {
-					IgnoreFunctions:        []string{"BenchmarkGenPool", "testing.(*B).ResetTimer"},
-					MinChangeThreshold:     3.0,
-					MaxRegressionThreshold: 10.0,
-				},
-			},
-		},
-	}
-
-	if err = os.MkdirAll(filepath.Dir(outputPath), workspace.PermDir); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	data, err := json.MarshalIndent(template, "", "    ")
+	path, err := Path(Filename)
 	if err != nil {
-		return fmt.Errorf("failed to marshal template file: %w", err)
+		return err
 	}
 
-	if err = os.WriteFile(outputPath, data, workspace.PermFile); err != nil {
-		return fmt.Errorf("failed to write template file: %w", err)
+	data, err := json.MarshalIndent(&c, "", "    ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
 	}
+	data = append(data, '\n')
 
-	slog.Info("Template configuration file created", "path", outputPath)
-	slog.Info("Please edit this file with your configuration")
+	tmp := path + ".tmp"
+	if err = os.WriteFile(tmp, data, workspace.PermFile); err != nil {
+		return fmt.Errorf("failed to write config temp file: %w", err)
+	}
+	if err = os.Rename(tmp, path); err != nil {
+		_ = os.Remove(tmp)
+		return fmt.Errorf("failed to replace config file: %w", err)
+	}
 	return nil
 }
 
-// PrintAutoConfiguration logs parsed auto-benchmark arguments and optional filters.
-func PrintAutoConfiguration(args *AutoArgs, functionFilterPerBench map[string]FunctionFilter) {
+// Default returns a starter config; modulePath pre-fills collection include prefixes when set.
+func Default(modulePath string) *Config {
+	modulePath = strings.TrimSpace(modulePath)
+	cfg := &Config{
+		Version: CurrentVersion,
+		Collection: Collection{
+			Defaults: FunctionFilter{
+				IgnoreFunctions: []string{"init", "TestMain", "BenchmarkMain"},
+			},
+		},
+		Track: Track{
+			Defaults: TrackPolicy{
+				IgnorePrefixes:       []string{"runtime.", "reflect.", "testing."},
+				MinChangePercent:     5.0,
+				MaxRegressionPercent: 15.0,
+			},
+		},
+	}
+	if modulePath != "" {
+		cfg.Collection.Defaults.IncludePrefixes = []string{modulePath}
+	}
+	Normalize(cfg)
+	return cfg
+}
+
+func readModulePath(goModPath string) (string, error) {
+	data, err := os.ReadFile(goModPath)
+	if err != nil {
+		return "", err
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "module ") {
+			return strings.TrimSpace(line[7:]), nil
+		}
+	}
+	return "", errors.New("module directive not found")
+}
+
+// DefaultFromModuleRoot builds Default using the module path from go.mod when available.
+func DefaultFromModuleRoot() (*Config, error) {
+	root, err := workspace.FindModuleRoot()
+	if err != nil {
+		return Default(""), nil
+	}
+	modPath, err := readModulePath(filepath.Join(root, "go.mod"))
+	if err != nil {
+		return Default(""), nil
+	}
+	return Default(modPath), nil
+}
+
+// CreateDefaultFile writes prof.json if it does not exist.
+func CreateDefaultFile() error {
+	path, err := Path(Filename)
+	if err != nil {
+		return err
+	}
+	if _, err = os.Stat(path); err == nil {
+		return fmt.Errorf("config file already exists: %s", path)
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("stat config file: %w", err)
+	}
+
+	cfg, err := DefaultFromModuleRoot()
+	if err != nil {
+		return err
+	}
+	if err = Save(cfg); err != nil {
+		return err
+	}
+
+	slog.Info("Configuration file created", "path", path)
+	return nil
+}
+
+// CreateTemplate is deprecated; use CreateDefaultFile.
+func CreateTemplate() error {
+	return CreateDefaultFile()
+}
+
+// PrintAutoConfiguration logs parsed auto-benchmark arguments and configured filters.
+func PrintAutoConfiguration(args *AutoArgs, cfg *Config) {
 	slog.Info(
 		"Parsed arguments",
 		"Benchmarks", args.Benchmarks,
@@ -103,12 +175,37 @@ func PrintAutoConfiguration(args *AutoArgs, functionFilterPerBench map[string]Fu
 		"Count", args.Count,
 	)
 
-	if len(functionFilterPerBench) > 0 {
-		slog.Info("Benchmark Function Filter Configurations:")
-		for benchmark, cfg := range functionFilterPerBench {
-			slog.Info("Benchmark Config", "Benchmark", benchmark, "Prefixes", cfg.IncludePrefixes, "Ignore", cfg.IgnoreFunctions)
-		}
-	} else {
+	if cfg == nil {
 		slog.Info("No benchmark configuration found in config file - analyzing all functions")
+		return
 	}
+
+	hasCollection := !functionFilterEmpty(cfg.Collection.Defaults) ||
+		len(cfg.Collection.Benchmarks) > 0 ||
+		len(cfg.Collection.ManualProfiles) > 0
+	if !hasCollection {
+		slog.Info("No benchmark configuration found in config file - analyzing all functions")
+		return
+	}
+
+	slog.Info("Collection filter configuration loaded from prof.json")
+	for _, benchmark := range args.Benchmarks {
+		filter := ResolveCollectionFilter(cfg, CollectionTargetAuto(benchmark))
+		slog.Info("Benchmark filter", "Benchmark", benchmark, "Prefixes", filter.IncludePrefixes, "Ignore", filter.IgnoreFunctions)
+	}
+}
+
+// ApplyRecommendedIgnores sets common stdlib/runtime ignores on collection and track defaults.
+func ApplyRecommendedIgnores(cfg *Config) {
+	if cfg == nil {
+		return
+	}
+	cfg.Collection.Defaults.IgnoreFunctions = dedupeStrings(append(
+		trimStrings(cfg.Collection.Defaults.IgnoreFunctions),
+		"init", "TestMain", "BenchmarkMain",
+	))
+	cfg.Track.Defaults.IgnorePrefixes = dedupeStrings(append(
+		trimStrings(cfg.Track.Defaults.IgnorePrefixes),
+		"runtime.", "reflect.", "testing.",
+	))
 }

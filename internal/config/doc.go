@@ -1,2 +1,2 @@
-// Package config loads and types prof's JSON configuration (function filters, CI thresholds).
+// Package config loads and saves prof.json beside go.mod.
 package config

@@ -1,15 +1,34 @@
 package config
 
-// ResolveFilter returns the function filter for a benchmark or manual profile stem.
-func ResolveFilter(cfg *Config, name string) FunctionFilter {
+// ResolveCollectionFilter returns the merged function filter for a collection target.
+// Precedence: named benchmark/manual entry field overrides defaults; empty fields inherit.
+func ResolveCollectionFilter(cfg *Config, target CollectionTarget) FunctionFilter {
 	if cfg == nil {
 		return FunctionFilter{}
 	}
-	if global, ok := cfg.FunctionFilter[GlobalSign]; ok {
-		return global
+
+	var named FunctionFilter
+	switch {
+	case target.auto != "":
+		if cfg.Collection.Benchmarks != nil {
+			named = cfg.Collection.Benchmarks[target.auto]
+		}
+	case target.manual != "":
+		if cfg.Collection.ManualProfiles != nil {
+			named = cfg.Collection.ManualProfiles[target.manual]
+		}
 	}
-	if local, ok := cfg.FunctionFilter[name]; ok {
-		return local
+
+	return mergeFunctionFilter(cfg.Collection.Defaults, named)
+}
+
+func mergeFunctionFilter(defaults, named FunctionFilter) FunctionFilter {
+	out := defaults
+	if len(named.IncludePrefixes) > 0 {
+		out.IncludePrefixes = named.IncludePrefixes
 	}
-	return FunctionFilter{}
+	if len(named.IgnoreFunctions) > 0 {
+		out.IgnoreFunctions = named.IgnoreFunctions
+	}
+	return out
 }
