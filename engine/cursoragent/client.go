@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -107,7 +106,7 @@ func (c *Client) resolvedBinaryForExec() (string, error) {
 		}
 		return name, nil
 	}
-	if _, lookErr := exec.LookPath(name); lookErr != nil {
+	if _, lookErr := tooling.LookPath(name); lookErr != nil {
 		return "", fmt.Errorf("%w: %w\n\n%s", ErrBinaryNotFound, lookErr, FixBinaryHelpBlock())
 	}
 	return ResolveBinaryPath(name), nil

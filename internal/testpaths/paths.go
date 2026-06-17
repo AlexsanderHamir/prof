@@ -50,11 +50,11 @@ func Asset(elem ...string) (string, error) {
 }
 
 // MustAsset is like Asset but fails the test on error.
-func MustAsset(t testing.TB, elem ...string) string {
-	t.Helper()
+func MustAsset(tb testing.TB, elem ...string) string {
+	tb.Helper()
 	p, err := Asset(elem...)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return p
 }

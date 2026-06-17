@@ -16,6 +16,7 @@ import (
 
 // cleanupBenchDirectory removes the bench directory if it exists
 func cleanupBenchDirectory(t *testing.T) {
+	t.Helper()
 	if _, err := os.Stat(internal.MainDirOutput); err == nil {
 		if err := os.RemoveAll(internal.MainDirOutput); err != nil {
 			t.Errorf("Failed to clean up bench directory: %v", err)

@@ -3,8 +3,9 @@ package cursoragent
 // Adapted from T2A pkgs/agents/runner/adapterkit/probe.go (ResolveBinaryPath, FirstNonEmptyLine, TrimForLog).
 
 import (
-	"os/exec"
 	"strings"
+
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 )
 
 // MergeBinaryPath returns the first non-empty trimmed value in order: flag, env, then empty string.
@@ -25,7 +26,7 @@ func ResolveBinaryPath(binaryPath string) string {
 	if p == "" {
 		return ""
 	}
-	if abs, err := exec.LookPath(p); err == nil {
+	if abs, err := tooling.LookPath(p); err == nil {
 		return abs
 	}
 	return p
