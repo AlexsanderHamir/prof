@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -113,8 +114,11 @@ func selectOutputFormat(selections *app.TrackOptions) error {
 
 // selectRegressionThreshold handles regression threshold selection
 func selectRegressionThreshold(selections *app.TrackOptions) error {
+	fmt.Fprintln(os.Stdout, "By default, regression gates come from prof.json (Manage prof.json configuration → Track).")
+	fmt.Fprintln(os.Stdout, "Enable below to override with a one-run CLI threshold for this comparison only.")
+
 	thresholdPrompt := &survey.Confirm{
-		Message: "Do you want to fail on performance regressions?",
+		Message: "Override prof.json and fail this run if regression exceeds a threshold?",
 		Default: false,
 	}
 	if err := survey.AskOne(thresholdPrompt, &selections.UseThreshold); err != nil {
