@@ -44,7 +44,7 @@ func (stubSetup) CreateTemplate() error { return nil }
 func TestWithDefaultsNilReceiver(t *testing.T) {
 	var s *Services
 	out := s.WithDefaults()
-	if out == nil || out.Runner == nil || out.Collect == nil || out.Tracker == nil || out.Tools == nil || out.Setup == nil {
+	if out == nil || out.Runner == nil || out.Collect == nil || out.Tracker == nil || out.Tools == nil || out.Setup == nil || out.Config == nil {
 		t.Fatalf("expected all fields set: %#v", out)
 	}
 }
@@ -148,7 +148,7 @@ func TestDefaultSetupCreateTemplate(t *testing.T) {
 	if err := Default().Setup.CreateTemplate(); err != nil {
 		t.Fatal(err)
 	}
-	p := filepath.Join(root, "config_template.json")
+	p := filepath.Join(root, "prof.json")
 	if _, err := os.Stat(p); err != nil {
 		t.Fatal(err)
 	}

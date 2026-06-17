@@ -12,8 +12,12 @@ const (
 	KindCollect Kind = "collect"
 	// KindCompare compares two tags using the bench/ tree (track auto).
 	KindCompare Kind = "compare"
-	// KindSetup writes the config template beside go.mod.
+	// KindSetup writes prof.json beside go.mod (deprecated alias).
 	KindSetup Kind = "setup"
+	// KindConfigCreate writes the default prof.json beside go.mod.
+	KindConfigCreate Kind = "config_create"
+	// KindConfigSave saves prof.json after validation.
+	KindConfigSave Kind = "config_save"
 	// KindToolsBenchstat runs benchstat between two tags for one benchmark.
 	KindToolsBenchstat Kind = "tools_benchstat"
 	// KindToolsQcachegrind opens a binary profile in qcachegrind.
@@ -31,7 +35,9 @@ func AllKinds() []KindDescriptor {
 	return []KindDescriptor{
 		{KindCollect, "Collect benchmark profiles (Benchmark.RunBenchmarks)"},
 		{KindCompare, "Compare two tagged runs (Tracker.RunTrackAuto)"},
-		{KindSetup, "Create configuration template (Setup.CreateTemplate)"},
+		{KindSetup, "Create prof.json (Setup.CreateTemplate)"},
+		{KindConfigCreate, "Create default prof.json (Config.CreateDefaultFile)"},
+		{KindConfigSave, "Save prof.json (Config.Save)"},
 		{KindToolsBenchstat, "Benchstat between two tags (Tools.RunBenchStats)"},
 		{KindToolsQcachegrind, "Open profile in qcachegrind (Tools.RunQcacheGrind)"},
 	}

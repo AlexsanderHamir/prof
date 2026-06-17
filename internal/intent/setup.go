@@ -4,7 +4,7 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/app"
 )
 
-// SetupIntent writes the prof configuration template (prof setup).
+// SetupIntent writes prof.json (alias for ConfigCreateIntent).
 type SetupIntent struct{}
 
 // Kind implements [Executable].
@@ -15,5 +15,5 @@ func (i *SetupIntent) Validate() error { return nil }
 
 // Run implements [Executable].
 func (i *SetupIntent) Run(svc *app.Services) error {
-	return svc.Setup.CreateTemplate()
+	return (&ConfigCreateIntent{}).Run(svc)
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/AlexsanderHamir/prof/engine/cursoragent"
 	"github.com/AlexsanderHamir/prof/engine/tooling"
+	"github.com/AlexsanderHamir/prof/internal/config"
 )
 
 // Collect runs auto and manual profile collection pipelines.
@@ -32,9 +33,17 @@ type Agent interface {
 	Run(ctx context.Context, req cursoragent.RunRequest, opts cursoragent.Options) (cursoragent.RunResult, error)
 }
 
-// Setup generates project scaffolding such as the config template.
+// Setup generates project scaffolding such as the config file.
 type Setup interface {
 	CreateTemplate() error
+}
+
+// Config loads and saves prof.json beside go.mod.
+type Config interface {
+	Load() (*config.Config, error)
+	Save(*config.Config) error
+	CreateDefaultFile() error
+	Path() (string, error)
 }
 
 // Services is the composition root: inject alternate implementations for tests or custom backends.
@@ -45,6 +54,7 @@ type Services struct {
 	Tools   Tools
 	Agent   Agent
 	Setup   Setup
+	Config  Config
 }
 
 // WithDefaults returns a copy of s with any nil fields replaced by default engine implementations.
@@ -70,6 +80,9 @@ func (s *Services) WithDefaults() *Services {
 	}
 	if out.Setup == nil {
 		out.Setup = defaultSetup{}
+	}
+	if out.Config == nil {
+		out.Config = defaultConfig{}
 	}
 	return &out
 }

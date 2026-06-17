@@ -8,9 +8,11 @@
 //
 // Supported translations:
 //
-//   - KindCollect / CollectIntent → Benchmark.RunBenchmarks
+//   - KindCollect / CollectIntent → Collect.RunAuto
 //   - KindCompare / CompareIntent → Tracker.RunTrackAuto (tag layout; not manual file paths)
-//   - KindSetup / SetupIntent → Setup.CreateTemplate
+//   - KindSetup / SetupIntent → Config.CreateDefaultFile (deprecated alias)
+//   - KindConfigCreate / ConfigCreateIntent → Config.CreateDefaultFile
+//   - KindConfigSave / ConfigSaveIntent → Config.Save
 //   - KindToolsBenchstat / ToolsBenchstatIntent → Tools.RunBenchStats
 //   - KindToolsQcachegrind / ToolsQcachegrindIntent → Tools.RunQcacheGrind
 //

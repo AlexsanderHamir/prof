@@ -22,6 +22,7 @@ func Default() *Services {
 		Tools:   defaultTools{runner: r},
 		Agent:   defaultAgent{},
 		Setup:   defaultSetup{},
+		Config:  defaultConfig{},
 	}
 }
 
@@ -76,5 +77,23 @@ func (defaultAgent) Run(ctx context.Context, req cursoragent.RunRequest, opts cu
 type defaultSetup struct{}
 
 func (defaultSetup) CreateTemplate() error {
-	return config.CreateTemplate()
+	return config.CreateDefaultFile()
+}
+
+type defaultConfig struct{}
+
+func (defaultConfig) Load() (*config.Config, error) {
+	return config.Load()
+}
+
+func (defaultConfig) Save(cfg *config.Config) error {
+	return config.Save(cfg)
+}
+
+func (defaultConfig) CreateDefaultFile() error {
+	return config.CreateDefaultFile()
+}
+
+func (defaultConfig) Path() (string, error) {
+	return config.Path(config.Filename)
 }
