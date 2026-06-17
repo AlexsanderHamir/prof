@@ -41,6 +41,9 @@ func TestRunAuto_validation(t *testing.T) {
 	if err := RunAuto(noopRunner{}, AutoOptions{Benchmarks: []string{"B"}}); err == nil {
 		t.Fatal("expected empty profiles error")
 	}
+	if err := RunAuto(noopRunner{}, AutoOptions{Benchmarks: []string{"B"}, Profiles: []string{"cpu"}, Count: 0}); err == nil {
+		t.Fatal("expected count error")
+	}
 }
 
 func TestRunManual_validation(t *testing.T) {

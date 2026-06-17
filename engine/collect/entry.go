@@ -21,6 +21,9 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 	if len(opts.Profiles) == 0 {
 		return errors.New("profiles flag is empty")
 	}
+	if opts.Count < 1 {
+		return errors.New("count must be at least 1")
+	}
 
 	cfg, err := config.Load()
 	if err != nil {
