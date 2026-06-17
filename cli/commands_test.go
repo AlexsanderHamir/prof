@@ -46,7 +46,7 @@ func (noopSetup) CreateTemplate() error { return nil }
 type noopConfig struct{}
 
 func (noopConfig) Load() (*config.Config, error) {
-	return config.Default(""), nil
+	return config.Default(), nil
 }
 
 func (noopConfig) Save(*config.Config) error { return nil }
@@ -67,7 +67,7 @@ func allNoopServices() *app.Services {
 
 type captureConfig struct{ createCalls int }
 
-func (c *captureConfig) Load() (*config.Config, error) { return config.Default(""), nil }
+func (c *captureConfig) Load() (*config.Config, error) { return config.Default(), nil }
 func (c *captureConfig) Save(*config.Config) error     { return nil }
 func (c *captureConfig) CreateDefaultFile() error {
 	c.createCalls++

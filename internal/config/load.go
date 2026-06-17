@@ -83,16 +83,10 @@ func Save(cfg *Config) error {
 	return nil
 }
 
-// Default returns a starter config; modulePath pre-fills collection include prefixes when set.
-func Default(modulePath string) *Config {
-	modulePath = strings.TrimSpace(modulePath)
+// Default returns a starter config with track defaults only; collection filters are opt-in.
+func Default() *Config {
 	cfg := &Config{
 		Version: CurrentVersion,
-		Collection: Collection{
-			Defaults: FunctionFilter{
-				IgnoreFunctions: []string{"init", "TestMain", "BenchmarkMain"},
-			},
-		},
 		Track: Track{
 			Defaults: TrackPolicy{
 				IgnorePrefixes:       []string{"runtime.", "reflect.", "testing."},
@@ -100,9 +94,6 @@ func Default(modulePath string) *Config {
 				MaxRegressionPercent: 15.0,
 			},
 		},
-	}
-	if modulePath != "" {
-		cfg.Collection.Defaults.IncludePrefixes = []string{modulePath}
 	}
 	Normalize(cfg)
 	return cfg
@@ -122,16 +113,9 @@ func readModulePath(goModPath string) (string, error) {
 	return "", errors.New("module directive not found")
 }
 
-// DefaultFromModuleRoot builds Default using the module path from go.mod when available.
+// DefaultFromModuleRoot builds Default for the current module root.
 func DefaultFromModuleRoot() (*Config, error) {
-	root, err := workspace.FindModuleRoot()
-	if err == nil {
-		modPath, readErr := readModulePath(filepath.Join(root, "go.mod"))
-		if readErr == nil {
-			return Default(modPath), nil
-		}
-	}
-	return Default(""), nil
+	return Default(), nil
 }
 
 // CreateDefaultFile writes prof.json if it does not exist.
@@ -156,8 +140,10 @@ func CreateDefaultFile() error {
 	}
 
 	modulePath := ""
-	if len(cfg.Collection.Defaults.IncludePrefixes) > 0 {
-		modulePath = cfg.Collection.Defaults.IncludePrefixes[0]
+	if root, rootErr := workspace.FindModuleRoot(); rootErr == nil {
+		if modPath, readErr := readModulePath(filepath.Join(root, "go.mod")); readErr == nil {
+			modulePath = modPath
+		}
 	}
 	examplePath, err := Path(ExampleFilename)
 	if err != nil {

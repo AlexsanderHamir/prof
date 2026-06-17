@@ -98,7 +98,7 @@ func TestSaveRoundTrip(t *testing.T) {
 	}
 	t.Chdir(root)
 
-	cfg := config.Default("example.com/foo")
+	cfg := config.Default()
 	cfg.Collection.Benchmarks = map[string]config.FunctionFilter{
 		"BenchmarkFoo": {IgnoreFunctions: []string{"init"}},
 	}

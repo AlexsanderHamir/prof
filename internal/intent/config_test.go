@@ -17,7 +17,7 @@ type fakeConfig struct {
 
 func (f *fakeConfig) Load() (*config.Config, error) {
 	f.loadCalls++
-	return config.Default(""), nil
+	return config.Default(), nil
 }
 
 func (f *fakeConfig) Save(_ *config.Config) error {
@@ -58,7 +58,7 @@ func TestConfigSaveIntent_Run(t *testing.T) {
 	t.Parallel()
 	fc := &fakeConfig{}
 	svc := &app.Services{Config: fc}
-	cfg := config.Default("example.com/mod")
+	cfg := config.Default()
 	if err := RunValidated(&ConfigSaveIntent{Config: cfg}, svc); err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestConfigSaveIntent_Run_error(t *testing.T) {
 	want := errors.New("disk full")
 	fc := &fakeConfig{saveErr: want}
 	svc := &app.Services{Config: fc}
-	err := RunValidated(&ConfigSaveIntent{Config: config.Default("")}, svc)
+	err := RunValidated(&ConfigSaveIntent{Config: config.Default()}, svc)
 	if !errors.Is(err, want) {
 		t.Fatalf("got %v", err)
 	}
