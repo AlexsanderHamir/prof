@@ -38,30 +38,37 @@ func TagDirFromCWD(tag string) (string, error) {
 	return l.Root, nil
 }
 
+// Bin returns the profile binary path for a benchmark and profile kind.
 func (l TagLayout) Bin(bench, profile string) string {
 	return filepath.Join(l.Root, ProfileBinDir, bench, fmt.Sprintf("%s_%s.%s", bench, profile, ProfileArtifactExtension))
 }
 
+// Text returns the flat text profile path for a benchmark and profile kind.
 func (l TagLayout) Text(bench, profile string) string {
 	return filepath.Join(l.Root, ProfileTextDir, bench, fmt.Sprintf("%s_%s.%s", bench, profile, TextExtension))
 }
 
+// Grouped returns the package-grouped text profile path.
 func (l TagLayout) Grouped(bench, profile string) string {
 	return filepath.Join(l.Root, ProfileTextDir, bench, fmt.Sprintf("%s_%s_grouped.%s", bench, profile, TextExtension))
 }
 
+// BenchText returns the combined benchmark text listing path.
 func (l TagLayout) BenchText(bench string) string {
 	return filepath.Join(l.Root, ProfileTextDir, bench, fmt.Sprintf("%s.%s", bench, TextExtension))
 }
 
+// FunctionsDir returns the per-function pprof list output directory.
 func (l TagLayout) FunctionsDir(profile, bench string) string {
 	return filepath.Join(l.Root, profile+FunctionsDirSuffix, bench)
 }
 
+// FunctionFile returns the path for one function's pprof list output.
 func (l TagLayout) FunctionFile(profile, bench, fnStem string) string {
 	return filepath.Join(l.FunctionsDir(profile, bench), fnStem+"."+TextExtension)
 }
 
+// PNG returns the Graphviz PNG visualization path for a profile.
 func (l TagLayout) PNG(profile, bench string) string {
 	return filepath.Join(l.FunctionsDir(profile, bench), fmt.Sprintf("%s_%s.png", bench, profile))
 }

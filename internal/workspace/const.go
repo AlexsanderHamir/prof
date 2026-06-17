@@ -1,5 +1,6 @@
 package workspace
 
+// Path and permission constants for bench/<tag>/ layout.
 const (
 	MainDirOutput               = "bench"
 	ProfileTextDir              = "text"
