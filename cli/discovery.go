@@ -6,21 +6,18 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/AlexsanderHamir/prof/engine/tooling"
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/app"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
-
-// profileCatalog matches the benchmark pipeline supported profile kinds.
-var profileCatalog = tooling.DefaultCatalog()
 
 // discoverAvailableTags scans the bench directory for existing tags
 func discoverAvailableTags() ([]string, error) {
-	root, err := internal.FindGoModuleRoot()
+	root, err := workspace.FindModuleRoot()
 	if err != nil {
 		return nil, fmt.Errorf("failed to locate module root: %w", err)
 	}
 
-	benchDir := filepath.Join(root, internal.MainDirOutput)
+	benchDir := filepath.Join(root, workspace.MainDirOutput)
 	entries, err := os.ReadDir(benchDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -41,12 +38,12 @@ func discoverAvailableTags() ([]string, error) {
 
 // discoverAvailableBenchmarks scans a specific tag directory for available benchmarks
 func discoverAvailableBenchmarks(tag string) ([]string, error) {
-	root, err := internal.FindGoModuleRoot()
+	root, err := workspace.FindModuleRoot()
 	if err != nil {
 		return nil, fmt.Errorf("failed to locate module root: %w", err)
 	}
 
-	benchDir := filepath.Join(root, internal.MainDirOutput, tag, internal.ProfileTextDir)
+	benchDir := filepath.Join(root, workspace.MainDirOutput, tag, workspace.ProfileTextDir)
 	entries, err := os.ReadDir(benchDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -67,12 +64,12 @@ func discoverAvailableBenchmarks(tag string) ([]string, error) {
 
 // discoverAvailableProfiles scans a specific tag and benchmark for available profile types
 func discoverAvailableProfiles(tag, benchmarkName string) ([]string, error) {
-	root, err := internal.FindGoModuleRoot()
+	root, err := workspace.FindModuleRoot()
 	if err != nil {
 		return nil, fmt.Errorf("failed to locate module root: %w", err)
 	}
 
-	benchDir := filepath.Join(root, internal.MainDirOutput, tag, internal.ProfileTextDir, benchmarkName)
+	benchDir := filepath.Join(root, workspace.MainDirOutput, tag, workspace.ProfileTextDir, benchmarkName)
 	entries, err := os.ReadDir(benchDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -88,7 +85,7 @@ func discoverAvailableProfiles(tag, benchmarkName string) ([]string, error) {
 			name := entry.Name()
 			if strings.HasPrefix(name, benchmarkName+"_") {
 				profileTypeName := strings.TrimSuffix(strings.TrimPrefix(name, benchmarkName+"_"), ".txt")
-				if profileCatalog.IsKnownProfile(profileTypeName) {
+				if app.IsKnownProfile(profileTypeName) {
 					availableProfiles = append(availableProfiles, profileTypeName)
 				}
 			}

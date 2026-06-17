@@ -9,7 +9,8 @@ import (
 	"os"
 	"sort"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/config"
+
 	"github.com/microcosm-cc/bluemonday"
 )
 
@@ -22,9 +23,9 @@ func (r *ProfileChangeReport) printSummary() {
 	// Separate changes by type
 	for _, change := range r.FunctionChanges {
 		switch change.ChangeType {
-		case internal.REGRESSION:
+		case ChangeRegression:
 			regressionList = append(regressionList, change)
-		case internal.IMPROVEMENT:
+		case ChangeImprovement:
 			improvementList = append(improvementList, change)
 		default:
 			stable++
@@ -74,9 +75,9 @@ func (r *ProfileChangeReport) printDetailedReport() {
 	var regressions, improvements, stable int
 	for _, change := range changes {
 		switch change.ChangeType {
-		case internal.REGRESSION:
+		case ChangeRegression:
 			regressions++
-		case internal.IMPROVEMENT:
+		case ChangeImprovement:
 			improvements++
 		default:
 			stable++
@@ -97,9 +98,9 @@ func (r *ProfileChangeReport) printDetailedReport() {
 	sort.Slice(changes, func(i, j int) bool {
 		// Primary sort: by change type priority
 		typePriority := map[string]int{
-			internal.REGRESSION:  regressionPriority,
-			internal.IMPROVEMENT: improvementPriority,
-			internal.STABLE:      stablePriority,
+			ChangeRegression:  regressionPriority,
+			ChangeImprovement: improvementPriority,
+			ChangeStable:      stablePriority,
 		}
 
 		if typePriority[changes[i].ChangeType] != typePriority[changes[j].ChangeType] {
@@ -132,9 +133,9 @@ func (r *ProfileChangeReport) generateHTMLSummary(outputPath string) error {
 
 	for _, change := range r.FunctionChanges {
 		switch change.ChangeType {
-		case internal.REGRESSION:
+		case ChangeRegression:
 			regressionList = append(regressionList, change)
-		case internal.IMPROVEMENT:
+		case ChangeImprovement:
 			improvementList = append(improvementList, change)
 		default:
 			stable++
@@ -238,9 +239,9 @@ func (r *ProfileChangeReport) generateDetailedHTMLReport(outputPath string) erro
 	var regressions, improvements, stable int
 	for _, change := range changes {
 		switch change.ChangeType {
-		case internal.REGRESSION:
+		case ChangeRegression:
 			regressions++
-		case internal.IMPROVEMENT:
+		case ChangeImprovement:
 			improvements++
 		default:
 			stable++
@@ -249,9 +250,9 @@ func (r *ProfileChangeReport) generateDetailedHTMLReport(outputPath string) erro
 
 	// Sort: regressions → improvements → stable, each by magnitude
 	typePriority := map[string]int{
-		internal.REGRESSION:  regressionPriority,
-		internal.IMPROVEMENT: improvementPriority,
-		internal.STABLE:      stablePriority,
+		ChangeRegression:  regressionPriority,
+		ChangeImprovement: improvementPriority,
+		ChangeStable:      stablePriority,
 	}
 
 	sort.Slice(changes, func(i, j int) bool {
@@ -351,9 +352,9 @@ func (r *ProfileChangeReport) generateJSONSummary(outputPath string) error {
 
 	for _, change := range r.FunctionChanges {
 		switch change.ChangeType {
-		case internal.REGRESSION:
+		case ChangeRegression:
 			regressionList = append(regressionList, change)
-		case internal.IMPROVEMENT:
+		case ChangeImprovement:
 			improvementList = append(improvementList, change)
 		default:
 			stable++
@@ -399,9 +400,9 @@ func (r *ProfileChangeReport) generateDetailedJSONReport(outputPath string) erro
 	var regressions, improvements, stable int
 	for _, change := range changes {
 		switch change.ChangeType {
-		case internal.REGRESSION:
+		case ChangeRegression:
 			regressions++
-		case internal.IMPROVEMENT:
+		case ChangeImprovement:
 			improvements++
 		default:
 			stable++
@@ -410,9 +411,9 @@ func (r *ProfileChangeReport) generateDetailedJSONReport(outputPath string) erro
 
 	// Sort: regressions → improvements → stable, each by magnitude
 	typePriority := map[string]int{
-		internal.REGRESSION:  regressionPriority,
-		internal.IMPROVEMENT: improvementPriority,
-		internal.STABLE:      stablePriority,
+		ChangeRegression:  regressionPriority,
+		ChangeImprovement: improvementPriority,
+		ChangeStable:      stablePriority,
 	}
 
 	sort.Slice(changes, func(i, j int) bool {
@@ -471,7 +472,7 @@ func (r *ProfileChangeReport) ChooseOutputFormat(outputFormat string) error {
 func (r *ProfileChangeReport) WorstRegression() *FunctionChangeResult {
 	var worst *FunctionChangeResult
 	for _, change := range r.FunctionChanges {
-		if change.ChangeType != internal.REGRESSION {
+		if change.ChangeType != ChangeRegression {
 			continue
 		}
 		if worst == nil || change.FlatChangePercent > worst.FlatChangePercent {
@@ -486,7 +487,7 @@ func (r *ProfileChangeReport) WorstRegression() *FunctionChangeResult {
 func (r *ProfileChangeReport) BestImprovement() *FunctionChangeResult {
 	var best *FunctionChangeResult
 	for _, change := range r.FunctionChanges {
-		if change.ChangeType != internal.IMPROVEMENT {
+		if change.ChangeType != ChangeImprovement {
 			continue
 		}
 		if best == nil || math.Abs(change.FlatChangePercent) > math.Abs(best.FlatChangePercent) {
@@ -497,13 +498,13 @@ func (r *ProfileChangeReport) BestImprovement() *FunctionChangeResult {
 }
 
 // ApplyCIConfiguration applies CI/CD configuration filtering to the report
-func (r *ProfileChangeReport) ApplyCIConfiguration(cicdConfig *internal.CIConfig, benchmarkName string) {
+func (r *ProfileChangeReport) ApplyCIConfiguration(cicdConfig *config.CIConfig, benchmarkName string) {
 	if cicdConfig == nil {
 		return
 	}
 
 	// Get the appropriate CI/CD configuration for this benchmark
-	var config *internal.CITrackingConfig
+	var config *config.CITrackingConfig
 	if benchmarkConfig, exists := cicdConfig.Benchmarks[benchmarkName]; exists {
 		config = &benchmarkConfig
 	} else if cicdConfig.Global != nil {

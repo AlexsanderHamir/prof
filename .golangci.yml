@@ -44,6 +44,18 @@ issues:
     # Integration harness helpers are intentionally loose.
     - path: (^|[\\/])tests[\\/].*\.go$
       linters: [thelper]
+    - path: (^|[\\/])cli[\\/]
+      linters: [tagliatelle]
+    - path: (^|[\\/])engine[\\/]
+      linters: [tagliatelle]
+    - path: (^|[\\/])parser[\\/]
+      linters: [tagliatelle]
+    - path: (^|[\\/])cmd[\\/]
+      linters: [tagliatelle]
+    - path: (^|[\\/])internal[\\/](app|intent|tui|workspace|testpaths)[\\/]
+      linters: [tagliatelle]
+    - path: (^|[\\/])tests[\\/]
+      linters: [tagliatelle]
 
 # Path mode for exclusions and linters is set under run.relative-path-mode above.
 
@@ -77,13 +89,8 @@ linters-settings:
     # Default (applies if no custom rules are defined): Only allow $gostd in all files.
     rules:
       "deprecated":
-        # List of file globs that will match this list of settings to compare against.
-        # Default: $all
         files:
           - "$all"
-        # List of packages that are not allowed.
-        # Entries can be a variable (starting with $), a string prefix, or an exact match (if ending with $).
-        # Default: []
         deny:
           - pkg: "github.com/golang/protobuf"
             desc: "Use google.golang.org/protobuf instead, see https://developers.google.com/protocol-buffers/docs/reference/go/faq#modules"
@@ -103,6 +110,35 @@ linters-settings:
         deny:
           - pkg: "log$"
             desc: "Use log/slog instead, see https://go.dev/blog/slog"
+      "layering-cli":
+        files:
+          - "cli/**"
+          - "internal/intent/**"
+          - "internal/tui/**"
+        deny:
+          - pkg: "github.com/AlexsanderHamir/prof/engine"
+            desc: "Presentation imports engines via internal/app only."
+      "layering-parser":
+        files:
+          - "parser/**"
+        deny:
+          - pkg: "github.com/AlexsanderHamir/prof/cli"
+          - pkg: "github.com/AlexsanderHamir/prof/engine"
+          - pkg: "github.com/AlexsanderHamir/prof/internal/workspace"
+            desc: "parser decodes profiles; it does not know bench/ layout."
+      "layering-exec":
+        files:
+          - "cli/**"
+          - "cmd/**"
+          - "internal/**"
+          - "engine/collect/**"
+          - "engine/tracker/**"
+          - "engine/cursoragent/**"
+          - "engine/tools/**"
+          - "parser/**"
+        deny:
+          - pkg: "os/exec$"
+            desc: "Use engine/tooling (LookPath, ExecRunner, StartDetached)."
 
   errcheck:
     # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
@@ -229,6 +265,11 @@ linters-settings:
     patterns:
       - ".*"
 
+  tagliatelle:
+    case:
+      rules:
+        json: snake
+
   usetesting:
     # Enable/disable `os.TempDir()` detections.
     # Default: false
@@ -298,6 +339,7 @@ linters:
     - spancheck # checks for mistakes with OpenTelemetry/Census spans
     - sqlclosecheck # checks that sql.Rows and sql.Stmt are closed
     - stylecheck # is a replacement for golint
+    - tagliatelle # checks the struct tags
     - testableexamples # checks if examples are testable (have an expected output)
     - testifylint # checks usage of github.com/stretchr/testify
     - thelper # detects test helpers without t.Helper()

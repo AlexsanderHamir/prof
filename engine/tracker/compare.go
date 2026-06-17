@@ -3,10 +3,11 @@ package tracker
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
@@ -26,11 +27,11 @@ func detectChangeBetweenTwoObjects(baseline, current *parser.LineObj) (*Function
 	if baseline.Cum != 0 {
 		cumChange = ((current.Cum - baseline.Cum) / baseline.Cum) * percentMultiplier
 	}
-	changeType := internal.STABLE
+	changeType := ChangeStable
 	if flatChange > 0 {
-		changeType = internal.REGRESSION
+		changeType = ChangeRegression
 	} else if flatChange < 0 {
-		changeType = internal.IMPROVEMENT
+		changeType = ChangeImprovement
 	}
 	return &FunctionChangeResult{
 		FunctionName:      current.FnName,
@@ -59,14 +60,20 @@ func lineObjByShortName(lineobjects []*parser.LineObj) map[string]*parser.LineOb
 	return m
 }
 
-func getBinFilesLocations(selections *Selections) (string, string) {
-	fileName := fmt.Sprintf("%s_%s.%s", selections.BenchmarkName, selections.ProfileType, internal.ProfileArtifactExtension)
-	base := filepath.Join(internal.MainDirOutput, selections.Baseline, internal.ProfileBinDir, selections.BenchmarkName, fileName)
-	cur := filepath.Join(internal.MainDirOutput, selections.Current, internal.ProfileBinDir, selections.BenchmarkName, fileName)
-	return base, cur
+func getBinFilesLocations(selections *Options) (string, string) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "."
+	}
+	baseRoot := filepath.Join(cwd, workspace.MainDirOutput, selections.Baseline)
+	curRoot := filepath.Join(cwd, workspace.MainDirOutput, selections.Current)
+	baseLayout := workspace.TagLayout{Tag: selections.Baseline, Root: baseRoot}
+	curLayout := workspace.TagLayout{Tag: selections.Current, Root: curRoot}
+	return baseLayout.Bin(selections.BenchmarkName, selections.ProfileType),
+		curLayout.Bin(selections.BenchmarkName, selections.ProfileType)
 }
 
-func chooseFileLocations(selections *Selections) (baselinePath, currentPath string) {
+func chooseFileLocations(selections *Options) (baselinePath, currentPath string) {
 	if selections.IsManual {
 		return selections.Baseline, selections.Current
 	}
@@ -74,7 +81,7 @@ func chooseFileLocations(selections *Selections) (baselinePath, currentPath stri
 }
 
 // CheckPerformanceDifferences loads both profiles and pairs functions by short name.
-func CheckPerformanceDifferences(selections *Selections) (*ProfileChangeReport, error) {
+func CheckPerformanceDifferences(selections *Options) (*ProfileChangeReport, error) {
 	binFilePathBaseLine, binFilePathCurrent := chooseFileLocations(selections)
 
 	lineObjsBaseline, err := parser.TurnLinesIntoObjectsV2(binFilePathBaseLine)

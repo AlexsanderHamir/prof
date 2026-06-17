@@ -19,7 +19,7 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to get current working directory: %w", err)
 	}
 
-	benchNames, err := svc.Benchmark.DiscoverBenchmarks(currentDir)
+	benchNames, err := svc.Collect.DiscoverBenchmarks(currentDir)
 	if err != nil {
 		return fmt.Errorf("failed to discover benchmarks: %w", err)
 	}
@@ -38,7 +38,7 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	profilesOptions := svc.Benchmark.SupportedProfiles()
+	profilesOptions := svc.Collect.SupportedProfiles()
 	var selectedProfiles []string
 	profilesPrompt := &survey.MultiSelect{
 		Message: "Select profiles:",
@@ -130,6 +130,6 @@ func runTUITrackAuto(svc *app.Services, _ *cobra.Command, _ []string) error {
 	}
 	fmt.Println()
 
-	cmp := &intent.CompareIntent{Selections: selections}
+	cmp := &intent.CompareIntent{Options: *selections}
 	return intent.RunValidated(cmp, svc)
 }

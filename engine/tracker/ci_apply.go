@@ -6,11 +6,11 @@ import (
 	"math"
 	"strings"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/config"
 )
 
 func applyCIConfiguration(report *ProfileChangeReport, selections *Selections) error {
-	cfg, err := internal.LoadFromFile(internal.ConfigFilename)
+	cfg, err := config.LoadFromFile(config.Filename)
 	if err != nil {
 		slog.Info("No CI/CD configuration found, using command-line settings only")
 		return applyCommandLineThresholds(report, selections)
@@ -38,7 +38,7 @@ func applyCommandLineThresholds(report *ProfileChangeReport, selections *Selecti
 	return nil
 }
 
-func applyCICDThresholdsOnly(report *ProfileChangeReport, selections *Selections, cicdConfig *internal.CIConfig) error {
+func applyCICDThresholdsOnly(report *ProfileChangeReport, selections *Selections, cicdConfig *config.CIConfig) error {
 	benchmarkName := selections.BenchmarkName
 	if benchmarkName == "" {
 		benchmarkName = "unknown"
@@ -81,7 +81,7 @@ func applyCICDThresholdsOnly(report *ProfileChangeReport, selections *Selections
 	return nil
 }
 
-func getEffectiveRegressionThreshold(cicdConfig *internal.CIConfig, benchmarkName string, commandLineThreshold float64) float64 {
+func getEffectiveRegressionThreshold(cicdConfig *config.CIConfig, benchmarkName string, commandLineThreshold float64) float64 {
 	if cicdConfig == nil {
 		return commandLineThreshold
 	}
@@ -106,7 +106,7 @@ func getEffectiveRegressionThreshold(cicdConfig *internal.CIConfig, benchmarkNam
 	return commandLineThreshold
 }
 
-func getMinChangeThreshold(cicdConfig *internal.CIConfig, benchmarkName string) float64 {
+func getMinChangeThreshold(cicdConfig *config.CIConfig, benchmarkName string) float64 {
 	if cicdConfig == nil {
 		return 0.0
 	}
@@ -119,7 +119,7 @@ func getMinChangeThreshold(cicdConfig *internal.CIConfig, benchmarkName string) 
 	return 0.0
 }
 
-func shouldFailOnImprovement(cicdConfig *internal.CIConfig, benchmarkName string) bool {
+func shouldFailOnImprovement(cicdConfig *config.CIConfig, benchmarkName string) bool {
 	if cicdConfig == nil {
 		return false
 	}
@@ -132,7 +132,7 @@ func shouldFailOnImprovement(cicdConfig *internal.CIConfig, benchmarkName string
 	return false
 }
 
-func shouldIgnoreFunction(cicdConfig *internal.CIConfig, functionName string, benchmarkName string) bool {
+func shouldIgnoreFunction(cicdConfig *config.CIConfig, functionName string, benchmarkName string) bool {
 	if cicdConfig == nil {
 		return false
 	}
@@ -147,7 +147,7 @@ func shouldIgnoreFunction(cicdConfig *internal.CIConfig, functionName string, be
 	return false
 }
 
-func shouldIgnoreFunctionByConfig(config *internal.CITrackingConfig, functionName string) bool {
+func shouldIgnoreFunctionByConfig(config *config.CITrackingConfig, functionName string) bool {
 	if config == nil {
 		return false
 	}

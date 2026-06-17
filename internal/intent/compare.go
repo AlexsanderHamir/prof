@@ -5,22 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AlexsanderHamir/prof/engine/tracker"
 	"github.com/AlexsanderHamir/prof/internal/app"
 )
 
-var compareValidFormats = map[string]bool{
-	"summary":       true,
-	"detailed":      true,
-	"summary-html":  true,
-	"detailed-html": true,
-	"summary-json":  true,
-	"detailed-json": true,
-}
-
 // CompareIntent wraps tag-based track auto selections (prof track auto, prof ui compare).
 type CompareIntent struct {
-	Selections *tracker.Selections
+	Options app.TrackOptions
 }
 
 // Kind implements [Executable].
@@ -28,10 +18,7 @@ func (i *CompareIntent) Kind() Kind { return KindCompare }
 
 // Validate checks fields required for RunTrackAuto.
 func (i *CompareIntent) Validate() error {
-	if i.Selections == nil {
-		return errors.New("compare intent: selections is nil")
-	}
-	s := i.Selections
+	s := i.Options
 	if s.IsManual {
 		return errors.New("compare intent: IsManual must be false for tag-based compare (use prof track manual for file paths)")
 	}
@@ -50,7 +37,7 @@ func (i *CompareIntent) Validate() error {
 	if strings.TrimSpace(s.OutputFormat) == "" {
 		return errors.New("compare intent: output format is required")
 	}
-	if !compareValidFormats[s.OutputFormat] {
+	if !app.ValidTrackOutputFormat(s.OutputFormat) {
 		return fmt.Errorf("compare intent: invalid output format %q", s.OutputFormat)
 	}
 	if s.UseThreshold && s.RegressionThreshold <= 0 {
@@ -61,5 +48,5 @@ func (i *CompareIntent) Validate() error {
 
 // Run implements [Executable].
 func (i *CompareIntent) Run(svc *app.Services) error {
-	return svc.Tracker.RunTrackAuto(i.Selections)
+	return svc.Tracker.RunTrackAuto(i.Options)
 }

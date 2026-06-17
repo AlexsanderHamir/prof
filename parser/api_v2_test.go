@@ -6,7 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/config"
+
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
@@ -106,7 +107,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) { //nolint:gocognit,funlen // table
 	profilePath := fixtureV2Path(t, "BenchmarkGenPool_cpu.out")
 
 	t.Run("no filters", func(t *testing.T) {
-		filter := internal.FunctionFilter{}
+		filter := config.FunctionFilter{}
 		names, err := parser.GetAllFunctionNamesV2(profilePath, filter)
 		if err != nil {
 			t.Fatalf("GetAllFunctionNamesV2() failed: %v", err)
@@ -126,7 +127,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) { //nolint:gocognit,funlen // table
 	})
 
 	t.Run("with include prefixes", func(t *testing.T) {
-		filter := internal.FunctionFilter{
+		filter := config.FunctionFilter{
 			IncludePrefixes: []string{"github.com/AlexsanderHamir/GenPool"},
 		}
 		names, err := parser.GetAllFunctionNamesV2(profilePath, filter)
@@ -148,7 +149,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) { //nolint:gocognit,funlen // table
 	})
 
 	t.Run("with ignore functions", func(t *testing.T) {
-		filter := internal.FunctionFilter{
+		filter := config.FunctionFilter{
 			IgnoreFunctions: []string{"func1", "func2"},
 		}
 		names, err := parser.GetAllFunctionNamesV2(profilePath, filter)
@@ -175,7 +176,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) { //nolint:gocognit,funlen // table
 	})
 
 	t.Run("with both filters", func(t *testing.T) {
-		filter := internal.FunctionFilter{
+		filter := config.FunctionFilter{
 			IncludePrefixes: []string{"github.com/AlexsanderHamir/GenPool"},
 			IgnoreFunctions: []string{"func1"},
 		}
@@ -203,7 +204,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) { //nolint:gocognit,funlen // table
 	})
 
 	t.Run("with non-existent prefix", func(t *testing.T) {
-		filter := internal.FunctionFilter{
+		filter := config.FunctionFilter{
 			IncludePrefixes: []string{"non/existent/prefix"},
 		}
 		names, err := parser.GetAllFunctionNamesV2(profilePath, filter)
@@ -219,7 +220,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) { //nolint:gocognit,funlen // table
 
 	t.Run("with memory profile", func(t *testing.T) {
 		memoryProfilePath := fixtureV2Path(t, "BenchmarkGenPool_memory.out")
-		filter := internal.FunctionFilter{}
+		filter := config.FunctionFilter{}
 		names, err := parser.GetAllFunctionNamesV2(memoryProfilePath, filter)
 		if err != nil {
 			t.Fatalf("GetAllFunctionNamesV2() failed with memory profile: %v", err)
@@ -232,7 +233,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) { //nolint:gocognit,funlen // table
 	})
 
 	t.Run("non-existent file", func(t *testing.T) {
-		filter := internal.FunctionFilter{}
+		filter := config.FunctionFilter{}
 		_, err := parser.GetAllFunctionNamesV2("non_existent_file.out", filter)
 		if err == nil {
 			t.Error("Expected error for non-existent file, got nil")
@@ -241,7 +242,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) { //nolint:gocognit,funlen // table
 
 	t.Run("with block profile", func(t *testing.T) {
 		blockProfilePath := fixtureV2Path(t, "BenchmarkGenPool_block.out")
-		filter := internal.FunctionFilter{}
+		filter := config.FunctionFilter{}
 		names, err := parser.GetAllFunctionNamesV2(blockProfilePath, filter)
 		if err != nil {
 			t.Fatalf("GetAllFunctionNamesV2() failed with block profile: %v", err)
@@ -255,7 +256,7 @@ func TestGetAllFunctionNamesV2(t *testing.T) { //nolint:gocognit,funlen // table
 
 	t.Run("with mutex profile", func(t *testing.T) {
 		mutexProfilePath := fixtureV2Path(t, "BenchmarkGenPool_mutex.out")
-		filter := internal.FunctionFilter{}
+		filter := config.FunctionFilter{}
 		names, err := parser.GetAllFunctionNamesV2(mutexProfilePath, filter)
 		if err != nil {
 			t.Fatalf("GetAllFunctionNamesV2() failed with mutex profile: %v", err)
@@ -273,7 +274,7 @@ func TestOrganizeProfileByPackageV2(t *testing.T) {
 	profilePath := fixtureV2Path(t, "BenchmarkGenPool_cpu.out")
 
 	// Test with empty filter
-	filter := internal.FunctionFilter{}
+	filter := config.FunctionFilter{}
 	result, err := parser.OrganizeProfileByPackageV2(profilePath, filter)
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
@@ -307,7 +308,7 @@ func TestOrganizeProfileByPackageV2WithFilter(t *testing.T) {
 	profilePath := fixtureV2Path(t, "BenchmarkGenPool_cpu.out")
 
 	// Test with include prefix filter
-	filter := internal.FunctionFilter{
+	filter := config.FunctionFilter{
 		IncludePrefixes: []string{"github.com/AlexsanderHamir/GenPool"},
 	}
 
@@ -327,7 +328,7 @@ func TestOrganizeProfileByPackageV2WithIgnoreFunctions(t *testing.T) {
 	profilePath := fixtureV2Path(t, "BenchmarkGenPool_cpu.out")
 
 	// Test with ignore functions filter
-	filter := internal.FunctionFilter{
+	filter := config.FunctionFilter{
 		IgnoreFunctions: []string{"BenchmarkGenPool"},
 	}
 

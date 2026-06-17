@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
 // profCacheDir is a single build output reused for all integration scenarios in one `go test` run.
@@ -61,7 +61,7 @@ func copyProfBinary(src, dst string) error {
 func ensureCachedProfBinary(projectRoot string) (string, error) {
 	integrationProfOnce.Do(func() {
 		cacheDir := filepath.Join(projectRoot, testDirName, profCacheDir)
-		if err := os.MkdirAll(cacheDir, internal.PermDir); err != nil {
+		if err := os.MkdirAll(cacheDir, workspace.PermDir); err != nil {
 			errIntegrationProfBuild = err
 			return
 		}

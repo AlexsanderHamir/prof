@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -57,7 +58,7 @@ func newHubModel() *hubModel {
 		items: []mainItem{
 			{"Run benchmarks and collect profiles", MainCollect},
 			{"Compare two tagged runs", MainCompare},
-			{fmt.Sprintf("Tools (%s, %s)", internal.ToolNameBenchstat, internal.ToolNameQcachegrind), MainTools},
+			{fmt.Sprintf("Tools (%s, %s)", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind), MainTools},
 			{"Create configuration template (prof setup)", MainSetup},
 			{"Show documentation URL", MainDocs},
 			{"Quit", MainQuit},
@@ -146,7 +147,7 @@ func (m *hubModel) View() string {
 
 	if m.showHelp {
 		b.WriteString(helpStyle.Render(
-			fmt.Sprintf("Collect runs benchmarks and writes bench/<tag>/. Compare needs at least two tags. Tools runs %s or %s. Setup writes the config template. Same engines as prof auto / prof track.", internal.ToolNameBenchstat, internal.ToolNameQcachegrind),
+			fmt.Sprintf("Collect runs benchmarks and writes bench/<tag>/. Compare needs at least two tags. Tools runs %s or %s. Setup writes the config template. Same engines as prof auto / prof track.", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind),
 		))
 		b.WriteString("\n")
 	}

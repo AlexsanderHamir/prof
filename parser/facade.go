@@ -1,6 +1,6 @@
 package parser
 
-import "github.com/AlexsanderHamir/prof/internal"
+import "github.com/AlexsanderHamir/prof/internal/config"
 
 // LineObjsFromProfileData builds line objects from aggregated profile data (e.g. [Pipeline.RunFromPath]).
 func LineObjsFromProfileData(d *ProfileData) []*LineObj {
@@ -33,7 +33,7 @@ func TurnLinesIntoObjectsV2(profilePath string) ([]*LineObj, error) {
 
 // GetFunctionListEntriesFromProfileData returns per-function list targets after the same
 // filtering as [GetAllFunctionNamesFromProfileData].
-func GetFunctionListEntriesFromProfileData(d *ProfileData, filter internal.FunctionFilter) []FunctionListEntry {
+func GetFunctionListEntriesFromProfileData(d *ProfileData, filter config.FunctionFilter) []FunctionListEntry {
 	if d == nil {
 		return nil
 	}
@@ -57,7 +57,7 @@ func GetFunctionListEntriesFromProfileData(d *ProfileData, filter internal.Funct
 }
 
 // GetAllFunctionNamesFromProfileData applies filters to [ProfileData] the same way as [GetAllFunctionNamesV2].
-func GetAllFunctionNamesFromProfileData(d *ProfileData, filter internal.FunctionFilter) []string {
+func GetAllFunctionNamesFromProfileData(d *ProfileData, filter config.FunctionFilter) []string {
 	if d == nil {
 		return nil
 	}
@@ -70,7 +70,7 @@ func GetAllFunctionNamesFromProfileData(d *ProfileData, filter internal.Function
 }
 
 // GetFunctionListEntriesV2 loads a profile path and returns [FunctionListEntry] values using filter rules.
-func GetFunctionListEntriesV2(profilePath string, filter internal.FunctionFilter) ([]FunctionListEntry, error) {
+func GetFunctionListEntriesV2(profilePath string, filter config.FunctionFilter) ([]FunctionListEntry, error) {
 	d, err := profileDataFromPath(profilePath)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func GetFunctionListEntriesV2(profilePath string, filter internal.FunctionFilter
 }
 
 // GetAllFunctionNamesV2 extracts short function names from a profile path using filter rules.
-func GetAllFunctionNamesV2(profilePath string, filter internal.FunctionFilter) ([]string, error) {
+func GetAllFunctionNamesV2(profilePath string, filter config.FunctionFilter) ([]string, error) {
 	entries, err := GetFunctionListEntriesV2(profilePath, filter)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func GetAllFunctionNamesV2(profilePath string, filter internal.FunctionFilter) (
 }
 
 // OrganizeProfileByPackageFromProfileData builds the package-grouped markdown report from [ProfileData].
-func OrganizeProfileByPackageFromProfileData(profileData *ProfileData, filter internal.FunctionFilter) string {
+func OrganizeProfileByPackageFromProfileData(profileData *ProfileData, filter config.FunctionFilter) string {
 	if profileData == nil {
 		return ""
 	}
@@ -146,7 +146,7 @@ func OrganizeProfileByPackageFromProfileData(profileData *ProfileData, filter in
 }
 
 // OrganizeProfileByPackageV2 loads a profile path and returns the package-grouped markdown report.
-func OrganizeProfileByPackageV2(profilePath string, filter internal.FunctionFilter) (string, error) {
+func OrganizeProfileByPackageV2(profilePath string, filter config.FunctionFilter) (string, error) {
 	d, err := profileDataFromPath(profilePath)
 	if err != nil {
 		return "", err
@@ -160,11 +160,11 @@ func TurnLinesIntoObjects(profilePath string) ([]*LineObj, error) {
 }
 
 // GetAllFunctionNames extracts function names from a profile path; equivalent to [GetAllFunctionNamesV2].
-func GetAllFunctionNames(profilePath string, filter internal.FunctionFilter) ([]string, error) {
+func GetAllFunctionNames(profilePath string, filter config.FunctionFilter) ([]string, error) {
 	return GetAllFunctionNamesV2(profilePath, filter)
 }
 
 // OrganizeProfileByPackage loads a profile and builds the package-grouped report; equivalent to [OrganizeProfileByPackageV2].
-func OrganizeProfileByPackage(profilePath string, filter internal.FunctionFilter) (string, error) {
+func OrganizeProfileByPackage(profilePath string, filter config.FunctionFilter) (string, error) {
 	return OrganizeProfileByPackageV2(profilePath, filter)
 }

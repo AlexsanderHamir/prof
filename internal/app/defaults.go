@@ -1,60 +1,58 @@
 package app
 
 import (
-	"github.com/AlexsanderHamir/prof/engine/benchmark"
-	"github.com/AlexsanderHamir/prof/engine/collector"
+	"context"
+
+	"github.com/AlexsanderHamir/prof/engine/collect"
+	"github.com/AlexsanderHamir/prof/engine/cursoragent"
 	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/engine/tools/benchstats"
 	"github.com/AlexsanderHamir/prof/engine/tools/qcachegrind"
 	"github.com/AlexsanderHamir/prof/engine/tracker"
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/config"
 )
 
 // Default returns stock services (production wiring).
 func Default() *Services {
 	r := tooling.NewExecRunner()
 	return &Services{
-		Runner:    r,
-		Benchmark: defaultBenchmark{runner: r},
-		Collector: defaultCollector{runner: r},
-		Tracker:   defaultTracker{},
-		Tools:     defaultTools{runner: r},
-		Setup:     defaultSetup{},
+		Runner:  r,
+		Collect: defaultCollect{runner: r},
+		Tracker: defaultTracker{},
+		Tools:   defaultTools{runner: r},
+		Agent:   defaultAgent{},
+		Setup:   defaultSetup{},
 	}
 }
 
-type defaultBenchmark struct {
+type defaultCollect struct {
 	runner tooling.Runner
 }
 
-func (d defaultBenchmark) RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupByPackage bool, lenientProfiles bool, skipPNG bool) error {
-	return benchmark.RunBenchmarks(d.runner, benchmarks, profiles, tag, count, groupByPackage, lenientProfiles, skipPNG)
+func (d defaultCollect) RunAuto(opts CollectAutoOptions) error {
+	return collect.RunAuto(d.runner, collect.AutoOptions(opts))
 }
 
-func (defaultBenchmark) DiscoverBenchmarks(scope string) ([]string, error) {
-	return benchmark.DiscoverBenchmarks(scope)
+func (d defaultCollect) RunManual(opts CollectManualOptions) error {
+	return collect.RunManual(d.runner, collect.ManualOptions(opts))
 }
 
-func (defaultBenchmark) SupportedProfiles() []string {
-	return benchmark.SupportedProfiles
+func (d defaultCollect) DiscoverBenchmarks(scope string) ([]string, error) {
+	return collect.DiscoverBenchmarks(scope)
 }
 
-type defaultCollector struct {
-	runner tooling.Runner
-}
-
-func (d defaultCollector) RunCollector(files []string, tag string, groupByPackage bool) error {
-	return collector.RunCollector(d.runner, files, tag, groupByPackage)
+func (d defaultCollect) SupportedProfiles() []string {
+	return collect.SupportedProfiles
 }
 
 type defaultTracker struct{}
 
-func (defaultTracker) RunTrackAuto(selections *tracker.Selections) error {
-	return tracker.RunTrackAuto(selections)
+func (defaultTracker) RunTrackAuto(opts TrackOptions) error {
+	return tracker.RunTrackAuto(tracker.Options(opts))
 }
 
-func (defaultTracker) RunTrackManual(selections *tracker.Selections) error {
-	return tracker.RunTrackManual(selections)
+func (defaultTracker) RunTrackManual(opts TrackOptions) error {
+	return tracker.RunTrackManual(tracker.Options(opts))
 }
 
 type defaultTools struct {
@@ -69,8 +67,14 @@ func (d defaultTools) RunQcacheGrind(tag, benchName, profile string) error {
 	return qcachegrind.RunQcacheGrind(d.runner, tag, benchName, profile)
 }
 
+type defaultAgent struct{}
+
+func (defaultAgent) Run(ctx context.Context, req cursoragent.RunRequest, opts cursoragent.Options) (cursoragent.RunResult, error) {
+	return cursoragent.NewClient(opts).Run(ctx, req)
+}
+
 type defaultSetup struct{}
 
 func (defaultSetup) CreateTemplate() error {
-	return internal.CreateTemplate()
+	return config.CreateTemplate()
 }

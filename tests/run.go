@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
 func newProfCmd(t *testing.T, envFullPath string, args []string) *exec.Cmd {
@@ -39,7 +39,7 @@ func runProfCaptured(t *testing.T, envFullPath string, args []string, expectedEr
 		return stdoutB.String(), stderrB.String(), shouldContinue
 	}
 
-	if checkSuccessMessage && !strings.Contains(stderrB.String(), internal.InfoCollectionSuccess) {
+	if checkSuccessMessage && !strings.Contains(stderrB.String(), workspace.InfoCollectionSuccess) {
 		t.Fatal("Expected success message not found")
 	}
 

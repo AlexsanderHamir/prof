@@ -5,7 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
+
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
@@ -31,7 +33,7 @@ var allFixtureProfiles = []fixtureProfile{
 // avoids ~100 `go tool pprof -list` shellouts per scenario without losing
 // coverage — the GetFunctionsOutput round-trip is already covered by the
 // collector unit tests.
-func runFilterInProcess(t *testing.T, cfg internal.Config) map[string][]string {
+func runFilterInProcess(t *testing.T, cfg config.Config) map[string][]string {
 	t.Helper()
 
 	root, err := getProjectRoot()
@@ -76,7 +78,7 @@ func checkFilteredNamesAgainstSpec(t *testing.T, names []string, spec map[fileFu
 	}
 
 	for _, name := range names {
-		fileName := name + "." + internal.TextExtension
+		fileName := name + "." + workspace.TextExtension
 		if spec != nil {
 			validateFileWithConfig(t, fileName, expectNonSpec, spec)
 		}

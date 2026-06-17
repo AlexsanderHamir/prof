@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math"
 	"strings"
-
-	"github.com/AlexsanderHamir/prof/internal"
 )
 
 func (cr *FunctionChangeResult) writeHeader(report *strings.Builder) {
@@ -22,15 +20,15 @@ func (cr *FunctionChangeResult) writeFunctionInfo(report *strings.Builder) {
 
 func (cr *FunctionChangeResult) writeStatusAssessment(report *strings.Builder) {
 	statusIcon := map[string]string{
-		internal.IMPROVEMENT: "✅",
-		internal.REGRESSION:  "⚠️",
+		ChangeImprovement: "✅",
+		ChangeRegression:  "⚠️",
 	}[cr.ChangeType]
 	if statusIcon == "" {
 		statusIcon = "🔄"
 	}
 	assessment := map[string]string{
-		internal.IMPROVEMENT: "Performance improvement detected",
-		internal.REGRESSION:  "Performance regression detected",
+		ChangeImprovement: "Performance improvement detected",
+		ChangeRegression:  "Performance regression detected",
 	}[cr.ChangeType]
 	if assessment == "" {
 		assessment = "No significant change detected"

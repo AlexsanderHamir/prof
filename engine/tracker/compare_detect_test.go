@@ -3,7 +3,6 @@ package tracker
 import (
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
@@ -14,7 +13,7 @@ func TestDetectChangeBetweenTwoObjectsRegression(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.ChangeType != internal.REGRESSION {
+	if r.ChangeType != ChangeRegression {
 		t.Fatalf("got %s", r.ChangeType)
 	}
 }
@@ -26,7 +25,7 @@ func TestDetectChangeBetweenTwoObjectsImprovement(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.ChangeType != internal.IMPROVEMENT {
+	if r.ChangeType != ChangeImprovement {
 		t.Fatalf("got %s", r.ChangeType)
 	}
 }

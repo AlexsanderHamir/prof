@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
 // integrationEnvDir is the per-scenario directory name under tests/ (package cwd).
@@ -27,17 +27,17 @@ var BenchmarkContent string
 
 func createPackage(dir string) error {
 	utilsDir := filepath.Join(dir, "utils")
-	if err := os.MkdirAll(utilsDir, internal.PermDir); err != nil {
+	if err := os.MkdirAll(utilsDir, workspace.PermDir); err != nil {
 		return fmt.Errorf("failed to create utils directory: %w", err)
 	}
 
 	utilsPath := filepath.Join(utilsDir, "utils.go")
-	return os.WriteFile(utilsPath, []byte(utilsTemplate), internal.PermFile)
+	return os.WriteFile(utilsPath, []byte(utilsTemplate), workspace.PermFile)
 }
 
 func createBenchmarkFile(dir string) error {
 	benchPath := filepath.Join(dir, "benchmark_test.go")
-	return os.WriteFile(benchPath, []byte(BenchmarkContent), internal.PermFile)
+	return os.WriteFile(benchPath, []byte(BenchmarkContent), workspace.PermFile)
 }
 
 func getProjectRoot() (string, error) {
@@ -63,7 +63,7 @@ func getProjectRoot() (string, error) {
 // envDir. Idempotent: skips `go mod init` if go.mod already exists, so it is
 // safe to call from both ensureSharedEnv (sync.Once) and setupEnviroment.
 func materializeSyntheticEnv(envDir string) error {
-	if err := os.Mkdir(envDir, internal.PermDir); err != nil && !os.IsExist(err) {
+	if err := os.Mkdir(envDir, workspace.PermDir); err != nil && !os.IsExist(err) {
 		return fmt.Errorf("create environment dir: %w", err)
 	}
 

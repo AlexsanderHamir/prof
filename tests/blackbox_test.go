@@ -10,7 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/cli"
+	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
 func skipSlowIntegration(t *testing.T) {
@@ -29,7 +31,7 @@ func TestAutoEndToEnd(t *testing.T) {
 	skipSlowIntegration(t)
 
 	testArgs := &TestArgs{
-		cfg:                     internal.Config{},
+		cfg:                     config.Config{},
 		withConfig:              false,
 		expectNonSpecifiedFiles: true,
 		cmd:                     runCmdWithCount(smokeCount),
@@ -49,14 +51,14 @@ func TestAutoEndToEnd(t *testing.T) {
 func TestFunctionFilter(t *testing.T) {
 	cases := []struct {
 		name          string
-		cfg           internal.Config
+		cfg           config.Config
 		expected      map[fileFullName]*FieldsCheck
 		expectNonSpec bool
 	}{
 		{"WithFunctionFilter", configWithFilter(), expectAllFunctionFiles(), false},
 		{"WithFunctionIgnore", configWithIgnore(), expectOnlyGenerate(), true},
 		{"WithFunctionFilterPlusIgnore", configWithFilterAndIgnore(), expectOnlyGenerate(), false},
-		{"WithoutAnyConfig", internal.Config{}, nil, true},
+		{"WithoutAnyConfig", config.Config{}, nil, true},
 	}
 
 	for _, tc := range cases {
@@ -74,7 +76,7 @@ func TestProfileValidation(t *testing.T) {
 	t.Run("RandomProfileName", func(t *testing.T) {
 		profileName := "fakeProfileName"
 		cmd := []string{
-			internal.AUTOCMD,
+			cli.CmdAuto,
 			"--benchmarks", benchName,
 			"--profiles", fmt.Sprintf("%s,%s,%s", cpuProfile, memProfile, profileName),
 			"--count", validationCount,
@@ -83,7 +85,7 @@ func TestProfileValidation(t *testing.T) {
 		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
-			cfg:                  internal.Config{},
+			cfg:                  config.Config{},
 			cmd:                  cmd,
 			expectedErrorMessage: fmt.Sprintf("failed to run %s: profile %s is not supported", benchName, profileName),
 			checkSuccessMessage:  true,
@@ -94,7 +96,7 @@ func TestProfileValidation(t *testing.T) {
 	t.Run("NonCollectedProfile", func(t *testing.T) {
 		profileName := "goroutine"
 		cmd := []string{
-			internal.AUTOCMD,
+			cli.CmdAuto,
 			"--benchmarks", benchName,
 			"--profiles", profileName,
 			"--count", validationCount,
@@ -103,7 +105,7 @@ func TestProfileValidation(t *testing.T) {
 		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
-			cfg:                  internal.Config{},
+			cfg:                  config.Config{},
 			cmd:                  cmd,
 			expectedErrorMessage: fmt.Sprintf("failed to run %s: profile %s is not supported", benchName, profileName),
 			checkSuccessMessage:  true,
@@ -113,7 +115,7 @@ func TestProfileValidation(t *testing.T) {
 
 	t.Run("CollectedProfile", func(t *testing.T) {
 		cmd := []string{
-			internal.AUTOCMD,
+			cli.CmdAuto,
 			"--benchmarks", benchName,
 			"--profiles", fmt.Sprintf("%s,%s,%s", cpuProfile, memProfile, blockProfile),
 			"--count", validationCount,
@@ -122,7 +124,7 @@ func TestProfileValidation(t *testing.T) {
 		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
-			cfg:                     internal.Config{},
+			cfg:                     config.Config{},
 			expectNonSpecifiedFiles: true,
 			cmd:                     cmd,
 			expectedNumberOfFiles:   4, // cpu, mem, goroutine, block
@@ -137,7 +139,7 @@ func TestCommandValidation(t *testing.T) {
 	skipSlowIntegration(t)
 	t.Run("EmptyBenchmarkSlice", func(t *testing.T) {
 		cmd := []string{
-			internal.AUTOCMD,
+			cli.CmdAuto,
 			"--benchmarks", "",
 			"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
 			"--count", validationCount,
@@ -146,7 +148,7 @@ func TestCommandValidation(t *testing.T) {
 		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
-			cfg:                  internal.Config{},
+			cfg:                  config.Config{},
 			cmd:                  cmd,
 			expectedErrorMessage: "benchmarks flag is empty",
 			checkSuccessMessage:  true,
@@ -156,7 +158,7 @@ func TestCommandValidation(t *testing.T) {
 
 	t.Run("EmptyProfileSlice", func(t *testing.T) {
 		cmd := []string{
-			internal.AUTOCMD,
+			cli.CmdAuto,
 			"--benchmarks", benchName,
 			"--profiles", "",
 			"--count", validationCount,
@@ -165,7 +167,7 @@ func TestCommandValidation(t *testing.T) {
 		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
-			cfg:                  internal.Config{},
+			cfg:                  config.Config{},
 			cmd:                  cmd,
 			expectedErrorMessage: "profiles flag is empty",
 			checkSuccessMessage:  true,
@@ -185,7 +187,7 @@ func TestManualCommand(t *testing.T) {
 	buildProf(t, binaryPath, root)
 
 	t.Cleanup(func() {
-		benchPath := filepath.Join(root, testDirName, internal.MainDirOutput)
+		benchPath := filepath.Join(root, workspace.MainDirOutput, tag)
 		if err = os.RemoveAll(benchPath); err != nil {
 			t.Logf("Failed to clean up bench: %v", err)
 		}
@@ -198,7 +200,7 @@ func TestManualCommand(t *testing.T) {
 	label := "BasicRun"
 	t.Run(label, func(t *testing.T) {
 		args := []string{
-			internal.MANUALCMD,
+			cli.CmdManual,
 			"--tag", tag,
 			"assets/cpu.out",
 			"assets/memory.out",
@@ -223,7 +225,7 @@ func TestManualCommand(t *testing.T) {
 			t.Fatalf("expected stderr to contain collector progress; stderr=%q", stderr.String())
 		}
 
-		benchRoot := filepath.Join(root, testDirName, internal.MainDirOutput, tag)
+		benchRoot := filepath.Join(root, workspace.MainDirOutput, tag)
 		if fi, statErr := os.Stat(benchRoot); statErr != nil || !fi.IsDir() {
 			t.Fatalf("expected bench output directory %s: %v", benchRoot, statErr)
 		}
@@ -261,7 +263,7 @@ func TestTrackerBasicRun(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		args := []string{
 			"track",
-			internal.AUTOCMD,
+			cli.CmdAuto,
 			"--base", "tag1",
 			"--current", "tag2",
 			"--bench-name", benchName,
@@ -288,7 +290,7 @@ func TestTrackerBasicRun(t *testing.T) {
 	t.Run(label, func(t *testing.T) {
 		args := []string{
 			"track",
-			internal.MANUALCMD,
+			cli.CmdManual,
 			"--base", baseTag,
 			"--current", currentProfile,
 			"--output-format", outputFormat,

@@ -3,43 +3,26 @@ package tracker
 import (
 	"fmt"
 	"log/slog"
-	"slices"
 	"strings"
 )
 
-var validFormats = map[string]bool{
-	"summary":       true,
-	"detailed":      true,
-	"summary-html":  true,
-	"detailed-html": true,
-	"summary-json":  true,
-	"detailed-json": true,
-}
-
-func validFormatNames() []string {
-	names := make([]string, 0, len(validFormats))
-	for k := range validFormats {
-		names = append(names, k)
-	}
-	slices.Sort(names)
-	return names
-}
-
 // RunTrackAuto compares runs collected via prof auto (tag layout).
-func RunTrackAuto(selections *Selections) error {
-	return runTrack(selections)
+func RunTrackAuto(opts Options) error {
+	opts.IsManual = false
+	return runTrack(&opts)
 }
 
-// RunTrackManual compares profile text files at paths given in Baseline / Current.
-func RunTrackManual(selections *Selections) error {
-	return runTrack(selections)
+// RunTrackManual compares binary pprof profiles at paths in Baseline / Current.
+func RunTrackManual(opts Options) error {
+	opts.IsManual = true
+	return runTrack(&opts)
 }
 
-func runTrack(selections *Selections) error {
-	if !validFormats[selections.OutputFormat] {
+func runTrack(selections *Options) error {
+	if !ValidOutputFormat(selections.OutputFormat) {
 		return fmt.Errorf("invalid output format %q (valid: %s)",
 			selections.OutputFormat,
-			strings.Join(validFormatNames(), ", "))
+			strings.Join(ValidOutputFormats, ", "))
 	}
 
 	report, err := CheckPerformanceDifferences(selections)

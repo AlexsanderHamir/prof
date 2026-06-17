@@ -7,7 +7,7 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/app"
 )
 
-// CollectIntent mirrors prof auto / prof tui collect → Benchmark.RunBenchmarks.
+// CollectIntent mirrors prof auto / prof tui collect → Collect.RunAuto.
 type CollectIntent struct {
 	Benchmarks      []string
 	Profiles        []string
@@ -47,15 +47,15 @@ func (i *CollectIntent) Validate() error {
 
 // Run implements [Executable].
 func (i *CollectIntent) Run(svc *app.Services) error {
-	return svc.Benchmark.RunBenchmarks(
-		i.Benchmarks,
-		i.Profiles,
-		i.Tag,
-		i.Count,
-		i.GroupByPackage,
-		i.LenientProfiles,
-		i.SkipPNG,
-	)
+	return svc.Collect.RunAuto(app.CollectAutoOptions{
+		Benchmarks:      i.Benchmarks,
+		Profiles:        i.Profiles,
+		Tag:             i.Tag,
+		Count:           i.Count,
+		GroupByPackage:  i.GroupByPackage,
+		LenientProfiles: i.LenientProfiles,
+		SkipPNG:         i.SkipPNG,
+	})
 }
 
 func nonEmptyStrings(in []string) []string {

@@ -6,7 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/config"
+
 	pprofprofile "github.com/google/pprof/profile"
 )
 
@@ -77,22 +78,22 @@ func TestGetAllFunctionNamesFromProfileDataFilters(t *testing.T) {
 			{Name: "other.Short", Flat: 5},
 		},
 	}
-	all := GetAllFunctionNamesFromProfileData(d, internal.FunctionFilter{})
+	all := GetAllFunctionNamesFromProfileData(d, config.FunctionFilter{})
 	if len(all) != 2 {
 		t.Fatalf("got %v", all)
 	}
-	ign := GetAllFunctionNamesFromProfileData(d, internal.FunctionFilter{IgnoreFunctions: []string{"Method"}})
+	ign := GetAllFunctionNamesFromProfileData(d, config.FunctionFilter{IgnoreFunctions: []string{"Method"}})
 	if len(ign) != 1 || ign[0] != "Short" {
 		t.Fatalf("got %v", ign)
 	}
-	pref := GetAllFunctionNamesFromProfileData(d, internal.FunctionFilter{IncludePrefixes: []string{"example.com"}})
+	pref := GetAllFunctionNamesFromProfileData(d, config.FunctionFilter{IncludePrefixes: []string{"example.com"}})
 	if len(pref) != 1 {
 		t.Fatalf("got %v", pref)
 	}
 }
 
 func TestOrganizeProfileByPackageFromProfileDataEmpty(t *testing.T) {
-	if OrganizeProfileByPackageFromProfileData(nil, internal.FunctionFilter{}) != "" {
+	if OrganizeProfileByPackageFromProfileData(nil, config.FunctionFilter{}) != "" {
 		t.Fatal("expected empty string")
 	}
 }
@@ -108,7 +109,7 @@ func TestOrganizeProfileByPackageFromProfileDataMarkdown(t *testing.T) {
 		SumPercentages:  map[string]float64{"github.com/a/b.Foo": 50},
 		Cum:             map[string]int64{"github.com/a/b.Foo": 50},
 	}
-	s := OrganizeProfileByPackageFromProfileData(d, internal.FunctionFilter{})
+	s := OrganizeProfileByPackageFromProfileData(d, config.FunctionFilter{})
 	if !strings.Contains(s, "github.com/a/b") || !strings.Contains(s, "Subtotal") {
 		t.Fatalf("unexpected report: %s", s)
 	}

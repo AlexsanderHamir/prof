@@ -3,13 +3,13 @@ package tracker
 import (
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/config"
 )
 
 func TestApplyCommandLineThresholdsNoFail(t *testing.T) {
 	r := &ProfileChangeReport{
 		FunctionChanges: []*FunctionChangeResult{
-			{FunctionName: "f", FlatChangePercent: 50, ChangeType: internal.REGRESSION},
+			{FunctionName: "f", FlatChangePercent: 50, ChangeType: ChangeRegression},
 		},
 	}
 	sel := &Selections{UseThreshold: false}
@@ -21,7 +21,7 @@ func TestApplyCommandLineThresholdsNoFail(t *testing.T) {
 func TestApplyCommandLineThresholdsTriggers(t *testing.T) {
 	r := &ProfileChangeReport{
 		FunctionChanges: []*FunctionChangeResult{
-			{FunctionName: "f", FlatChangePercent: 99, ChangeType: internal.REGRESSION},
+			{FunctionName: "f", FlatChangePercent: 99, ChangeType: ChangeRegression},
 		},
 	}
 	sel := &Selections{UseThreshold: true, RegressionThreshold: 10}
@@ -31,7 +31,7 @@ func TestApplyCommandLineThresholdsTriggers(t *testing.T) {
 }
 
 func TestShouldIgnoreFunctionByConfig(t *testing.T) {
-	cfg := &internal.CITrackingConfig{
+	cfg := &config.CITrackingConfig{
 		IgnoreFunctions: []string{"x"},
 		IgnorePrefixes:  []string{"runtime."},
 	}

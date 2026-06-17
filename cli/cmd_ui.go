@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/AlexsanderHamir/prof/internal/workspace"
+
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/internal/app"
 	"github.com/AlexsanderHamir/prof/internal/intent"
 	"github.com/AlexsanderHamir/prof/internal/tui"
@@ -83,8 +84,8 @@ func runUISetupWizard(svc *app.Services) error {
 
 func runUIToolsMenu(svc *app.Services) error {
 	const (
-		toolBenchstat   = internal.ToolNameBenchstat + " - compare benchmark text between two tags"
-		toolQcachegrind = internal.ToolNameQcachegrind + " - open a binary profile in qcachegrind"
+		toolBenchstat   = workspace.ToolNameBenchstat + " - compare benchmark text between two tags"
+		toolQcachegrind = workspace.ToolNameQcachegrind + " - open a binary profile in qcachegrind"
 		toolBack        = "Back to main menu"
 	)
 	var tool string

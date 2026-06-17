@@ -6,12 +6,12 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 
-	"github.com/AlexsanderHamir/prof/engine/tracker"
+	"github.com/AlexsanderHamir/prof/internal/app"
 )
 
 // getTrackSelections collects all user selections interactively
-func getTrackSelections(tags []string) (*tracker.Selections, error) {
-	selections := &tracker.Selections{}
+func getTrackSelections(tags []string) (*app.TrackOptions, error) {
+	selections := &app.TrackOptions{}
 
 	// Select baseline tag
 	baselinePrompt := &survey.Select{
@@ -64,7 +64,7 @@ func getTrackSelections(tags []string) (*tracker.Selections, error) {
 }
 
 // selectBenchmark discovers and selects a benchmark
-func selectBenchmark(selections *tracker.Selections) error {
+func selectBenchmark(selections *app.TrackOptions) error {
 	availableBenchmarks, err := discoverAvailableBenchmarks(selections.Baseline)
 	if err != nil {
 		return fmt.Errorf("failed to discover benchmarks for tag %s: %w", selections.Baseline, err)
@@ -82,7 +82,7 @@ func selectBenchmark(selections *tracker.Selections) error {
 }
 
 // selectProfileType discovers and selects a profile type
-func selectProfileType(selections *tracker.Selections) error {
+func selectProfileType(selections *app.TrackOptions) error {
 	availableProfiles, err := discoverAvailableProfiles(selections.Baseline, selections.BenchmarkName)
 	if err != nil {
 		return fmt.Errorf("failed to discover profiles for tag %s, benchmark %s: %w", selections.Baseline, selections.BenchmarkName, err)
@@ -100,8 +100,8 @@ func selectProfileType(selections *tracker.Selections) error {
 }
 
 // selectOutputFormat selects the output format
-func selectOutputFormat(selections *tracker.Selections) error {
-	outputFormats := []string{"summary", "detailed", "summary-html", "detailed-html", "summary-json", "detailed-json"}
+func selectOutputFormat(selections *app.TrackOptions) error {
+	outputFormats := app.TrackOutputFormats()
 	formatPrompt := &survey.Select{
 		Message:  "Select output format [Press Enter to select]:",
 		Options:  outputFormats,
@@ -112,7 +112,7 @@ func selectOutputFormat(selections *tracker.Selections) error {
 }
 
 // selectRegressionThreshold handles regression threshold selection
-func selectRegressionThreshold(selections *tracker.Selections) error {
+func selectRegressionThreshold(selections *app.TrackOptions) error {
 	thresholdPrompt := &survey.Confirm{
 		Message: "Do you want to fail on performance regressions?",
 		Default: false,

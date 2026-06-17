@@ -7,9 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/engine/collector"
+	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
+
+	"github.com/AlexsanderHamir/prof/engine/collect"
 	"github.com/AlexsanderHamir/prof/engine/tooling"
-	"github.com/AlexsanderHamir/prof/internal"
 	"github.com/AlexsanderHamir/prof/parser"
 	pprofprofile "github.com/google/pprof/profile"
 )
@@ -43,7 +45,7 @@ func edgecasesWriteProfileRoundTrip(t *testing.T, p *pprofprofile.Profile, fileN
 		t.Fatalf("round-trip parse after rename: %v", rerr)
 	}
 	tmp := filepath.Join(t.TempDir(), fileName)
-	if wferr := os.WriteFile(tmp, buf.Bytes(), internal.PermFile); wferr != nil {
+	if wferr := os.WriteFile(tmp, buf.Bytes(), workspace.PermFile); wferr != nil {
 		t.Fatalf("WriteFile: %v", wferr)
 	}
 	return tmp
@@ -64,7 +66,7 @@ func edgecasesFindEntryByFullSymbol(entries []parser.FunctionListEntry, full str
 // path relies on regexp.QuoteMeta in the collector.
 func TestEdge_functionListCollection_fixture(t *testing.T) {
 	cpuPath := edgecasesFixturePath(t, fixtureCPUFile)
-	entries, listErr := parser.GetFunctionListEntriesV2(cpuPath, internal.FunctionFilter{})
+	entries, listErr := parser.GetFunctionListEntriesV2(cpuPath, config.FunctionFilter{})
 	if listErr != nil {
 		t.Fatalf("GetFunctionListEntriesV2: %v", listErr)
 	}
@@ -81,10 +83,10 @@ func TestEdge_functionListCollection_fixture(t *testing.T) {
 	}
 
 	dir := t.TempDir()
-	if outErr := collector.GetFunctionsOutput(tooling.NewExecRunner(), []parser.FunctionListEntry{pick}, cpuPath, dir); outErr != nil {
+	if outErr := collect.FunctionsOutput(tooling.NewExecRunner(), []parser.FunctionListEntry{pick}, cpuPath, dir); outErr != nil {
 		t.Fatalf("GetFunctionsOutput: %v", outErr)
 	}
-	out := filepath.Join(dir, pick.OutputStem+"."+internal.TextExtension)
+	out := filepath.Join(dir, pick.OutputStem+"."+workspace.TextExtension)
 	st, statErr := os.Stat(out)
 	if statErr != nil {
 		t.Fatalf("expected per-function list file %s: %v", out, statErr)
@@ -115,7 +117,7 @@ func TestEdge_functionListCollection_renamedFixtureSymbol(t *testing.T) {
 	}
 
 	tmp := edgecasesWriteProfileRoundTrip(t, p, "mutated_edge.out")
-	entries, listErr := parser.GetFunctionListEntriesV2(tmp, internal.FunctionFilter{})
+	entries, listErr := parser.GetFunctionListEntriesV2(tmp, config.FunctionFilter{})
 	if listErr != nil {
 		t.Fatalf("GetFunctionListEntriesV2: %v", listErr)
 	}

@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
 func writeTempGoMod(t *testing.T, dir string) {
@@ -32,7 +32,7 @@ func TestDiscoverAvailableTagsMissingBench(t *testing.T) {
 func TestDiscoverAvailableTagsWithDirs(t *testing.T) {
 	root := t.TempDir()
 	writeTempGoMod(t, root)
-	bench := filepath.Join(root, internal.MainDirOutput)
+	bench := filepath.Join(root, workspace.MainDirOutput)
 	if err := os.MkdirAll(filepath.Join(bench, "alpha"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestDiscoverAvailableBenchmarksMissingDir(t *testing.T) {
 func TestDiscoverAvailableBenchmarksWithSubdirs(t *testing.T) {
 	root := t.TempDir()
 	writeTempGoMod(t, root)
-	textDir := filepath.Join(root, internal.MainDirOutput, "v1", internal.ProfileTextDir)
+	textDir := filepath.Join(root, workspace.MainDirOutput, "v1", workspace.ProfileTextDir)
 	if err := os.MkdirAll(filepath.Join(textDir, "B1"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func TestDiscoverAvailableProfilesParsesTxt(t *testing.T) {
 	root := t.TempDir()
 	writeTempGoMod(t, root)
 	benchName := "BenchmarkGenPool"
-	dir := filepath.Join(root, internal.MainDirOutput, "t1", internal.ProfileTextDir, benchName)
+	dir := filepath.Join(root, workspace.MainDirOutput, "t1", workspace.ProfileTextDir, benchName)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}

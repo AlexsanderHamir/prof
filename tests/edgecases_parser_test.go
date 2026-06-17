@@ -6,7 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/config"
+
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
@@ -45,7 +46,7 @@ func TestEdge_profileReader_errors(t *testing.T) {
 func TestEdge_profileReader_missingPath(t *testing.T) {
 	t.Parallel()
 	missing := filepath.Join(t.TempDir(), "does-not-exist-profile.out")
-	_, err := parser.GetFunctionListEntriesV2(missing, internal.FunctionFilter{})
+	_, err := parser.GetFunctionListEntriesV2(missing, config.FunctionFilter{})
 	if err == nil {
 		t.Fatal("expected error for missing profile path")
 	}
@@ -54,7 +55,7 @@ func TestEdge_profileReader_missingPath(t *testing.T) {
 func TestEdge_functionListEntries_includeMatchesNothing(t *testing.T) {
 	t.Parallel()
 	cpuPath := edgecasesFixturePath(t, fixtureCPUFile)
-	f := internal.FunctionFilter{
+	f := config.FunctionFilter{
 		IncludePrefixes: []string{"import/path/that/cannot/exist/in/fixture/zzzz"},
 	}
 	entries, err := parser.GetFunctionListEntriesV2(cpuPath, f)
@@ -69,8 +70,8 @@ func TestEdge_functionListEntries_includeMatchesNothing(t *testing.T) {
 func TestEdge_functionListEntries_duplicateIgnoreSameAsSingle(t *testing.T) {
 	t.Parallel()
 	cpuPath := edgecasesFixturePath(t, fixtureCPUFile)
-	once := internal.FunctionFilter{IgnoreFunctions: []string{benchName}}
-	dup := internal.FunctionFilter{IgnoreFunctions: []string{benchName, benchName}}
+	once := config.FunctionFilter{IgnoreFunctions: []string{benchName}}
+	dup := config.FunctionFilter{IgnoreFunctions: []string{benchName, benchName}}
 
 	a, err := parser.GetFunctionListEntriesV2(cpuPath, once)
 	if err != nil {
@@ -95,8 +96,8 @@ func TestEdge_functionListEntries_duplicateIgnoreSameAsSingle(t *testing.T) {
 func TestEdge_functionListEntries_ignoreWithoutIncludePrefixes(t *testing.T) {
 	t.Parallel()
 	memPath := edgecasesFixturePath(t, fixtureMemFile)
-	none := internal.FunctionFilter{}
-	withIgnore := internal.FunctionFilter{IgnoreFunctions: []string{funcProcess}}
+	none := config.FunctionFilter{}
+	withIgnore := config.FunctionFilter{IgnoreFunctions: []string{funcProcess}}
 
 	all, err := parser.GetFunctionListEntriesV2(memPath, none)
 	if err != nil {

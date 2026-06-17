@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
 type fileFullName string
@@ -42,7 +42,7 @@ func newDefaultFieldsCheckNotExpected() *FieldsCheck {
 // functionFile builds the per-function output filename used as a key in
 // specifiedFiles maps (e.g. "ProcessStrings.txt").
 func functionFile(name string) fileFullName {
-	return fileFullName(name + "." + internal.TextExtension)
+	return fileFullName(name + "." + workspace.TextExtension)
 }
 
 func checkDirectory(t *testing.T, path, description string) {
@@ -62,13 +62,13 @@ func checkOutput(t *testing.T, envPath string, testArgs *TestArgs) {
 	specifiedFiles := testArgs.specifiedFiles
 	expectedNumberOfFiles := testArgs.expectedNumberOfFiles
 
-	benchPath := filepath.Join(envPath, internal.MainDirOutput)
+	benchPath := filepath.Join(envPath, workspace.MainDirOutput)
 
 	tagPath := filepath.Join(benchPath, tag)
 	checkDirectory(t, tagPath, tag)
 
-	binPath := filepath.Join(tagPath, internal.ProfileBinDir)
-	textPath := filepath.Join(tagPath, internal.ProfileTextDir)
+	binPath := filepath.Join(tagPath, workspace.ProfileBinDir)
+	textPath := filepath.Join(tagPath, workspace.ProfileTextDir)
 	binBenchPath := filepath.Join(binPath, benchName)
 	textBenchPath := filepath.Join(textPath, benchName)
 
@@ -83,7 +83,7 @@ func checkOutput(t *testing.T, envPath string, testArgs *TestArgs) {
 	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, configDoesntApply, specifiedFiles)
 
 	for _, profile := range expectedProfiles {
-		profileFunctionsDir := fmt.Sprintf("%s%s", profile, internal.FunctionsDirSuffix)
+		profileFunctionsDir := fmt.Sprintf("%s%s", profile, workspace.FunctionsDirSuffix)
 		profileFunctionsPath := filepath.Join(tagPath, profileFunctionsDir)
 		checkDirectory(t, profileFunctionsPath, "profile functions directory e.g cpu_functions")
 

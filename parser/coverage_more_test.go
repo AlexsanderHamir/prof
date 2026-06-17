@@ -9,7 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/internal/config"
+
 	pprofprofile "github.com/google/pprof/profile"
 )
 
@@ -49,17 +50,17 @@ func TestPathBasedFacadeFuncs(t *testing.T) {
 	if err != nil || len(objs) == 0 {
 		t.Fatal(err, len(objs))
 	}
-	if _, missingErr := GetAllFunctionNamesV2(filepath.Join(t.TempDir(), "nope"), internal.FunctionFilter{}); missingErr == nil {
+	if _, missingErr := GetAllFunctionNamesV2(filepath.Join(t.TempDir(), "nope"), config.FunctionFilter{}); missingErr == nil {
 		t.Fatal()
 	}
-	names, err := GetAllFunctionNamesV2(path, internal.FunctionFilter{})
+	names, err := GetAllFunctionNamesV2(path, config.FunctionFilter{})
 	if err != nil || len(names) == 0 {
 		t.Fatal(err, len(names))
 	}
-	if _, missingErr := OrganizeProfileByPackageV2(filepath.Join(t.TempDir(), "nope"), internal.FunctionFilter{}); missingErr == nil {
+	if _, missingErr := OrganizeProfileByPackageV2(filepath.Join(t.TempDir(), "nope"), config.FunctionFilter{}); missingErr == nil {
 		t.Fatal()
 	}
-	s, err := OrganizeProfileByPackageV2(path, internal.FunctionFilter{})
+	s, err := OrganizeProfileByPackageV2(path, config.FunctionFilter{})
 	if err != nil || !strings.Contains(s, "Subtotal") {
 		t.Fatal(err, s)
 	}
@@ -206,7 +207,7 @@ func TestOrganizeUnknownPackageFormatting(t *testing.T) {
 		SumPercentages:  map[string]float64{"orphanSymbolWithoutEnoughDots": 100},
 		Cum:             map[string]int64{"orphanSymbolWithoutEnoughDots": 10},
 	}
-	s := OrganizeProfileByPackageFromProfileData(d, internal.FunctionFilter{})
+	s := OrganizeProfileByPackageFromProfileData(d, config.FunctionFilter{})
 	if !strings.Contains(s, "unknown") || !strings.Contains(s, "flat:") {
 		t.Fatal(s)
 	}
@@ -318,14 +319,14 @@ func TestWithDefaultsEachSlot(t *testing.T) {
 
 func TestGetAllFunctionNamesFromProfileDataEmptyShort(t *testing.T) {
 	d := &ProfileData{SortedEntries: []FuncEntry{{Name: ".", Flat: 1}}}
-	n := GetAllFunctionNamesFromProfileData(d, internal.FunctionFilter{})
+	n := GetAllFunctionNamesFromProfileData(d, config.FunctionFilter{})
 	if len(n) != 0 {
 		t.Fatal(n)
 	}
 }
 
 func TestGetAllFunctionNamesFromProfileDataNilAndFilters(t *testing.T) {
-	if GetAllFunctionNamesFromProfileData(nil, internal.FunctionFilter{}) != nil {
+	if GetAllFunctionNamesFromProfileData(nil, config.FunctionFilter{}) != nil {
 		t.Fatal()
 	}
 	d := &ProfileData{
@@ -335,16 +336,16 @@ func TestGetAllFunctionNamesFromProfileDataNilAndFilters(t *testing.T) {
 			{Name: "other.C", Flat: 1},
 		},
 	}
-	if n := GetAllFunctionNamesFromProfileData(d, internal.FunctionFilter{IgnoreFunctions: []string{"A"}}); len(n) != 2 {
+	if n := GetAllFunctionNamesFromProfileData(d, config.FunctionFilter{IgnoreFunctions: []string{"A"}}); len(n) != 2 {
 		t.Fatal(n)
 	}
-	if n := GetAllFunctionNamesFromProfileData(d, internal.FunctionFilter{IncludePrefixes: []string{"other"}}); len(n) != 1 || n[0] != "C" {
+	if n := GetAllFunctionNamesFromProfileData(d, config.FunctionFilter{IncludePrefixes: []string{"other"}}); len(n) != 1 || n[0] != "C" {
 		t.Fatal(n)
 	}
 }
 
 func TestOrganizeProfileByPackageFromProfileDataNilAndFilters(t *testing.T) {
-	if OrganizeProfileByPackageFromProfileData(nil, internal.FunctionFilter{}) != "" {
+	if OrganizeProfileByPackageFromProfileData(nil, config.FunctionFilter{}) != "" {
 		t.Fatal()
 	}
 	d := &ProfileData{
@@ -355,7 +356,7 @@ func TestOrganizeProfileByPackageFromProfileDataNilAndFilters(t *testing.T) {
 		SumPercentages:  map[string]float64{"p.X": 50, "p.Y": 100},
 		Cum:             map[string]int64{"p.X": 1, "p.Y": 1},
 	}
-	if s := OrganizeProfileByPackageFromProfileData(d, internal.FunctionFilter{IgnoreFunctions: []string{"X"}}); !strings.Contains(s, "Y") || strings.Contains(s, "X") {
+	if s := OrganizeProfileByPackageFromProfileData(d, config.FunctionFilter{IgnoreFunctions: []string{"X"}}); !strings.Contains(s, "Y") || strings.Contains(s, "X") {
 		t.Fatal(s)
 	}
 	d2 := &ProfileData{
@@ -366,7 +367,7 @@ func TestOrganizeProfileByPackageFromProfileDataNilAndFilters(t *testing.T) {
 		SumPercentages:  map[string]float64{"keep.M": 100},
 		Cum:             map[string]int64{"keep.M": 1},
 	}
-	if s := OrganizeProfileByPackageFromProfileData(d2, internal.FunctionFilter{IncludePrefixes: []string{"nomatch"}}); s != "" {
+	if s := OrganizeProfileByPackageFromProfileData(d2, config.FunctionFilter{IncludePrefixes: []string{"nomatch"}}); s != "" {
 		t.Fatal(s)
 	}
 	d3 := &ProfileData{
@@ -377,7 +378,7 @@ func TestOrganizeProfileByPackageFromProfileDataNilAndFilters(t *testing.T) {
 		SumPercentages:  map[string]float64{"NoDotSymbol": 100},
 		Cum:             map[string]int64{"NoDotSymbol": 1},
 	}
-	if s := OrganizeProfileByPackageFromProfileData(d3, internal.FunctionFilter{}); !strings.Contains(s, "unknown") {
+	if s := OrganizeProfileByPackageFromProfileData(d3, config.FunctionFilter{}); !strings.Contains(s, "unknown") {
 		t.Fatal(s)
 	}
 	d4 := &ProfileData{
@@ -388,7 +389,7 @@ func TestOrganizeProfileByPackageFromProfileDataNilAndFilters(t *testing.T) {
 		SumPercentages:  map[string]float64{".": 100},
 		Cum:             map[string]int64{".": 1},
 	}
-	if s := OrganizeProfileByPackageFromProfileData(d4, internal.FunctionFilter{}); s != "" {
+	if s := OrganizeProfileByPackageFromProfileData(d4, config.FunctionFilter{}); s != "" {
 		t.Fatalf("expected empty report when all names filter to empty short, got %q", s)
 	}
 }

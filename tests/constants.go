@@ -1,10 +1,8 @@
 package tests
 
-import "github.com/AlexsanderHamir/prof/internal"
+import "github.com/AlexsanderHamir/prof/internal/workspace"
 
-// Test environment, run, and fixture constants. Every literal that the
-// integration suite cares about lives here; if you find yourself adding a
-// new string in a test or helper, hoist it into this file first.
+// Test environment, run, and fixture constants.
 const (
 	envDirNameStatic = "Enviroment" // legacy spelling preserved on disk
 	sharedEnvLabel   = "shared"
@@ -40,10 +38,10 @@ const (
 // pprof fixtures (or a real prof auto run) are expected to surface.
 // Test scenarios reference these instead of repeating string literals.
 var expectedFunctionFiles = []string{
-	benchName + "." + internal.TextExtension,
-	funcProcess + "." + internal.TextExtension,
-	funcGenerate + "." + internal.TextExtension,
-	funcAddString + "." + internal.TextExtension,
+	benchName + "." + workspace.TextExtension,
+	funcProcess + "." + workspace.TextExtension,
+	funcGenerate + "." + workspace.TextExtension,
+	funcAddString + "." + workspace.TextExtension,
 }
 
 // filterIncludePrefixes mirrors the IncludePrefixes the original TestConfig

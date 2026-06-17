@@ -7,13 +7,15 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlexsanderHamir/prof/internal"
+	"github.com/AlexsanderHamir/prof/cli"
+	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
 // TestArgs holds inputs and expectations for a single integration test scenario.
 type TestArgs struct {
 	specifiedFiles          map[fileFullName]*FieldsCheck
-	cfg                     internal.Config
+	cfg                     config.Config
 	expectedNumberOfFiles   int
 	expectedErrorMessage    string
 	label                   string
@@ -34,7 +36,7 @@ type TestArgs struct {
 	useSharedEnv bool
 }
 
-func createConfigFile(t *testing.T, envDir string, cfgTemplate *internal.Config) {
+func createConfigFile(t *testing.T, envDir string, cfgTemplate *config.Config) {
 	t.Helper()
 
 	configPath := filepath.Join(envDir, templateFile)
@@ -44,7 +46,7 @@ func createConfigFile(t *testing.T, envDir string, cfgTemplate *internal.Config)
 		t.Fatalf("failed to marshal config template: %v", err)
 	}
 
-	if err = os.WriteFile(configPath, data, internal.PermFile); err != nil {
+	if err = os.WriteFile(configPath, data, workspace.PermFile); err != nil {
 		t.Fatalf("failed to write config template file: %v", err)
 	}
 }
@@ -106,7 +108,7 @@ func resolveScenarioEnv(t *testing.T, testArgs *TestArgs) string {
 // validationCount without rebuilding the rest of the command.
 func runCmdWithCount(countVal string) []string {
 	cmd := []string{
-		internal.AUTOCMD,
+		cli.CmdAuto,
 		"--benchmarks", benchName,
 		"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
 		"--count", countVal,
@@ -117,9 +119,9 @@ func runCmdWithCount(countVal string) []string {
 
 // configWithFilter builds the FunctionFilter scenario that whitelists symbols
 // under the synthetic module + utils package prefixes.
-func configWithFilter() internal.Config {
-	return internal.Config{
-		FunctionFilter: map[string]internal.FunctionFilter{
+func configWithFilter() config.Config {
+	return config.Config{
+		FunctionFilter: map[string]config.FunctionFilter{
 			benchName: {IncludePrefixes: filterIncludePrefixes},
 		},
 	}
@@ -127,9 +129,9 @@ func configWithFilter() internal.Config {
 
 // configWithIgnore builds the FunctionFilter scenario that drops the
 // canonical ignore set (Benchmark + ProcessStrings + AddString).
-func configWithIgnore() internal.Config {
-	return internal.Config{
-		FunctionFilter: map[string]internal.FunctionFilter{
+func configWithIgnore() config.Config {
+	return config.Config{
+		FunctionFilter: map[string]config.FunctionFilter{
 			benchName: {IgnoreFunctions: filterIgnoreFunctions},
 		},
 	}
@@ -137,9 +139,9 @@ func configWithIgnore() internal.Config {
 
 // configWithFilterAndIgnore combines the two filter axes; only GenerateStrings
 // survives the include + ignore intersection.
-func configWithFilterAndIgnore() internal.Config {
-	return internal.Config{
-		FunctionFilter: map[string]internal.FunctionFilter{
+func configWithFilterAndIgnore() config.Config {
+	return config.Config{
+		FunctionFilter: map[string]config.FunctionFilter{
 			benchName: {
 				IncludePrefixes: filterIncludePrefixes,
 				IgnoreFunctions: filterIgnoreFunctions,
@@ -178,7 +180,7 @@ func autoBenchSkipPNGArgs() []string {
 
 func createBenchForTracker(t *testing.T, label, iterations, tagName string, blockOutputCheck, isEnvironmentSet bool) {
 	cmd := []string{
-		internal.AUTOCMD,
+		cli.CmdAuto,
 		"--benchmarks", benchName,
 		"--profiles", cpuProfile,
 		"--count", iterations,
@@ -188,7 +190,7 @@ func createBenchForTracker(t *testing.T, label, iterations, tagName string, bloc
 
 	testArgs := &TestArgs{
 		specifiedFiles:          nil,
-		cfg:                     internal.Config{},
+		cfg:                     config.Config{},
 		withConfig:              false,
 		expectNonSpecifiedFiles: true,
 		noConfigFile:            true,

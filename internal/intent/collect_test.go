@@ -7,31 +7,24 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/app"
 )
 
-type fakeBenchmark struct {
-	lastBenchmarks      []string
-	lastProfiles        []string
-	lastTag             string
-	lastCount           int
-	lastGroupByPackage  bool
-	lastLenientProfiles bool
-	lastSkipPNG         bool
-	err                 error
+type fakeCollect struct {
+	lastAuto   app.CollectAutoOptions
+	lastManual app.CollectManualOptions
+	err        error
 }
 
-func (f *fakeBenchmark) RunBenchmarks(benchmarks, profiles []string, tag string, count int, groupByPackage, lenientProfiles, skipPNG bool) error {
-	f.lastBenchmarks = append([]string(nil), benchmarks...)
-	f.lastProfiles = append([]string(nil), profiles...)
-	f.lastTag = tag
-	f.lastCount = count
-	f.lastGroupByPackage = groupByPackage
-	f.lastLenientProfiles = lenientProfiles
-	f.lastSkipPNG = skipPNG
+func (f *fakeCollect) RunAuto(opts app.CollectAutoOptions) error {
+	f.lastAuto = opts
 	return f.err
 }
 
-func (f *fakeBenchmark) DiscoverBenchmarks(string) ([]string, error) { return nil, nil }
+func (f *fakeCollect) RunManual(opts app.CollectManualOptions) error {
+	f.lastManual = opts
+	return f.err
+}
 
-func (f *fakeBenchmark) SupportedProfiles() []string { return nil }
+func (f *fakeCollect) DiscoverBenchmarks(string) ([]string, error) { return nil, nil }
+func (f *fakeCollect) SupportedProfiles() []string                 { return nil }
 
 func TestCollectIntent_Validate(t *testing.T) {
 	t.Parallel()
@@ -82,8 +75,8 @@ func TestCollectIntent_Normalize(t *testing.T) {
 
 func TestCollectIntent_Run(t *testing.T) {
 	t.Parallel()
-	fb := &fakeBenchmark{}
-	svc := &app.Services{Benchmark: fb}
+	fc := &fakeCollect{}
+	svc := &app.Services{Collect: fc}
 	intent := &CollectIntent{
 		Benchmarks:      []string{"BenchA"},
 		Profiles:        []string{"cpu", "memory"},
@@ -96,25 +89,25 @@ func TestCollectIntent_Run(t *testing.T) {
 	if err := RunValidated(intent, svc); err != nil {
 		t.Fatal(err)
 	}
-	if fb.lastTag != "v1" || fb.lastCount != 3 {
-		t.Fatalf("unexpected forwarding: tag=%q count=%d", fb.lastTag, fb.lastCount)
+	if fc.lastAuto.Tag != "v1" || fc.lastAuto.Count != 3 {
+		t.Fatalf("unexpected forwarding: tag=%q count=%d", fc.lastAuto.Tag, fc.lastAuto.Count)
 	}
-	if len(fb.lastBenchmarks) != 1 || fb.lastBenchmarks[0] != "BenchA" {
-		t.Fatalf("benchmarks: %#v", fb.lastBenchmarks)
+	if len(fc.lastAuto.Benchmarks) != 1 || fc.lastAuto.Benchmarks[0] != "BenchA" {
+		t.Fatalf("benchmarks: %#v", fc.lastAuto.Benchmarks)
 	}
-	if len(fb.lastProfiles) != 2 {
-		t.Fatalf("profiles: %#v", fb.lastProfiles)
+	if len(fc.lastAuto.Profiles) != 2 {
+		t.Fatalf("profiles: %#v", fc.lastAuto.Profiles)
 	}
-	if !fb.lastGroupByPackage || !fb.lastLenientProfiles || fb.lastSkipPNG {
-		t.Fatalf("flags: gbp=%v lenient=%v skip=%v", fb.lastGroupByPackage, fb.lastLenientProfiles, fb.lastSkipPNG)
+	if !fc.lastAuto.GroupByPackage || !fc.lastAuto.LenientProfiles || fc.lastAuto.SkipPNG {
+		t.Fatalf("flags: gbp=%v lenient=%v skip=%v", fc.lastAuto.GroupByPackage, fc.lastAuto.LenientProfiles, fc.lastAuto.SkipPNG)
 	}
 }
 
 func TestCollectIntent_Run_propagatesError(t *testing.T) {
 	t.Parallel()
 	want := errors.New("boom")
-	fb := &fakeBenchmark{err: want}
-	svc := &app.Services{Benchmark: fb}
+	fc := &fakeCollect{err: want}
+	svc := &app.Services{Collect: fc}
 	intent := &CollectIntent{
 		Benchmarks: []string{"B"},
 		Profiles:   []string{"cpu"},

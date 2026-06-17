@@ -1,10 +1,13 @@
 package tooling
 
-import "github.com/AlexsanderHamir/prof/internal"
+// goToolPprofPrefix returns argv prefix {"go","tool","pprof"}.
+func goToolPprofPrefix() []string {
+	return []string{"go", "tool", "pprof"}
+}
 
 // PprofTextTopArgs returns argv for: go tool pprof -cum -edgefraction=0 -nodefraction=0 -top <binaryPath>
 func PprofTextTopArgs(binaryPath string) []string {
-	return append(internal.GoToolPprofPrefix(),
+	return append(goToolPprofPrefix(),
 		"-cum", "-edgefraction=0", "-nodefraction=0", "-top",
 		binaryPath,
 	)
@@ -12,15 +15,15 @@ func PprofTextTopArgs(binaryPath string) []string {
 
 // PprofPNGArgs returns argv for: go tool pprof -png <binaryPath>
 func PprofPNGArgs(binaryPath string) []string {
-	return append(append(internal.GoToolPprofPrefix(), "-png"), binaryPath)
+	return append(append(goToolPprofPrefix(), "-png"), binaryPath)
 }
 
 // PprofListArgs returns argv for: go tool pprof -list=<pattern> <binaryPath>
 func PprofListArgs(binaryPath, pattern string) []string {
-	return append(internal.GoToolPprofPrefix(), "-list="+pattern, binaryPath)
+	return append(goToolPprofPrefix(), "-list="+pattern, binaryPath)
 }
 
 // PprofCallgrindArgs returns argv for: go tool pprof -callgrind <binaryPath>
 func PprofCallgrindArgs(binaryPath string) []string {
-	return append(append(internal.GoToolPprofPrefix(), "-callgrind"), binaryPath)
+	return append(append(goToolPprofPrefix(), "-callgrind"), binaryPath)
 }
