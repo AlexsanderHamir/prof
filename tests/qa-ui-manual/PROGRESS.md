@@ -37,3 +37,4 @@ Track implementation of findings from [RESULTS.md](./RESULTS.md).
 | 643db61 | filter preview + advanced collect |
 | 8f194a2 | wizard pickers |
 | bf04db1 | discovery scope |
+| 7998f7b | test closure + QA sandbox |
