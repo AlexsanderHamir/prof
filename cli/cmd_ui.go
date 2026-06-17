@@ -44,30 +44,73 @@ func runUILauncher(svc *app.Services) error {
 		return err
 	}
 
+	for {
+		if err := runUILauncherOnce(svc); err != nil {
+			if errors.Is(err, errUILoopExit) {
+				return nil
+			}
+			return err
+		}
+	}
+}
+
+func runUILauncherOnce(svc *app.Services) error {
 	choice, err := tui.RunMainMenu()
 	if err != nil {
 		return err
 	}
 
+	var runErr error
 	switch choice {
 	case tui.MainCollect:
-		return runTUI(svc, nil, nil)
+		runErr = runTUI(svc, nil, nil)
 	case tui.MainCompare:
-		return runTUITrackAuto(svc, nil, nil)
+		runErr = runTUITrackAuto(svc, nil, nil)
 	case tui.MainTools:
 		return runUIToolsMenu(svc)
 	case tui.MainConfig:
-		return runUIConfigWizard(svc)
+		runErr = runUIConfigWizard(svc)
 	case tui.MainSetup:
-		return runUIConfigWizard(svc)
+		runErr = runUIConfigWizard(svc)
 	case tui.MainDocs:
 		fmt.Fprintf(os.Stdout, "Prof documentation:\n  %s\n", profDocumentationURL)
-		return nil
+		runErr = nil
 	case tui.MainQuit, tui.MainNone:
-		return nil
+		return errUILoopExit
 	default:
 		return fmt.Errorf("unknown action: %d", choice)
 	}
+
+	return finishUIWorkflow(runErr)
+}
+
+func finishUIWorkflow(runErr error) error {
+	if runErr != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", runErr)
+	}
+	if err := promptReturnToHub(); err != nil {
+		if runErr != nil && errors.Is(err, errUILoopExit) {
+			return runErr
+		}
+		return err
+	}
+	return nil
+}
+
+var errUILoopExit = errors.New("ui: exit hub loop")
+
+func promptReturnToHub() error {
+	var again bool
+	if err := survey.AskOne(&survey.Confirm{
+		Message: "Return to main menu?",
+		Default: true,
+	}, &again); err != nil {
+		return err
+	}
+	if again {
+		return nil
+	}
+	return errUILoopExit
 }
 
 func runUIToolsMenu(svc *app.Services) error {
@@ -86,11 +129,11 @@ func runUIToolsMenu(svc *app.Services) error {
 	}
 	switch tool {
 	case toolBenchstat:
-		return runUIBenchstat(svc)
+		return finishUIWorkflow(runUIBenchstat(svc))
 	case toolQcachegrind:
-		return runUIQcachegrind(svc)
+		return finishUIWorkflow(runUIQcachegrind(svc))
 	case toolBack:
-		return runUILauncher(svc)
+		return nil
 	default:
 		return fmt.Errorf("unknown tool: %s", tool)
 	}

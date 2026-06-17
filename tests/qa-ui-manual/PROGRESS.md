@@ -4,8 +4,8 @@ Track implementation of findings from [RESULTS.md](./RESULTS.md).
 
 | ID | Item | Status | Commit | Verified |
 |----|------|--------|--------|----------|
-| QA-01 | Return-to-hub prompt | pending | | |
-| QA-02 | Auto skip PNG + notify | done |  | |
+| QA-01 | Return-to-hub prompt | in_progress | | |
+| QA-02 | Auto skip PNG + notify | verified | 4067980 | applyAutoSkipPNG + UI default |
 | QA-03 | Compare regression policy messaging | pending | | |
 | QA-04 | Reject count zero in auto | verified | 1af3bc8 | RunAuto rejects count 0 |
 | QA-05 | Collection filter preview + advanced options | pending | | |

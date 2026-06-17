@@ -61,7 +61,7 @@ func newHubModel() *hubModel {
 			{"Run benchmarks and collect profiles", MainCollect},
 			{"Compare two tagged runs", MainCompare},
 			{fmt.Sprintf("Tools (%s, %s)", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind), MainTools},
-			{"Manage configuration", MainConfig},
+			{"Manage prof.json configuration", MainConfig},
 			{"Show documentation URL", MainDocs},
 			{"Quit", MainQuit},
 		},
