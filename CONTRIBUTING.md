@@ -20,21 +20,21 @@ Before starting, check [issues](https://github.com/AlexsanderHamir/prof/issues) 
 - `cmd/prof/` – Program entry (`main`)
 - `cli/` – Cobra commands, flags, interactive TUI
 - `internal/app/` – Interfaces and default wiring into engines
-- `engine/benchmark/` – `go test` orchestration and `bench/<tag>/` layout
-- `engine/tooling/` – Subprocess [`Runner`](engine/tooling/runner.go), profile [`Catalog`](engine/tooling/catalog.go), and `go tool pprof` argv helpers used by benchmark, collector, and optional tools
-- `engine/collector/` – Profile ingestion, text/PNG/function outputs, manual flow
+- `engine/collect/` – Unified auto + manual collection (`RunAuto`, `RunManual`)
+- `engine/tooling/` – Subprocess [`Runner`](engine/tooling/runner.go), profile [`Catalog`](engine/tooling/catalog.go), and `go tool pprof` argv helpers
 - `engine/tracker/` – Compare runs, reports, CI-style filtering
 - `engine/tools/` – Optional tooling (benchstat, qcachegrind)
 - `parser/` – pprof decoding, aggregation, line/package reports (`Pipeline`)
-- `internal/` – Shared config types (`Config`, `FunctionFilter`, …), command wire types (`BenchArgs`, `CollectionArgs`), constants, filesystem helpers (`LoadFromFile`, `FindGoModuleRoot`, …). *Not split into nested `internal/config` packages—everything lives here as `.go` files.*
+- `internal/config/` – JSON config types and loading
+- `internal/workspace/` – `TagLayout`, module root, bench path constants
 - `tests/` – Integration and blackbox checks
 
-📖 Diagrams, command → file map, and sharp edges: [CODEBASE_DESIGN.md](CODEBASE_DESIGN.md).
+📖 Architecture, edge cases: [CODEBASE_DESIGN.md](CODEBASE_DESIGN.md). Testing layers and coverage: [TESTING.md](TESTING.md).
 
 ## Add a profile kind or change `pprof` / `go test` flags
 
-1. Register the profile in [`engine/tooling/catalog.go`](engine/tooling/catalog.go) (`DefaultCatalog`). [`engine/benchmark/constants.go`](engine/benchmark/constants.go) rebuilds `ProfileFlags` and `ExpectedFiles` from that catalog in `init`, and [`cli/discovery.go`](cli/discovery.go) uses the same catalog for known profile names.
-2. Run `go test ./...` and update tests under [`engine/tooling`](engine/tooling) or [`engine/benchmark`](engine/benchmark) if behavior or argv changes.
+1. Register the profile in [`engine/tooling/catalog.go`](engine/tooling/catalog.go) (`DefaultCatalog`). [`engine/collect/constants.go`](engine/collect/constants.go) rebuilds profile flags from that catalog, and [`internal/app/profiles.go`](internal/app/profiles.go) exposes known names to the CLI.
+2. Run `go test ./...` and update tests under [`engine/tooling`](engine/tooling) or [`engine/collect`](engine/collect) if behavior or argv changes.
 3. External commands must go through [`tooling.Runner`](engine/tooling/runner.go) in production code so tests can inject [`tooling.FakeRunner`](engine/tooling/fake_runner.go).
 
 ## Quick Start
@@ -73,6 +73,15 @@ The Go toolchain keeps a build cache, so after the first compile, most edits onl
    go test ./...
    golangci-lint run
    ```
+
+   Coverage report (optional, full suite + per-package table):
+
+   ```bash
+   ./scripts/test-cover.sh          # Linux/macOS
+   .\scripts\test-cover.ps1         # Windows
+   ```
+
+   See [TESTING.md](TESTING.md) for layers, fixture commands, and how to read coverage numbers.
 
    Optional — only edge-case tests (faster while editing them):
 

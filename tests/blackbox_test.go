@@ -18,7 +18,7 @@ import (
 func skipSlowIntegration(t *testing.T) {
 	t.Helper()
 	if testing.Short() {
-		t.Skip("slow integration scenario; omit -short to run full integration suite")
+		t.Skip("slow integration scenario; omit -short to run full integration suite (see TESTING.md)")
 	}
 }
 
