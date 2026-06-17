@@ -117,22 +117,28 @@ func runCmdWithCount(countVal string) []string {
 	return append(cmd, autoBenchSkipPNGArgs()...)
 }
 
-// configWithFilter builds the FunctionFilter scenario that whitelists symbols
+// configWithFilter builds the collection filter scenario that whitelists symbols
 // under the synthetic module + utils package prefixes.
 func configWithFilter() config.Config {
 	return config.Config{
-		FunctionFilter: map[string]config.FunctionFilter{
-			benchName: {IncludePrefixes: filterIncludePrefixes},
+		Version: config.CurrentVersion,
+		Collection: config.Collection{
+			Benchmarks: map[string]config.FunctionFilter{
+				benchName: {IncludePrefixes: filterIncludePrefixes},
+			},
 		},
 	}
 }
 
-// configWithIgnore builds the FunctionFilter scenario that drops the
+// configWithIgnore builds the collection filter scenario that drops the
 // canonical ignore set (Benchmark + ProcessStrings + AddString).
 func configWithIgnore() config.Config {
 	return config.Config{
-		FunctionFilter: map[string]config.FunctionFilter{
-			benchName: {IgnoreFunctions: filterIgnoreFunctions},
+		Version: config.CurrentVersion,
+		Collection: config.Collection{
+			Benchmarks: map[string]config.FunctionFilter{
+				benchName: {IgnoreFunctions: filterIgnoreFunctions},
+			},
 		},
 	}
 }
@@ -141,10 +147,13 @@ func configWithIgnore() config.Config {
 // survives the include + ignore intersection.
 func configWithFilterAndIgnore() config.Config {
 	return config.Config{
-		FunctionFilter: map[string]config.FunctionFilter{
-			benchName: {
-				IncludePrefixes: filterIncludePrefixes,
-				IgnoreFunctions: filterIgnoreFunctions,
+		Version: config.CurrentVersion,
+		Collection: config.Collection{
+			Benchmarks: map[string]config.FunctionFilter{
+				benchName: {
+					IncludePrefixes: filterIncludePrefixes,
+					IgnoreFunctions: filterIgnoreFunctions,
+				},
 			},
 		},
 	}

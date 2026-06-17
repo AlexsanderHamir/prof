@@ -30,7 +30,7 @@ func RunManual(runner tooling.Runner, opts ManualOptions) error {
 		return fmt.Errorf("CleanOrCreateTag failed: %w", cleanErr)
 	}
 
-	cfg, err := config.LoadFromFile(config.Filename)
+	cfg, err := config.Load()
 	if err != nil {
 		cfg = &config.Config{}
 	}
@@ -50,7 +50,8 @@ func RunManual(runner tooling.Runner, opts ManualOptions) error {
 
 func processOneManualFile(runner tooling.Runner, fullBinaryPath string, layout workspace.TagLayout, cfg *config.Config, groupByPackage bool) error {
 	benchName, profile := manualBenchAndProfile(fullBinaryPath)
-	filter := config.ResolveFilter(cfg, benchName)
+	stem := stemFromPath(fullBinaryPath)
+	filter := config.ResolveCollectionFilter(cfg, config.CollectionTargetManual(stem))
 
 	binDest := layout.Bin(benchName, profile)
 	if err := copyProfileBinary(fullBinaryPath, binDest); err != nil {

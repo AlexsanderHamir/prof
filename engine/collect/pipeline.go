@@ -11,11 +11,8 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
-func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, benchmarkConfigs map[string]config.FunctionFilter, groupByPackage bool, lenientProfiles bool, skipPNG bool) error {
+func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cfg *config.Config, groupByPackage bool, lenientProfiles bool, skipPNG bool) error {
 	slog.Info("Starting benchmark pipeline...")
-
-	cfg := &config.Config{FunctionFilter: benchmarkConfigs}
-	globalFilter, hasGlobalFilter := benchmarkConfigs[config.GlobalSign]
 
 	for _, benchmarkName := range autoArgs.Benchmarks {
 		slog.Info("Running benchmark", "Benchmark", benchmarkName)
@@ -23,10 +20,7 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, be
 			return fmt.Errorf("failed to run %s: %w", benchmarkName, err)
 		}
 
-		filter := config.ResolveFilter(cfg, benchmarkName)
-		if hasGlobalFilter {
-			filter = globalFilter
-		}
+		filter := config.ResolveCollectionFilter(cfg, config.CollectionTargetAuto(benchmarkName))
 
 		slog.Info("Processing profiles", "Benchmark", benchmarkName)
 		profilesReady, err := processProfiles(runner, benchmarkName, autoArgs.Profiles, autoArgs.Tag, filter, groupByPackage, lenientProfiles, skipPNG)

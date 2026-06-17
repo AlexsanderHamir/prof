@@ -497,40 +497,23 @@ func (r *ProfileChangeReport) BestImprovement() *FunctionChangeResult {
 	return best
 }
 
-// ApplyCIConfiguration applies CI/CD configuration filtering to the report
-func (r *ProfileChangeReport) ApplyCIConfiguration(cicdConfig *config.CIConfig, benchmarkName string) {
-	if cicdConfig == nil {
-		return
-	}
-
-	// Get the appropriate CI/CD configuration for this benchmark
-	var config *config.CITrackingConfig
-	if benchmarkConfig, exists := cicdConfig.Benchmarks[benchmarkName]; exists {
-		config = &benchmarkConfig
-	} else if cicdConfig.Global != nil {
-		config = cicdConfig.Global
-	} else {
-		return
-	}
-
-	// Filter out ignored functions
+// ApplyTrackPolicy filters ignored functions from the report using track policy.
+func (r *ProfileChangeReport) ApplyTrackPolicy(policy config.TrackPolicy) {
 	originalCount := len(r.FunctionChanges)
 	var filteredChanges []*FunctionChangeResult
 	for _, change := range r.FunctionChanges {
-		if !shouldIgnoreFunctionByConfig(config, change.FunctionName) {
+		if !config.ShouldIgnoreFunction(policy, change.FunctionName) {
 			filteredChanges = append(filteredChanges, change)
 		} else {
-			slog.Debug("Function ignored by CI/CD config",
-				"function", change.FunctionName,
-				"benchmark", benchmarkName)
+			slog.Debug("Function ignored by track config", "function", change.FunctionName)
 		}
 	}
 
-	// Update the report with filtered changes
 	r.FunctionChanges = filteredChanges
 
-	slog.Info("Applied CI/CD configuration filtering",
-		"benchmark", benchmarkName,
-		"original_functions", originalCount,
-		"filtered_functions", len(filteredChanges))
+	if originalCount != len(filteredChanges) {
+		slog.Info("Applied track configuration filtering",
+			"original_functions", originalCount,
+			"filtered_functions", len(filteredChanges))
+	}
 }

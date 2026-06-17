@@ -42,7 +42,7 @@ func runFilterInProcess(t *testing.T, cfg config.Config) map[string][]string {
 	}
 	fixturesPath := filepath.Join(root, testDirName, fixturesSubdir)
 
-	filter := cfg.FunctionFilter[benchName]
+	filter := config.ResolveCollectionFilter(&cfg, config.CollectionTargetAuto(benchName))
 
 	out := make(map[string][]string, len(allFixtureProfiles))
 	for _, fp := range allFixtureProfiles {

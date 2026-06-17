@@ -6,7 +6,7 @@ import "github.com/AlexsanderHamir/prof/internal/workspace"
 const (
 	envDirNameStatic = "Enviroment" // legacy spelling preserved on disk
 	sharedEnvLabel   = "shared"
-	templateFile     = "config_template.json"
+	templateFile     = "prof.json"
 	testDirName      = "tests"
 	tag              = "test_tag"
 

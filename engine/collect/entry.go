@@ -22,10 +22,10 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 		return errors.New("profiles flag is empty")
 	}
 
-	cfg, err := config.LoadFromFile(config.Filename)
+	cfg, err := config.Load()
 	if err != nil {
 		slog.Info("No config file found at repository root; proceeding without function filters.", "expected", config.Filename)
-		slog.Info("You can generate one with 'prof setup'. It will be placed at the root next to go.mod.")
+		slog.Info("You can generate one with 'prof config init' or prof ui → Manage configuration.")
 		cfg = &config.Config{}
 	}
 
@@ -40,9 +40,9 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 		Tag:        opts.Tag,
 	}
 
-	config.PrintAutoConfiguration(autoArgs, cfg.FunctionFilter)
+	config.PrintAutoConfiguration(autoArgs, cfg)
 
-	return runBenchAndGetProfiles(runner, autoArgs, cfg.FunctionFilter, opts.GroupByPackage, opts.LenientProfiles, opts.SkipPNG)
+	return runBenchAndGetProfiles(runner, autoArgs, cfg, opts.GroupByPackage, opts.LenientProfiles, opts.SkipPNG)
 }
 
 // DiscoverBenchmarks scans for BenchmarkXxx functions under scope or module root.

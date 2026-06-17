@@ -30,18 +30,30 @@ func TestApplyCommandLineThresholdsTriggers(t *testing.T) {
 	}
 }
 
-func TestShouldIgnoreFunctionByConfig(t *testing.T) {
-	cfg := &config.CITrackingConfig{
+func TestShouldIgnoreFunctionByTrackPolicy(t *testing.T) {
+	policy := config.TrackPolicy{
 		IgnoreFunctions: []string{"x"},
 		IgnorePrefixes:  []string{"runtime."},
 	}
-	if !shouldIgnoreFunctionByConfig(cfg, "x") {
+	if !config.ShouldIgnoreFunction(policy, "x") {
 		t.Fatal()
 	}
-	if !shouldIgnoreFunctionByConfig(cfg, "runtime.gc") {
+	if !config.ShouldIgnoreFunction(policy, "runtime.gc") {
 		t.Fatal()
 	}
-	if shouldIgnoreFunctionByConfig(cfg, "other") {
+	if config.ShouldIgnoreFunction(policy, "other") {
 		t.Fatal()
+	}
+}
+
+func TestApplyTrackThresholdsOnlyTriggers(t *testing.T) {
+	r := &ProfileChangeReport{
+		FunctionChanges: []*FunctionChangeResult{
+			{FunctionName: "f", FlatChangePercent: 20, ChangeType: ChangeRegression},
+		},
+	}
+	policy := config.TrackPolicy{MaxRegressionPercent: 10}
+	if err := applyTrackThresholdsOnly(r, policy); err == nil {
+		t.Fatal("expected regression failure")
 	}
 }
