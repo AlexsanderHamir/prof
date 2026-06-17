@@ -1,8 +1,29 @@
+# Local scratch
 tasks.md
-*prof
+
+# Built prof binary
+/prof
+/prof.exe
+
+# Runtime profiling output (prof auto / prof tui)
+/bench/
+
+# Release builds
+/dist/
+
+# Integration test environments and artifacts
 tests/Enviroment*/
 tests/.integration_prof_build/
 tests/prof.exe
 tests/bench/
-# MkDocs output for prof_web_doc (see prof_web_doc/docs/cli-reference.md)
+
+# MkDocs (see prof_web_doc/docs/cli-reference.md)
 prof_web_doc/site/
+prof_web_doc/.venv/
+__pycache__/
+*.pyc
+
+# Go tooling
+coverage.out
+*.coverprofile
+*.test

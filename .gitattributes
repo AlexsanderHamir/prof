@@ -1,14 +1,42 @@
+# Cross-platform text defaults
+* text=auto eol=lf
+*.go text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.mod text eol=lf
+*.sum text eol=lf
+
+# Binary assets — do not normalize line endings
+*.png binary
+*.gif binary
+*.out binary
+*.exe binary
+
+# Slim Go module zips (go get / proxy). Files stay in git for dev/CI; omitted from the published module.
 .github/** export-ignore
 .vscode/** export-ignore
+.cursor/** export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
+.golangci.yml export-ignore
+
+docs/** export-ignore
+assets/** export-ignore
+prof_web_doc/** export-ignore
+dist/** export-ignore
 
 *.md export-ignore
 *.png export-ignore
-LICENSE export-ignore
+*.gif export-ignore
 
+# Tests and pprof fixtures (library consumers do not need these)
 *_test.go export-ignore
-*test*/ export-ignore
+/tests/** export-ignore
+/**/tests/** export-ignore
+*.out export-ignore
 
-prof export-ignore
-prof_web_doc/ export-ignore
+# Local builds
+/prof export-ignore
+/prof.exe export-ignore
