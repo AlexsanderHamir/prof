@@ -84,14 +84,14 @@ func chooseFileLocations(selections *Options) (baselinePath, currentPath string)
 func CheckPerformanceDifferences(selections *Options) (*ProfileChangeReport, error) {
 	binFilePathBaseLine, binFilePathCurrent := chooseFileLocations(selections)
 
-	lineObjsBaseline, err := parser.TurnLinesIntoObjectsV2(binFilePathBaseLine)
+	lineObjsBaseline, err := loadProfileObjects(binFilePathBaseLine, selections, "baseline")
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", binFilePathBaseLine, err)
+		return nil, err
 	}
 
-	lineObjsCurrent, err := parser.TurnLinesIntoObjectsV2(binFilePathCurrent)
+	lineObjsCurrent, err := loadProfileObjects(binFilePathCurrent, selections, "current")
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get objs for path: %s, error: %w", binFilePathCurrent, err)
+		return nil, err
 	}
 
 	byName := lineObjByShortName(lineObjsBaseline)
@@ -108,4 +108,20 @@ func CheckPerformanceDifferences(selections *Options) (*ProfileChangeReport, err
 		report.FunctionChanges = append(report.FunctionChanges, changeResult)
 	}
 	return report, nil
+}
+
+func loadProfileObjects(path string, selections *Options, role string) ([]*parser.LineObj, error) {
+	objs, err := parser.TurnLinesIntoObjectsV2(path)
+	if err == nil {
+		return objs, nil
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		tag := selections.Baseline
+		if role == "current" {
+			tag = selections.Current
+		}
+		return nil, fmt.Errorf("%s tag %q has no %s/%s profile — run collect for that benchmark or pick another",
+			role, tag, selections.BenchmarkName, selections.ProfileType)
+	}
+	return nil, fmt.Errorf("couldn't load profile at %s: %w", path, err)
 }
