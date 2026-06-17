@@ -27,7 +27,7 @@ func runUIConfigCreate(svc *app.Services) error {
 
 	create := false
 	if err = survey.AskOne(&survey.Confirm{
-		Message: "Create prof.json with a commented template next to go.mod?",
+		Message: "Create prof.json next to go.mod (with prof.json.example for field docs)?",
 		Default: true,
 	}, &create); err != nil {
 		return err
@@ -40,6 +40,6 @@ func runUIConfigCreate(svc *app.Services) error {
 	}
 
 	fmt.Fprintf(os.Stdout, "Created %s\n", path)
-	fmt.Fprintln(os.Stdout, "Open it in your text editor. Lines starting with // are comments; uncomment optional sections as needed.")
+	fmt.Fprintln(os.Stdout, "Edit prof.json in your text editor (valid JSON). See prof.json.example for commented field documentation.")
 	return nil
 }

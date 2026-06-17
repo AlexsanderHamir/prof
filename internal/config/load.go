@@ -151,22 +151,35 @@ func CreateDefaultFile() error {
 	if err != nil {
 		return err
 	}
+	if err = Save(cfg); err != nil {
+		return err
+	}
+
 	modulePath := ""
 	if len(cfg.Collection.Defaults.IncludePrefixes) > 0 {
 		modulePath = cfg.Collection.Defaults.IncludePrefixes[0]
 	}
-	content := DefaultTemplate(modulePath)
+	examplePath, err := Path(ExampleFilename)
+	if err != nil {
+		return err
+	}
+	if err = writeFileAtomic(examplePath, []byte(ExampleTemplate(modulePath))); err != nil {
+		return fmt.Errorf("failed to write %s: %w", ExampleFilename, err)
+	}
 
+	slog.Info("Configuration file created", "path", path, "example", examplePath)
+	return nil
+}
+
+func writeFileAtomic(path string, content []byte) error {
 	tmp := path + ".tmp"
-	if err = os.WriteFile(tmp, []byte(content), workspace.PermFile); err != nil {
-		return fmt.Errorf("failed to write config temp file: %w", err)
+	if err := os.WriteFile(tmp, content, workspace.PermFile); err != nil {
+		return fmt.Errorf("failed to write temp file: %w", err)
 	}
-	if err = os.Rename(tmp, path); err != nil {
+	if err := os.Rename(tmp, path); err != nil {
 		_ = os.Remove(tmp)
-		return fmt.Errorf("failed to replace config file: %w", err)
+		return fmt.Errorf("failed to replace file: %w", err)
 	}
-
-	slog.Info("Configuration file created", "path", path)
 	return nil
 }
 

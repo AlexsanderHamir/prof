@@ -24,31 +24,28 @@ func TestStripJSONComments_removesLineComments(t *testing.T) {
 	}
 }
 
-func TestLoadFromFile_withComments(t *testing.T) {
+func TestLoadFromFile_withCommentsInExample(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/foo\n\ngo 1.24\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)
 
-	content := DefaultTemplate("example.com/foo")
-	if err := os.WriteFile(filepath.Join(root, "prof.json"), []byte(content), 0o600); err != nil {
+	content := ExampleTemplate("example.com/foo")
+	if err := os.WriteFile(filepath.Join(root, ExampleFilename), []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	loaded, err := Load()
-	if err != nil {
+	var c Config
+	if err := json.Unmarshal(stripJSONComments([]byte(content)), &c); err != nil {
 		t.Fatal(err)
 	}
-	if len(loaded.Collection.Defaults.IncludePrefixes) != 1 || loaded.Collection.Defaults.IncludePrefixes[0] != "example.com/foo" {
-		t.Fatalf("include_prefixes: %+v", loaded.Collection.Defaults.IncludePrefixes)
-	}
-	if loaded.Track.Defaults.MaxRegressionPercent != 15 {
-		t.Fatalf("track defaults: %+v", loaded.Track.Defaults)
+	if len(c.Collection.Defaults.IncludePrefixes) != 1 {
+		t.Fatalf("include_prefixes: %+v", c.Collection.Defaults.IncludePrefixes)
 	}
 }
 
-func TestCreateDefaultFile_writesCommentedTemplate(t *testing.T) {
+func TestCreateDefaultFile_writesValidJSONAndExample(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/bar\n\ngo 1.24\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -58,24 +55,32 @@ func TestCreateDefaultFile_writesCommentedTemplate(t *testing.T) {
 	if err := CreateDefaultFile(); err != nil {
 		t.Fatal(err)
 	}
-	data, err := os.ReadFile(filepath.Join(root, "prof.json"))
+
+	profData, err := os.ReadFile(filepath.Join(root, Filename))
 	if err != nil {
 		t.Fatal(err)
 	}
-	text := string(data)
-	if !strings.Contains(text, "// include_prefixes:") {
-		t.Fatal("expected include_prefixes comment")
-	}
-	if !strings.Contains(text, "example.com/bar") {
-		t.Fatal("expected module path in template")
+	if strings.Contains(string(profData), "//") {
+		t.Fatal("prof.json must be valid JSON without comments")
 	}
 	if _, err = Load(); err != nil {
-		t.Fatalf("created file should load: %v", err)
+		t.Fatalf("prof.json should load: %v", err)
+	}
+
+	exampleData, err := os.ReadFile(filepath.Join(root, ExampleFilename))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(exampleData), "// include_prefixes:") {
+		t.Fatal("expected include_prefixes comment in example file")
+	}
+	if !strings.Contains(string(exampleData), "example.com/bar") {
+		t.Fatal("expected module path in example file")
 	}
 }
 
-func TestDefaultTemplate_loadsAfterCommentStrip(t *testing.T) {
-	tmpl := DefaultTemplate("github.com/org/app")
+func TestExampleTemplate_loadsAfterCommentStrip(t *testing.T) {
+	tmpl := ExampleTemplate("github.com/org/app")
 	var c Config
 	if err := json.Unmarshal(stripJSONComments([]byte(tmpl)), &c); err != nil {
 		t.Fatal(err)

@@ -61,7 +61,7 @@ func newHubModel() *hubModel {
 			{"Run benchmarks and save profiles (pick a name for this run)", MainCollect},
 			{"Built-in regression check — compare two runs, function by function", MainCompare},
 			{fmt.Sprintf("External tools — %s or %s", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind), MainTools},
-			{"Create prof.json — commented template (edit file yourself)", MainConfig},
+			{"Create prof.json — starter config + prof.json.example docs", MainConfig},
 			{"Help — print link to online documentation", MainDocs},
 			{"Quit", MainQuit},
 		},
@@ -152,7 +152,7 @@ func (m *hubModel) View() string {
 			"Save profiles: runs benchmarks and stores output under bench/<name>/.\n" +
 				"Built-in regression check: prof compares two saved runs and lists which functions got slower or faster; can fail the run using limits in prof.json (for CI).\n" +
 				fmt.Sprintf("External tools: run %s or %s (separate programs, not prof's built-in regression check).\n", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind) +
-				"Create prof.json: writes a commented template beside go.mod if missing; edit the file in your editor.\n" +
+				"Create prof.json: writes valid prof.json and prof.json.example (commented reference) beside go.mod.\n" +
 				"Press ? again to hide this help.",
 		))
 		b.WriteString("\n")

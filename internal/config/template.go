@@ -2,8 +2,8 @@ package config
 
 import "strings"
 
-// DefaultTemplate returns prof.json starter content with // comments explaining each field.
-func DefaultTemplate(modulePath string) string {
+// ExampleTemplate returns prof.json.example content with // comments explaining each field.
+func ExampleTemplate(modulePath string) string {
 	modulePath = strings.TrimSpace(modulePath)
 	includeExample := modulePath
 	if includeExample == "" {
@@ -11,8 +11,8 @@ func DefaultTemplate(modulePath string) string {
 	}
 
 	return strings.TrimRight(`
-// prof.json — configuration for prof (https://github.com/AlexsanderHamir/prof)
-// Edit this file in your text editor. Lines starting with // are comments; prof ignores them when loading.
+// prof.json.example — reference for prof (https://github.com/AlexsanderHamir/prof)
+// Copy sections into prof.json as needed. This file is not loaded by prof; prof.json is valid JSON without comments.
 
 {
     "version": 1,
