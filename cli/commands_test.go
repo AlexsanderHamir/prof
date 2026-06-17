@@ -45,10 +45,15 @@ func (noopSetup) CreateTemplate() error { return nil }
 
 type noopConfig struct{}
 
-func (noopConfig) Load() (*config.Config, error)         { return config.Default(""), nil }
-func (noopConfig) Save(*config.Config) error             { return nil }
-func (noopConfig) CreateDefaultFile() error              { return nil }
-func (noopConfig) Path() (string, error)                 { return config.Path(config.Filename) }
+func (noopConfig) Load() (*config.Config, error) {
+	return config.Default(""), nil
+}
+
+func (noopConfig) Save(*config.Config) error { return nil }
+
+func (noopConfig) CreateDefaultFile() error { return nil }
+
+func (noopConfig) Path() (string, error) { return config.Path(config.Filename) }
 
 func allNoopServices() *app.Services {
 	return &app.Services{

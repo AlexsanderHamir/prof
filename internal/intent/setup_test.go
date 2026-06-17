@@ -13,7 +13,7 @@ type fakeSetupConfig struct {
 	err   error
 }
 
-func (f *fakeSetupConfig) Load() (*config.Config, error) { return nil, nil }
+func (f *fakeSetupConfig) Load() (*config.Config, error) { return config.Default(""), nil }
 func (f *fakeSetupConfig) Save(*config.Config) error     { return nil }
 func (f *fakeSetupConfig) CreateDefaultFile() error {
 	f.calls++

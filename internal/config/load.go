@@ -125,14 +125,13 @@ func readModulePath(goModPath string) (string, error) {
 // DefaultFromModuleRoot builds Default using the module path from go.mod when available.
 func DefaultFromModuleRoot() (*Config, error) {
 	root, err := workspace.FindModuleRoot()
-	if err != nil {
-		return Default(""), nil
+	if err == nil {
+		modPath, readErr := readModulePath(filepath.Join(root, "go.mod"))
+		if readErr == nil {
+			return Default(modPath), nil
+		}
 	}
-	modPath, err := readModulePath(filepath.Join(root, "go.mod"))
-	if err != nil {
-		return Default(""), nil
-	}
-	return Default(modPath), nil
+	return Default(""), nil
 }
 
 // CreateDefaultFile writes prof.json if it does not exist.

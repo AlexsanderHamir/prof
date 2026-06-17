@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	cfgOverviewCollection = "Collection — function extracts"
-	cfgOverviewTrack      = "Track — regression gates"
+	cfgOverviewCollection  = "Collection — function extracts"
+	cfgOverviewTrack       = "Track — regression gates"
 	cfgOverviewRecommended = "Apply recommended ignores to both sections"
-	cfgOverviewViewPath   = "View file path"
-	cfgOverviewSave       = "Save and exit"
-	cfgOverviewDiscard    = "Discard and exit"
+	cfgOverviewViewPath    = "View file path"
+	cfgOverviewSave        = "Save and exit"
+	cfgOverviewDiscard     = "Discard and exit"
 )
 
 func runUIConfigWizard(svc *app.Services) error {
@@ -73,58 +73,74 @@ func runUIConfigWizard(svc *app.Services) error {
 }
 
 func loadConfigForWizard(svc *app.Services, path string, loadedAt *time.Time) (*config.Config, error) {
+	info, err := ensureConfigFileExists(svc, path)
+	if err != nil {
+		return nil, err
+	}
+	*loadedAt = info.ModTime()
+	return loadValidConfig(svc, path, loadedAt)
+}
+
+func ensureConfigFileExists(svc *app.Services, path string) (os.FileInfo, error) {
+	info, err := os.Stat(path)
+	if err == nil {
+		return info, nil
+	}
+	if !os.IsNotExist(err) {
+		return nil, err
+	}
+	return promptCreateConfigFile(svc, path)
+}
+
+func promptCreateConfigFile(svc *app.Services, path string) (os.FileInfo, error) {
+	create := false
+	if err := survey.AskOne(&survey.Confirm{
+		Message: "No prof.json found. Create a default configuration file?",
+		Default: true,
+	}, &create); err != nil {
+		return nil, err
+	}
+	if !create {
+		return nil, errors.New("configuration cancelled: prof.json does not exist")
+	}
+	if err := intent.RunValidated(&intent.ConfigCreateIntent{}, svc); err != nil {
+		return nil, err
+	}
+	return os.Stat(path)
+}
+
+func loadValidConfig(svc *app.Services, path string, loadedAt *time.Time) (*config.Config, error) {
+	cfg, err := svc.Config.Load()
+	if err == nil {
+		return cfg, nil
+	}
+	return recoverInvalidConfigFile(svc, path, loadedAt, err)
+}
+
+func recoverInvalidConfigFile(svc *app.Services, path string, loadedAt *time.Time, loadErr error) (*config.Config, error) {
+	fix := false
+	fmt.Fprintf(os.Stderr, "Invalid prof.json: %v\n", loadErr)
+	if askErr := survey.AskOne(&survey.Confirm{
+		Message: "Back up to prof.json.bak and recreate from defaults?",
+		Default: false,
+	}, &fix); askErr != nil {
+		return nil, askErr
+	}
+	if !fix {
+		return nil, loadErr
+	}
+	if backupErr := os.Rename(path, path+".bak"); backupErr != nil {
+		return nil, backupErr
+	}
+	if createErr := intent.RunValidated(&intent.ConfigCreateIntent{}, svc); createErr != nil {
+		return nil, createErr
+	}
 	info, statErr := os.Stat(path)
 	if statErr != nil {
-		if !os.IsNotExist(statErr) {
-			return nil, statErr
-		}
-		create := false
-		if err := survey.AskOne(&survey.Confirm{
-			Message: "No prof.json found. Create a default configuration file?",
-			Default: true,
-		}, &create); err != nil {
-			return nil, err
-		}
-		if !create {
-			return nil, errors.New("configuration cancelled: prof.json does not exist")
-		}
-		if err := intent.RunValidated(&intent.ConfigCreateIntent{}, svc); err != nil {
-			return nil, err
-		}
-		info, statErr = os.Stat(path)
-		if statErr != nil {
-			return nil, statErr
-		}
+		return nil, statErr
 	}
-
 	*loadedAt = info.ModTime()
-	cfg, err := svc.Config.Load()
-	if err != nil {
-		fix := false
-		fmt.Fprintf(os.Stderr, "Invalid prof.json: %v\n", err)
-		if askErr := survey.AskOne(&survey.Confirm{
-			Message: "Back up to prof.json.bak and recreate from defaults?",
-			Default: false,
-		}, &fix); askErr != nil {
-			return nil, askErr
-		}
-		if !fix {
-			return nil, err
-		}
-		if backupErr := os.Rename(path, path+".bak"); backupErr != nil {
-			return nil, backupErr
-		}
-		if createErr := intent.RunValidated(&intent.ConfigCreateIntent{}, svc); createErr != nil {
-			return nil, createErr
-		}
-		info, statErr = os.Stat(path)
-		if statErr != nil {
-			return nil, statErr
-		}
-		*loadedAt = info.ModTime()
-		return svc.Config.Load()
-	}
-	return cfg, nil
+	return svc.Config.Load()
 }
 
 func configOverviewMenu(cfg *config.Config) (string, error) {
@@ -411,30 +427,30 @@ func editTrackPolicy(label string, p *config.TrackPolicy) error {
 	}, &minStr); err != nil {
 		return err
 	}
-	min, err := strconv.ParseFloat(strings.TrimSpace(minStr), 64)
-	if err != nil || min < 0 {
+	minPct, parseErr := strconv.ParseFloat(strings.TrimSpace(minStr), 64)
+	if parseErr != nil || minPct < 0 {
 		return fmt.Errorf("invalid min_change_percent: %s", minStr)
 	}
-	p.MinChangePercent = min
+	p.MinChangePercent = minPct
 
 	var maxStr string
-	if err := survey.AskOne(&survey.Input{
+	if askErr := survey.AskOne(&survey.Input{
 		Message: label + " — fail if regression exceeds (% flat time, 0 = disabled):",
 		Default: fmt.Sprintf("%.1f", p.MaxRegressionPercent),
-	}, &maxStr); err != nil {
-		return err
+	}, &maxStr); askErr != nil {
+		return askErr
 	}
-	max, err := strconv.ParseFloat(strings.TrimSpace(maxStr), 64)
-	if err != nil || max < 0 {
+	maxPct, parseErr := strconv.ParseFloat(strings.TrimSpace(maxStr), 64)
+	if parseErr != nil || maxPct < 0 {
 		return fmt.Errorf("invalid max_regression_percent: %s", maxStr)
 	}
-	p.MaxRegressionPercent = max
+	p.MaxRegressionPercent = maxPct
 
-	if err := survey.AskOne(&survey.Confirm{
+	if askErr := survey.AskOne(&survey.Confirm{
 		Message: label + " — fail on unexpected speedups?",
 		Default: p.FailOnImprovement,
-	}, &p.FailOnImprovement); err != nil {
-		return err
+	}, &p.FailOnImprovement); askErr != nil {
+		return askErr
 	}
 	return nil
 }
@@ -463,11 +479,11 @@ func confirmSaveIfChanged(path string, loadedAt time.Time) error {
 		return nil
 	}
 	confirm := false
-	if err := survey.AskOne(&survey.Confirm{
+	if askErr := survey.AskOne(&survey.Confirm{
 		Message: "prof.json was modified on disk since this session started. Overwrite?",
 		Default: false,
-	}, &confirm); err != nil {
-		return err
+	}, &confirm); askErr != nil {
+		return askErr
 	}
 	if !confirm {
 		return errors.New("save cancelled: file changed on disk")
