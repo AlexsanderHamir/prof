@@ -58,11 +58,11 @@ func newHubModel() *hubModel {
 		cursor: 0,
 		result: MainNone,
 		items: []mainItem{
-			{"Run benchmarks and save profiles (pick a name for this run)", MainCollect},
-			{"Built-in regression check — compare two runs, function by function", MainCompare},
-			{fmt.Sprintf("External tools — %s or %s", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind), MainTools},
-			{"Create prof.json — starter config + prof.json.example docs", MainConfig},
-			{"Help — print link to online documentation", MainDocs},
+			{"Collect Profiles", MainCollect},
+			{"Compare Runs", MainCompare},
+			{"External Tools", MainTools},
+			{"Create Configuration File", MainConfig},
+			{"Documentation Site", MainDocs},
 			{"Quit", MainQuit},
 		},
 	}
@@ -149,10 +149,10 @@ func (m *hubModel) View() string {
 
 	if m.showHelp {
 		b.WriteString(helpStyle.Render(
-			"Save profiles: runs benchmarks and stores output under bench/<name>/.\n" +
-				"Built-in regression check: prof compares two saved runs and lists which functions got slower or faster; can fail the run using limits in prof.json (for CI).\n" +
-				fmt.Sprintf("External tools: run %s or %s (separate programs, not prof's built-in regression check).\n", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind) +
-				"Create prof.json: writes valid prof.json and prof.json.example (commented reference) beside go.mod.\n" +
+			"Collect Profiles: run benchmarks and store output under bench/<tag>/.\n" +
+				"Compare Runs: diff two saved runs function-by-function; optional regression limits from prof.json or CLI.\n" +
+				fmt.Sprintf("External Tools: run %s or %s.\n", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind) +
+				"Create Configuration File: writes prof.json and prof.json.example beside go.mod.\n" +
 				"Press ? again to hide this help.",
 		))
 		b.WriteString("\n")
