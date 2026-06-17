@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	cfgOverviewCollection = "Collection — function extracts"
-	cfgOverviewTrack      = "Track — regression gates"
-	cfgOverviewViewPath   = "View file path"
+	cfgOverviewCollection = "Profile collection — what to save from benchmarks"
+	cfgOverviewTrack      = "Regression limits — when a compare should fail"
+	cfgOverviewViewPath   = "View prof.json file path"
 	cfgOverviewSave       = "Save and exit"
-	cfgOverviewDiscard    = "Discard and exit"
+	cfgOverviewDiscard    = "Discard changes and exit"
 )
 
 func runUIConfigWizard(svc *app.Services) error {
@@ -33,6 +33,9 @@ func runUIConfigWizard(svc *app.Services) error {
 	if err != nil {
 		return err
 	}
+
+	fmt.Fprintln(os.Stdout, "Settings edit prof.json next to go.mod.")
+	fmt.Fprintln(os.Stdout, "Defaults work for most projects — choose Save and exit unless you need advanced filters or CI limits.")
 
 	for {
 		choice, menuErr := configOverviewMenu(cfg)
@@ -152,9 +155,10 @@ func configOverviewMenu(cfg *config.Config) (string, error) {
 	}
 	var choice string
 	err := survey.AskOne(&survey.Select{
-		Message:  "Manage configuration — what do you want to change?",
+		Message:  "Settings — what do you want to change?",
 		Options:  options,
 		PageSize: 8,
+		Help:     "Save and exit writes prof.json. You can skip the other sections if defaults are fine.",
 	}, &choice, survey.WithValidator(survey.Required))
 	if err != nil {
 		return "", err
@@ -171,22 +175,28 @@ func configOverviewMenu(cfg *config.Config) (string, error) {
 
 func runCollectionSubmenu(svc *app.Services, cfg *config.Config) error {
 	const (
-		editDefaults = "Edit defaults (all benchmarks)"
-		editBench    = "Add or edit benchmark rule (prof auto)"
-		editManual   = "Add or edit manual profile rule (prof manual)"
+		done         = "Done — defaults are fine"
+		editDefaults = "Advanced: change default package and function filters"
+		editBench    = "Advanced: filters for one benchmark only"
+		editManual   = "Advanced: filters for one manual profile only"
 		removeRule   = "Remove a benchmark or manual rule"
-		back         = "Back"
+		back         = "Back to settings menu"
 	)
+	fmt.Fprintln(os.Stdout, "")
+	fmt.Fprintln(os.Stdout, "Profile collection controls which functions appear in saved files after you run benchmarks.")
+	fmt.Fprintln(os.Stdout, "Most projects: choose Done — defaults are fine. Your module path from go.mod is already included.")
 	for {
 		var choice string
 		if err := survey.AskOne(&survey.Select{
-			Message:  "Collection filters",
-			Options:  []string{editDefaults, editBench, editManual, removeRule, back},
-			PageSize: 6,
+			Message:  "Profile collection",
+			Options:  []string{done, editDefaults, editBench, editManual, removeRule, back},
+			PageSize: 8,
 		}, &choice, survey.WithValidator(survey.Required)); err != nil {
 			return err
 		}
 		switch choice {
+		case done, back:
+			return nil
 		case editDefaults:
 			if err := editFunctionFilter("Collection defaults", &cfg.Collection.Defaults, svc); err != nil {
 				return err
@@ -203,29 +213,33 @@ func runCollectionSubmenu(svc *app.Services, cfg *config.Config) error {
 			if err := removeCollectionRule(cfg); err != nil {
 				return err
 			}
-		case back:
-			return nil
 		}
 	}
 }
 
 func runTrackSubmenu(svc *app.Services, cfg *config.Config) error {
 	const (
-		editDefaults = "Edit defaults (global regression policy)"
-		editBench    = "Add or edit benchmark override"
-		removeBench  = "Remove benchmark override"
-		back         = "Back"
+		done         = "Done — defaults are fine"
+		editDefaults = "Advanced: change global regression limits"
+		editBench    = "Advanced: limits for one benchmark only"
+		removeBench  = "Remove a benchmark override"
+		back         = "Back to settings menu"
 	)
+	fmt.Fprintln(os.Stdout, "")
+	fmt.Fprintln(os.Stdout, "Regression limits control when the built-in compare run fails (for example in CI).")
+	fmt.Fprintln(os.Stdout, "Most projects: choose Done — defaults are fine, or adjust fail thresholds under Advanced.")
 	for {
 		var choice string
 		if err := survey.AskOne(&survey.Select{
-			Message:  "Track regression gates",
-			Options:  []string{editDefaults, editBench, removeBench, back},
-			PageSize: 5,
+			Message:  "Regression limits",
+			Options:  []string{done, editDefaults, editBench, removeBench, back},
+			PageSize: 6,
 		}, &choice, survey.WithValidator(survey.Required)); err != nil {
 			return err
 		}
 		switch choice {
+		case done, back:
+			return nil
 		case editDefaults:
 			if err := editTrackPolicy("Track defaults", &cfg.Track.Defaults); err != nil {
 				return err
@@ -238,8 +252,6 @@ func runTrackSubmenu(svc *app.Services, cfg *config.Config) error {
 			if err := removeTrackBenchmark(cfg); err != nil {
 				return err
 			}
-		case back:
-			return nil
 		}
 	}
 }
@@ -412,10 +424,20 @@ func editFunctionFilter(label string, f *config.FunctionFilter, svc *app.Service
 			defaultPrefix = cfg.Collection.Defaults.IncludePrefixes[0]
 		}
 	}
+
+	fmt.Fprintln(os.Stdout, "")
+	if label != "Collection defaults" {
+		fmt.Fprintf(os.Stdout, "Editing: %s\n", label)
+	}
+	fmt.Fprintln(os.Stdout, "Press Enter at each prompt to keep the suggested value.")
+	fmt.Fprintln(os.Stdout, "Package filter: limits saved profiles to your code (import paths from go.mod), not the Go standard library.")
+	fmt.Fprintln(os.Stdout, "Function filter: optional names to skip, such as init or test helpers.")
+
 	var prefixes string
 	if err := survey.AskOne(&survey.Input{
-		Message: fmt.Sprintf("%s — only include functions from packages (comma-separated, empty = all):", label),
+		Message: "Go package import paths to include (comma-separated):",
 		Default: defaultPrefix,
+		Help:    "Example: github.com/you/yourapp. Leave empty only if you want every function in the profile, including stdlib.",
 	}, &prefixes); err != nil {
 		return err
 	}
@@ -423,8 +445,9 @@ func editFunctionFilter(label string, f *config.FunctionFilter, svc *app.Service
 
 	var ignores string
 	if err := survey.AskOne(&survey.Input{
-		Message: fmt.Sprintf("%s — skip function names (comma-separated):", label),
+		Message: "Function names to skip (comma-separated, optional):",
 		Default: strings.Join(f.IgnoreFunctions, ", "),
+		Help:    "Example: init, BenchmarkHelper. Empty means do not skip any names beyond the package filter.",
 	}, &ignores); err != nil {
 		return err
 	}
@@ -433,12 +456,18 @@ func editFunctionFilter(label string, f *config.FunctionFilter, svc *app.Service
 }
 
 func editTrackPolicy(label string, p *config.TrackPolicy) error {
-	fmt.Fprintln(os.Stdout, "Applies when prof track runs without --fail-on-regression. CLI flags override.")
+	fmt.Fprintln(os.Stdout, "")
+	if label != "Track defaults" {
+		fmt.Fprintf(os.Stdout, "Editing: %s\n", label)
+	}
+	fmt.Fprintln(os.Stdout, "These apply when you use the built-in regression check. Press Enter to keep each suggested value.")
+	fmt.Fprintln(os.Stdout, "CLI flags can override these for a single run.")
 
 	var prefixes string
 	if err := survey.AskOne(&survey.Input{
-		Message: label + " — ignore function prefixes (comma-separated):",
+		Message: "Skip functions whose names start with (comma-separated, optional):",
 		Default: strings.Join(p.IgnorePrefixes, ", "),
+		Help:    "Example: runtime., testing. — common noise from the Go runtime and test framework.",
 	}, &prefixes); err != nil {
 		return err
 	}
@@ -446,8 +475,9 @@ func editTrackPolicy(label string, p *config.TrackPolicy) error {
 
 	var funcs string
 	if err := survey.AskOne(&survey.Input{
-		Message: label + " — ignore exact function names (comma-separated):",
+		Message: "Skip exact function names (comma-separated, optional):",
 		Default: strings.Join(p.IgnoreFunctions, ", "),
+		Help:    "Example: init. Empty means only use the prefix list above.",
 	}, &funcs); err != nil {
 		return err
 	}
@@ -455,8 +485,9 @@ func editTrackPolicy(label string, p *config.TrackPolicy) error {
 
 	var minStr string
 	if err := survey.AskOne(&survey.Input{
-		Message: label + " — ignore changes smaller than (% noise floor, 0 = disabled):",
+		Message: "Ignore slowdowns smaller than this percent (0 = report everything):",
 		Default: fmt.Sprintf("%.1f", p.MinChangePercent),
+		Help:    "Example: 5 means a 3% slowdown is treated as noise and ignored.",
 	}, &minStr); err != nil {
 		return err
 	}
@@ -468,8 +499,9 @@ func editTrackPolicy(label string, p *config.TrackPolicy) error {
 
 	var maxStr string
 	if askErr := survey.AskOne(&survey.Input{
-		Message: label + " — fail if regression exceeds (% flat time, 0 = disabled):",
+		Message: "Fail the run if slowdown exceeds this percent (0 = never fail on slowdown):",
 		Default: fmt.Sprintf("%.1f", p.MaxRegressionPercent),
+		Help:    "Example: 15 fails CI when a function is 15% or more slower than the baseline run.",
 	}, &maxStr); askErr != nil {
 		return askErr
 	}
@@ -480,8 +512,9 @@ func editTrackPolicy(label string, p *config.TrackPolicy) error {
 	p.MaxRegressionPercent = maxPct
 
 	if askErr := survey.AskOne(&survey.Confirm{
-		Message: label + " — fail on unexpected speedups?",
+		Message: "Fail when a function gets unexpectedly faster (unusual — usually leave off)?",
 		Default: p.FailOnImprovement,
+		Help:    "Most projects leave this off. Enable only if speedups should also break CI.",
 	}, &p.FailOnImprovement); askErr != nil {
 		return askErr
 	}

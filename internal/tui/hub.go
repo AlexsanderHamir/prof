@@ -58,11 +58,11 @@ func newHubModel() *hubModel {
 		cursor: 0,
 		result: MainNone,
 		items: []mainItem{
-			{"Run benchmarks and collect profiles", MainCollect},
-			{"Compare two tagged runs", MainCompare},
-			{fmt.Sprintf("Tools (%s, %s)", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind), MainTools},
-			{"Manage prof.json configuration", MainConfig},
-			{"Show documentation URL", MainDocs},
+			{"Run benchmarks and save profiles (pick a name for this run)", MainCollect},
+			{"Built-in regression check — compare two runs, function by function", MainCompare},
+			{fmt.Sprintf("External tools — %s or %s", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind), MainTools},
+			{"Settings — filters, ignores, and regression limits", MainConfig},
+			{"Help — print link to online documentation", MainDocs},
 			{"Quit", MainQuit},
 		},
 	}
@@ -134,7 +134,7 @@ func (m *hubModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *hubModel) View() string {
 	var b strings.Builder
-	b.WriteString(titleStyle.Render("Prof — what do you want to do?"))
+	b.WriteString(titleStyle.Render("Prof — main menu"))
 	b.WriteString("\n\n")
 	for i, it := range m.items {
 		prefix := "  "
@@ -149,7 +149,11 @@ func (m *hubModel) View() string {
 
 	if m.showHelp {
 		b.WriteString(helpStyle.Render(
-			fmt.Sprintf("Collect runs benchmarks and writes bench/<tag>/. Compare needs at least two tags. Tools runs %s or %s. Manage configuration edits prof.json. Same engines as prof auto / prof track.", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind),
+			"Save profiles: runs benchmarks and stores output under bench/<name>/.\n"+
+				"Built-in regression check: prof compares two saved runs and lists which functions got slower or faster; can fail the run using Settings limits (for CI).\n"+
+				fmt.Sprintf("External tools: run %s or %s (separate programs, not prof's built-in regression check).\n", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind)+
+				"Settings: edits prof.json — which functions to include, skip, and when to fail.\n"+
+				"Press ? again to hide this help.",
 		))
 		b.WriteString("\n")
 	}

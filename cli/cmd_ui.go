@@ -115,8 +115,8 @@ func promptReturnToHub() error {
 
 func runUIToolsMenu(svc *app.Services) error {
 	const (
-		toolBenchstat   = workspace.ToolNameBenchstat + " - compare benchmark text between two tags"
-		toolQcachegrind = workspace.ToolNameQcachegrind + " - open a binary profile in qcachegrind"
+		toolBenchstat   = workspace.ToolNameBenchstat + " — benchmark timing table (external)"
+		toolQcachegrind = workspace.ToolNameQcachegrind + " — call graph for one profile (external)"
 		toolBack        = "Back to main menu"
 	)
 	var tool string
