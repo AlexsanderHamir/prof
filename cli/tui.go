@@ -39,6 +39,8 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return err
 	}
 
+	printCollectionFilterPreview(svc, selectedBenches)
+
 	profilesOptions := svc.Collect.SupportedProfiles()
 	var selectedProfiles []string
 	profilesPrompt := &survey.MultiSelect{
@@ -67,28 +69,9 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	var groupPkg bool
-	if err = survey.AskOne(&survey.Confirm{
-		Message: "Group profile output by Go package (writes additional *_grouped.txt style reports under the tag)?",
-		Default: false,
-	}, &groupPkg); err != nil {
-		return err
-	}
-
-	var lenient bool
-	if err = survey.AskOne(&survey.Confirm{
-		Message: "Lenient profiles: if a profile binary is missing after the bench run, skip it instead of failing?",
-		Default: false,
-	}, &lenient); err != nil {
-		return err
-	}
-
-	var skipPng bool
-	skipPngDefault := !tooling.GraphvizAvailable()
-	if err = survey.AskOne(&survey.Confirm{
-		Message: "Skip PNG generation failures (e.g. when Graphviz is not installed)? The run still succeeds if text profiles were produced.",
-		Default: skipPngDefault,
-	}, &skipPng); err != nil {
+	var groupPkg, lenient, skipPng bool
+	groupPkg, lenient, skipPng, err = askAdvancedCollectOptions()
+	if err != nil {
 		return err
 	}
 	if !skipPng && !tooling.GraphvizAvailable() {
