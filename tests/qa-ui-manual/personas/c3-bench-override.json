@@ -1,0 +1,39 @@
+{
+    "version": 1,
+    "collection": {
+        "defaults": {
+            "include_prefixes": [
+                "qa-ui-manual"
+            ],
+            "ignore_functions": [
+                "init",
+                "TestMain",
+                "BenchmarkMain"
+            ]
+        },
+        "benchmarks": {
+            "BenchmarkStringProcessor": {
+                "include_prefixes": [
+                    "qa-ui-manual",
+                    "utils."
+                ],
+                "ignore_functions": [
+                    "BenchmarkStringProcessor",
+                    "ProcessStrings",
+                    "AddString"
+                ]
+            }
+        }
+    },
+    "track": {
+        "defaults": {
+            "ignore_prefixes": [
+                "runtime.",
+                "reflect.",
+                "testing."
+            ],
+            "min_change_percent": 5,
+            "max_regression_percent": 15
+        }
+    }
+}

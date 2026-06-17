@@ -1,0 +1,10 @@
+# QA sandbox runtime artifacts — keep personas/ and source, ignore generated output
+/bench/
+/prof.exe
+/prof.json
+/prof.json.bak
+/prof.json.tmp
+/cpu.out
+/memory.out
+/mutex.out
+/block.out

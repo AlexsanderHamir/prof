@@ -82,8 +82,8 @@ func TestGetFunctionsOutput_fakeRunner(t *testing.T) {
 		Out: [][]byte{[]byte("list output for " + pick.OutputStem)},
 	}
 	dir := t.TempDir()
-	if err := getFunctionsOutput(runner, []parser.FunctionListEntry{pick}, cpuPath, dir); err != nil {
-		t.Fatal(err)
+	if outErr := getFunctionsOutput(runner, []parser.FunctionListEntry{pick}, cpuPath, dir); outErr != nil {
+		t.Fatal(outErr)
 	}
 	outFile := filepath.Join(dir, pick.OutputStem+"."+workspace.TextExtension)
 	if _, statErr := os.Stat(outFile); statErr != nil {
