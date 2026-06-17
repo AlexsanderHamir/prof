@@ -56,8 +56,10 @@ func runUILauncher(svc *app.Services) error {
 		return runTUITrackAuto(svc, nil, nil)
 	case tui.MainTools:
 		return runUIToolsMenu(svc)
+	case tui.MainConfig:
+		return runUIConfigWizard(svc)
 	case tui.MainSetup:
-		return runUISetupWizard(svc)
+		return runUIConfigWizard(svc)
 	case tui.MainDocs:
 		fmt.Fprintf(os.Stdout, "Prof documentation:\n  %s\n", profDocumentationURL)
 		return nil
@@ -66,20 +68,6 @@ func runUILauncher(svc *app.Services) error {
 	default:
 		return fmt.Errorf("unknown action: %d", choice)
 	}
-}
-
-func runUISetupWizard(svc *app.Services) error {
-	confirm := false
-	if err := survey.AskOne(&survey.Confirm{
-		Message: "This writes the prof configuration template into your module (same as prof setup). Continue?",
-		Default: true,
-	}, &confirm); err != nil {
-		return err
-	}
-	if !confirm {
-		return nil
-	}
-	return intent.RunValidated(&intent.SetupIntent{}, svc)
 }
 
 func runUIToolsMenu(svc *app.Services) error {

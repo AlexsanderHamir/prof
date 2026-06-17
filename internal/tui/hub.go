@@ -24,8 +24,10 @@ const (
 	MainCompare
 	// MainTools opens the tools submenu (benchstat, qcachegrind).
 	MainTools
-	// MainSetup runs the configuration template step.
+	// MainSetup runs the configuration wizard (deprecated alias).
 	MainSetup
+	// MainConfig manages prof.json interactively.
+	MainConfig
 	// MainDocs prints the documentation URL only.
 	MainDocs
 )
@@ -59,7 +61,7 @@ func newHubModel() *hubModel {
 			{"Run benchmarks and collect profiles", MainCollect},
 			{"Compare two tagged runs", MainCompare},
 			{fmt.Sprintf("Tools (%s, %s)", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind), MainTools},
-			{"Create configuration template (prof setup)", MainSetup},
+			{"Manage configuration", MainConfig},
 			{"Show documentation URL", MainDocs},
 			{"Quit", MainQuit},
 		},
@@ -147,7 +149,7 @@ func (m *hubModel) View() string {
 
 	if m.showHelp {
 		b.WriteString(helpStyle.Render(
-			fmt.Sprintf("Collect runs benchmarks and writes bench/<tag>/. Compare needs at least two tags. Tools runs %s or %s. Setup writes the config template. Same engines as prof auto / prof track.", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind),
+			fmt.Sprintf("Collect runs benchmarks and writes bench/<tag>/. Compare needs at least two tags. Tools runs %s or %s. Manage configuration edits prof.json. Same engines as prof auto / prof track.", workspace.ToolNameBenchstat, workspace.ToolNameQcachegrind),
 		))
 		b.WriteString("\n")
 	}

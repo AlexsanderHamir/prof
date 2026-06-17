@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/internal/app"
+	"github.com/AlexsanderHamir/prof/internal/config"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
@@ -42,21 +43,32 @@ type noopSetup struct{}
 
 func (noopSetup) CreateTemplate() error { return nil }
 
+type noopConfig struct{}
+
+func (noopConfig) Load() (*config.Config, error)         { return config.Default(""), nil }
+func (noopConfig) Save(*config.Config) error             { return nil }
+func (noopConfig) CreateDefaultFile() error              { return nil }
+func (noopConfig) Path() (string, error)                 { return config.Path(config.Filename) }
+
 func allNoopServices() *app.Services {
 	return &app.Services{
 		Collect: noopCollect{},
 		Tracker: noopTrack{},
 		Tools:   noopTools{},
 		Setup:   noopSetup{},
+		Config:  noopConfig{},
 	}
 }
 
-type captureSetup struct{ calls int }
+type captureConfig struct{ createCalls int }
 
-func (c *captureSetup) CreateTemplate() error {
-	c.calls++
+func (c *captureConfig) Load() (*config.Config, error) { return config.Default(""), nil }
+func (c *captureConfig) Save(*config.Config) error     { return nil }
+func (c *captureConfig) CreateDefaultFile() error {
+	c.createCalls++
 	return nil
 }
+func (c *captureConfig) Path() (string, error) { return config.Path(config.Filename) }
 
 type captureCollect struct {
 	manual app.CollectManualOptions
@@ -128,7 +140,23 @@ func TestExecuteWithNilUsesOSArgs(t *testing.T) {
 	if err := ExecuteWith(nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(root, "config_template.json")); err != nil {
+	if _, err := os.Stat(filepath.Join(root, "prof.json")); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestConfigInitCreatesProfJSON(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module cliexec3\n\ngo 1.24.3\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(root)
+	rootCmd := CreateRootCmd(nil)
+	rootCmd.SetArgs([]string{"config", "init"})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "prof.json")); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -148,33 +176,33 @@ func TestExecuteDelegatesToExecuteWithNil(t *testing.T) {
 }
 
 func TestExecuteWithStubServices(t *testing.T) {
-	st := &captureSetup{}
-	os.Args = []string{"prof", "setup"}
+	st := &captureConfig{}
+	os.Args = []string{"prof", "config", "init"}
 	err := ExecuteWith(&app.Services{
 		Collect: noopCollect{},
 		Tracker: noopTrack{},
 		Tools:   noopTools{},
-		Setup:   st,
+		Config:  st,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if st.calls != 1 {
-		t.Fatalf("CreateTemplate calls=%d", st.calls)
+	if st.createCalls != 1 {
+		t.Fatalf("CreateDefaultFile calls=%d", st.createCalls)
 	}
 }
 
 func TestCmdSetupRunE(t *testing.T) {
-	st := &captureSetup{}
+	st := &captureConfig{}
 	root := CreateRootCmd(&app.Services{
-		Collect: noopCollect{}, Tracker: noopTrack{}, Tools: noopTools{}, Setup: st,
+		Collect: noopCollect{}, Tracker: noopTrack{}, Tools: noopTools{}, Config: st,
 	})
 	root.SetArgs([]string{"setup"})
 	if err := root.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if st.calls != 1 {
-		t.Fatal(st.calls)
+	if st.createCalls != 1 {
+		t.Fatal(st.createCalls)
 	}
 }
 
