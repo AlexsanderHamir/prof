@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/app"
 	"github.com/AlexsanderHamir/prof/internal/intent"
 	"github.com/spf13/cobra"
@@ -83,11 +84,16 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 	}
 
 	var skipPng bool
+	skipPngDefault := !tooling.GraphvizAvailable()
 	if err = survey.AskOne(&survey.Confirm{
 		Message: "Skip PNG generation failures (e.g. when Graphviz is not installed)? The run still succeeds if text profiles were produced.",
-		Default: false,
+		Default: skipPngDefault,
 	}, &skipPng); err != nil {
 		return err
+	}
+	if !skipPng && !tooling.GraphvizAvailable() {
+		fmt.Fprintln(os.Stdout, tooling.SkipPNGNotice)
+		skipPng = true
 	}
 
 	collect := &intent.CollectIntent{

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/config"
@@ -25,6 +26,8 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 		return errors.New("count must be at least 1")
 	}
 
+	autoSkippedPNG := applyAutoSkipPNG(&opts)
+
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Info("No config file found at repository root; proceeding without function filters.", "expected", config.Filename)
@@ -45,7 +48,21 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 
 	config.PrintAutoConfiguration(autoArgs, cfg)
 
+	if autoSkippedPNG {
+		fmt.Fprintln(os.Stdout, tooling.SkipPNGNotice)
+		slog.Info(tooling.SkipPNGNotice)
+	}
+
 	return runBenchAndGetProfiles(runner, autoArgs, cfg, opts.GroupByPackage, opts.LenientProfiles, opts.SkipPNG)
+}
+
+// applyAutoSkipPNG enables SkipPNG when Graphviz is unavailable. Returns true if it changed opts.
+func applyAutoSkipPNG(opts *AutoOptions) bool {
+	if opts.SkipPNG || tooling.GraphvizAvailable() {
+		return false
+	}
+	opts.SkipPNG = true
+	return true
 }
 
 // DiscoverBenchmarks scans for BenchmarkXxx functions under scope or module root.
