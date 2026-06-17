@@ -79,7 +79,7 @@ prof track manual --base "path/to/baseline_cpu.out" \
 
 `--fail-on-regression` with a positive `--regression-threshold` compares the worst flat-time regression percent against your cap. Flat time is time in the function itself excluding callees.
 
-Full rules, `config_template.json` integration, and links to the CI schema: [CI and regressions](ci.md).
+Full rules, `prof.json` integration, and links to the CI schema: [CI and regressions](ci.md).
 
 ## Testing / verify
 
@@ -89,7 +89,7 @@ Full rules, `config_template.json` integration, and links to the CI schema: [CI 
 
 ## Next steps
 
-- [CI and regressions](ci.md) for `ci_config` and Actions examples.
+- [CI and regressions](ci.md) for `track` policy and Actions examples.
 - [Optional tools](tools.md) for `benchstat` and QCacheGrind on the same tags.
 
 ## Related

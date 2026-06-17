@@ -17,14 +17,17 @@ Static site output is written to `prof_web_doc/site/` when you run `mkdocs build
 
 | Command | Purpose |
 | ------- | ------- |
-| `prof ui` | Full-screen menu: collect, compare, tools, setup. |
+| `prof ui` | Full-screen menu: collect, compare, tools, manage configuration. |
 | `prof tui` | Terminal collect flow (multi-select benchmarks and profiles). |
 | `prof tui track` | Terminal compare flow (pick two tags under `bench/`). |
 | `prof auto` | Run `go test` benchmarks and collect listed profiles into `bench/<tag>/`. |
 | `prof manual` | Ingest existing profile files into the same layout style (no `go test`). |
 | `prof track auto` | Compare two tags created by `prof auto` (or compatible layout). |
 | `prof track manual` | Compare two profile files by filesystem path. |
-| `prof setup` | Write `config_template.json` next to `go.mod`. |
+| `prof config init` | Create `prof.json` next to `go.mod`. |
+| `prof config validate` | Load and validate `prof.json`; exit non-zero on error. |
+| `prof config path` | Print resolved `prof.json` path. |
+| `prof setup` | Hidden alias for `prof config init`. |
 | `prof tools benchstat` | Run `benchstat` for two tags; writes under `bench/tools/`. |
 | `prof tools qcachegrind` | Emit Callgrind files for QCacheGrind. |
 

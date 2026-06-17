@@ -1,6 +1,6 @@
 # CI and regressions
 
-This guide explains how to fail a job when performance regresses using `prof track` flags and optional `ci_config` in `config_template.json`, without using interactive menus.
+This guide explains how to fail a job when performance regresses using `prof track` flags and optional `track` policy in `prof.json`, without using interactive menus.
 
 ## Before you begin
 
@@ -28,11 +28,13 @@ prof track auto --base baseline --current pr-branch \
 
 If you pass `--fail-on-regression` but leave the threshold at `0`, the CLI gate does not activate. See [Troubleshooting](troubleshooting.md#regression-gate-always-passes-or-does-not-fail-the-build).
 
-## JSON in `config_template.json`
+## JSON in `prof.json`
 
-Add a `ci_config` section for ignores, noise floors, per-benchmark caps, and related policy. Precedence (tightest wins): per-benchmark `max_regression_threshold`, then global `max_regression_threshold`, then `--regression-threshold` when CLI flags are in effect. See the canonical schema for exact rules:
+Add a `track` section for ignores, noise floors, per-benchmark caps, and related policy. When CLI gate flags are omitted, track config applies. CLI flags override when provided. See the canonical schema:
 
 - [CI/CD configuration](https://github.com/AlexsanderHamir/prof/blob/main/docs/cicd_configuration.md)
+
+Edit via `prof ui` → Manage configuration, or `prof config init`.
 
 ## Testing / verify
 
@@ -43,7 +45,7 @@ Add a `ci_config` section for ignores, noise floors, per-benchmark caps, and rel
 ## Next steps
 
 - [Optional tools](tools.md) for `benchstat` across tags in review workflows.
-- [Configure collection](configure.md) to add `ci_config` next to filters.
+- [Configure collection](configure.md) for `collection` filters and track policy.
 
 ## Related
 

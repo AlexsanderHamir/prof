@@ -96,7 +96,7 @@ If `go test` fails, Prof exits non-zero. Fix the test failure first. For PNG or 
 ## Next steps
 
 - [Compare runs](compare.md) to diff two tags.
-- [Configure collection](configure.md) for `function_collection_filter` and CI fields.
+- [Configure collection](configure.md) for `collection` and `track` in `prof.json`.
 
 ## Related
 

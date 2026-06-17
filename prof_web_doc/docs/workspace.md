@@ -13,7 +13,7 @@ Prof uses your current working directory to find the Go module and to write `ben
 
 - Benchmark discovery is relative to cwd (same rules as `go test`).
 - Output goes to `bench/<tag>/` under cwd ([terminology](index.md#terminology)).
-- `prof setup` writes `config_template.json` next to `go.mod` at the module root. Keep cwd aligned with that root when you expect that file to be found.
+- `prof config init` writes `prof.json` next to `go.mod` at the module root. Keep cwd aligned with that root when you expect that file to be found.
 
 ## Directory layout under `bench/<tag>/`
 
@@ -25,7 +25,7 @@ Using Prof creates a `bench/` tree next to your module, one folder per run (tag)
 | `bench/<tag>/bin/<BenchmarkName>/` | Binary profiles (`.out`), the durable source for `go tool pprof`. |
 | `bench/<tag>/text/<BenchmarkName>/` | Human-readable profile listings (flat and optional package-grouped). |
 | `bench/<tag>/<profile>_functions/<BenchmarkName>/` | Per-function extracts when configured; optional call-graph PNGs if Graphviz is installed. |
-| `config_template.json` | Next to `go.mod` after `prof setup` or the template action in `prof ui`; filters which functions get extra extracts. |
+| `prof.json` | Next to `go.mod` after `prof config init` or **Manage configuration** in `prof ui`; collection filters and track policy. |
 
 Details on collection flags and behavior: [Collect profiling data](collect.md). Configuration keys: [Configure collection](configure.md).
 

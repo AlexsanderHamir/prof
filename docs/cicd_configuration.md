@@ -2,40 +2,45 @@
 
 Short guide (flags, gates, link here): [CI and regressions](https://alexsanderhamir.github.io/prof/ci/) in the Prof docs.
 
-This file is the **full** reference: `ci_config` shape in `config_template.json`, ignores, thresholds, and GitHub Actions examples.
+This file is the **full** reference: `track` section in `prof.json`, ignores, thresholds, and GitHub Actions examples.
 
 ## Overview
 
-`ci_config` filters noisy functions, sets global and per-benchmark regression caps (stricter than `prof track` CLI wins), and can set `fail_on_improvement`.
+The `track` section filters noisy functions, sets global and per-benchmark regression caps (`prof track` CLI flags win when provided), and can set `fail_on_improvement`.
+
+Create or edit via `prof ui` → Manage configuration, or `prof config init`.
 
 ## Configuration Structure
 
-The CI/CD configuration is added to your existing `config_template.json` file under the `ci_config` section:
+Track policy lives in `prof.json` under the `track` section:
 
 ```json
 {
-  "function_collection_filter": {
-    // ... existing function filtering ...
+  "version": 1,
+  "collection": {
+    "defaults": {},
+    "benchmarks": {}
   },
-  "ci_config": {
-    "global": {
-      // Global CI/CD settings
+  "track": {
+    "defaults": {
+      "ignore_prefixes": ["runtime."],
+      "max_regression_percent": 15.0
     },
     "benchmarks": {
       "BenchmarkName": {
-        // Benchmark-specific CI/CD settings
+        "max_regression_percent": 10.0
       }
     }
   }
 }
 ```
 
-## Global Configuration
+## Global Configuration (track.defaults)
 
 Global settings apply to all benchmarks unless overridden by benchmark-specific settings:
 
 ```json
-"global": {
+"defaults": {
   "ignore_functions": [
     "runtime.gcBgMarkWorker",
     "runtime.systemstack",
@@ -46,9 +51,9 @@ Global settings apply to all benchmarks unless overridden by benchmark-specific 
     "reflect.",
     "testing."
   ],
-  "min_change_threshold": 5.0,
-  "max_regression_threshold": 20.0,
-  "fail_on_improvement": false,
+  "min_change_percent": 5.0,
+  "max_regression_percent": 20.0,
+  "fail_on_improvement": false
 }
 ```
 
@@ -56,10 +61,10 @@ Global settings apply to all benchmarks unless overridden by benchmark-specific 
 
 | Setting                    | Description                                      | Default |
 | -------------------------- | ------------------------------------------------ | ------- |
-| `ignore_functions`         | Functions to ignore during CI/CD (exact matches) | `[]`    |
+| `ignore_functions`         | Functions to ignore during comparison (exact)      | `[]`    |
 | `ignore_prefixes`          | Function prefixes to ignore (e.g., "runtime.")   | `[]`    |
-| `min_change_threshold`     | Minimum change % to trigger CI/CD failure        | `0.0`   |
-| `max_regression_threshold` | Maximum acceptable regression %                  | `∞`     |
+| `min_change_percent`       | Minimum change % for improvement gate / noise floor | `0.0`   |
+| `max_regression_percent`   | Maximum acceptable regression % before fail      | disabled (`0`) |
 | `fail_on_improvement`      | Whether to fail on performance improvements      | `false` |
 
 ## Benchmark-Specific Configuration
@@ -70,8 +75,8 @@ You can override global settings for specific benchmarks:
 "benchmarks": {
   "BenchmarkMyFunction": {
     "ignore_functions": ["BenchmarkMyFunction"],
-    "min_change_threshold": 3.0,
-    "max_regression_threshold": 10.0,
+    "min_change_percent": 3.0,
+    "max_regression_percent": 10.0,
     "fail_on_improvement": true,
   }
 }
@@ -114,7 +119,7 @@ This will ignore all functions from the `runtime`, `reflect`, `testing`, `syscal
 Only functions with changes ≥ this threshold will cause CI/CD failures:
 
 ```json
-"min_change_threshold": 5.0
+"min_change_percent": 5.0
 ```
 
 This prevents CI/CD from failing on minor fluctuations (e.g., 1-2% changes).
@@ -124,15 +129,15 @@ This prevents CI/CD from failing on minor fluctuations (e.g., 1-2% changes).
 This overrides command-line `--regression-threshold` settings:
 
 ```json
-"max_regression_threshold": 15.0
+"max_regression_percent": 15.0
 ```
 
 If a function regresses by 15%, CI/CD will fail regardless of command-line settings.
 
 ### Command-Line Override Priority
 
-1. Benchmark-specific `max_regression_threshold`
-2. Global `max_regression_threshold`
+1. Benchmark-specific `max_regression_percent`
+2. Global `max_regression_percent`
 3. Command-line `--regression-threshold`
 
 The most restrictive (lowest) threshold wins.
@@ -157,24 +162,25 @@ Here's a complete configuration example:
 
 ```json
 {
-  "function_collection_filter": {
-    "*": {
+  "version": 1,
+  "collection": {
+    "defaults": {
       "include_prefixes": ["github.com/myorg/myproject"],
       "ignore_functions": ["init", "TestMain"]
     }
   },
-  "ci_config": {
-    "global": {
+  "track": {
+    "defaults": {
       "ignore_functions": ["runtime.gcBgMarkWorker", "testing.(*B).ResetTimer"],
       "ignore_prefixes": ["runtime.", "reflect.", "testing."],
-      "min_change_threshold": 5.0,
-      "max_regression_threshold": 20.0,
+      "min_change_percent": 5.0,
+      "max_regression_percent": 20.0,
       "fail_on_improvement": false
     },
     "benchmarks": {
       "BenchmarkCriticalPath": {
-        "min_change_threshold": 1.0,
-        "max_regression_threshold": 5.0
+        "min_change_percent": 1.0,
+        "max_regression_percent": 5.0
       }
     }
   }
@@ -226,7 +232,7 @@ The configuration file must be at your project root (same directory as `go.mod`)
 ```
 your-project/
 ├── go.mod
-├── config_template.json  # ← CI/CD config goes here
+├── prof.json  # ← CI/CD config goes here
 ├── cmd/
 ├── internal/
 └── ...
@@ -236,21 +242,22 @@ your-project/
 
 Here's a complete example that shows how to set up CI/CD performance tracking without requiring CLI flags:
 
-### 1. Configuration File (`config_template.json`)
+### 1. Configuration File (`prof.json`)
 
 ```json
 {
-  "ci_config": {
-    "global": {
+  "version": 1,
+  "track": {
+    "defaults": {
       "ignore_prefixes": ["runtime.", "reflect.", "testing."],
-      "min_change_threshold": 5.0,
-      "max_regression_threshold": 15.0,
+      "min_change_percent": 5.0,
+      "max_regression_percent": 15.0,
       "fail_on_improvement": false
     },
     "benchmarks": {
       "BenchmarkMyFunction": {
-        "min_change_threshold": 3.0,
-        "max_regression_threshold": 10.0,
+        "min_change_percent": 3.0,
+        "max_regression_percent": 10.0,
         "ignore_functions": ["setup", "teardown"]
       }
     }
@@ -279,7 +286,7 @@ Begin with global settings that apply to all benchmarks:
 ```json
 "global": {
   "ignore_prefixes": ["runtime.", "reflect.", "testing."],
-  "min_change_threshold": 5.0
+  "min_change_percent": 5.0
 }
 ```
 
@@ -303,7 +310,7 @@ prof track auto --base baseline --current PR \
   --output-format summary
 ```
 
-The second approach will use the thresholds defined in your `config_template.json` file. This makes CI/CD pipelines cleaner and more maintainable.
+The second approach will use the thresholds defined in your `prof.json` file. This makes CI/CD pipelines cleaner and more maintainable.
 
 ### 3. Add Benchmark-Specific Overrides
 
@@ -312,7 +319,7 @@ Only override global settings when necessary:
 ```json
 "benchmarks": {
   "BenchmarkCriticalPath": {
-    "min_change_threshold": 1.0  // More sensitive for critical paths
+    "min_change_percent": 1.0  // More sensitive for critical paths
   }
 }
 ```
@@ -330,8 +337,8 @@ Don't ignore too many functions - you might miss real regressions:
 
 ### 5. Set Reasonable Thresholds
 
-- `min_change_threshold`: 5-10% for most cases
-- `max_regression_threshold`: 15-25% for most cases
+- `min_change_percent`: 5-10% for most cases
+- `max_regression_percent`: 15-25% for most cases
 - Critical paths: 1-5%
 
 ### 6. Monitor and Adjust
@@ -346,9 +353,9 @@ Review CI/CD failures and adjust thresholds based on:
 
 ### Common Issues
 
-1. **Configuration not loaded**: Ensure `config_template.json` is at project root
+1. **Configuration not loaded**: Ensure `prof.json` is at project root
 2. **Functions still causing failures**: Check `ignore_functions` and `ignore_prefixes`
-3. **Thresholds not working**: Verify `min_change_threshold` and `max_regression_threshold`
+3. **Thresholds not working**: Verify `min_change_percent` and `max_regression_percent`
 4. **Global vs benchmark settings**: Benchmark-specific settings override global
 5. **CLI flags vs config**: When using CI/CD config, `--fail-on-regression` and `--regression-threshold` are optional
 
@@ -389,9 +396,10 @@ prof track auto --base baseline --current PR \
 
 ```json
 {
-  "ci_config": {
-    "global": {
-      "max_regression_threshold": 10.0
+  "version": 1,
+  "track": {
+    "defaults": {
+      "max_regression_percent": 10.0
     }
   }
 }

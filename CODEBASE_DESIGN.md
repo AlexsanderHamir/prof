@@ -15,7 +15,7 @@
 1. **See how packages depend on each other** → [How packages connect at runtime](#how-packages-connect-at-runtime)
 2. **Look up what a directory is for** → [Package layout (by path)](#package-layout-by-path)
 3. **Change a command or UI flow** → [How to find the code for each command](#how-to-find-the-code-for-each-command)
-4. **Change on-disk output or JSON / pipeline behavior** → [Profile pipelines](#profile-pipelines), [Output layout under `bench/`](#output-layout-under-bench), [Configuration](#configuration-config_templatejson)
+4. **Change on-disk output or JSON / pipeline behavior** → [Profile pipelines](#profile-pipelines), [Output layout under `bench/`](#output-layout-under-bench), [Configuration](#configuration-profjson)
 5. **Avoid surprises** → [Invariants](#invariants), [Edge-case catalog](#edge-case-catalog), [Testing and lint policy](#testing-and-lint-policy)
 
 ## How packages connect at runtime
@@ -82,7 +82,7 @@ flowchart TB
 | [`internal/app`](internal/app) | Composition root: `Services`, DTOs, default adapters |
 | [`internal/intent`](internal/intent) | Validates UI-shaped input (`CollectIntent`, `CompareIntent`, …) |
 | [`internal/tui`](internal/tui) | Bubble Tea hub for `prof ui` |
-| [`internal/config`](internal/config) | JSON types, `LoadFromFile`, `ResolveFilter` |
+| [`internal/config`](internal/config) | `prof.json` types, Load/Save/Validate, resolvers |
 | [`internal/workspace`](internal/workspace) | `TagLayout`, tag lifecycle, module root, path constants |
 | [`engine/collect`](engine/collect) | Unified auto + manual collection (`RunAuto`, `RunManual`) |
 | [`engine/tracker`](engine/tracker) | Compare two profiles, reports, CI apply |
@@ -100,7 +100,9 @@ flowchart TB
 | `prof track auto` / `manual` | [`cli/cmd_track.go`](cli/cmd_track.go) → [`engine/tracker/run.go`](engine/tracker/run.go) | `app.TrackOptions` → compare → format |
 | `prof ui` | [`cli/cmd_ui.go`](cli/cmd_ui.go), [`internal/tui`](internal/tui), [`internal/intent`](internal/intent) | Intents → `app.Services` |
 | `prof tui` | [`cli/tui.go`](cli/tui.go) | Survey prompts → intents |
-| `prof setup` | [`cli/cmd_setup.go`](cli/cmd_setup.go) → [`internal/config/load.go`](internal/config/load.go) | Writes `config_template.json` beside `go.mod` |
+| `prof config init` | [`cli/cmd_config.go`](cli/cmd_config.go) → [`internal/config/load.go`](internal/config/load.go) | Writes `prof.json` beside `go.mod` |
+| `prof setup` | [`cli/cmd_setup.go`](cli/cmd_setup.go) | Hidden alias for `prof config init` |
+| `prof ui` → Manage configuration | [`cli/config_wizard.go`](cli/config_wizard.go) | Survey editor for `prof.json` |
 | `prof tools …` | [`cli/cmd_tools.go`](cli/cmd_tools.go) → `engine/tools/*` | Benchstat / qcachegrind |
 
 Benchmark discovery: [`engine/collect/discovery.go`](engine/collect/discovery.go). Profile names: [`engine/tooling/catalog.go`](engine/tooling/catalog.go) (surfaced via `app.KnownProfileIDs()`).
@@ -109,7 +111,7 @@ Benchmark discovery: [`engine/collect/discovery.go`](engine/collect/discovery.go
 
 ### Automated benchmark (`prof auto`)
 
-1. [`collect.RunAuto`](engine/collect/entry.go) loads optional `config_template.json` via [`config.LoadFromFile`](internal/config/load.go).
+1. [`collect.RunAuto`](engine/collect/entry.go) loads optional `prof.json` via [`config.Load`](internal/config/load.go).
 2. Creates `bench/<tag>/` via [`collect/layout.go`](engine/collect/layout.go) and [`workspace.CleanOrCreateTag`](internal/workspace/tag.go).
 3. Runs `go test` per benchmark ([`gotest.go`](engine/collect/gotest.go)), writes binaries under `bench/<tag>/bin/<bench>/`.
 4. [`processProfiles`](engine/collect/profiles.go): text, optional grouped text (with resolved filter), PNG, per-function lists.
@@ -132,17 +134,19 @@ bench/
     └── <profile>_functions/<BenchmarkName>/<function>.txt
 ```
 
-## Configuration (`config_template.json`)
+## Configuration (`prof.json`)
 
-[`internal/config`](internal/config) defines the JSON shape:
+[`internal/config`](internal/config) defines version 1 JSON beside `go.mod`:
 
-- **`function_collection_filter`**: per-benchmark or global (`"*"`). Used by both auto and manual grouped output and function lists via [`config.ResolveFilter`](internal/config/filter.go).
-- **`ci_config`**: optional thresholds for `prof track` ([`engine/tracker/ci_apply.go`](engine/tracker/ci_apply.go)).
+- **`collection`**: `defaults`, `benchmarks` (prof auto), `manual_profiles` (prof manual). Resolved via [`config.ResolveCollectionFilter`](internal/config/filter.go).
+- **`track`**: regression ignores and thresholds for `prof track` ([`engine/tracker/ci_apply.go`](engine/tracker/ci_apply.go)). Resolved via [`config.ResolveTrackPolicy`](internal/config/track.go).
+
+Edit interactively: `prof ui` → Manage configuration. CLI: `prof config init|validate|path`.
 
 ## Invariants
 
 1. **Single layout contract:** auto and manual both use `workspace.TagLayout`; no duplicate path builders in engines.
-2. **Config is optional:** missing `config_template.json` → empty filter; collection proceeds with logging.
+2. **Config is optional:** missing `prof.json` → empty filter; collection proceeds with logging.
 3. **Subprocesses only via tooling:** product code uses [`tooling.Runner`](engine/tooling/runner.go); raw `os/exec` is limited to tooling and tests (enforced by `forbidigo` + `depguard`).
 4. **Presentation boundary:** CLI/intent/tui pass `app` DTOs; engines are reached only through `app.Services` defaults or test stubs.
 
@@ -156,7 +160,7 @@ bench/
 | Grouped filter ignored in auto | `engine/collect` | Fixed: auto passes `config.ResolveFilter` into grouped generation |
 | Tag dir not empty before run | `internal/workspace` | [`layout_test.go`](internal/workspace/layout_test.go) `CleanOrCreateTag` |
 | Invalid track output format | `engine/tracker` | Validated in CLI/intent via `app.ValidTrackOutputFormat` |
-| Config global `*` filter | `internal/config` | [`config_test.go`](internal/config/config_test.go) |
+| Per-bench overrides collection defaults | `internal/config` | [`config_test.go`](internal/config/config_test.go) |
 
 ## Testing and lint policy
 
