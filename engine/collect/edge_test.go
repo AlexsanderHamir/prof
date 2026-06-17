@@ -1,4 +1,4 @@
-package tests
+package collect
 
 import (
 	"bytes"
@@ -7,17 +7,27 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/testpaths"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 
-	"github.com/AlexsanderHamir/prof/engine/collect"
-	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/parser"
 	pprofprofile "github.com/google/pprof/profile"
 )
 
-// edgecasesRenameFirstNamedFunction sets the first non-nil function name in p.
-func edgecasesRenameFirstNamedFunction(p *pprofprofile.Profile, name string) bool {
+const (
+	edgeBenchName   = "BenchmarkStringProcessor"
+	edgeFixtureCPU  = edgeBenchName + "_cpu.out"
+	edgeWeirdSymbol = `edge/syn.(*Re[go.shape.string]).Method`
+)
+
+func edgeFixturePath(t *testing.T, fileName string) string {
+	t.Helper()
+	return testpaths.MustAsset(t, "fixtures", fileName)
+}
+
+func edgeRenameFirstNamedFunction(p *pprofprofile.Profile, name string) bool {
 	for _, s := range p.Sample {
 		for _, loc := range s.Location {
 			if loc == nil {
@@ -34,8 +44,7 @@ func edgecasesRenameFirstNamedFunction(p *pprofprofile.Profile, name string) boo
 	return false
 }
 
-// edgecasesWriteProfileRoundTrip writes p to a temp file after verifying parse round-trip.
-func edgecasesWriteProfileRoundTrip(t *testing.T, p *pprofprofile.Profile, fileName string) string {
+func edgeWriteProfileRoundTrip(t *testing.T, p *pprofprofile.Profile, fileName string) string {
 	t.Helper()
 	var buf bytes.Buffer
 	if werr := p.Write(&buf); werr != nil {
@@ -51,7 +60,7 @@ func edgecasesWriteProfileRoundTrip(t *testing.T, p *pprofprofile.Profile, fileN
 	return tmp
 }
 
-func edgecasesFindEntryByFullSymbol(entries []parser.FunctionListEntry, full string) (parser.FunctionListEntry, bool) {
+func edgeFindEntryByFullSymbol(entries []parser.FunctionListEntry, full string) (parser.FunctionListEntry, bool) {
 	for _, e := range entries {
 		if e.FullSymbol == full {
 			return e, true
@@ -60,12 +69,8 @@ func edgecasesFindEntryByFullSymbol(entries []parser.FunctionListEntry, full str
 	return parser.FunctionListEntry{}, false
 }
 
-// TestEdge_functionListCollection_fixture exercises collector.GetFunctionsOutput
-// against the committed CPU fixture using a real profile symbol whose FullSymbol
-// contains regexp metacharacters (parentheses from pointer receiver syntax). That
-// path relies on regexp.QuoteMeta in the collector.
 func TestEdge_functionListCollection_fixture(t *testing.T) {
-	cpuPath := edgecasesFixturePath(t, fixtureCPUFile)
+	cpuPath := edgeFixturePath(t, edgeFixtureCPU)
 	entries, listErr := parser.GetFunctionListEntriesV2(cpuPath, config.FunctionFilter{})
 	if listErr != nil {
 		t.Fatalf("GetFunctionListEntriesV2: %v", listErr)
@@ -83,8 +88,8 @@ func TestEdge_functionListCollection_fixture(t *testing.T) {
 	}
 
 	dir := t.TempDir()
-	if outErr := collect.FunctionsOutput(tooling.NewExecRunner(), []parser.FunctionListEntry{pick}, cpuPath, dir); outErr != nil {
-		t.Fatalf("GetFunctionsOutput: %v", outErr)
+	if outErr := FunctionsOutput(tooling.NewExecRunner(), []parser.FunctionListEntry{pick}, cpuPath, dir); outErr != nil {
+		t.Fatalf("FunctionsOutput: %v", outErr)
 	}
 	out := filepath.Join(dir, pick.OutputStem+"."+workspace.TextExtension)
 	st, statErr := os.Stat(out)
@@ -96,14 +101,8 @@ func TestEdge_functionListCollection_fixture(t *testing.T) {
 	}
 }
 
-// TestEdge_functionListCollection_renamedFixtureSymbol clones the committed CPU
-// fixture, rewrites one function's name to include regexp metacharacters, and
-// asserts the parser pipeline still extracts the expected short stem. This
-// complements TestEdge_functionListCollection_fixture without requiring a
-// hand-built protobuf profile (which is easy to get subtly wrong).
 func TestEdge_functionListCollection_renamedFixtureSymbol(t *testing.T) {
-	const weirdName = `edge/syn.(*Re[go.shape.string]).Method`
-	cpuPath := edgecasesFixturePath(t, fixtureCPUFile)
+	cpuPath := edgeFixturePath(t, edgeFixtureCPU)
 	raw, readErr := os.ReadFile(cpuPath)
 	if readErr != nil {
 		t.Fatalf("ReadFile: %v", readErr)
@@ -112,18 +111,18 @@ func TestEdge_functionListCollection_renamedFixtureSymbol(t *testing.T) {
 	if parseErr != nil {
 		t.Fatalf("Parse fixture: %v", parseErr)
 	}
-	if !edgecasesRenameFirstNamedFunction(p, weirdName) {
+	if !edgeRenameFirstNamedFunction(p, edgeWeirdSymbol) {
 		t.Fatal("could not find a function line to rename")
 	}
 
-	tmp := edgecasesWriteProfileRoundTrip(t, p, "mutated_edge.out")
+	tmp := edgeWriteProfileRoundTrip(t, p, "mutated_edge.out")
 	entries, listErr := parser.GetFunctionListEntriesV2(tmp, config.FunctionFilter{})
 	if listErr != nil {
 		t.Fatalf("GetFunctionListEntriesV2: %v", listErr)
 	}
-	e, ok := edgecasesFindEntryByFullSymbol(entries, weirdName)
+	e, ok := edgeFindEntryByFullSymbol(entries, edgeWeirdSymbol)
 	if !ok {
-		t.Fatalf("renamed symbol %q not present in entries", weirdName)
+		t.Fatalf("renamed symbol %q not present in entries", edgeWeirdSymbol)
 	}
 	if got, want := e.OutputStem, "Method"; got != want {
 		t.Fatalf("OutputStem: got %q want %q", got, want)

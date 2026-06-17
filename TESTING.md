@@ -19,7 +19,7 @@ These do **not** replace `go test ./...`:
 | Goal | Command |
 |------|---------|
 | One package while editing | `go test ./engine/collect/ -count=1` |
-| Edge-case tests only | `go test ./tests -count=1 -run '^TestEdge'` |
+| Edge tests only | `go test ./parser ./engine/collect -count=1 -run '^TestEdge'` |
 | Debug: skip slow integration | `go test -short ./...` (see note below) |
 
 `-short` skips subprocess integration tests in [`tests/blackbox_test.go`](tests/blackbox_test.go). It is for local debugging only; CI never passes `-short`.
@@ -29,7 +29,7 @@ These do **not** replace `go test ./...`:
 | Layer | Where | When to add |
 |-------|-------|-------------|
 | **Unit** | `*_test.go` next to code (`cli/`, `internal/`, `engine/`, `parser/`) | Pure logic, validation, stubs — no subprocess |
-| **Fixture** | Same package or `tests/edgecases_*_test.go` (`TestEdge_*`) | Committed `.out` fixtures, `tooling.FakeRunner`, one real `pprof` at most |
+| **Fixture** | Same package (`TestEdge_*` in `parser/`, `engine/collect/`) or `tests/edgecases_*_test.go` | Committed `.out` fixtures, `tooling.FakeRunner`, one real `pprof` at most |
 | **Integration** | `tests/` only (`blackbox_test.go`) | End-to-end `prof` binary + `go test -bench` wiring |
 
 **Rule:** new behavior tests go in the package you changed. Add to `tests/` only when the full CLI subprocess path must be proven.
@@ -42,9 +42,9 @@ These do **not** replace `go test ./...`:
 | Intent validation | [`internal/intent/collect_test.go`](internal/intent/collect_test.go) |
 | Config / filters | [`internal/config/config_test.go`](internal/config/config_test.go) |
 | Layout paths | [`internal/workspace/layout_test.go`](internal/workspace/layout_test.go) |
-| Parser fixtures | [`parser/parser_test.go`](parser/parser_test.go) |
-| Collect (expand here) | [`engine/collect/manual_test.go`](engine/collect/manual_test.go) |
-| Edge invariants | [`tests/edgecases_parser_test.go`](tests/edgecases_parser_test.go) |
+| Parser fixtures | [`parser/parser_test.go`](parser/parser_test.go), [`parser/edge_test.go`](parser/edge_test.go) |
+| Collect (expand here) | [`engine/collect/manual_test.go`](engine/collect/manual_test.go), [`engine/collect/edge_test.go`](engine/collect/edge_test.go) |
+| Edge invariants | [`parser/edge_test.go`](parser/edge_test.go), [`engine/collect/edge_test.go`](engine/collect/edge_test.go) |
 
 ## Coverage
 
@@ -96,9 +96,9 @@ Re-run the script after adding tests and note the new total in your PR if covera
 | Domain | Unit tests | Integration |
 |--------|------------|-------------|
 | `internal/config`, `internal/workspace` | `*_test.go` in package | — |
-| `engine/collect` | `engine/collect/*_test.go` (expand) | `TestAutoEndToEnd`, `TestManualCommand` |
-| `engine/tracker` | `engine/tracker/*_test.go` | `TestTrackerBasicRun` |
-| `parser` | `parser/*_test.go`, `TestEdge_*` in `tests/` | — |
+| `engine/collect` | `engine/collect/*_test.go`, `edge_test.go` (expand) | `TestAutoEndToEnd`, `TestManualCommand` |
+| `engine/tracker` | `engine/tracker/*_test.go`, `compare_fixture_test.go` | `TestTrackerBasicRun` |
+| `parser` | `parser/*_test.go`, `parser/edge_test.go` | — |
 | `cli`, `internal/intent`, `internal/tui` | stub `app.Services` | command validation in `tests/` |
 | `engine/tooling` | `engine/tooling/*_test.go` | — |
 

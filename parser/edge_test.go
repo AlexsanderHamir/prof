@@ -1,4 +1,4 @@
-package tests
+package parser_test
 
 import (
 	"path/filepath"
@@ -7,9 +7,22 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/testpaths"
 
 	"github.com/AlexsanderHamir/prof/parser"
 )
+
+const (
+	edgeBenchName   = "BenchmarkStringProcessor"
+	edgeFuncProcess = "ProcessStrings"
+	edgeFixtureCPU  = edgeBenchName + "_cpu.out"
+	edgeFixtureMem  = edgeBenchName + "_memory.out"
+)
+
+func edgeFixturePath(t *testing.T, fileName string) string {
+	t.Helper()
+	return testpaths.MustAsset(t, "fixtures", fileName)
+}
 
 func TestEdge_profileReader_errors(t *testing.T) {
 	t.Parallel()
@@ -54,7 +67,7 @@ func TestEdge_profileReader_missingPath(t *testing.T) {
 
 func TestEdge_functionListEntries_includeMatchesNothing(t *testing.T) {
 	t.Parallel()
-	cpuPath := edgecasesFixturePath(t, fixtureCPUFile)
+	cpuPath := edgeFixturePath(t, edgeFixtureCPU)
 	f := config.FunctionFilter{
 		IncludePrefixes: []string{"import/path/that/cannot/exist/in/fixture/zzzz"},
 	}
@@ -69,9 +82,9 @@ func TestEdge_functionListEntries_includeMatchesNothing(t *testing.T) {
 
 func TestEdge_functionListEntries_duplicateIgnoreSameAsSingle(t *testing.T) {
 	t.Parallel()
-	cpuPath := edgecasesFixturePath(t, fixtureCPUFile)
-	once := config.FunctionFilter{IgnoreFunctions: []string{benchName}}
-	dup := config.FunctionFilter{IgnoreFunctions: []string{benchName, benchName}}
+	cpuPath := edgeFixturePath(t, edgeFixtureCPU)
+	once := config.FunctionFilter{IgnoreFunctions: []string{edgeBenchName}}
+	dup := config.FunctionFilter{IgnoreFunctions: []string{edgeBenchName, edgeBenchName}}
 
 	a, err := parser.GetFunctionListEntriesV2(cpuPath, once)
 	if err != nil {
@@ -95,9 +108,9 @@ func TestEdge_functionListEntries_duplicateIgnoreSameAsSingle(t *testing.T) {
 
 func TestEdge_functionListEntries_ignoreWithoutIncludePrefixes(t *testing.T) {
 	t.Parallel()
-	memPath := edgecasesFixturePath(t, fixtureMemFile)
+	memPath := edgeFixturePath(t, edgeFixtureMem)
 	none := config.FunctionFilter{}
-	withIgnore := config.FunctionFilter{IgnoreFunctions: []string{funcProcess}}
+	withIgnore := config.FunctionFilter{IgnoreFunctions: []string{edgeFuncProcess}}
 
 	all, err := parser.GetFunctionListEntriesV2(memPath, none)
 	if err != nil {
@@ -111,7 +124,7 @@ func TestEdge_functionListEntries_ignoreWithoutIncludePrefixes(t *testing.T) {
 		t.Fatalf("expected fewer entries after ignore, all=%d filtered=%d", len(all), len(filtered))
 	}
 	for _, e := range filtered {
-		if e.OutputStem == funcProcess {
+		if e.OutputStem == edgeFuncProcess {
 			t.Fatalf("ignored short name still present: %q", e.OutputStem)
 		}
 	}
