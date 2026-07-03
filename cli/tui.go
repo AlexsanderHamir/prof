@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/app"
 	"github.com/AlexsanderHamir/prof/internal/intent"
 	"github.com/spf13/cobra"
@@ -74,23 +73,11 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	var lenient, skipPng bool
-	lenient, skipPng, err = askAdvancedCollectOptions()
-	if err != nil {
-		return err
-	}
-	if !skipPng && !tooling.GraphvizAvailable() {
-		fmt.Fprintln(os.Stdout, tooling.SkipPNGNotice)
-		skipPng = true
-	}
-
 	collect := &intent.CollectIntent{
-		Benchmarks:      selectedBenches,
-		Profiles:        selectedProfiles,
-		Tag:             tagStr,
-		Count:           runCount,
-		LenientProfiles: lenient,
-		SkipPNG:         skipPng,
+		Benchmarks: selectedBenches,
+		Profiles:   selectedProfiles,
+		Tag:        tagStr,
+		Count:      runCount,
 	}
 	collect.Normalize()
 	return intent.RunValidated(collect, svc)

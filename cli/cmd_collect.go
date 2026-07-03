@@ -12,12 +12,10 @@ type manualCollectFlags struct {
 }
 
 type autoCollectFlags struct {
-	benchmarks      []string
-	profiles        []string
-	tag             string
-	count           int
-	lenientProfiles bool
-	skipPNG         bool
+	benchmarks []string
+	profiles   []string
+	tag        string
+	count      int
 }
 
 func newManualCollectCmd(svc *app.Services) *cobra.Command {
@@ -53,12 +51,10 @@ func newAutoBenchmarkCmd(svc *app.Services) *cobra.Command {
 		Example: example,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return svc.Collect.RunAuto(app.CollectAutoOptions{
-				Benchmarks:      f.benchmarks,
-				Profiles:        f.profiles,
-				Tag:             f.tag,
-				Count:           f.count,
-				LenientProfiles: f.lenientProfiles,
-				SkipPNG:         f.skipPNG,
+				Benchmarks: f.benchmarks,
+				Profiles:   f.profiles,
+				Tag:        f.tag,
+				Count:      f.count,
 			})
 		},
 	}
@@ -66,8 +62,6 @@ func newAutoBenchmarkCmd(svc *app.Services) *cobra.Command {
 	cmd.Flags().StringSliceVar(&f.profiles, profileFlag, []string{}, `Profiles to use (e.g., "cpu,memory,mutex")`)
 	cmd.Flags().StringVar(&f.tag, tagFlag, "", "The tag is used to organize the results")
 	cmd.Flags().IntVar(&f.count, countFlag, 0, "Number of runs")
-	cmd.Flags().BoolVar(&f.lenientProfiles, "lenient-profiles", false, "If a profile binary is missing after bench, skip it instead of failing")
-	cmd.Flags().BoolVar(&f.skipPNG, "skip-png", false, "Allow the run to succeed even when PNG generation fails")
 	_ = cmd.MarkFlagRequired(benchFlag)
 	_ = cmd.MarkFlagRequired(profileFlag)
 	_ = cmd.MarkFlagRequired(tagFlag)
