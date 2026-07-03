@@ -14,12 +14,9 @@ func TestFormatProgressLabel_runBenchmark(t *testing.T) {
 
 	got := formatProgressLabel(Progress{
 		Phase:  PhaseRunBenchmark,
-		Label:  "BenchmarkFibonacci",
-		Index:  2,
-		Total:  2,
 		Detail: "count=5",
 	}, true)
-	want := "Running benchmark 2/2: BenchmarkFibonacci (count=5)…"
+	want := "  0) Run benchmark (count=5)…"
 	if got != want {
 		t.Fatalf("formatProgressLabel() = %q, want %q", got, want)
 	}
@@ -30,10 +27,9 @@ func TestFormatProgressLabel_collectProfiles(t *testing.T) {
 
 	got := formatProgressLabel(Progress{
 		Phase:  PhaseCollectProfiles,
-		Label:  "BenchmarkFibonacci",
 		Detail: "cpu, memory",
 	}, true)
-	want := "Collecting profiles for BenchmarkFibonacci (cpu, memory)…"
+	want := "  1) Collect profiles (cpu, memory)…"
 	if got != want {
 		t.Fatalf("formatProgressLabel() = %q, want %q", got, want)
 	}
@@ -44,25 +40,19 @@ func TestFormatProgressLabel_collectFunctionProfiles(t *testing.T) {
 
 	got := formatProgressLabel(Progress{
 		Phase: PhaseCollectFunctionProfiles,
-		Label: "BenchmarkFibonacci",
 	}, true)
-	want := "Collecting function profiles for BenchmarkFibonacci…"
+	want := "  2) Collect per-function text profiles…"
 	if got != want {
 		t.Fatalf("formatProgressLabel() = %q, want %q", got, want)
 	}
 }
 
-func TestFormatProgressLabel_singleBenchmark(t *testing.T) {
+func TestFormatProgressLabel_prepareUnindented(t *testing.T) {
 	t.Parallel()
 
-	got := formatProgressLabel(Progress{
-		Phase: PhaseRunBenchmark,
-		Label: "BenchmarkOnly",
-		Total: 1,
-		Index: 1,
-	}, true)
-	if !strings.Contains(got, "Running benchmark: BenchmarkOnly") {
-		t.Fatalf("single benchmark label = %q", got)
+	got := formatProgressLabel(Progress{Phase: PhasePrepare}, true)
+	if got != "Preparing…" {
+		t.Fatalf("prepare label = %q", got)
 	}
 }
 
@@ -120,7 +110,7 @@ func TestSession_RunWhile_persistentDoneAndWarnings(t *testing.T) {
 	t.Parallel()
 
 	var buf bytes.Buffer
-	s := newSessionForTest(&buf, true)
+	s := newSessionForTest(&buf)
 	err := s.RunWhile(Progress{Phase: PhasePrepare}, func() error {
 		s.Warn("setup warn")
 		return nil
@@ -143,11 +133,26 @@ func TestSession_RunWhile_persistentDoneAndWarnings(t *testing.T) {
 	}
 }
 
+func TestSession_BeginBenchmark_printsSectionHeader(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newSessionForTest(&buf)
+	s.BeginBenchmark(1, 2, "BenchmarkFoo")
+	s.BeginBenchmark(2, 2, "BenchmarkBar")
+	out := buf.String()
+	if !strings.Contains(out, "Benchmark 1/2 · BenchmarkFoo") {
+		t.Fatalf("missing first benchmark header: %q", out)
+	}
+	if !strings.Contains(out, "Benchmark 2/2 · BenchmarkBar") {
+		t.Fatalf("missing second benchmark header: %q", out)
+	}
+}
+
 func TestSession_Warn_indentOutsideStageFallsBackToSlog(t *testing.T) {
 	t.Parallel()
 
-	s := newSessionForTest(io.Discard, true)
-	// Should not panic when no stage is active.
+	s := newSessionForTest(io.Discard)
 	s.Warn("orphan")
 }
 
@@ -167,10 +172,9 @@ func TestSession_WarningsStayBelowHeaderWithMultipleWarns(t *testing.T) {
 	t.Parallel()
 
 	var buf bytes.Buffer
-	s := newSessionForTest(&buf, true)
+	s := newSessionForTest(&buf)
 	err := s.RunWhile(Progress{
 		Phase:  PhaseCollectProfiles,
-		Label:  "BenchmarkFoo",
 		Detail: "cpu, memory",
 	}, func() error {
 		s.Warn("first warn")
@@ -181,7 +185,7 @@ func TestSession_WarningsStayBelowHeaderWithMultipleWarns(t *testing.T) {
 		t.Fatalf("RunWhile() err = %v", err)
 	}
 	out := buf.String()
-	if !warningBelowStageHeader(out, "Collecting profiles for BenchmarkFoo") {
+	if !warningBelowStageHeader(out, "1) Collect profiles") {
 		t.Fatalf("warnings not below header: %q", out)
 	}
 	first := strings.Index(out, "first warn")

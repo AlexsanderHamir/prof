@@ -20,4 +20,6 @@ var (
 	DoneStyle = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("42"))
 	// FailStyle styles the failure marker on failed stages.
 	FailStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
+	// BenchmarkTitleStyle styles the benchmark group header in the progress log.
+	BenchmarkTitleStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(AccentColor))
 )

@@ -32,6 +32,9 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cf
 		if !session.Interactive() {
 			slog.Info("Running benchmark", "Benchmark", benchmarkName)
 		}
+		if session.Interactive() {
+			session.BeginBenchmark(i+1, total, benchmarkName)
+		}
 		if err := session.RunWhile(base.WithPhase(termui.PhaseRunBenchmark).WithDetail(countDetail), func() error {
 			return runBenchmark(runner, benchmarkName, autoArgs.Profiles, autoArgs.Count, autoArgs.Tag)
 		}); err != nil {

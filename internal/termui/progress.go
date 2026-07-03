@@ -54,27 +54,33 @@ func (p Progress) WithDetail(detail string) Progress {
 
 // Session drives TTY progress UI for a collect run. Nil is non-interactive.
 //
-// Interactive layout (one header line per stage):
+// Interactive layout:
 //
 //	✓ Preparing
 //	    warning: …
-//	✓ Running benchmark 1/2: BenchmarkX (count=5)
 //
-// The header line updates in place while running (spinner), then becomes ✓ when done.
-// Warnings are always on separate indented lines below their stage header.
+//	Benchmark 1/2 · BenchmarkStringProcessor
+//	  ✓ 0) Run benchmark (count=5)
+//	  ✓ 1) Collect profiles (cpu, memory)
+//	      warning: …
+//	  ✓ 2) Collect per-function text profiles
+//
+// The step line updates in place while running (spinner), then becomes ✓ when done.
 type Session struct {
 	w           io.Writer
 	fd          int
 	interactive bool
 
-	mu           sync.Mutex
-	stageActive  bool
-	headerLocked bool
-	warningCount int
-	runningLabel string
-	lastFrame    string
-	spinnerStop  chan struct{}
-	spinnerDone  sync.WaitGroup
+	mu                sync.Mutex
+	stageActive       bool
+	headerLocked      bool
+	warningCount      int
+	runningLabel      string
+	warnPrefix        string
+	lastFrame         string
+	spinnerStop       chan struct{}
+	spinnerDone       sync.WaitGroup
+	benchmarksStarted int
 }
 
 // NewSession reports whether w/fd is an interactive terminal.
@@ -95,34 +101,59 @@ func (s *Session) Interactive() bool {
 }
 
 func formatProgressLabel(p Progress, running bool) string {
+	linePrefix, _ := phasePrefixes(p.Phase)
 	var b strings.Builder
+	b.WriteString(linePrefix)
 	switch p.Phase {
 	case PhasePrepare:
 		b.WriteString("Preparing")
 	case PhaseRunBenchmark:
-		if p.Total > 1 {
-			fmt.Fprintf(&b, "Running benchmark %d/%d: ", p.Index, p.Total)
-		} else {
-			b.WriteString("Running benchmark: ")
-		}
-		b.WriteString(p.Label)
+		b.WriteString("0) Run benchmark")
 		if p.Detail != "" {
 			fmt.Fprintf(&b, " (%s)", p.Detail)
 		}
 	case PhaseCollectProfiles:
-		b.WriteString("Collecting profiles for ")
-		b.WriteString(p.Label)
+		b.WriteString("1) Collect profiles")
 		if p.Detail != "" {
 			fmt.Fprintf(&b, " (%s)", p.Detail)
 		}
 	case PhaseCollectFunctionProfiles:
-		b.WriteString("Collecting function profiles for ")
-		b.WriteString(p.Label)
+		b.WriteString("2) Collect per-function text profiles")
 	}
 	if running {
 		b.WriteString("…")
 	}
 	return b.String()
+}
+
+func phasePrefixes(phase Phase) (linePrefix, warnPrefix string) {
+	if phase == PhasePrepare {
+		return "", "    "
+	}
+	return "  ", "      "
+}
+
+// BeginBenchmark prints a section header before the three steps for one benchmark.
+func (s *Session) BeginBenchmark(index, total int, name string) {
+	if s == nil || !s.interactive {
+		return
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.benchmarksStarted > 0 {
+		fmt.Fprintln(s.w)
+	}
+	s.benchmarksStarted++
+
+	var title string
+	if total > 1 {
+		title = fmt.Sprintf("Benchmark %d/%d · %s", index, total, name)
+	} else {
+		title = name
+	}
+	fmt.Fprintln(s.w, BenchmarkTitleStyle.Render(title))
 }
 
 var dotSpinner = spinner.Dot
@@ -140,6 +171,7 @@ func (s *Session) RunWhile(p Progress, fn func() error) error {
 	s.stageActive = true
 	s.headerLocked = false
 	s.warningCount = 0
+	_, s.warnPrefix = phasePrefixes(p.Phase)
 	s.runningLabel = formatProgressLabel(p, true)
 	s.startSpinnerLocked()
 	s.mu.Unlock()
@@ -268,8 +300,8 @@ func (s *Session) overwriteLineLocked(content string, newline bool) {
 	}
 }
 
-func formatWarningLine(msg string) string {
-	return WarningPrefixStyle.Render("    warning: ") + WarningStyle.Render(msg)
+func formatWarningLine(prefix, msg string) string {
+	return WarningPrefixStyle.Render(prefix+"warning: ") + WarningStyle.Render(msg)
 }
 
 // Warn writes a styled warning on its own line below the active stage header.
@@ -288,7 +320,7 @@ func (s *Session) Warn(msg string) {
 	}
 
 	s.lockHeaderLocked()
-	fmt.Fprintln(s.w, formatWarningLine(msg))
+	fmt.Fprintln(s.w, formatWarningLine(s.warnPrefix, msg))
 	s.warningCount++
 }
 
@@ -302,8 +334,8 @@ func (s *Session) Success(msg string) {
 }
 
 // newSessionForTest builds a session with a forced interactive flag (tests only).
-func newSessionForTest(w io.Writer, interactive bool) *Session {
-	return &Session{w: w, interactive: interactive}
+func newSessionForTest(w io.Writer) *Session {
+	return &Session{w: w, interactive: true}
 }
 
 var spinnerFrameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(AccentColor))
