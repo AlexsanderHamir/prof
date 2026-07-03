@@ -1,6 +1,7 @@
 package termui
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -80,7 +81,7 @@ func formatProgressLabel(p Progress) string {
 // When fd is not a terminal, fn runs with no UI overhead.
 func RunWhile(w io.Writer, fd int, p Progress, fn func() error) error {
 	if fn == nil {
-		return fmt.Errorf("termui: nil task")
+		return errors.New("termui: nil task")
 	}
 	if !term.IsTerminal(fd) {
 		return fn()
