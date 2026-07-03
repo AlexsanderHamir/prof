@@ -65,12 +65,6 @@ func TestPrimarySampleValueIndexEmptyTypes(t *testing.T) {
 	}
 }
 
-func TestLineObjsFromProfileDataNil(t *testing.T) {
-	if LineObjsFromProfileData(nil) != nil {
-		t.Fatal("expected nil")
-	}
-}
-
 func TestGetAllFunctionNamesFromProfileDataFilters(t *testing.T) {
 	d := &ProfileData{
 		SortedEntries: []FuncEntry{

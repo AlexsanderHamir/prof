@@ -71,7 +71,7 @@ func cleanupSharedEnv() {
 
 // TestMain runs all package tests and cleans up the shared synthetic env on
 // exit. Tests that need their own scratch env (TestManualCommand,
-// TestTrackerBasicRun) continue to manage their own t.Cleanup blocks.
+// Integration tests that build their own env (e.g. TestManualCollectBasicRun) continue to manage their own t.Cleanup blocks.
 func TestMain(m *testing.M) {
 	code := m.Run()
 	cleanupSharedEnv()

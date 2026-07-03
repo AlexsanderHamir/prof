@@ -22,8 +22,6 @@ Before starting, check [issues](https://github.com/AlexsanderHamir/prof/issues) 
 - `internal/app/` – Interfaces and default wiring into engines
 - `engine/collect/` – Unified auto + manual collection (`RunAuto`, `RunManual`)
 - `engine/tooling/` – Subprocess [`Runner`](engine/tooling/runner.go), profile [`Catalog`](engine/tooling/catalog.go), and `go tool pprof` argv helpers
-- `engine/tracker/` – Compare runs, reports, CI-style filtering
-- `engine/tools/` – Optional tooling (benchstat, qcachegrind)
 - `parser/` – pprof decoding, aggregation, line/package reports (`Pipeline`)
 - `internal/config/` – JSON config types and loading
 - `internal/workspace/` – `TagLayout`, module root, bench path constants
@@ -89,7 +87,7 @@ The Go toolchain keeps a build cache, so after the first compile, most edits onl
    go test ./tests -count=1 -run '^TestEdge'
    ```
 
-2. **Code style** — Idiomatic Go; small functions; exported symbols commented when non-obvious. **Subprocesses:** do not call `exec.Command` or `exec.CommandContext` outside `engine/tooling` (`exec_runner.go`, `exec_spawn.go`) or the `tests/` tree — **golangci-lint forbidigo** enforces this; use [`tooling.ExecRunner`](engine/tooling/exec_runner.go), [`tooling.StartDetached`](engine/tooling/exec_spawn.go), and [`tooling.LookPath`](engine/tooling/exec_spawn.go) instead.
+2. **Code style** — Idiomatic Go; small functions; exported symbols commented when non-obvious. **Subprocesses:** do not call `exec.Command` or `exec.CommandContext` outside `engine/tooling` (`exec_runner.go`, `lookpath.go`) or the `tests/` tree — **golangci-lint forbidigo** enforces this; use [`tooling.ExecRunner`](engine/tooling/exec_runner.go) and [`tooling.LookPath`](engine/tooling/lookpath.go) instead.
 
 3. **Commits** — One logical change per commit; descriptive messages (`feat:`, `fix:`, `docs:`, `refactor:`).
 
