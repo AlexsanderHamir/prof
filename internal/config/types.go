@@ -13,7 +13,7 @@ type Collection struct {
 	ManualProfiles map[string]FunctionFilter `json:"manual_profiles,omitempty"`
 }
 
-// FunctionFilter defines filters for collection (per-function extracts and grouped text).
+// FunctionFilter defines filters for collection (per-function extracts).
 type FunctionFilter struct {
 	IncludePrefixes []string `json:"include_prefixes,omitempty"`
 	IgnoreFunctions []string `json:"ignore_functions,omitempty"`
