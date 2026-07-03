@@ -21,5 +21,5 @@ func GraphvizAvailable() bool {
 	return err == nil
 }
 
-// SkipPNGNotice is printed when PNG generation is auto-skipped.
+// SkipPNGNotice is shown during prepare when Graphviz is unavailable.
 const SkipPNGNotice = "Graphviz not found; skipping PNG generation (text profiles still collected)"

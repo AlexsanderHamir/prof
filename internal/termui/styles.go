@@ -22,14 +22,4 @@ var (
 	FailStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
 	// BenchmarkTitleStyle styles the benchmark group header in the progress log.
 	BenchmarkTitleStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(AccentColor))
-	// PromptSectionStyle styles titled prelude blocks before Survey prompts.
-	PromptSectionStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(AccentColor))
-	// PromptHintStyle styles secondary guidance in Survey preludes.
-	PromptHintStyle = lipgloss.NewStyle().Faint(true)
-	// PromptCalloutStyle styles environment notices (amber left rule + text).
-	PromptCalloutStyle = lipgloss.NewStyle().
-				Border(lipgloss.NormalBorder(), false, false, false, true).
-				BorderForeground(lipgloss.Color("214")).
-				PaddingLeft(1).
-				Foreground(lipgloss.Color("214"))
 )
