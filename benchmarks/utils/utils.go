@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"strings"
@@ -42,7 +43,7 @@ func (sp *StringProcessor) ProcessStrings() map[string]interface{} {
 	hashes := make([]string, len(sp.data))
 	for i, s := range sp.data {
 		hash := sha256.Sum256([]byte(s))
-		hashes[i] = fmt.Sprintf("%x", hash)
+		hashes[i] = hex.EncodeToString(hash[:])
 	}
 	result["hashes"] = hashes
 
@@ -77,9 +78,9 @@ func (c *Calculator) MatrixMultiply(a, b [][]int) [][]int {
 		result[i] = make([]int, cols)
 	}
 
-	for i := 0; i < rows; i++ {
-		for j := 0; j < cols; j++ {
-			for k := 0; k < len(b); k++ {
+	for i := range rows {
+		for j := range cols {
+			for k := range b {
 				result[i][j] += a[i][k] * b[k][j]
 			}
 		}
@@ -101,7 +102,7 @@ func NewDataGenerator() *DataGenerator {
 //go:noinline
 func (dg *DataGenerator) GenerateStrings(count int) []string {
 	result := make([]string, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		result[i] = fmt.Sprintf("generated_string_%d_%s", i, strings.Repeat("x", i%100))
 	}
 	return result
