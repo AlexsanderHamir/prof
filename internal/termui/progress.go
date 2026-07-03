@@ -29,6 +29,8 @@ const (
 	PhaseCollectFunctionProfiles Phase = "collect_function_profiles"
 )
 
+const defaultTermWidth = 120
+
 // Progress describes a long-running step for user-facing labels.
 type Progress struct {
 	Phase  Phase
@@ -51,20 +53,28 @@ func (p Progress) WithDetail(detail string) Progress {
 }
 
 // Session drives TTY progress UI for a collect run. Nil is non-interactive.
+//
+// Interactive layout (one header line per stage):
+//
+//	✓ Preparing
+//	    warning: …
+//	✓ Running benchmark 1/2: BenchmarkX (count=5)
+//
+// The header line updates in place while running (spinner), then becomes ✓ when done.
+// Warnings are always on separate indented lines below their stage header.
 type Session struct {
 	w           io.Writer
 	fd          int
 	interactive bool
 
-	mu              sync.Mutex
-	stageActive     bool
-	headerFrozen    bool
-	warningCount    int
-	completedStages int
-	runningLabel    string
-	lastFrame       string
-	spinnerStop     chan struct{}
-	spinnerDone     sync.WaitGroup
+	mu           sync.Mutex
+	stageActive  bool
+	headerLocked bool
+	warningCount int
+	runningLabel string
+	lastFrame    string
+	spinnerStop  chan struct{}
+	spinnerDone  sync.WaitGroup
 }
 
 // NewSession reports whether w/fd is an interactive terminal.
@@ -127,11 +137,8 @@ func (s *Session) RunWhile(p Progress, fn func() error) error {
 	}
 
 	s.mu.Lock()
-	if s.completedStages > 0 {
-		fmt.Fprintln(s.w)
-	}
 	s.stageActive = true
-	s.headerFrozen = false
+	s.headerLocked = false
 	s.warningCount = 0
 	s.runningLabel = formatProgressLabel(p, true)
 	s.startSpinnerLocked()
@@ -150,7 +157,6 @@ func (s *Session) RunWhile(p Progress, fn func() error) error {
 	s.mu.Lock()
 	s.finishStageLocked(doneLabel, failed)
 	s.stageActive = false
-	s.completedStages++
 	s.mu.Unlock()
 
 	return fnErr
@@ -163,7 +169,7 @@ func (s *Session) startSpinnerLocked() {
 
 	frames := dotSpinner.Frames
 	s.lastFrame = frames[0]
-	s.paintSpinnerFrameLocked(s.lastFrame)
+	s.paintSpinnerHeaderLocked(s.lastFrame)
 
 	go func() {
 		defer s.spinnerDone.Done()
@@ -177,10 +183,10 @@ func (s *Session) startSpinnerLocked() {
 				return
 			case <-ticker.C:
 				s.mu.Lock()
-				if !s.headerFrozen {
+				if !s.headerLocked {
 					frame := frames[i%len(frames)]
 					s.lastFrame = frame
-					s.paintSpinnerFrameLocked(frame)
+					s.paintSpinnerHeaderLocked(frame)
 				}
 				s.mu.Unlock()
 				i++
@@ -189,20 +195,18 @@ func (s *Session) startSpinnerLocked() {
 	}()
 }
 
-func (s *Session) paintSpinnerFrameLocked(frame string) {
-	frameStyled := spinnerFrameStyle.Render(frame)
-	labelStyled := LabelStyle.Render(s.runningLabel)
-	fmt.Fprint(s.w, ansi.EraseEntireLine+"\r"+frameStyled+" "+labelStyled)
+func (s *Session) paintSpinnerHeaderLocked(frame string) {
+	content := spinnerFrameStyle.Render(frame) + " " + LabelStyle.Render(s.runningLabel)
+	s.overwriteLineLocked(content, false)
 }
 
-func (s *Session) freezeHeaderLocked() {
-	if s.headerFrozen {
+func (s *Session) lockHeaderLocked() {
+	if s.headerLocked {
 		return
 	}
-	s.headerFrozen = true
-	frameStyled := spinnerFrameStyle.Render(s.lastFrame)
-	labelStyled := LabelStyle.Render(s.runningLabel)
-	fmt.Fprint(s.w, ansi.EraseEntireLine+"\r"+frameStyled+" "+labelStyled+"\n")
+	s.headerLocked = true
+	// Commit the in-place spinner line; do not repaint (avoids duplicate frames).
+	fmt.Fprint(s.w, "\n")
 }
 
 func (s *Session) signalSpinnerStopLocked() {
@@ -220,20 +224,48 @@ func (s *Session) finishStageLocked(doneLabel string, failed bool) {
 	}
 	line := mark + " " + doneLabel
 
-	if s.warningCount == 0 {
-		fmt.Fprint(s.w, ansi.EraseEntireLine+"\r"+line+"\n")
+	if s.warningCount > 0 {
+		s.seekStageHeaderLocked()
+		s.overwriteLineLocked(line, false)
+		s.seekAfterStageBlockLocked()
+		fmt.Fprint(s.w, "\n")
 		return
 	}
 
-	if !s.headerFrozen {
-		s.freezeHeaderLocked()
-	}
+	s.overwriteLineLocked(line, true)
+}
 
-	linesUp := s.warningCount
-	fmt.Fprint(s.w, ansi.CursorUp(linesUp))
-	fmt.Fprint(s.w, ansi.EraseEntireLine+"\r"+line)
-	fmt.Fprint(s.w, ansi.CursorDown(linesUp))
-	fmt.Fprint(s.w, "\n")
+func (s *Session) seekStageHeaderLocked() {
+	if s.warningCount > 0 {
+		fmt.Fprint(s.w, ansi.CursorUp(s.warningCount))
+	}
+}
+
+func (s *Session) seekAfterStageBlockLocked() {
+	if s.warningCount > 0 {
+		fmt.Fprint(s.w, ansi.CursorDown(s.warningCount))
+	}
+}
+
+func (s *Session) termWidth() int {
+	_, width, err := term.GetSize(s.fd)
+	if err != nil || width <= 0 {
+		return defaultTermWidth
+	}
+	return width
+}
+
+func (s *Session) overwriteLineLocked(content string, newline bool) {
+	width := s.termWidth()
+	visible := lipgloss.Width(content)
+	padding := width - visible
+	if padding < 0 {
+		padding = 0
+	}
+	fmt.Fprint(s.w, ansi.EraseEntireLine+"\r"+content+strings.Repeat(" ", padding))
+	if newline {
+		fmt.Fprint(s.w, "\n")
+	}
 }
 
 func formatWarningLine(msg string) string {
@@ -255,7 +287,7 @@ func (s *Session) Warn(msg string) {
 		return
 	}
 
-	s.freezeHeaderLocked()
+	s.lockHeaderLocked()
 	fmt.Fprintln(s.w, formatWarningLine(msg))
 	s.warningCount++
 }
@@ -266,7 +298,6 @@ func (s *Session) Success(msg string) {
 		slog.Info(msg)
 		return
 	}
-	fmt.Fprintln(s.w)
 	fmt.Fprintln(s.w, SuccessStyle.Render(msg))
 }
 

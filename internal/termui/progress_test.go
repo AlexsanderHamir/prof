@@ -138,7 +138,6 @@ func TestSession_RunWhile_persistentDoneAndWarnings(t *testing.T) {
 	if !warningBelowStageHeader(out, "Preparing") {
 		t.Fatalf("warning should be on its own line below the stage header: %q", out)
 	}
-	// lipgloss wraps done marker; check plain check character is present.
 	if !strings.Contains(out, "✓") {
 		t.Fatalf("output missing done marker: %q", out)
 	}
