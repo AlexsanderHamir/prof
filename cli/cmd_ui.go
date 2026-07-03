@@ -61,7 +61,7 @@ func runUILauncherOnce(svc *app.Services) error {
 	switch choice {
 	case tui.MainCollect:
 		runErr = runTUI(svc, nil, nil)
-	case tui.MainConfig, tui.MainSetup:
+	case tui.MainConfig:
 		runErr = runUIConfigCreate(svc)
 	case tui.MainQuit, tui.MainNone:
 		return errUILoopExit
