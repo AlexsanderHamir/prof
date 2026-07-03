@@ -5,6 +5,7 @@ On-demand playbooks for agents. Read a guide when the task matches, not at sessi
 | Guide | Read when |
 | --- | --- |
 | [codegraph-tools.md](./codegraph-tools.md) | Go symbol lookup, call graph, or refactor prep with Codegraph MCP (`user-codegraph`) |
+| [../collect-request-flow.md](../collect-request-flow.md) | Trace interactive collect (`prof tui` / `prof ui`) from Survey prompts to engine and disk |
 
 ## Conventions
 

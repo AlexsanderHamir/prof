@@ -1,6 +1,16 @@
 # Interactive collect request flow
 
+**Content type:** Explanation — internal call chain for one workflow, not a user tutorial.
+
 This page traces what happens **inside prof** when you run interactive benchmark collection: the Survey prompts from `prof tui`, or **Run Benchmarks & Collect Profiles** in `prof ui`. It complements [CODEBASE_DESIGN.md](../CODEBASE_DESIGN.md) (package map) and the user guides in [prof_web_doc/docs/tui.md](../prof_web_doc/docs/tui.md) and [prof_web_doc/docs/collect.md](../prof_web_doc/docs/collect.md).
+
+## How to use this page
+
+1. **See which command you entered** → [Scope](#scope)
+2. **Map a Survey prompt to code** → [Prompt → code mapping](#prompt--code-mapping)
+3. **Follow execution after you confirm the last prompt** → [Engine pipeline](#engine-pipeline)
+4. **Know what lands on disk** → [Output layout (example)](#output-layout-example)
+5. **Find the right file to edit** → [Where to change behavior](#where-to-change-behavior)
 
 ## Before you begin
 
@@ -23,6 +33,8 @@ This page covers **interactive collect only**:
 | --- | --- | --- |
 | `prof tui` / `prof ui` collect | Survey → `CollectIntent` → `intent.RunValidated` | `app.Services.Collect.RunAuto` → `collect.RunAuto` |
 | `prof auto` | Cobra flags in [`cli/cmd_collect.go`](../cli/cmd_collect.go) | Same `collect.RunAuto` |
+
+**Note:** Only `prof ui` returns to the Bubble Tea hub after collect. [`finishUIWorkflow`](../cli/cmd_ui.go) prints errors to stderr, then asks **Return to main menu?** via `promptReturnToHub`. `prof tui` exits when `runTUI` returns.
 
 ## Running example
 
@@ -56,16 +68,35 @@ flowchart LR
 
 Each Survey step maps to a function, validation rule, and field on [`CollectIntent`](../internal/intent/collect.go):
 
-| Prompt (as shown) | Code | Effect |
+| Prompt (as shown) | Code | `CollectIntent` field |
 | --- | --- | --- |
-| Select benchmarks to run | `svc.Collect.DiscoverBenchmarks(cwd)` → [`engine/collect/discovery.go`](../engine/collect/discovery.go) `scanForBenchmarks` | Regex scan of `*_test.go` under cwd; skips `vendor`, `bench`, `tests`, and nested `go.mod` trees |
-| Collection filters: none / from prof.json | [`cli/collect_preview.go`](../cli/collect_preview.go) `printCollectionFilterPreview` | Read-only preview via `config.Load` + `ResolveCollectionFilter`; does not block the run |
-| Select profiles | `svc.Collect.SupportedProfiles()` | Profile IDs from [`engine/tooling/catalog.go`](../engine/tooling/catalog.go) |
-| Number of runs (count) | `strconv.Atoi` in `runTUI` | Rejects count &lt; 1 before intent validation |
-| Tag name | Survey input | Trimmed tag becomes `bench/<tag>/` via [`internal/workspace/layout.go`](../internal/workspace/layout.go) |
-| Advanced options | `askAdvancedCollectOptions` in [`cli/collect_preview.go`](../cli/collect_preview.go) | Sets `GroupByPackage`, `LenientProfiles`, `SkipPNG`; auto-enables skip PNG when Graphviz is missing |
+| Select benchmarks to run | `svc.Collect.DiscoverBenchmarks(cwd)` → [`scanForBenchmarks`](../engine/collect/discovery.go) | `Benchmarks` |
+| Collection filters: none / from prof.json | [`printCollectionFilterPreview`](../cli/collect_preview.go) | *(preview only — not stored on intent)* |
+| Select profiles | `svc.Collect.SupportedProfiles()` | `Profiles` |
+| Number of runs (count) | `strconv.Atoi` in `runTUI` | `Count` |
+| Tag name | Survey input | `Tag` |
+| Advanced options | [`askAdvancedCollectOptions`](../cli/collect_preview.go) | `GroupByPackage`, `LenientProfiles`, `SkipPNG` |
 
-After the last prompt:
+**Prompt effects**
+
+| Prompt | Effect |
+| --- | --- |
+| Select benchmarks | Regex scan of `*_test.go` under cwd; skips `vendor`, `bench`, `tests`, and nested `go.mod` trees |
+| Collection filters line | Read-only preview via `config.Load` + `ResolveCollectionFilter`; does not block the run |
+| Select profiles | Profile IDs from [`engine/tooling/catalog.go`](../engine/tooling/catalog.go) |
+| Number of runs | Rejects count `< 1` in `runTUI` before intent validation |
+| Tag name | Trimmed tag becomes `bench/<tag>/` via [`workspace.TagLayout`](../internal/workspace/layout.go) |
+| Advanced options | See [Advanced options defaults](#advanced-options-defaults) |
+
+`CollectIntent.Run` copies fields into `app.CollectAutoOptions` ([`internal/app/dto.go`](../internal/app/dto.go)) with the same names before calling `collect.RunAuto`.
+
+### Advanced options defaults
+
+When you answer **No** to **Advanced options**, [`askAdvancedCollectOptions`](../cli/collect_preview.go) still sets `SkipPNG` to `true` when Graphviz is unavailable — you do not get separate prompts for group-by-package or lenient profiles (both stay `false`).
+
+When you answer **Yes**, you get three confirms. `SkipPNG` defaults to `true` when Graphviz is missing; if you leave it `false` without Graphviz, prof prints `SkipPNGNotice` and forces skip PNG before building the intent. [`runTUI`](../cli/tui.go) repeats the Graphviz check after advanced options return.
+
+### After the last prompt
 
 1. `collect.Normalize()` trims the tag and drops empty benchmark/profile entries.
 2. `intent.RunValidated(collect, svc)` calls `Validate()` then `Run()`.
@@ -90,20 +121,20 @@ flowchart TB
 
 [`collect.RunAuto`](../engine/collect/entry.go):
 
-- Rejects empty benchmarks/profiles and count &lt; 1.
-- Calls `applyAutoSkipPNG` — if Graphviz is unavailable and skip PNG was not set, enables `SkipPNG` and logs a notice.
+- Rejects empty benchmarks/profiles and count `< 1`.
+- Calls `applyAutoSkipPNG` — if Graphviz is unavailable and skip PNG was not set, enables `SkipPNG` and logs a notice (second guard after the Survey layer).
 - Loads optional `prof.json` via [`config.Load`](../internal/config/load.go). Missing config is non-fatal; collection proceeds with empty filters.
 
 ### 2. Create output layout
 
-[`setupDirectories`](../engine/collect/layout.go) in [`engine/collect/layout.go`](../engine/collect/layout.go):
+[`setupDirectories`](../engine/collect/layout.go):
 
 - Resolves `bench/<tag>/` with [`workspace.CleanOrCreateTag`](../internal/workspace/tag.go).
 - Creates `bin/<benchmark>/`, `text/<benchmark>/`, `<profile>_functions/<benchmark>/`, and `description.txt`.
 
 ### 3. Run benchmark (`go test`)
 
-For `BenchmarkMatrixMultiplication`, [`runBenchmark`](../engine/collect/gotest.go) in [`engine/collect/gotest.go`](../engine/collect/gotest.go):
+For `BenchmarkMatrixMultiplication`, [`runBenchmark`](../engine/collect/gotest.go):
 
 - Locates the package directory containing the benchmark function.
 - Builds `go test -run=^$ -bench=^BenchmarkMatrixMultiplication$ -benchmem -count=5` plus profile flags from the tooling catalog (`cpu`, `memory`).
@@ -112,7 +143,7 @@ For `BenchmarkMatrixMultiplication`, [`runBenchmark`](../engine/collect/gotest.g
 
 ### 4. Process profiles
 
-[`processProfiles`](../engine/collect/profiles.go) in [`engine/collect/profiles.go`](../engine/collect/profiles.go) runs per profile (`cpu`, then `memory`):
+[`processProfiles`](../engine/collect/profiles.go) runs per profile (`cpu`, then `memory`):
 
 | Step | Output | Notes for this example |
 | --- | --- | --- |
@@ -125,7 +156,7 @@ Resolved function filters for each benchmark come from `config.ResolveCollection
 
 ### 5. Per-function extracts
 
-[`collectProfileFunctions`](../engine/collect/pipeline.go) in [`engine/collect/pipeline.go`](../engine/collect/pipeline.go):
+[`collectProfileFunctions`](../engine/collect/pipeline.go):
 
 - For each successfully processed profile, [`parser.GetFunctionListEntriesV2`](../parser/) reads the binary and applies config filters.
 - `go tool pprof -list` output is written under `cpu_functions/BenchmarkMatrixMultiplication/` and `memory_functions/BenchmarkMatrixMultiplication/`.
@@ -154,9 +185,34 @@ bench/
 
 PNG files, when generated, live under `<profile>_functions/<benchmark>/`.
 
+## Where to change behavior
+
+| You want to change… | Start here |
+| --- | --- |
+| Survey prompts or defaults | [`cli/tui.go`](../cli/tui.go), [`cli/collect_preview.go`](../cli/collect_preview.go) |
+| Hub menu labels or actions | [`internal/tui/hub.go`](../internal/tui/hub.go), [`cli/cmd_ui.go`](../cli/cmd_ui.go) |
+| Intent validation rules | [`internal/intent/collect.go`](../internal/intent/collect.go) |
+| Benchmark discovery rules | [`engine/collect/discovery.go`](../engine/collect/discovery.go) |
+| `go test` argv or profile flags | [`engine/collect/gotest.go`](../engine/collect/gotest.go), [`engine/tooling/catalog.go`](../engine/tooling/catalog.go) |
+| Artifact paths or tag lifecycle | [`internal/workspace/layout.go`](../internal/workspace/layout.go), [`engine/collect/layout.go`](../engine/collect/layout.go) |
+| Lenient profiles / skip PNG / grouped text | [`engine/collect/profiles.go`](../engine/collect/profiles.go) |
+| Per-function file list and filters | [`parser/`](../parser/), [`internal/config/filter.go`](../internal/config/filter.go) |
+
 ## Layering
 
 `cli`, `internal/tui`, and `internal/intent` never import `engine/*` directly. They pass DTOs through [`internal/app`](../internal/app) only ([CODEBASE_DESIGN.md](../CODEBASE_DESIGN.md) layering rule). The interactive path uses `CollectIntent`; the flag path uses [`cli/cmd_collect.go`](../cli/cmd_collect.go) — both converge on `collect.RunAuto`.
+
+## Common failure points
+
+| Symptom | Layer | Code / flag |
+| --- | --- | --- |
+| No benchmarks in multi-select | Discovery | [`scanForBenchmarks`](../engine/collect/discovery.go) — empty result errors in `runTUI` |
+| Invalid count | CLI | `runTUI` before intent; `CollectIntent.Validate` |
+| Missing profile binary after bench | Engine | `LenientProfiles` → skip; default → fail ([`profiles.go`](../engine/collect/profiles.go)) |
+| PNG / Graphviz missing | CLI + engine | `SkipPNG` on intent; `applyAutoSkipPNG` in [`entry.go`](../engine/collect/entry.go) |
+| Tag dir not empty | Workspace | [`CleanOrCreateTag`](../internal/workspace/tag.go) during `setupDirectories` |
+
+See [CODEBASE_DESIGN.md — Edge-case catalog](../CODEBASE_DESIGN.md#edge-case-catalog) for the full contributor table.
 
 ## See also
 
