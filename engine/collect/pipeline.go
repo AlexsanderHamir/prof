@@ -7,6 +7,7 @@ import (
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/termui"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 	"github.com/AlexsanderHamir/prof/parser"
 )
@@ -14,9 +15,16 @@ import (
 func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cfg *config.Config, lenientProfiles bool, skipPNG bool) error {
 	slog.Info("Starting benchmark pipeline...")
 
-	for _, benchmarkName := range autoArgs.Benchmarks {
+	total := len(autoArgs.Benchmarks)
+	for i, benchmarkName := range autoArgs.Benchmarks {
+		progress := termui.Progress{
+			Label:  benchmarkName,
+			Index:  i + 1,
+			Total:  total,
+			Detail: fmt.Sprintf("count=%d", autoArgs.Count),
+		}
 		slog.Info("Running benchmark", "Benchmark", benchmarkName)
-		if err := runBenchmark(runner, benchmarkName, autoArgs.Profiles, autoArgs.Count, autoArgs.Tag); err != nil {
+		if err := runBenchmark(runner, benchmarkName, autoArgs.Profiles, autoArgs.Count, autoArgs.Tag, progress); err != nil {
 			return fmt.Errorf("failed to run %s: %w", benchmarkName, err)
 		}
 

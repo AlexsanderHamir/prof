@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
+	"github.com/AlexsanderHamir/prof/internal/termui"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
@@ -46,25 +47,31 @@ func buildBenchmarkCommand(benchmarkName string, profiles []string, count int) (
 	return append(cmd, flags...), nil
 }
 
-func runBenchmarkCommand(runner tooling.Runner, cmd []string, outputFile string, rootDir string) error {
+func runBenchmarkCommand(runner tooling.Runner, cmd []string, outputFile string, rootDir string, progress termui.Progress) error {
 	if runner == nil {
 		return errors.New("tooling runner is nil")
 	}
 	ctx := context.Background()
-	output, err := runner.Run(ctx, cmd, tooling.RunOpts{Dir: rootDir, Combined: true})
-	fmt.Println("🚀 ==================== BENCHMARK OUTPUT ==================== 🚀")
-	fmt.Println(string(output))
-	fmt.Println("📊 ========================================================== 📊")
+	var output []byte
+	err := termui.RunWhile(os.Stderr, int(os.Stderr.Fd()), progress, func() error {
+		var runErr error
+		output, runErr = runner.Run(ctx, cmd, tooling.RunOpts{Dir: rootDir, Combined: true})
+		return runErr
+	})
 	if err != nil {
 		if strings.Contains(string(output), moduleNotFoundMsg) {
-			return fmt.Errorf("❌ %s - ensure you're in a Go project directory 📁", moduleNotFoundMsg)
+			return fmt.Errorf("%s - ensure you're in a Go project directory", moduleNotFoundMsg)
 		}
-		return fmt.Errorf("💥 BENCHMARK COMMAND FAILED 💥\n%s", string(output))
+		return fmt.Errorf("benchmark command failed:\n%s", string(output))
 	}
-	return os.WriteFile(outputFile, output, workspace.PermFile)
+	if writeErr := os.WriteFile(outputFile, output, workspace.PermFile); writeErr != nil {
+		return writeErr
+	}
+	termui.DoneLine(os.Stderr, int(os.Stderr.Fd()), progress)
+	return nil
 }
 
-func runBenchmark(runner tooling.Runner, benchmarkName string, profiles []string, count int, tag string) error {
+func runBenchmark(runner tooling.Runner, benchmarkName string, profiles []string, count int, tag string, progress termui.Progress) error {
 	cmd, err := buildBenchmarkCommand(benchmarkName, profiles, count)
 	if err != nil {
 		return err
@@ -83,7 +90,7 @@ func runBenchmark(runner tooling.Runner, benchmarkName string, profiles []string
 	}
 	outputFile := layout.BenchText(benchmarkName)
 	binDir := filepath.Join(layout.Root, workspace.ProfileBinDir, benchmarkName)
-	if err = runBenchmarkCommand(runner, cmd, outputFile, pkgDir); err != nil {
+	if err = runBenchmarkCommand(runner, cmd, outputFile, pkgDir, progress); err != nil {
 		return err
 	}
 	if err = moveProfileFiles(benchmarkName, profiles, pkgDir, binDir); err != nil {
