@@ -87,8 +87,8 @@ flowchart TB
 |---------|-------------|------|
 | `prof auto` | [`cli/cmd_collect.go`](cli/cmd_collect.go) → [`engine/collect/entry.go`](engine/collect/entry.go) | Flags → `app.CollectAutoOptions` → layout → `go test` → artifacts |
 | `prof manual` | [`cli/cmd_collect.go`](cli/cmd_collect.go) → [`engine/collect/manual.go`](engine/collect/manual.go) | Same `TagLayout` as auto; infers bench/profile from filename |
-| `prof ui` | [`cli/cmd_ui.go`](cli/cmd_ui.go), [`internal/tui`](internal/tui), [`internal/intent`](internal/intent) | Intents → `app.Services` |
-| `prof tui` | [`cli/tui.go`](cli/tui.go) | Survey prompts → collect intent |
+| `prof ui` | [`cli/cmd_ui.go`](cli/cmd_ui.go), [`internal/tui`](internal/tui), [`internal/intent`](internal/intent) | Intents → `app.Services`; see [docs/collect-request-flow.md](docs/collect-request-flow.md) for collect |
+| `prof tui` | [`cli/tui.go`](cli/tui.go) | Survey prompts → collect intent; see [docs/collect-request-flow.md](docs/collect-request-flow.md) |
 | `prof config init` | [`cli/cmd_config.go`](cli/cmd_config.go) → [`internal/config/load.go`](internal/config/load.go) | Writes `prof.json` beside `go.mod` |
 | `prof setup` | [`cli/cmd_setup.go`](cli/cmd_setup.go) | Hidden alias for `prof config init` |
 
