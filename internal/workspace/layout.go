@@ -48,11 +48,6 @@ func (l TagLayout) Text(bench, profile string) string {
 	return filepath.Join(l.Root, ProfileTextDir, bench, fmt.Sprintf("%s_%s.%s", bench, profile, TextExtension))
 }
 
-// Grouped returns the package-grouped text profile path.
-func (l TagLayout) Grouped(bench, profile string) string {
-	return filepath.Join(l.Root, ProfileTextDir, bench, fmt.Sprintf("%s_%s_grouped.%s", bench, profile, TextExtension))
-}
-
 // BenchText returns the combined benchmark text listing path.
 func (l TagLayout) BenchText(bench string) string {
 	return filepath.Join(l.Root, ProfileTextDir, bench, fmt.Sprintf("%s.%s", bench, TextExtension))

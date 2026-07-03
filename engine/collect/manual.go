@@ -41,14 +41,14 @@ func RunManual(runner tooling.Runner, opts ManualOptions) error {
 	}
 
 	for _, fullBinaryPath := range opts.Files {
-		if err = processOneManualFile(runner, fullBinaryPath, layout, cfg, opts.GroupByPackage); err != nil {
+		if err = processOneManualFile(runner, fullBinaryPath, layout, cfg); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func processOneManualFile(runner tooling.Runner, fullBinaryPath string, layout workspace.TagLayout, cfg *config.Config, groupByPackage bool) error {
+func processOneManualFile(runner tooling.Runner, fullBinaryPath string, layout workspace.TagLayout, cfg *config.Config) error {
 	benchName, profile := manualBenchAndProfile(fullBinaryPath)
 	stem := stemFromPath(fullBinaryPath)
 	filter := config.ResolveCollectionFilter(cfg, config.CollectionTargetManual(stem))
@@ -58,23 +58,15 @@ func processOneManualFile(runner tooling.Runner, fullBinaryPath string, layout w
 		return err
 	}
 
-	if err := emitProfileArtifacts(runner, binDest, layout, benchName, profile, filter, groupByPackage); err != nil {
+	if err := emitProfileArtifacts(runner, binDest, layout, benchName, profile); err != nil {
 		return err
 	}
 	return collectPerFunctionLists(runner, layout, benchName, profile, binDest, filter)
 }
 
-func emitProfileArtifacts(runner tooling.Runner, binPath string, layout workspace.TagLayout, benchName, profile string, filter config.FunctionFilter, groupByPackage bool) error {
+func emitProfileArtifacts(runner tooling.Runner, binPath string, layout workspace.TagLayout, benchName, profile string) error {
 	textOut := layout.Text(benchName, profile)
-	if err := getProfileTextOutput(runner, binPath, textOut); err != nil {
-		return err
-	}
-	if groupByPackage {
-		if err := writeGroupedPackageProfile(binPath, layout.Grouped(benchName, profile), filter); err != nil {
-			return fmt.Errorf("grouped profile: %w", err)
-		}
-	}
-	return nil
+	return getProfileTextOutput(runner, binPath, textOut)
 }
 
 func collectPerFunctionLists(runner tooling.Runner, layout workspace.TagLayout, benchName, profile, binPath string, functionFilter config.FunctionFilter) error {

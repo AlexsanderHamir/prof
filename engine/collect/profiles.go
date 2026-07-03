@@ -7,11 +7,10 @@ import (
 	"os"
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
-	"github.com/AlexsanderHamir/prof/internal/config"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
-func processProfiles(runner tooling.Runner, benchmarkName string, profiles []string, tag string, filter config.FunctionFilter, groupByPackage bool, lenientProfiles bool, skipPNG bool) ([]string, error) { //nolint:gocognit // sequential profile stages
+func processProfiles(runner tooling.Runner, benchmarkName string, profiles []string, tag string, lenientProfiles bool, skipPNG bool) ([]string, error) { //nolint:gocognit // sequential profile stages
 	layout, err := workspace.TagLayoutFromCWD(tag)
 	if err != nil {
 		return nil, err
@@ -37,12 +36,6 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 
 		if textErr := getProfileTextOutput(runner, profileFile, outputFile); textErr != nil {
 			return nil, fmt.Errorf("failed to generate text profile for %s: %w", profile, textErr)
-		}
-
-		if groupByPackage {
-			if groupedErr := writeGroupedPackageProfile(profileFile, layout.Grouped(benchmarkName, profile), filter); groupedErr != nil {
-				return nil, fmt.Errorf("failed to generate grouped profile for %s: %w", profile, groupedErr)
-			}
 		}
 
 		if mkdirErr := os.MkdirAll(fnDir, workspace.PermDir); mkdirErr != nil {

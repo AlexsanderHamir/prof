@@ -69,8 +69,8 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	var groupPkg, lenient, skipPng bool
-	groupPkg, lenient, skipPng, err = askAdvancedCollectOptions()
+	var lenient, skipPng bool
+	lenient, skipPng, err = askAdvancedCollectOptions()
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,6 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		Profiles:        selectedProfiles,
 		Tag:             tagStr,
 		Count:           runCount,
-		GroupByPackage:  groupPkg,
 		LenientProfiles: lenient,
 		SkipPNG:         skipPng,
 	}

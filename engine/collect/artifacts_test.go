@@ -13,6 +13,17 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
+const filterFixtureCPU = "BenchmarkStringProcessor_cpu.out"
+
+func mustReadFile(t *testing.T, path string) []byte {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return data
+}
+
 func TestWriteArtifactFile_createsParent(t *testing.T) {
 	t.Parallel()
 	out := filepath.Join(t.TempDir(), "nested", "artifact.txt")

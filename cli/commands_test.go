@@ -146,11 +146,11 @@ func TestCmdManualCollectRunE(t *testing.T) {
 	root := CreateRootCmd(&app.Services{
 		Collect: captured, Setup: noopSetup{},
 	})
-	root.SetArgs([]string{CmdManual, "--tag", "t1", "--group-by-package", "a.prof", "b.prof"})
+	root.SetArgs([]string{CmdManual, "--tag", "t1", "a.prof", "b.prof"})
 	if err := root.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if captured.manual.Tag != "t1" || !captured.manual.GroupByPackage || len(captured.manual.Files) != 2 || captured.manual.Files[0] != "a.prof" {
+	if captured.manual.Tag != "t1" || len(captured.manual.Files) != 2 || captured.manual.Files[0] != "a.prof" {
 		t.Fatalf("%+v", captured.manual)
 	}
 }
@@ -166,12 +166,11 @@ func TestCmdAutoBenchmarkRunE(t *testing.T) {
 		"--profiles", testProfCPU + "," + testProfMemory,
 		"--tag", "tg",
 		"--count", "2",
-		"--group-by-package",
 	})
 	if err := root.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if captured.auto.Tag != "tg" || captured.auto.Count != 2 || !captured.auto.GroupByPackage || len(captured.auto.Benchmarks) != 1 || captured.auto.Benchmarks[0] != "B1" {
+	if captured.auto.Tag != "tg" || captured.auto.Count != 2 || len(captured.auto.Benchmarks) != 1 || captured.auto.Benchmarks[0] != "B1" {
 		t.Fatalf("%+v", captured.auto)
 	}
 	if len(captured.auto.Profiles) != 2 || captured.auto.Profiles[0] != testProfCPU || captured.auto.Profiles[1] != testProfMemory {

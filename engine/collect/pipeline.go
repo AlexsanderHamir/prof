@@ -11,7 +11,7 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
-func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cfg *config.Config, groupByPackage bool, lenientProfiles bool, skipPNG bool) error {
+func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cfg *config.Config, lenientProfiles bool, skipPNG bool) error {
 	slog.Info("Starting benchmark pipeline...")
 
 	for _, benchmarkName := range autoArgs.Benchmarks {
@@ -23,7 +23,7 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cf
 		filter := config.ResolveCollectionFilter(cfg, config.CollectionTargetAuto(benchmarkName))
 
 		slog.Info("Processing profiles", "Benchmark", benchmarkName)
-		profilesReady, err := processProfiles(runner, benchmarkName, autoArgs.Profiles, autoArgs.Tag, filter, groupByPackage, lenientProfiles, skipPNG)
+		profilesReady, err := processProfiles(runner, benchmarkName, autoArgs.Profiles, autoArgs.Tag, lenientProfiles, skipPNG)
 		if err != nil {
 			return fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err)
 		}

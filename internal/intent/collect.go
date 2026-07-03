@@ -13,7 +13,6 @@ type CollectIntent struct {
 	Profiles        []string
 	Tag             string
 	Count           int
-	GroupByPackage  bool
 	LenientProfiles bool
 	SkipPNG         bool
 }
@@ -52,7 +51,6 @@ func (i *CollectIntent) Run(svc *app.Services) error {
 		Profiles:        i.Profiles,
 		Tag:             i.Tag,
 		Count:           i.Count,
-		GroupByPackage:  i.GroupByPackage,
 		LenientProfiles: i.LenientProfiles,
 		SkipPNG:         i.SkipPNG,
 	})

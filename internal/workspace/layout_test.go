@@ -22,7 +22,6 @@ func TestTagLayout_paths(t *testing.T) {
 	}{
 		{"bin", l.Bin("BenchmarkFoo", "cpu"), filepath.Join(root, "bench", "v1", "bin", "BenchmarkFoo", "BenchmarkFoo_cpu.out")},
 		{"text", l.Text("BenchmarkFoo", "cpu"), filepath.Join(root, "bench", "v1", "text", "BenchmarkFoo", "BenchmarkFoo_cpu.txt")},
-		{"grouped", l.Grouped("BenchmarkFoo", "cpu"), filepath.Join(root, "bench", "v1", "text", "BenchmarkFoo", "BenchmarkFoo_cpu_grouped.txt")},
 		{"functions", l.FunctionsDir("cpu", "BenchmarkFoo"), filepath.Join(root, "bench", "v1", "cpu_functions", "BenchmarkFoo")},
 		{"bench text", l.BenchText("BenchmarkFoo"), filepath.Join(root, "bench", "v1", "text", "BenchmarkFoo", "BenchmarkFoo.txt")},
 	}
