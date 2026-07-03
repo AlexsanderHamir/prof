@@ -23,10 +23,6 @@ func (noopCollect) RunManual(_ app.CollectManualOptions) error    { return nil }
 func (noopCollect) DiscoverBenchmarks(_ string) ([]string, error) { return nil, nil }
 func (noopCollect) SupportedProfiles() []string                   { return nil }
 
-type noopSetup struct{}
-
-func (noopSetup) CreateTemplate() error { return nil }
-
 type captureConfig struct{ createCalls int }
 
 func (c *captureConfig) Load() (*config.Config, error) { return config.Default(), nil }
@@ -144,7 +140,7 @@ func TestCmdSetupRunE(t *testing.T) {
 func TestCmdManualCollectRunE(t *testing.T) {
 	captured := &captureCollect{}
 	root := CreateRootCmd(&app.Services{
-		Collect: captured, Setup: noopSetup{},
+		Collect: captured,
 	})
 	root.SetArgs([]string{CmdManual, "--tag", "t1", "a.prof", "b.prof"})
 	if err := root.Execute(); err != nil {
@@ -158,7 +154,7 @@ func TestCmdManualCollectRunE(t *testing.T) {
 func TestCmdAutoBenchmarkRunE(t *testing.T) {
 	captured := &captureCollect{}
 	root := CreateRootCmd(&app.Services{
-		Collect: captured, Setup: noopSetup{},
+		Collect: captured,
 	})
 	root.SetArgs([]string{
 		CmdAuto,
@@ -185,7 +181,7 @@ func TestCmdTuiRunEDiscoverError(t *testing.T) {
 	}
 	t.Chdir(rootMod)
 	root := CreateRootCmd(&app.Services{
-		Collect: errDiscoverCollect{}, Setup: noopSetup{},
+		Collect: errDiscoverCollect{},
 	})
 	root.SetArgs([]string{"tui"})
 	if err := root.Execute(); err == nil || !strings.Contains(err.Error(), "discover") {
@@ -200,7 +196,7 @@ func TestCmdTuiRunENoBenchmarks(t *testing.T) {
 	}
 	t.Chdir(rootMod)
 	root := CreateRootCmd(&app.Services{
-		Collect: emptyDiscoverCollect{}, Setup: noopSetup{},
+		Collect: emptyDiscoverCollect{},
 	})
 	root.SetArgs([]string{"tui"})
 	if err := root.Execute(); err == nil || !strings.Contains(err.Error(), "no benchmarks found") {
