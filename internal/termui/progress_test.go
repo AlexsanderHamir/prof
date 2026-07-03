@@ -133,6 +133,43 @@ func TestSession_RunWhile_persistentDoneAndWarnings(t *testing.T) {
 	}
 }
 
+func TestSession_PreparingThenBenchmark(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newSessionForTest(&buf)
+	err := s.RunWhile(Progress{Phase: PhasePrepare}, func() error {
+		s.Warn("no prof.json")
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("RunWhile() err = %v", err)
+	}
+	s.BeginBenchmark(1, 2, "BenchmarkFoo")
+	out := buf.String()
+	if !strings.Contains(out, "no prof.json") {
+		t.Fatalf("missing prepare warning: %q", out)
+	}
+	if !strings.Contains(out, "Benchmark 1/2 · BenchmarkFoo") {
+		t.Fatalf("missing benchmark header: %q", out)
+	}
+	// Finish resets column after width-padded overwrite so the benchmark header is left-aligned.
+	if !strings.Contains(out, "\r") {
+		t.Fatalf("expected column reset after warned prepare stage: %q", out)
+	}
+}
+
+func TestSession_BeginBenchmark_leadingSeparator(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newSessionForTest(&buf)
+	s.BeginBenchmark(1, 2, "BenchmarkFoo")
+	if !strings.HasPrefix(buf.String(), "\n") {
+		t.Fatalf("expected leading blank line before benchmark header, got %q", buf.String())
+	}
+}
+
 func TestSession_BeginBenchmark_printsSectionHeader(t *testing.T) {
 	t.Parallel()
 

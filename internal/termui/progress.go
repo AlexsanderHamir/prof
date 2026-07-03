@@ -142,9 +142,7 @@ func (s *Session) BeginBenchmark(index, total int, name string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.benchmarksStarted > 0 {
-		fmt.Fprintln(s.w)
-	}
+	fmt.Fprintln(s.w)
 	s.benchmarksStarted++
 
 	var title string
@@ -279,6 +277,9 @@ func (s *Session) seekAfterStageBlockLocked() {
 	n := s.warningCount + 1
 	if n > 0 {
 		fmt.Fprint(s.w, ansi.CursorDown(n))
+		// Width-padded overwrite leaves the cursor at the terminal edge; reset column
+		// so the next write starts at the left margin.
+		fmt.Fprint(s.w, "\r")
 	}
 }
 
