@@ -16,7 +16,7 @@ func BenchmarkStringProcessor(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		// Keep GenerateStrings on the CPU hot path so filtered profiles still list it
 		// (ProcessStrings is ignored in typical prof.json filters; without this, cpu.out
 		// can lack any matching benchmarks module symbols).
@@ -30,7 +30,7 @@ func BenchmarkFibonacci(b *testing.B) {
 	calc := utils.NewCalculator()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		result := calc.Fibonacci(25)
 		_ = result
 	}
@@ -44,7 +44,7 @@ func BenchmarkMatrixMultiplication(b *testing.B) {
 	matrixB := generator.GenerateMatrix(50, 50)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		result := calc.MatrixMultiply(matrixA, matrixB)
 		_ = result
 	}
@@ -54,7 +54,7 @@ func BenchmarkDataGeneration(b *testing.B) {
 	generator := utils.NewDataGenerator()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		strings := generator.GenerateStrings(500)
 		matrix := generator.GenerateMatrix(20, 20)
 		_ = strings

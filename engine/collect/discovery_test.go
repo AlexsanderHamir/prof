@@ -67,7 +67,7 @@ func TestDiscoverBenchmarks_repoBenchmarksFixture(t *testing.T) {
 		t.Skip(err)
 	}
 	fixture := filepath.Join(root, "benchmarks", "benchmark_test.go")
-	if _, err := os.Stat(fixture); err != nil {
+	if _, statErr := os.Stat(fixture); statErr != nil {
 		t.Skip("benchmarks fixture not present in this module")
 	}
 
