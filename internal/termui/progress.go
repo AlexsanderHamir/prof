@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -12,12 +13,52 @@ import (
 	"golang.org/x/term"
 )
 
+// Phase identifies a user-visible collect pipeline step.
+type Phase string
+
+const (
+	// PhaseRunBenchmark covers go test, bench text write, and profile binary move.
+	PhaseRunBenchmark Phase = "run_benchmark"
+	// PhaseCollectProfiles covers pprof text and PNG generation.
+	PhaseCollectProfiles Phase = "collect_profiles"
+	// PhaseAnalyzeProfiles covers parser extraction and per-function pprof lists.
+	PhaseAnalyzeProfiles Phase = "analyze_profiles"
+)
+
 // Progress describes a long-running step for user-facing labels.
 type Progress struct {
+	Phase  Phase
 	Label  string // benchmark name
-	Index  int    // 1-based step index
-	Total  int    // total steps in the run
-	Detail string // optional detail, e.g. "count=5"
+	Index  int    // 1-based benchmark index
+	Total  int    // benchmark count
+	Detail string // optional detail, e.g. "count=5" or "cpu, memory"
+}
+
+// WithPhase returns a copy of p with the given phase.
+func (p Progress) WithPhase(phase Phase) Progress {
+	p.Phase = phase
+	return p
+}
+
+// Session drives TTY progress UI for a collect run. Zero value is non-interactive.
+type Session struct {
+	w           io.Writer
+	fd          int
+	interactive bool
+}
+
+// NewSession reports whether w/fd is an interactive terminal.
+func NewSession(w io.Writer, fd int) Session {
+	return Session{
+		w:           w,
+		fd:          fd,
+		interactive: term.IsTerminal(fd),
+	}
+}
+
+// Interactive is true when the session can show spinners and styled lines.
+func (s Session) Interactive() bool {
+	return s.interactive
 }
 
 type workDoneMsg struct {
@@ -31,12 +72,12 @@ type spinnerModel struct {
 }
 
 func newSpinnerModel(label string) spinnerModel {
-	s := spinner.New(
+	sp := spinner.New(
 		spinner.WithSpinner(spinner.Dot),
 		spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color(AccentColor))),
 	)
 	return spinnerModel{
-		spinner: s,
+		spinner: sp,
 		label:   LabelStyle.Render(label),
 	}
 }
@@ -61,29 +102,39 @@ func (m spinnerModel) View() string {
 	return m.spinner.View() + " " + m.label
 }
 
-// formatProgressLabel builds the human-readable label shown beside the spinner.
 func formatProgressLabel(p Progress) string {
 	var b strings.Builder
-	if p.Total > 1 {
-		fmt.Fprintf(&b, "Running benchmark %d/%d: ", p.Index, p.Total)
-	} else {
-		b.WriteString("Running benchmark: ")
-	}
-	b.WriteString(p.Label)
-	if p.Detail != "" {
-		fmt.Fprintf(&b, " (%s)", p.Detail)
+	switch p.Phase {
+	case PhaseCollectProfiles:
+		b.WriteString("Collecting profiles for ")
+		b.WriteString(p.Label)
+		if p.Detail != "" {
+			fmt.Fprintf(&b, " (%s)", p.Detail)
+		}
+	case PhaseAnalyzeProfiles:
+		b.WriteString("Analyzing profiles for ")
+		b.WriteString(p.Label)
+	default:
+		if p.Total > 1 {
+			fmt.Fprintf(&b, "Running benchmark %d/%d: ", p.Index, p.Total)
+		} else {
+			b.WriteString("Running benchmark: ")
+		}
+		b.WriteString(p.Label)
+		if p.Detail != "" {
+			fmt.Fprintf(&b, " (%s)", p.Detail)
+		}
 	}
 	b.WriteString("…")
 	return b.String()
 }
 
-// RunWhile runs fn while showing a spinner on w when fd is a terminal.
-// When fd is not a terminal, fn runs with no UI overhead.
-func RunWhile(w io.Writer, fd int, p Progress, fn func() error) error {
+// RunWhile runs fn while showing a spinner when the session is interactive.
+func (s Session) RunWhile(p Progress, fn func() error) error {
 	if fn == nil {
 		return errors.New("termui: nil task")
 	}
-	if !term.IsTerminal(fd) {
+	if !s.interactive {
 		return fn()
 	}
 
@@ -93,7 +144,7 @@ func RunWhile(w io.Writer, fd int, p Progress, fn func() error) error {
 	model := newSpinnerModel(label)
 	prog := tea.NewProgram(
 		model,
-		tea.WithOutput(w),
+		tea.WithOutput(s.w),
 		tea.WithInput(nil),
 		tea.WithoutSignalHandler(),
 	)
@@ -110,10 +161,20 @@ func RunWhile(w io.Writer, fd int, p Progress, fn func() error) error {
 	return fnErr
 }
 
-// DoneLine writes a single faint completion line to w when fd is a terminal.
-func DoneLine(w io.Writer, fd int, p Progress) {
-	if !term.IsTerminal(fd) {
+// Warn writes a styled warning line on interactive terminals.
+func (s Session) Warn(msg string) {
+	if !s.interactive {
+		slog.Warn(msg)
 		return
 	}
-	fmt.Fprintln(w, FaintStyle.Render(p.Label+" finished"))
+	fmt.Fprintln(s.w, WarningStyle.Render("warning: "+msg))
+}
+
+// Success writes a completion message (styled on TTY, slog otherwise).
+func (s Session) Success(msg string) {
+	if !s.interactive {
+		slog.Info(msg)
+		return
+	}
+	fmt.Fprintln(s.w, SuccessStyle.Render(msg))
 }

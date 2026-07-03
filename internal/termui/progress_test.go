@@ -7,10 +7,11 @@ import (
 	"testing"
 )
 
-func TestFormatProgressLabel(t *testing.T) {
+func TestFormatProgressLabel_runBenchmark(t *testing.T) {
 	t.Parallel()
 
 	got := formatProgressLabel(Progress{
+		Phase:  PhaseRunBenchmark,
 		Label:  "BenchmarkFibonacci",
 		Index:  2,
 		Total:  2,
@@ -20,14 +21,50 @@ func TestFormatProgressLabel(t *testing.T) {
 	if got != want {
 		t.Fatalf("formatProgressLabel() = %q, want %q", got, want)
 	}
+}
 
-	single := formatProgressLabel(Progress{Label: "BenchmarkOnly", Total: 1, Index: 1})
-	if !strings.Contains(single, "Running benchmark: BenchmarkOnly") {
-		t.Fatalf("single benchmark label = %q", single)
+func TestFormatProgressLabel_collectProfiles(t *testing.T) {
+	t.Parallel()
+
+	got := formatProgressLabel(Progress{
+		Phase:  PhaseCollectProfiles,
+		Label:  "BenchmarkFibonacci",
+		Detail: "cpu, memory",
+	})
+	want := "Collecting profiles for BenchmarkFibonacci (cpu, memory)…"
+	if got != want {
+		t.Fatalf("formatProgressLabel() = %q, want %q", got, want)
 	}
 }
 
-func TestRunWhile_nonTTY(t *testing.T) {
+func TestFormatProgressLabel_analyzeProfiles(t *testing.T) {
+	t.Parallel()
+
+	got := formatProgressLabel(Progress{
+		Phase: PhaseAnalyzeProfiles,
+		Label: "BenchmarkFibonacci",
+	})
+	want := "Analyzing profiles for BenchmarkFibonacci…"
+	if got != want {
+		t.Fatalf("formatProgressLabel() = %q, want %q", got, want)
+	}
+}
+
+func TestFormatProgressLabel_singleBenchmark(t *testing.T) {
+	t.Parallel()
+
+	got := formatProgressLabel(Progress{
+		Phase: PhaseRunBenchmark,
+		Label: "BenchmarkOnly",
+		Total: 1,
+		Index: 1,
+	})
+	if !strings.Contains(got, "Running benchmark: BenchmarkOnly") {
+		t.Fatalf("single benchmark label = %q", got)
+	}
+}
+
+func TestSession_RunWhile_nonTTY(t *testing.T) {
 	t.Parallel()
 
 	r, w, err := os.Pipe()
@@ -39,9 +76,14 @@ func TestRunWhile_nonTTY(t *testing.T) {
 		_ = w.Close()
 	})
 
+	session := NewSession(w, int(r.Fd()))
+	if session.Interactive() {
+		t.Fatal("expected non-interactive session for pipe fd")
+	}
+
 	var calls int
 	runErr := errors.New("boom")
-	err = RunWhile(w, int(r.Fd()), Progress{Label: "B"}, func() error {
+	err = session.RunWhile(Progress{Label: "B"}, func() error {
 		calls++
 		return runErr
 	})
@@ -53,10 +95,11 @@ func TestRunWhile_nonTTY(t *testing.T) {
 	}
 }
 
-func TestRunWhile_nilTask(t *testing.T) {
+func TestSession_RunWhile_nilTask(t *testing.T) {
 	t.Parallel()
 
-	err := RunWhile(os.Stderr, int(os.Stderr.Fd()), Progress{}, nil)
+	session := NewSession(os.Stderr, int(os.Stderr.Fd()))
+	err := session.RunWhile(Progress{}, nil)
 	if err == nil {
 		t.Fatal("expected error for nil task")
 	}
