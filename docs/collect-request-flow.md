@@ -111,10 +111,11 @@ flowchart TB
   runAuto["RunAuto"] --> loadCfg["config.Load prof.json"]
   loadCfg --> setup["setupDirectories CleanOrCreateTag"]
   setup --> loop["for each benchmark"]
-  loop --> bench["runBenchmark go test"]
-  bench --> move["moveProfileFiles to bench/tag/bin"]
-  move --> proc["processProfiles text grouped PNG"]
-  proc --> fn["collectProfileFunctions parser + pprof"]
+  loop --> s1["1 Running benchmark go test + move"]
+  s1 --> s2["2 Collecting profiles text + PNG"]
+  s2 --> s3["3 Analyzing profiles parser + pprof"]
+  s3 --> loop
+  loop --> done["session.Success"]
 ```
 
 ### 1. Validate and prepare
@@ -123,7 +124,8 @@ flowchart TB
 
 - Rejects empty benchmarks/profiles and count `< 1`.
 - Calls `applyAutoSkipPNG` — if Graphviz is unavailable and skip PNG was not set, enables `SkipPNG` and logs a notice (second guard after the Survey layer).
-- Loads optional `prof.json` via [`config.Load`](../internal/config/load.go). Missing config is non-fatal; collection proceeds with empty filters.
+- Loads optional `prof.json` via [`config.Load`](../internal/config/load.go). Missing config is non-fatal; collection proceeds with empty filters. On an interactive TTY, a single styled warning replaces the two `slog.Info` lines; non-TTY keeps both info logs.
+- Skips [`config.PrintAutoConfiguration`](../internal/config/load.go) on an interactive TTY (options were already confirmed in Survey).
 
 ### 2. Create output layout
 
@@ -132,17 +134,36 @@ flowchart TB
 - Resolves `bench/<tag>/` with [`workspace.CleanOrCreateTag`](../internal/workspace/tag.go).
 - Creates `bin/<benchmark>/`, `text/<benchmark>/`, `<profile>_functions/<benchmark>/`, and `description.txt`.
 
-### 3. Run benchmark (`go test`)
+### 3–5. Per-benchmark progress (TTY)
+
+[`runBenchAndGetProfiles`](../engine/collect/pipeline.go) orchestrates **three user-visible steps** per benchmark via [`termui.Session`](../internal/termui/progress.go). Artifact moves after `go test` are part of step 1 (no separate spinner).
+
+| Step | Label (TTY stderr) | Internal work |
+| --- | --- | --- |
+| 1 | `Running benchmark 1/2: BenchmarkX (count=5)…` | [`runBenchmark`](../engine/collect/gotest.go): `go test`, write bench text, [`moveProfileFiles`](../engine/collect/artifacts.go) |
+| 2 | `Collecting profiles for BenchmarkX (cpu, memory)…` | [`processProfiles`](../engine/collect/profiles.go): text + PNG |
+| 3 | `Analyzing profiles for BenchmarkX…` | [`collectProfileFunctions`](../engine/collect/pipeline.go): parser + per-function `pprof -list` |
+
+On an interactive TTY after Survey:
+
+- **Stderr:** one updating spinner per step, styled warnings via `Session.Warn`, and a single faint success line (`Session.Success`) when all benchmarks finish.
+- **Stdout:** stays clean for Survey/hub.
+- **No** per-function `Collected function` lines or stage `slog.Info` spam.
+
+Non-TTY (CI, piped `prof auto`): no spinners; stage `slog.Info` / `slog.Warn` unchanged; success still logged via `Session.Success` → `slog.Info` for [`tests/run.go`](../tests/run.go).
+
+Recoverable issues on TTY route through `Session.Warn` (lenient missing profile, skipped PNG, per-function list skip, optional missing `prof.json`).
+
+#### Step 1 — Run benchmark (`go test` + move)
 
 For `BenchmarkMatrixMultiplication`, [`runBenchmark`](../engine/collect/gotest.go):
 
 - Locates the package directory containing the benchmark function.
 - Builds `go test -run=^$ -bench=^BenchmarkMatrixMultiplication$ -benchmem -count=5` plus profile flags from the tooling catalog (`cpu`, `memory`).
 - Runs the command in the benchmark package directory via [`tooling.Runner`](../engine/tooling/runner.go).
-- On an interactive TTY, shows a stderr spinner via [`termui.RunWhile`](../internal/termui/progress.go) (e.g. `Running benchmark 1/1: BenchmarkMatrixMultiplication (count=5)…`) instead of streaming `go test` output to stdout. The full transcript is still written to the tag text file; failures still print combined output in the error.
-- Writes combined benchmark output to the tag layout and moves profile binaries (`.out`) into `bench/Baseline/bin/BenchmarkMatrixMultiplication/` via [`moveProfileFiles`](../engine/collect/artifacts.go).
+- Writes combined benchmark output to the tag text file; moves profile binaries (`.out`) into `bench/Baseline/bin/BenchmarkMatrixMultiplication/`. Failures return combined output in the error.
 
-### 4. Process profiles
+#### Step 2 — Process profiles
 
 [`processProfiles`](../engine/collect/profiles.go) runs per profile (`cpu`, then `memory`):
 
@@ -155,7 +176,7 @@ For `BenchmarkMatrixMultiplication`, [`runBenchmark`](../engine/collect/gotest.g
 
 Resolved function filters for each benchmark come from `config.ResolveCollectionFilter` (same rules previewed during the Survey step).
 
-### 5. Per-function extracts
+#### Step 3 — Per-function extracts
 
 [`collectProfileFunctions`](../engine/collect/pipeline.go):
 
@@ -191,7 +212,7 @@ PNG files, when generated, live under `<profile>_functions/<benchmark>/`.
 | You want to change… | Start here |
 | --- | --- |
 | Survey prompts or defaults | [`cli/tui.go`](../cli/tui.go), [`cli/collect_preview.go`](../cli/collect_preview.go) |
-| Benchmark run progress UI | [`internal/termui/progress.go`](../internal/termui/progress.go) |
+| Collect progress UI (TTY vs non-TTY) | [`internal/termui/progress.go`](../internal/termui/progress.go), [`engine/collect/pipeline.go`](../engine/collect/pipeline.go) |
 | Hub menu labels or actions | [`internal/tui/hub.go`](../internal/tui/hub.go), [`cli/cmd_ui.go`](../cli/cmd_ui.go) |
 | Intent validation rules | [`internal/intent/collect.go`](../internal/intent/collect.go) |
 | Benchmark discovery rules | [`engine/collect/discovery.go`](../engine/collect/discovery.go) |
