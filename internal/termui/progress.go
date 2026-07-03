@@ -7,11 +7,11 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"golang.org/x/term"
 )
 
@@ -56,10 +56,15 @@ type Session struct {
 	fd          int
 	interactive bool
 
-	mu            sync.Mutex
-	stageActive   bool
-	stageWarnings atomic.Int32
-	spinnerStop   chan struct{}
+	mu              sync.Mutex
+	stageActive     bool
+	headerFrozen    bool
+	warningCount    int
+	completedStages int
+	runningLabel    string
+	lastFrame       string
+	spinnerStop     chan struct{}
+	spinnerDone     sync.WaitGroup
 }
 
 // NewSession reports whether w/fd is an interactive terminal.
@@ -121,83 +126,121 @@ func (s *Session) RunWhile(p Progress, fn func() error) error {
 		return fn()
 	}
 
-	runningLabel := formatProgressLabel(p, true)
-	doneLabel := formatProgressLabel(p, false)
-
 	s.mu.Lock()
+	if s.completedStages > 0 {
+		fmt.Fprintln(s.w)
+	}
 	s.stageActive = true
-	s.stageWarnings.Store(0)
-	s.startSpinner(runningLabel)
+	s.headerFrozen = false
+	s.warningCount = 0
+	s.runningLabel = formatProgressLabel(p, true)
+	s.startSpinnerLocked()
 	s.mu.Unlock()
 
 	fnErr := fn()
 
 	s.mu.Lock()
-	s.finishStage(doneLabel, fnErr != nil)
+	s.signalSpinnerStopLocked()
+	doneLabel := formatProgressLabel(p, false)
+	failed := fnErr != nil
+	s.mu.Unlock()
+
+	s.spinnerDone.Wait()
+
+	s.mu.Lock()
+	s.finishStageLocked(doneLabel, failed)
 	s.stageActive = false
-	s.stageWarnings.Store(0)
+	s.completedStages++
 	s.mu.Unlock()
 
 	return fnErr
 }
 
-func (s *Session) startSpinner(label string) {
+func (s *Session) startSpinnerLocked() {
 	stop := make(chan struct{})
 	s.spinnerStop = stop
+	s.spinnerDone.Add(1)
 
-	styled := LabelStyle.Render(label)
-	frameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(AccentColor))
 	frames := dotSpinner.Frames
+	s.lastFrame = frames[0]
+	s.paintSpinnerFrameLocked(s.lastFrame)
 
 	go func() {
+		defer s.spinnerDone.Done()
 		ticker := time.NewTicker(dotSpinner.FPS)
 		defer ticker.Stop()
 
-		i := 0
-		writeHeader := func() {
-			frame := frameStyle.Render(frames[i%len(frames)])
-			linesUp := int(s.stageWarnings.Load())
-			if linesUp > 0 {
-				fmt.Fprintf(s.w, "\033[%dF", linesUp)
-			}
-			fmt.Fprintf(s.w, "\r%s %s", frame, styled)
-			if linesUp > 0 {
-				fmt.Fprintf(s.w, "\033[%dE", linesUp)
-			}
-		}
-
-		writeHeader()
+		i := 1
 		for {
 			select {
 			case <-stop:
 				return
 			case <-ticker.C:
+				s.mu.Lock()
+				if !s.headerFrozen {
+					frame := frames[i%len(frames)]
+					s.lastFrame = frame
+					s.paintSpinnerFrameLocked(frame)
+				}
+				s.mu.Unlock()
 				i++
-				writeHeader()
 			}
 		}
 	}()
 }
 
-func (s *Session) finishStage(doneLabel string, failed bool) {
-	if s.spinnerStop != nil {
-		close(s.spinnerStop)
-		s.spinnerStop = nil
-	}
+func (s *Session) paintSpinnerFrameLocked(frame string) {
+	frameStyled := spinnerFrameStyle.Render(frame)
+	labelStyled := LabelStyle.Render(s.runningLabel)
+	fmt.Fprint(s.w, ansi.EraseEntireLine+"\r"+frameStyled+" "+labelStyled)
+}
 
+func (s *Session) freezeHeaderLocked() {
+	if s.headerFrozen {
+		return
+	}
+	s.headerFrozen = true
+	frameStyled := spinnerFrameStyle.Render(s.lastFrame)
+	labelStyled := LabelStyle.Render(s.runningLabel)
+	fmt.Fprint(s.w, ansi.EraseEntireLine+"\r"+frameStyled+" "+labelStyled+"\n")
+}
+
+func (s *Session) signalSpinnerStopLocked() {
+	if s.spinnerStop == nil {
+		return
+	}
+	close(s.spinnerStop)
+	s.spinnerStop = nil
+}
+
+func (s *Session) finishStageLocked(doneLabel string, failed bool) {
 	mark := DoneStyle.Render("✓")
 	if failed {
 		mark = FailStyle.Render("✗")
 	}
+	line := mark + " " + doneLabel
 
-	linesUp := int(s.stageWarnings.Load())
-	if linesUp > 0 {
-		fmt.Fprintf(s.w, "\033[%dF", linesUp)
+	if s.warningCount == 0 {
+		fmt.Fprint(s.w, ansi.EraseEntireLine+"\r"+line+"\n")
+		return
 	}
-	fmt.Fprintf(s.w, "\r%s %s\n", mark, doneLabel)
+
+	if !s.headerFrozen {
+		s.freezeHeaderLocked()
+	}
+
+	linesUp := s.warningCount
+	fmt.Fprint(s.w, ansi.CursorUp(linesUp))
+	fmt.Fprint(s.w, ansi.EraseEntireLine+"\r"+line)
+	fmt.Fprint(s.w, ansi.CursorDown(linesUp))
+	fmt.Fprint(s.w, "\n")
 }
 
-// Warn writes a styled warning indented under the active stage on interactive terminals.
+func formatWarningLine(msg string) string {
+	return WarningPrefixStyle.Render("    warning: ") + WarningStyle.Render(msg)
+}
+
+// Warn writes a styled warning on its own line below the active stage header.
 func (s *Session) Warn(msg string) {
 	if s == nil || !s.interactive {
 		slog.Warn(msg)
@@ -212,8 +255,9 @@ func (s *Session) Warn(msg string) {
 		return
 	}
 
-	fmt.Fprintln(s.w, WarningStyle.Render("    warning: "+msg))
-	s.stageWarnings.Add(1)
+	s.freezeHeaderLocked()
+	fmt.Fprintln(s.w, formatWarningLine(msg))
+	s.warningCount++
 }
 
 // Success writes a completion message (styled on TTY, slog otherwise).
@@ -222,6 +266,7 @@ func (s *Session) Success(msg string) {
 		slog.Info(msg)
 		return
 	}
+	fmt.Fprintln(s.w)
 	fmt.Fprintln(s.w, SuccessStyle.Render(msg))
 }
 
@@ -229,3 +274,5 @@ func (s *Session) Success(msg string) {
 func newSessionForTest(w io.Writer, interactive bool) *Session {
 	return &Session{w: w, interactive: interactive}
 }
+
+var spinnerFrameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(AccentColor))

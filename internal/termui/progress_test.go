@@ -132,8 +132,11 @@ func TestSession_RunWhile_persistentDoneAndWarnings(t *testing.T) {
 	if !strings.Contains(out, "Preparing") {
 		t.Fatalf("output missing stage label: %q", out)
 	}
-	if !strings.Contains(out, "    warning: setup warn") {
-		t.Fatalf("output missing indented warning: %q", out)
+	if !strings.Contains(out, "warning:") {
+		t.Fatalf("output missing warning prefix: %q", out)
+	}
+	if !warningBelowStageHeader(out, "Preparing") {
+		t.Fatalf("warning should be on its own line below the stage header: %q", out)
 	}
 	// lipgloss wraps done marker; check plain check character is present.
 	if !strings.Contains(out, "✓") {
@@ -147,4 +150,44 @@ func TestSession_Warn_indentOutsideStageFallsBackToSlog(t *testing.T) {
 	s := newSessionForTest(io.Discard, true)
 	// Should not panic when no stage is active.
 	s.Warn("orphan")
+}
+
+func warningBelowStageHeader(out, stage string) bool {
+	stageIdx := strings.Index(out, stage)
+	if stageIdx < 0 {
+		return false
+	}
+	warnIdx := strings.Index(out[stageIdx:], "warning:")
+	if warnIdx < 0 {
+		return false
+	}
+	return strings.Contains(out[stageIdx:stageIdx+warnIdx], "\n")
+}
+
+func TestSession_WarningsStayBelowHeaderWithMultipleWarns(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newSessionForTest(&buf, true)
+	err := s.RunWhile(Progress{
+		Phase:  PhaseCollectProfiles,
+		Label:  "BenchmarkFoo",
+		Detail: "cpu, memory",
+	}, func() error {
+		s.Warn("first warn")
+		s.Warn("second warn")
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("RunWhile() err = %v", err)
+	}
+	out := buf.String()
+	if !warningBelowStageHeader(out, "Collecting profiles for BenchmarkFoo") {
+		t.Fatalf("warnings not below header: %q", out)
+	}
+	first := strings.Index(out, "first warn")
+	second := strings.Index(out, "second warn")
+	if first < 0 || second < 0 || second <= first {
+		t.Fatalf("expected two warning lines in order: %q", out)
+	}
 }
