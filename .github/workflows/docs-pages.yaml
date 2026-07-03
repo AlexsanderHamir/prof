@@ -15,11 +15,15 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -35,16 +39,41 @@ jobs:
       - name: Build site
         run: mkdocs build --strict -f prof_web_doc/mkdocs.yml
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: prof_web_doc/site
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment_retry.outputs.page_url || steps.deployment.outputs.page_url }}
+    timeout-minutes: 15
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+        with:
+          # Poll longer on transient Pages backend failures (see actions/deploy-pages#418).
+          reporting_interval: 10000
+          error_count: 15
+
+      - name: Retry Pages deploy after transient failure
+        if: steps.deployment.outcome == 'failure'
+        id: deployment_retry
+        uses: actions/deploy-pages@v5
+        with:
+          reporting_interval: 10000
+          error_count: 15
+
+      - name: Require successful Pages deploy
+        if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure'
+        run: |
+          echo "GitHub Pages deploy failed after two attempts."
+          echo "Re-run this workflow from Actions, or check Settings → Pages → Source: GitHub Actions."
+          exit 1
