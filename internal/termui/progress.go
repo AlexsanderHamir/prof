@@ -111,16 +111,7 @@ func (m spinnerModel) View() string {
 func formatProgressLabel(p Progress) string {
 	var b strings.Builder
 	switch p.Phase {
-	case PhaseCollectProfiles:
-		b.WriteString("Collecting profiles for ")
-		b.WriteString(p.Label)
-		if p.Detail != "" {
-			fmt.Fprintf(&b, " (%s)", p.Detail)
-		}
-	case PhaseAnalyzeProfiles:
-		b.WriteString("Analyzing profiles for ")
-		b.WriteString(p.Label)
-	default:
+	case PhaseRunBenchmark:
 		if p.Total > 1 {
 			fmt.Fprintf(&b, "Running benchmark %d/%d: ", p.Index, p.Total)
 		} else {
@@ -130,6 +121,15 @@ func formatProgressLabel(p Progress) string {
 		if p.Detail != "" {
 			fmt.Fprintf(&b, " (%s)", p.Detail)
 		}
+	case PhaseCollectProfiles:
+		b.WriteString("Collecting profiles for ")
+		b.WriteString(p.Label)
+		if p.Detail != "" {
+			fmt.Fprintf(&b, " (%s)", p.Detail)
+		}
+	case PhaseAnalyzeProfiles:
+		b.WriteString("Analyzing profiles for ")
+		b.WriteString(p.Label)
 	}
 	b.WriteString("…")
 	return b.String()
