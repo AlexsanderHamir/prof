@@ -45,8 +45,6 @@ These IDs are the ones `go test` integration supports (comma-separated for `--pr
 | `--profiles` | strings | Yes | n/a | Profile IDs, comma-separated (for example `cpu,memory,mutex,block`). |
 | `--tag` | string | Yes | n/a | Tag directory name under `bench/`. |
 | `--count` | int | Yes | n/a | Number of benchmark iterations or runs `go test` should perform (must be positive). |
-| `--lenient-profiles` | bool | No | `false` | Skip missing profile binaries instead of failing the run. |
-| `--skip-png` | bool | No | `false` | Succeed even when PNG generation fails (for example Graphviz missing). |
 
 ## `prof manual`
 

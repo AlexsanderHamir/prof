@@ -138,8 +138,8 @@ Edit interactively: `prof ui` → Create Configuration File. CLI: `prof config i
 
 | Symptom | Package | Test / note |
 |---------|---------|-------------|
-| Missing profile binary after bench | `engine/collect` | `--lenient-profiles` skips; default fails |
-| PNG / Graphviz missing | `engine/collect` | `--skip-png` warns; default fails |
+| Missing profile binary after bench | `engine/collect` | Warn and skip; fails if zero profiles processed |
+| PNG / Graphviz missing | `engine/collect` | Warn and continue; text profiles still collected |
 | Manual file `cpu.out` → bench `cpu` | `engine/collect` | [`manual_test.go`](engine/collect/manual_test.go) stem rules |
 | Tag dir not empty before run | `internal/workspace` | [`layout_test.go`](internal/workspace/layout_test.go) `CleanOrCreateTag` |
 | Per-bench overrides collection defaults | `internal/config` | [`config_test.go`](internal/config/config_test.go) |

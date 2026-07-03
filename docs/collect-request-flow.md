@@ -44,7 +44,6 @@ The walkthrough below uses these choices (from a typical interactive session):
 - **Profiles:** `cpu`, `memory`
 - **Count:** `5`
 - **Tag:** `Baseline`
-- **Advanced options:** group-by-package **No**, lenient profiles **Yes**, skip PNG **Yes**
 
 ## Entry paths
 
@@ -75,7 +74,6 @@ Each Survey step maps to a function, validation rule, and field on [`CollectInte
 | Select profiles | `svc.Collect.SupportedProfiles()` | `Profiles` |
 | Number of runs (count) | `strconv.Atoi` in `runTUI` | `Count` |
 | Tag name | Survey input | `Tag` |
-| Advanced options | [`askAdvancedCollectOptions`](../cli/collect_preview.go) | `GroupByPackage`, `LenientProfiles`, `SkipPNG` |
 
 **Prompt effects**
 
@@ -86,15 +84,8 @@ Each Survey step maps to a function, validation rule, and field on [`CollectInte
 | Select profiles | Profile IDs from [`engine/tooling/catalog.go`](../engine/tooling/catalog.go) |
 | Number of runs | Rejects count `< 1` in `runTUI` before intent validation |
 | Tag name | Trimmed tag becomes `bench/<tag>/` via [`workspace.TagLayout`](../internal/workspace/layout.go) |
-| Advanced options | See [Advanced options defaults](#advanced-options-defaults) |
 
-`CollectIntent.Run` copies fields into `app.CollectAutoOptions` ([`internal/app/dto.go`](../internal/app/dto.go)) with the same names before calling `collect.RunAuto`.
-
-### Advanced options defaults
-
-When you answer **No** to **Advanced options**, [`askAdvancedCollectOptions`](../cli/collect_preview.go) still sets `SkipPNG` to `true` when Graphviz is unavailable — you do not get separate prompts for group-by-package or lenient profiles (both stay `false`).
-
-When you answer **Yes**, you get three confirms. `SkipPNG` defaults to `true` when Graphviz is missing; if you leave it `false` without Graphviz, prof prints `SkipPNGNotice` and forces skip PNG before building the intent. [`runTUI`](../cli/tui.go) repeats the Graphviz check after advanced options return.
+`CollectIntent.Run` copies fields into `app.CollectAutoOptions` ([`internal/app/dto.go`](../internal/app/dto.go)) before calling `collect.RunAuto`.
 
 ### After the last prompt
 
@@ -122,10 +113,9 @@ flowchart TB
 [`collect.RunAuto`](../engine/collect/entry.go):
 
 - Rejects empty benchmarks/profiles and count `< 1`.
-- Calls `applyAutoSkipPNG` — if Graphviz is unavailable and skip PNG was not set, enables `SkipPNG` and logs a notice (second guard after the Survey layer).
 - Loads optional `prof.json` via [`config.Load`](../internal/config/load.go). Missing config is non-fatal; collection proceeds with empty filters.
 - Skips [`config.PrintAutoConfiguration`](../internal/config/load.go) on an interactive TTY (options were already confirmed in Survey).
-- On an interactive TTY, runs a **Preparing** stage ([`PhasePrepare`](../internal/termui/progress.go)) that creates the tag layout and emits prelude warnings (missing `prof.json`, global Graphviz skip notice) indented under that stage. Non-TTY keeps separate `slog.Info` lines and runs [`setupDirectories`](../engine/collect/layout.go) before the benchmark loop.
+- On an interactive TTY, runs a **Preparing** stage ([`PhasePrepare`](../internal/termui/progress.go)) that creates the tag layout and emits prelude warnings (missing `prof.json`, Graphviz unavailable notice) indented under that stage. Non-TTY keeps separate `slog.Info` lines and runs [`setupDirectories`](../engine/collect/layout.go) before the benchmark loop.
 
 ### 2. Create output layout
 
@@ -166,7 +156,7 @@ Example (two benchmarks, no Graphviz):
 
 Non-TTY (CI, piped `prof auto`): no spinners; stage `slog.Info` / `slog.Warn` unchanged; success still logged via `Session.Success` → `slog.Info` for [`tests/run.go`](../tests/run.go).
 
-Recoverable issues on TTY route through `Session.Warn` under the active stage (lenient missing profile and skipped PNG under **Collecting profiles**; per-function list skip under **Collecting function profiles**; prelude issues under **Preparing**).
+Recoverable issues on TTY route through `Session.Warn` under the active stage (missing profile binary and skipped PNG under **Collecting profiles**; per-function list skip under **Collecting function profiles**; prelude issues under **Preparing**).
 
 #### Step 1 — Run benchmark (`go test` + move)
 
@@ -183,10 +173,9 @@ For `BenchmarkMatrixMultiplication`, [`runBenchmark`](../engine/collect/gotest.g
 
 | Step | Output | Notes for this example |
 | --- | --- | --- |
-| Stat binary | — | **Lenient profiles Yes:** missing `.out` logs a warning and skips that profile instead of failing |
+| Stat binary | — | Missing `.out` logs a warning and skips that profile instead of failing |
 | Text profile | `text/.../BenchmarkMatrixMultiplication_cpu.txt` (and `_memory.txt`) | Via `go tool pprof` |
-| Grouped text | `*_grouped.txt` | **Group by package No:** this branch is skipped |
-| PNG | `<profile>_functions/.../BenchmarkMatrixMultiplication.png` | **Skip PNG Yes:** PNG failure logs a warning; run still succeeds if text profiles were produced |
+| PNG | `<profile>_functions/.../BenchmarkMatrixMultiplication.png` | PNG failure logs a warning; run still succeeds if text profiles were produced |
 
 Resolved function filters for each benchmark come from `config.ResolveCollectionFilter` (same rules previewed during the Survey step).
 
@@ -232,7 +221,7 @@ PNG files, when generated, live under `<profile>_functions/<benchmark>/`.
 | Benchmark discovery rules | [`engine/collect/discovery.go`](../engine/collect/discovery.go) |
 | `go test` argv or profile flags | [`engine/collect/gotest.go`](../engine/collect/gotest.go), [`engine/tooling/catalog.go`](../engine/tooling/catalog.go) |
 | Artifact paths or tag lifecycle | [`internal/workspace/layout.go`](../internal/workspace/layout.go), [`engine/collect/layout.go`](../engine/collect/layout.go) |
-| Lenient profiles / skip PNG / grouped text | [`engine/collect/profiles.go`](../engine/collect/profiles.go) |
+| Missing profile / PNG handling | [`engine/collect/profiles.go`](../engine/collect/profiles.go) |
 | Per-function file list and filters | [`parser/`](../parser/), [`internal/config/filter.go`](../internal/config/filter.go) |
 
 ## Layering
@@ -245,8 +234,8 @@ PNG files, when generated, live under `<profile>_functions/<benchmark>/`.
 | --- | --- | --- |
 | No benchmarks in multi-select | Discovery | [`scanForBenchmarks`](../engine/collect/discovery.go) — empty result errors in `runTUI` |
 | Invalid count | CLI | `runTUI` before intent; `CollectIntent.Validate` |
-| Missing profile binary after bench | Engine | `LenientProfiles` → skip; default → fail ([`profiles.go`](../engine/collect/profiles.go)) |
-| PNG / Graphviz missing | CLI + engine | `SkipPNG` on intent; `applyAutoSkipPNG` in [`entry.go`](../engine/collect/entry.go) |
+| Missing profile binary after bench | Engine | Warn and skip profile ([`profiles.go`](../engine/collect/profiles.go)); fails only if zero profiles processed |
+| PNG / Graphviz missing | Engine | Prelude notice in [`entry.go`](../engine/collect/entry.go); per-profile PNG failure warns in [`profiles.go`](../engine/collect/profiles.go) |
 | Tag dir not empty | Workspace | [`CleanOrCreateTag`](../internal/workspace/tag.go) during `setupDirectories` |
 
 See [CODEBASE_DESIGN.md — Edge-case catalog](../CODEBASE_DESIGN.md#edge-case-catalog) for the full contributor table.
