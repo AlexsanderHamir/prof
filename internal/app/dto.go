@@ -17,15 +17,3 @@ type CollectManualOptions struct {
 	Tag            string
 	GroupByPackage bool
 }
-
-// TrackOptions describes prof track auto or manual compare inputs.
-type TrackOptions struct {
-	Baseline            string
-	Current             string
-	BenchmarkName       string
-	ProfileType         string
-	OutputFormat        string
-	UseThreshold        bool
-	RegressionThreshold float64
-	IsManual            bool
-}

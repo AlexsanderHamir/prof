@@ -43,13 +43,6 @@ func TestLoadProfileAndParseWrappers(t *testing.T) {
 
 func TestPathBasedFacadeFuncs(t *testing.T) {
 	path := benchmarkGenPoolCPUFixturePath(t)
-	if _, err := TurnLinesIntoObjectsV2(filepath.Join(t.TempDir(), "nope")); err == nil {
-		t.Fatal("expected error")
-	}
-	objs, err := TurnLinesIntoObjectsV2(path)
-	if err != nil || len(objs) == 0 {
-		t.Fatal(err, len(objs))
-	}
 	if _, missingErr := GetAllFunctionNamesV2(filepath.Join(t.TempDir(), "nope"), config.FunctionFilter{}); missingErr == nil {
 		t.Fatal()
 	}
@@ -63,20 +56,6 @@ func TestPathBasedFacadeFuncs(t *testing.T) {
 	s, err := OrganizeProfileByPackageV2(path, config.FunctionFilter{})
 	if err != nil || !strings.Contains(s, "Subtotal") {
 		t.Fatal(err, s)
-	}
-}
-
-func TestLineObjsFromProfileDataNonNil(t *testing.T) {
-	d := &ProfileData{
-		SortedEntries:   []FuncEntry{{Name: "a.B", Flat: 1}},
-		FlatPercentages: map[string]float64{"a.B": 100},
-		CumPercentages:  map[string]float64{"a.B": 100},
-		SumPercentages:  map[string]float64{"a.B": 100},
-		Cum:             map[string]int64{"a.B": 1},
-	}
-	objs := LineObjsFromProfileData(d)
-	if len(objs) != 1 || objs[0].FnName != "a.B" {
-		t.Fatalf("%+v", objs)
 	}
 }
 

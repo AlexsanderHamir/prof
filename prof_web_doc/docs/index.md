@@ -1,24 +1,21 @@
 # Prof
 
-Prof is a command-line tool for Go that runs benchmarks with `go test`, captures CPU, memory, mutex, and block profiles, stores everything under a predictable `bench/<tag>/` tree, and compares two tags so you can see *where* performance changed, not only the `benchstat` headline.
+Prof is a command-line tool for Go that runs benchmarks with `go test`, captures CPU, memory, mutex, and block profiles, and stores everything under a predictable `bench/<tag>/` tree for analysis with `pprof` and your own tooling.
 
-Use it when you already trust `ns/op` but need comparable profiles across experiments, a stable layout for `pprof`, and optional CI regression gates on flat-time change.
+Use it when you want comparable profiles across experiments and a stable on-disk layout without memorizing `go test` and `pprof` flags.
 
 ## What you can do
 
 | Goal | Start here |
 | ---- | ---------- |
 | Install the `prof` binary | [Install Prof](install.md) |
-| First collect and compare in a few minutes | [Quickstart](quickstart.md) |
+| First collect in a few minutes | [Quickstart](quickstart.md) |
 | Understand cwd, `go.mod`, and `bench/` | [Working directory and paths](workspace.md) |
 | Script or CI: collect without menus | [Collect profiling data](collect.md) |
-| Diff two runs (tags or file paths) | [Compare runs](compare.md) |
-| Per-function extracts and CI rules in JSON | [Configure collection](configure.md) |
+| Per-function extracts in JSON | [Configure collection](configure.md) |
 | Menus: full UI or terminal flows | [Interactive UI and TUI](tui.md) |
-| Fail builds on regressions | [CI and regressions](ci.md) |
-| `benchstat` or QCacheGrind on saved data | [Optional tools](tools.md) |
 | Flags, defaults, and formats in one place | [CLI reference](cli-reference.md) |
-| Something failed (TTY, paths, tools) | [Troubleshooting](troubleshooting.md) |
+| Something failed (TTY, paths) | [Troubleshooting](troubleshooting.md) |
 
 ## How the workflow fits together
 
@@ -26,12 +23,12 @@ Use it when you already trust `ns/op` but need comparable profiles across experi
 flowchart LR
   collect[Collect_prof_auto_or_ui]
   bench["bench/tag_layout"]
-  analyze[Compare_or_tools]
+  analyze[pprof_or_your_tools]
   collect --> bench
   bench --> analyze
 ```
 
-You label each run with a tag. Prof writes `bench/<tag>/`. [Compare runs](compare.md) pairs two tags (baseline vs current) for the same benchmark and profile type, or you can point [Optional tools](tools.md) at those directories.
+You label each run with a tag. Prof writes `bench/<tag>/` with binary profiles, text summaries, and optional per-function extracts.
 
 ## Terminology
 
@@ -39,12 +36,11 @@ You label each run with a tag. Prof writes `bench/<tag>/`. [Compare runs](compar
 | ---- | ------- |
 | Module root | Directory containing your `go.mod`; run Prof from here, same as for `go test`. |
 | Tag | Label for one run; artifacts live in `bench/<tag>/`. |
-| Baseline / current | The two tags (or two file paths) you compare. |
 | Profile type | One of `cpu`, `memory`, `mutex`, `block`. |
 
 ## Source
 
-[Prof on GitHub](https://github.com/AlexsanderHamir/prof). Full CI JSON schema and GitHub Actions examples: [CI/CD configuration](https://github.com/AlexsanderHamir/prof/blob/main/docs/cicd_configuration.md).
+[Prof on GitHub](https://github.com/AlexsanderHamir/prof).
 
 ## Next steps
 

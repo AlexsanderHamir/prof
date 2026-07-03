@@ -132,13 +132,11 @@ linters-settings:
           - "cmd/**"
           - "internal/**"
           - "engine/collect/**"
-          - "engine/tracker/**"
           - "engine/cursoragent/**"
-          - "engine/tools/**"
           - "parser/**"
         deny:
           - pkg: "os/exec$"
-            desc: "Use engine/tooling (LookPath, ExecRunner, StartDetached)."
+            desc: "Use engine/tooling (LookPath, ExecRunner)."
 
   errcheck:
     # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
@@ -180,7 +178,7 @@ linters-settings:
   forbidigo:
     forbid:
       - p: ^exec\.Command$
-        msg: Use engine/tooling.ExecRunner, tooling.StartDetached, or tests-only harness code — not exec.Command.
+        msg: Use engine/tooling.ExecRunner, or tests-only harness code — not exec.Command.
       - p: ^exec\.CommandContext$
         msg: Use engine/tooling.ExecRunner — not exec.CommandContext outside engine/tooling/exec_*.go.
 

@@ -9,12 +9,9 @@
 // Supported translations:
 //
 //   - KindCollect / CollectIntent → Collect.RunAuto
-//   - KindCompare / CompareIntent → Tracker.RunTrackAuto (tag layout; not manual file paths)
 //   - KindSetup / SetupIntent → Config.CreateDefaultFile (deprecated alias)
 //   - KindConfigCreate / ConfigCreateIntent → Config.CreateDefaultFile
 //   - KindConfigSave / ConfigSaveIntent → Config.Save
-//   - KindToolsBenchstat / ToolsBenchstatIntent → Tools.RunBenchStats
-//   - KindToolsQcachegrind / ToolsQcachegrindIntent → Tools.RunQcacheGrind
 //
 // New workflows: add a Kind constant, an entry to AllKinds, a new file with types implementing Executable,
 // and wire cli or cli/tui to construct the intent after Survey prompts.

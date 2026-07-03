@@ -81,8 +81,3 @@ func (l TagLayout) ResolveBin(bench, profile string) (string, error) {
 	}
 	return p, nil
 }
-
-// ToolResultsDir returns bench/tools/<toolName>/.
-func ToolResultsDir(toolName string) string {
-	return filepath.Join(MainDirOutput, ToolDir, toolName)
-}

@@ -1,15 +1,5 @@
 package parser
 
-// LineObj is one function row for tracker-style comparisons (flat/cum and percentages).
-type LineObj struct {
-	FnName         string
-	Flat           float64
-	FlatPercentage float64
-	SumPercentage  float64
-	Cum            float64
-	CumPercentage  float64
-}
-
 // PackageGroup is a module/package bucket for grouped report output.
 type PackageGroup struct {
 	Name           string

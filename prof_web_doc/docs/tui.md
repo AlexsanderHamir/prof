@@ -1,6 +1,6 @@
 # Interactive UI and TUI
 
-This guide covers `prof ui` (full-screen menus), `prof tui` (terminal collect), and `prof tui track` (terminal compare). They call the same engines as `prof auto` and `prof track`; artifacts still land under `bench/<tag>/`.
+This guide covers `prof ui` (full-screen menus) and `prof tui` (terminal collect). They call the same engines as `prof auto`; artifacts land under `bench/<tag>/`.
 
 ## Before you begin
 
@@ -9,11 +9,11 @@ This guide covers `prof ui` (full-screen menus), `prof tui` (terminal collect), 
 
 !!! important
 
-    `prof ui`, `prof tui`, and `prof tui track` need a normal terminal (stdin and stdout must be TTYs). For automation, use flag commands and `prof -h`. See [Troubleshooting](troubleshooting.md#prof-ui-or-prof-tui-fails-in-ci-or-ides).
+    `prof ui` and `prof tui` need a normal terminal (stdin and stdout must be TTYs). For automation, use flag commands and `prof -h`. See [Troubleshooting](troubleshooting.md#prof-ui-or-prof-tui-fails-in-ci-or-ides).
 
 ## What is `prof ui`?
 
-`prof ui` is the recommended first run: a Bubble Tea full-screen menu where you choose Run benchmarks and collect profiles, Compare two tagged runs, Tools (`benchstat` and QCacheGrind), Create configuration template, Show documentation URL, or Quit.
+`prof ui` is the recommended first run: a Bubble Tea full-screen menu where you choose Collect Profiles, Create Configuration File, Documentation Site, or Quit.
 
 ### Start the UI
 
@@ -21,7 +21,7 @@ This guide covers `prof ui` (full-screen menus), `prof tui` (terminal collect), 
 prof ui
 ```
 
-After you pick an action, Survey-style prompts collect parameters (benchmarks, profiles, tags, and so on), equivalent to the flags documented in [Collect profiling data](collect.md) and [Compare runs](compare.md).
+After you pick an action, Survey-style prompts collect parameters (benchmarks, profiles, tags, and so on), equivalent to the flags documented in [Collect profiling data](collect.md).
 
 ## What is `prof tui`?
 
@@ -33,24 +33,13 @@ prof tui
 
 Navigation: arrow keys; Space toggles in multi-select; type to filter long lists.
 
-## What is `prof tui track`?
-
-`prof tui track` is a compare-only flow. You need at least two tags under `bench/` from any prior collect. Prompts cover baseline, current, benchmark, profile type, output format, and optional regression gate.
-
-```bash
-prof tui track
-```
-
 ## Testing / verify
 
-- Collect: after finishing `prof tui` or the collect path in `prof ui`, confirm `bench/<tag>/` exists with `bin/` and `text/` populated.
-- Compare: you should see report text in the terminal or the same files or HTML or JSON outputs as `prof track` ([Compare runs](compare.md)).
+After finishing `prof tui` or the collect path in `prof ui`, confirm `bench/<tag>/` exists with `bin/` and `text/` populated.
 
 ## Next steps
 
 - [Collect profiling data](collect.md) for exact flag meanings mirrored in the TUIs.
-- [Compare runs](compare.md) for output formats and regression options.
-- [CI and regressions](ci.md) when moving the same flows to pipelines.
 
 ## Related
 

@@ -4,12 +4,10 @@ package workspace
 const (
 	MainDirOutput               = "bench"
 	ProfileTextDir              = "text"
-	ToolDir                     = "tools"
 	ProfileBinDir               = "bin"
 	PermDir                     = 0o755
 	PermFile                    = 0o644
 	FunctionsDirSuffix          = "_functions"
-	ToolsResultsSuffix          = "_results.txt"
 	TextExtension               = "txt"
 	ExpectedTestSuffix          = ".test"
 	ProfileArtifactExtension    = "out"
@@ -17,8 +15,6 @@ const (
 	BenchDescriptionPlaceholder = "The explanation for this profilling session goes here"
 	GoBinaryName                = "go"
 	GoTestSubcommand            = "test"
-	ToolNameBenchstat           = "benchstat"
-	ToolNameQcachegrind         = "qcachegrind"
 )
 
 // InfoCollectionSuccess is logged when auto collection completes.

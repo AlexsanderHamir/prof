@@ -83,7 +83,7 @@ func Save(cfg *Config) error {
 	return nil
 }
 
-// Default returns a minimal starter config; collection and track settings are opt-in.
+// Default returns a minimal starter config; collection settings are opt-in.
 func Default() *Config {
 	cfg := &Config{
 		Version: CurrentVersion,
@@ -92,21 +92,16 @@ func Default() *Config {
 	return cfg
 }
 
-// configForJSON omits empty collection/track sections so minimal prof.json stays version-only.
+// configForJSON omits empty collection sections so minimal prof.json stays version-only.
 func configForJSON(cfg Config) any {
 	type fileConfig struct {
 		Version    int         `json:"version"`
 		Collection *Collection `json:"collection,omitempty"`
-		Track      *Track      `json:"track,omitempty"`
 	}
 	out := fileConfig{Version: cfg.Version}
 	if !collectionEmpty(cfg.Collection) {
 		col := cfg.Collection
 		out.Collection = &col
-	}
-	if !trackSectionEmpty(cfg.Track) {
-		tr := cfg.Track
-		out.Track = &tr
 	}
 	return out
 }

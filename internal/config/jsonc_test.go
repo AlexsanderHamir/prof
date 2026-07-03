@@ -66,7 +66,7 @@ func TestCreateDefaultFile_writesValidJSONAndExample(t *testing.T) {
 	if _, err = Load(); err != nil {
 		t.Fatalf("prof.json should load: %v", err)
 	}
-	if strings.Contains(string(profData), `"collection"`) || strings.Contains(string(profData), `"track"`) {
+	if strings.Contains(string(profData), `"collection"`) {
 		t.Fatalf("prof.json should be minimal (version only), got: %s", profData)
 	}
 
@@ -85,11 +85,7 @@ func TestCreateDefaultFile_writesValidJSONAndExample(t *testing.T) {
 		docSiteBase + "/configure/#collection",
 		docSiteBase + "/configure/#collection-benchmarks",
 		docSiteBase + "/configure/#collection-manual-profiles",
-		docSiteBase + "/configure/#track",
-		docSiteBase + "/configure/#track-benchmarks",
 		docSiteBase + "/collect/#artifact-layout-under-benchtag",
-		docSiteBase + "/compare/#regression-gate",
-		docSiteBase + "/ci/#json-in-profjson",
 	} {
 		if !strings.Contains(example, anchor) {
 			t.Fatalf("expected doc link %q in example file", anchor)
@@ -109,9 +105,6 @@ func TestExampleTemplate_loadsAfterCommentStrip(t *testing.T) {
 	if c.Version != CurrentVersion {
 		t.Fatalf("version %d", c.Version)
 	}
-	if len(c.Track.Defaults.IgnorePrefixes) != 3 {
-		t.Fatalf("track defaults: %+v", c.Track.Defaults)
-	}
 }
 
 func TestExampleTemplate_containsDocLinks(t *testing.T) {
@@ -119,7 +112,6 @@ func TestExampleTemplate_containsDocLinks(t *testing.T) {
 	for _, anchor := range []string{
 		"/configure/#collection-benchmarks",
 		"/collect/#prof-manual",
-		"/compare/#regression-gate",
 	} {
 		if !strings.Contains(tmpl, anchor) {
 			t.Fatalf("expected %q in template", anchor)

@@ -4,11 +4,11 @@
 // Structure:
 //
 //   - [Pipeline] and stage interfaces — swap open/decode/validate/aggregation without changing callers.
-//   - Types in types.go — [ProfileData], [LineObj], report structs.
+//   - Types in types.go — [ProfileData], report structs.
 //   - profile_io.go — load/parse/validate entrypoints wired to the default pipeline.
 //   - aggregate.go — sample → flat/cum maps and percentages.
 //   - symbol_name.go — function/package string parsing for filters and grouping.
 //   - package_report.go — markdown formatting for package groups.
-//   - facade.go — path-based API: [TurnLinesIntoObjects], [GetAllFunctionNames], [OrganizeProfileByPackage],
+//   - facade.go — path-based API: [GetAllFunctionNames], [OrganizeProfileByPackage],
 //     and *V2 equivalents kept for stable call sites.
 package parser

@@ -4,7 +4,7 @@
 
 Remediation tracked in [PROGRESS.md](./PROGRESS.md). Commits on `main`: `1af3bc8`, `4067980`, `671484c`, `52861d6`, `48368ec`, `643db61`, `8f194a2`, `bf04db1`, plus test closure commit.
 
-Original findings below.
+Original findings below (historical). **Compare Runs** and **External Tools** were removed from prof in 2026; scenarios 3.x and 4.x no longer apply.
 
 ---
 

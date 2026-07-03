@@ -70,27 +70,6 @@ func TestResolveCollectionFilter_emptyConfig(t *testing.T) {
 	}
 }
 
-func TestResolveTrackPolicy_merge(t *testing.T) {
-	cfg := &config.Config{
-		Track: config.Track{
-			Defaults: config.TrackPolicy{
-				IgnorePrefixes:       []string{"runtime."},
-				MaxRegressionPercent: 15,
-			},
-			Benchmarks: map[string]config.TrackPolicy{
-				"BenchmarkX": {MaxRegressionPercent: 10},
-			},
-		},
-	}
-	got := config.ResolveTrackPolicy(cfg, "BenchmarkX")
-	if got.MaxRegressionPercent != 10 {
-		t.Fatalf("got %v", got.MaxRegressionPercent)
-	}
-	if len(got.IgnorePrefixes) != 1 {
-		t.Fatalf("expected inherited ignore prefix, got %+v", got)
-	}
-}
-
 func TestSaveRoundTrip(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/foo\n\ngo 1.24\n"), 0o600); err != nil {
@@ -115,17 +94,5 @@ func TestSaveRoundTrip(t *testing.T) {
 	}
 	if len(loaded.Collection.Benchmarks["BenchmarkFoo"].IgnoreFunctions) != 1 {
 		t.Fatalf("got %+v", loaded.Collection.Benchmarks)
-	}
-}
-
-func TestValidate_rejectsNegativeThreshold(t *testing.T) {
-	cfg := &config.Config{
-		Version: config.CurrentVersion,
-		Track: config.Track{
-			Defaults: config.TrackPolicy{MaxRegressionPercent: -1},
-		},
-	}
-	if err := config.Validate(cfg); err == nil {
-		t.Fatal("expected error")
 	}
 }

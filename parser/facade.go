@@ -2,35 +2,6 @@ package parser
 
 import "github.com/AlexsanderHamir/prof/internal/config"
 
-// LineObjsFromProfileData builds line objects from aggregated profile data (e.g. [Pipeline.RunFromPath]).
-func LineObjsFromProfileData(d *ProfileData) []*LineObj {
-	if d == nil {
-		return nil
-	}
-	out := make([]*LineObj, 0, len(d.SortedEntries))
-	for _, entry := range d.SortedEntries {
-		fn := entry.Name
-		out = append(out, &LineObj{
-			FnName:         fn,
-			Flat:           float64(entry.Flat),
-			FlatPercentage: d.FlatPercentages[fn],
-			SumPercentage:  d.SumPercentages[fn],
-			Cum:            float64(d.Cum[fn]),
-			CumPercentage:  d.CumPercentages[fn],
-		})
-	}
-	return out
-}
-
-// TurnLinesIntoObjectsV2 loads a profile path and returns line objects sorted by flat cost.
-func TurnLinesIntoObjectsV2(profilePath string) ([]*LineObj, error) {
-	d, err := profileDataFromPath(profilePath)
-	if err != nil {
-		return nil, err
-	}
-	return LineObjsFromProfileData(d), nil
-}
-
 // GetFunctionListEntriesFromProfileData returns per-function list targets after the same
 // filtering as [GetAllFunctionNamesFromProfileData].
 func GetFunctionListEntriesFromProfileData(d *ProfileData, filter config.FunctionFilter) []FunctionListEntry {
@@ -152,11 +123,6 @@ func OrganizeProfileByPackageV2(profilePath string, filter config.FunctionFilter
 		return "", err
 	}
 	return OrganizeProfileByPackageFromProfileData(d, filter), nil
-}
-
-// TurnLinesIntoObjects is a convenience name for [TurnLinesIntoObjectsV2].
-func TurnLinesIntoObjects(profilePath string) ([]*LineObj, error) {
-	return TurnLinesIntoObjectsV2(profilePath)
 }
 
 // GetAllFunctionNames extracts function names from a profile path; equivalent to [GetAllFunctionNamesV2].
