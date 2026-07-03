@@ -9,6 +9,7 @@ import (
 	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/app"
 	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/termui"
 )
 
 func printCollectionFilterPreview(svc *app.Services, benchNames []string) {
@@ -33,15 +34,27 @@ func formatFilterList(items []string) string {
 }
 
 func printCollectOutputOptionsHelp() {
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, "Collect output options:")
-	fmt.Fprintln(os.Stdout, "  Lenient profiles — if a .prof file is missing after the bench, skip it instead of failing the run")
-	fmt.Fprintln(os.Stdout, "  Skip PNG — ignore call-graph PNG failures; the run still succeeds when text profiles were collected")
-	fmt.Fprintln(os.Stdout, "")
-	if tooling.GraphvizAvailable() {
-		fmt.Fprintln(os.Stdout, "Press Enter for defaults: flat text profiles, strict profile checks, PNG call graphs when possible.")
-	} else {
-		fmt.Fprintln(os.Stdout, "Press Enter for defaults: flat text profiles, strict profile checks, PNG skipped (Graphviz not installed).")
+	fmt.Fprintln(os.Stdout)
+	fmt.Fprintln(os.Stdout, termui.PromptSectionStyle.Render("Output options"))
+	fmt.Fprintln(os.Stdout, termui.PromptHintStyle.Render("  Optional — press Enter at the prompt below to keep defaults."))
+	fmt.Fprintln(os.Stdout)
+
+	fmt.Fprintln(os.Stdout, "  Lenient profiles")
+	fmt.Fprintln(os.Stdout, termui.PromptHintStyle.Render("    Skip missing .prof files instead of failing the run"))
+	fmt.Fprintln(os.Stdout, "  Skip PNG")
+	fmt.Fprintln(os.Stdout, termui.PromptHintStyle.Render("    Ignore call-graph PNG failures; text profiles still count"))
+	fmt.Fprintln(os.Stdout)
+
+	defaults := "flat text profiles · strict profile checks · PNG call graphs when Graphviz is available"
+	if !tooling.GraphvizAvailable() {
+		defaults = "flat text profiles · strict profile checks · PNG skipped"
+	}
+	fmt.Fprintln(os.Stdout, termui.PromptHintStyle.Render("  Defaults: "+defaults))
+	fmt.Fprintln(os.Stdout)
+
+	if !tooling.GraphvizAvailable() {
+		fmt.Fprintln(os.Stdout, termui.PromptCalloutStyle.Render("Graphviz not installed — PNG call graphs will be skipped."))
+		fmt.Fprintln(os.Stdout)
 	}
 }
 
@@ -50,7 +63,7 @@ func askAdvancedCollectOptions() (lenient, skipPng bool, err error) {
 
 	var advanced bool
 	if err = survey.AskOne(&survey.Confirm{
-		Message: "Change any of the options above?",
+		Message: "Customize output options?",
 		Default: false,
 	}, &advanced); err != nil {
 		return false, false, err
