@@ -92,7 +92,7 @@ flowchart TB
 | `prof config init` | [`cli/cmd_config.go`](cli/cmd_config.go) → [`internal/config/load.go`](internal/config/load.go) | Writes `prof.json` beside `go.mod` |
 | `prof setup` | [`cli/cmd_setup.go`](cli/cmd_setup.go) | Hidden alias for `prof config init` |
 
-Benchmark discovery: [`engine/collect/discovery.go`](engine/collect/discovery.go). Profile names: [`engine/tooling/catalog.go`](engine/tooling/catalog.go) (surfaced via `app.KnownProfileIDs()`).
+Benchmark discovery: [`engine/collect/discovery.go`](engine/collect/discovery.go). Profile names: [`engine/tooling/catalog.go`](engine/tooling/catalog.go) via [`collect.SupportedProfiles`](engine/collect/options.go).
 
 ## Profile pipelines
 

@@ -109,15 +109,6 @@ func (c *Catalog) ProfileKinds() []ProfileKind {
 	return out
 }
 
-// IsKnownProfile reports whether id is a supported profile kind.
-func (c *Catalog) IsKnownProfile(id string) bool {
-	if c == nil {
-		return false
-	}
-	_, ok := c.byID[id]
-	return ok
-}
-
 // KnownProfileSet returns a set of profile ids for membership checks (for example CLI discovery).
 func (c *Catalog) KnownProfileSet() map[string]struct{} {
 	if c == nil {

@@ -18,7 +18,7 @@ func runUIConfigCreate(svc *app.Services) error {
 
 	if _, err = os.Stat(path); err == nil {
 		fmt.Fprintf(os.Stdout, "Configuration already exists:\n  %s\n", path)
-		fmt.Fprintln(os.Stdout, "Edit this file in your text editor to change filters or regression limits.")
+		fmt.Fprintln(os.Stdout, "Edit this file in your text editor to change collection filters.")
 		return nil
 	}
 	if !os.IsNotExist(err) {

@@ -58,11 +58,6 @@ func (l TagLayout) FunctionsDir(profile, bench string) string {
 	return filepath.Join(l.Root, profile+FunctionsDirSuffix, bench)
 }
 
-// FunctionFile returns the path for one function's pprof list output.
-func (l TagLayout) FunctionFile(profile, bench, fnStem string) string {
-	return filepath.Join(l.FunctionsDir(profile, bench), fnStem+"."+TextExtension)
-}
-
 // PNG returns the Graphviz PNG visualization path for a profile.
 func (l TagLayout) PNG(profile, bench string) string {
 	return filepath.Join(l.FunctionsDir(profile, bench), fmt.Sprintf("%s_%s.png", bench, profile))

@@ -18,8 +18,6 @@ const (
 	MainQuit
 	// MainCollect runs interactive benchmark collection.
 	MainCollect
-	// MainSetup is a deprecated alias for MainConfig.
-	MainSetup
 	// MainConfig creates prof.json when missing.
 	MainConfig
 )
