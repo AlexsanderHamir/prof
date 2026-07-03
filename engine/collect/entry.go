@@ -31,18 +31,9 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 	autoSkippedPNG := applyAutoSkipPNG(&opts)
 
 	cfg, err := config.Load()
-	if err != nil {
-		if session.Interactive() {
-			session.Warn("No prof.json found; proceeding without function filters (run prof config init to add one).")
-		} else {
-			slog.Info("No config file found at repository root; proceeding without function filters.", "expected", config.Filename)
-			slog.Info("You can generate one with 'prof config init' or Create prof.json in prof ui.")
-		}
+	cfgMissing := err != nil
+	if cfgMissing {
 		cfg = &config.Config{}
-	}
-
-	if err = setupDirectories(opts.Tag, opts.Benchmarks, opts.Profiles, session.Interactive()); err != nil {
-		return fmt.Errorf("failed to setup directories: %w", err)
 	}
 
 	autoArgs := &config.AutoArgs{
@@ -52,19 +43,33 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 		Tag:        opts.Tag,
 	}
 
-	if !session.Interactive() {
-		config.PrintAutoConfiguration(autoArgs, cfg)
-	}
-
-	if autoSkippedPNG {
-		if session.Interactive() {
-			session.Warn(tooling.SkipPNGNotice)
-		} else {
-			fmt.Fprintln(os.Stdout, tooling.SkipPNGNotice)
-			slog.Info(tooling.SkipPNGNotice)
+	if session.Interactive() {
+		if err := session.RunWhile(termui.Progress{Phase: termui.PhasePrepare}, func() error {
+			if cfgMissing {
+				session.Warn("No prof.json found; proceeding without function filters (run prof config init to add one).")
+			}
+			if autoSkippedPNG {
+				session.Warn(tooling.SkipPNGNotice)
+			}
+			return setupDirectories(opts.Tag, opts.Benchmarks, opts.Profiles, true)
+		}); err != nil {
+			return fmt.Errorf("failed to setup directories: %w", err)
 		}
+		return runBenchAndGetProfiles(runner, autoArgs, cfg, opts.LenientProfiles, opts.SkipPNG, session)
 	}
 
+	if cfgMissing {
+		slog.Info("No config file found at repository root; proceeding without function filters.", "expected", config.Filename)
+		slog.Info("You can generate one with 'prof config init' or Create prof.json in prof ui.")
+	}
+	if err = setupDirectories(opts.Tag, opts.Benchmarks, opts.Profiles, false); err != nil {
+		return fmt.Errorf("failed to setup directories: %w", err)
+	}
+	config.PrintAutoConfiguration(autoArgs, cfg)
+	if autoSkippedPNG {
+		fmt.Fprintln(os.Stdout, tooling.SkipPNGNotice)
+		slog.Info(tooling.SkipPNGNotice)
+	}
 	return runBenchAndGetProfiles(runner, autoArgs, cfg, opts.LenientProfiles, opts.SkipPNG, session)
 }
 

@@ -13,7 +13,7 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
-func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cfg *config.Config, lenientProfiles bool, skipPNG bool, session termui.Session) error {
+func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cfg *config.Config, lenientProfiles bool, skipPNG bool, session *termui.Session) error {
 	if !session.Interactive() {
 		slog.Info("Starting benchmark pipeline...")
 	}
@@ -53,7 +53,7 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cf
 		}
 
 		if !session.Interactive() {
-			slog.Info("Analyzing profile functions", "Benchmark", benchmarkName)
+			slog.Info("Collecting function profiles", "Benchmark", benchmarkName)
 		}
 		args := &config.CollectionArgs{
 			Tag:             autoArgs.Tag,
@@ -61,10 +61,10 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cf
 			BenchmarkName:   benchmarkName,
 			BenchmarkConfig: filter,
 		}
-		if err := session.RunWhile(base.WithPhase(termui.PhaseAnalyzeProfiles), func() error {
+		if err := session.RunWhile(base.WithPhase(termui.PhaseCollectFunctionProfiles), func() error {
 			return collectProfileFunctions(runner, args, session)
 		}); err != nil {
-			return fmt.Errorf("failed to analyze profile functions for %s: %w", benchmarkName, err)
+			return fmt.Errorf("failed to collect function profiles for %s: %w", benchmarkName, err)
 		}
 
 		if !session.Interactive() {
@@ -76,7 +76,7 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cf
 	return nil
 }
 
-func collectProfileFunctions(runner tooling.Runner, args *config.CollectionArgs, session termui.Session) error {
+func collectProfileFunctions(runner tooling.Runner, args *config.CollectionArgs, session *termui.Session) error {
 	layout, err := workspace.TagLayoutFromCWD(args.Tag)
 	if err != nil {
 		return err

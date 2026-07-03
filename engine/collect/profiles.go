@@ -11,7 +11,7 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
-func processProfiles(runner tooling.Runner, benchmarkName string, profiles []string, tag string, lenientProfiles bool, skipPNG bool, session termui.Session) ([]string, error) { //nolint:gocognit // sequential profile stages
+func processProfiles(runner tooling.Runner, benchmarkName string, profiles []string, tag string, lenientProfiles bool, skipPNG bool, session *termui.Session) ([]string, error) { //nolint:gocognit // sequential profile stages
 	layout, err := workspace.TagLayoutFromCWD(tag)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 	return processed, nil
 }
 
-func warnMissingProfile(session termui.Session, profileFile string) {
+func warnMissingProfile(session *termui.Session, profileFile string) {
 	msg := fmt.Sprintf("profile file not found, skipping: %s", profileFile)
 	if session.Interactive() {
 		session.Warn(msg)
@@ -74,7 +74,7 @@ func warnMissingProfile(session termui.Session, profileFile string) {
 	slog.Warn("Profile file not found — skipping", "file", profileFile)
 }
 
-func warnSkippedPNG(session termui.Session, profile, benchmarkName string, pngErr error) {
+func warnSkippedPNG(session *termui.Session, profile, benchmarkName string, pngErr error) {
 	msg := fmt.Sprintf("PNG skipped for %s/%s: %v", benchmarkName, profile, pngErr)
 	if session.Interactive() {
 		session.Warn(msg)

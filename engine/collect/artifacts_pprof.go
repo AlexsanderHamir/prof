@@ -87,7 +87,7 @@ func writeFunctionListPprof(runner tooling.Runner, shortStem, fullSymbol, binary
 	return lastErr
 }
 
-func getFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string, session termui.Session) error {
+func getFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string, session *termui.Session) error {
 	for _, e := range entries {
 		out := filepath.Join(basePath, e.OutputStem+"."+workspace.TextExtension)
 		if err := writeFunctionListPprof(runner, e.OutputStem, e.FullSymbol, binaryPath, out); err != nil {
@@ -104,5 +104,5 @@ func getFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntr
 
 // FunctionsOutput runs pprof -list for each entry (exported for integration tests).
 func FunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string) error {
-	return getFunctionsOutput(runner, entries, binaryPath, basePath, termui.Session{})
+	return getFunctionsOutput(runner, entries, binaryPath, basePath, nil)
 }

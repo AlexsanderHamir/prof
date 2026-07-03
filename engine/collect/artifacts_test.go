@@ -8,7 +8,6 @@ import (
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/config"
-	"github.com/AlexsanderHamir/prof/internal/termui"
 	"github.com/AlexsanderHamir/prof/internal/testpaths"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 	"github.com/AlexsanderHamir/prof/parser"
@@ -94,7 +93,7 @@ func TestGetFunctionsOutput_fakeRunner(t *testing.T) {
 		Out: [][]byte{[]byte("list output for " + pick.OutputStem)},
 	}
 	dir := t.TempDir()
-	if outErr := getFunctionsOutput(runner, []parser.FunctionListEntry{pick}, cpuPath, dir, termui.Session{}); outErr != nil {
+	if outErr := getFunctionsOutput(runner, []parser.FunctionListEntry{pick}, cpuPath, dir, nil); outErr != nil {
 		t.Fatal(outErr)
 	}
 	outFile := filepath.Join(dir, pick.OutputStem+"."+workspace.TextExtension)
