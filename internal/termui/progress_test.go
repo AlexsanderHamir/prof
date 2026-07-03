@@ -1,7 +1,9 @@
 package termui
 
 import (
+	"bytes"
 	"errors"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -103,4 +105,46 @@ func TestSession_RunWhile_nilTask(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for nil task")
 	}
+}
+
+func TestFormatProgressLabel_doneOmitsEllipsis(t *testing.T) {
+	t.Parallel()
+
+	got := formatProgressLabel(Progress{Phase: PhasePrepare}, false)
+	if got != "Preparing" || strings.Contains(got, "…") {
+		t.Fatalf("done label = %q, want Preparing without ellipsis", got)
+	}
+}
+
+func TestSession_RunWhile_persistentDoneAndWarnings(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newSessionForTest(&buf, true)
+	err := s.RunWhile(Progress{Phase: PhasePrepare}, func() error {
+		s.Warn("setup warn")
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("RunWhile() err = %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "Preparing") {
+		t.Fatalf("output missing stage label: %q", out)
+	}
+	if !strings.Contains(out, "    warning: setup warn") {
+		t.Fatalf("output missing indented warning: %q", out)
+	}
+	// lipgloss wraps done marker; check plain check character is present.
+	if !strings.Contains(out, "✓") {
+		t.Fatalf("output missing done marker: %q", out)
+	}
+}
+
+func TestSession_Warn_indentOutsideStageFallsBackToSlog(t *testing.T) {
+	t.Parallel()
+
+	s := newSessionForTest(io.Discard, true)
+	// Should not panic when no stage is active.
+	s.Warn("orphan")
 }

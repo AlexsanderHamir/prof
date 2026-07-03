@@ -224,3 +224,8 @@ func (s *Session) Success(msg string) {
 	}
 	fmt.Fprintln(s.w, SuccessStyle.Render(msg))
 }
+
+// newSessionForTest builds a session with a forced interactive flag (tests only).
+func newSessionForTest(w io.Writer, interactive bool) *Session {
+	return &Session{w: w, interactive: interactive}
+}
