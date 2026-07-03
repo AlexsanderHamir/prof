@@ -237,8 +237,9 @@ func (s *Session) lockHeaderLocked() {
 		return
 	}
 	s.headerLocked = true
-	// Commit the in-place spinner line; do not repaint (avoids duplicate frames).
-	fmt.Fprint(s.w, "\n")
+	// Commit the spinner line (erase + newline) so warnings append below a stable header.
+	content := spinnerFrameStyle.Render(s.lastFrame) + " " + LabelStyle.Render(s.runningLabel)
+	s.overwriteLineLocked(content, true)
 }
 
 func (s *Session) signalSpinnerStopLocked() {
@@ -260,7 +261,6 @@ func (s *Session) finishStageLocked(doneLabel string, failed bool) {
 		s.seekStageHeaderLocked()
 		s.overwriteLineLocked(line, false)
 		s.seekAfterStageBlockLocked()
-		fmt.Fprint(s.w, "\n")
 		return
 	}
 
@@ -268,14 +268,17 @@ func (s *Session) finishStageLocked(doneLabel string, failed bool) {
 }
 
 func (s *Session) seekStageHeaderLocked() {
-	if s.warningCount > 0 {
-		fmt.Fprint(s.w, ansi.CursorUp(s.warningCount))
+	// Header line, then warningCount warning lines below; cursor starts after the block.
+	n := s.warningCount + 1
+	if n > 0 {
+		fmt.Fprint(s.w, ansi.CursorUp(n))
 	}
 }
 
 func (s *Session) seekAfterStageBlockLocked() {
-	if s.warningCount > 0 {
-		fmt.Fprint(s.w, ansi.CursorDown(s.warningCount))
+	n := s.warningCount + 1
+	if n > 0 {
+		fmt.Fprint(s.w, ansi.CursorDown(n))
 	}
 }
 
