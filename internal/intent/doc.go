@@ -10,7 +10,6 @@
 //
 //   - KindCollect / CollectIntent → Collect.RunAuto
 //   - KindConfigCreate / ConfigCreateIntent → Config.CreateDefaultFile
-//   - KindConfigSave / ConfigSaveIntent → Config.Save
 //
 // New workflows: add a Kind constant, an entry to AllKinds, a new file with types implementing Executable,
 // and wire cli or cli/tui to construct the intent after Survey prompts.

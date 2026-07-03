@@ -12,8 +12,6 @@ const (
 	KindCollect Kind = "collect"
 	// KindConfigCreate writes the default prof.json beside go.mod.
 	KindConfigCreate Kind = "config_create"
-	// KindConfigSave saves prof.json after validation.
-	KindConfigSave Kind = "config_save"
 )
 
 // KindDescriptor pairs a Kind with a one-line description for listings and tests.
@@ -27,7 +25,6 @@ func AllKinds() []KindDescriptor {
 	return []KindDescriptor{
 		{KindCollect, "Collect benchmark profiles (Benchmark.RunBenchmarks)"},
 		{KindConfigCreate, "Create default prof.json (Config.CreateDefaultFile)"},
-		{KindConfigSave, "Save prof.json (Config.Save)"},
 	}
 }
 
