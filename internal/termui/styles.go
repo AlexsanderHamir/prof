@@ -14,4 +14,8 @@ var (
 	WarningStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
 	// SuccessStyle styles the final success line on interactive terminals.
 	SuccessStyle = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("42"))
+	// DoneStyle styles the completion marker on finished stages.
+	DoneStyle = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("42"))
+	// FailStyle styles the failure marker on failed stages.
+	FailStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
 )

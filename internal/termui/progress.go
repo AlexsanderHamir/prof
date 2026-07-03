@@ -6,9 +6,11 @@ import (
 	"io"
 	"log/slog"
 	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 )
@@ -17,12 +19,14 @@ import (
 type Phase string
 
 const (
+	// PhasePrepare covers setup and prelude warnings before benchmarks run.
+	PhasePrepare Phase = "prepare"
 	// PhaseRunBenchmark covers go test, bench text write, and profile binary move.
 	PhaseRunBenchmark Phase = "run_benchmark"
 	// PhaseCollectProfiles covers pprof text and PNG generation.
 	PhaseCollectProfiles Phase = "collect_profiles"
-	// PhaseAnalyzeProfiles covers parser extraction and per-function pprof lists.
-	PhaseAnalyzeProfiles Phase = "analyze_profiles"
+	// PhaseCollectFunctionProfiles covers parser extraction and per-function pprof lists.
+	PhaseCollectFunctionProfiles Phase = "collect_function_profiles"
 )
 
 // Progress describes a long-running step for user-facing labels.
@@ -46,16 +50,21 @@ func (p Progress) WithDetail(detail string) Progress {
 	return p
 }
 
-// Session drives TTY progress UI for a collect run. Zero value is non-interactive.
+// Session drives TTY progress UI for a collect run. Nil is non-interactive.
 type Session struct {
 	w           io.Writer
 	fd          int
 	interactive bool
+
+	mu            sync.Mutex
+	stageActive   bool
+	stageWarnings atomic.Int32
+	spinnerStop   chan struct{}
 }
 
 // NewSession reports whether w/fd is an interactive terminal.
-func NewSession(w io.Writer, fd int) Session {
-	return Session{
+func NewSession(w io.Writer, fd int) *Session {
+	return &Session{
 		w:           w,
 		fd:          fd,
 		interactive: term.IsTerminal(fd),
@@ -63,54 +72,18 @@ func NewSession(w io.Writer, fd int) Session {
 }
 
 // Interactive is true when the session can show spinners and styled lines.
-func (s Session) Interactive() bool {
+func (s *Session) Interactive() bool {
+	if s == nil {
+		return false
+	}
 	return s.interactive
 }
 
-type workDoneMsg struct {
-	err error
-}
-
-type spinnerModel struct {
-	spinner spinner.Model
-	label   string
-	workErr error
-}
-
-func newSpinnerModel(label string) spinnerModel {
-	sp := spinner.New(
-		spinner.WithSpinner(spinner.Dot),
-		spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color(AccentColor))),
-	)
-	return spinnerModel{
-		spinner: sp,
-		label:   LabelStyle.Render(label),
-	}
-}
-
-func (m spinnerModel) Init() tea.Cmd {
-	return m.spinner.Tick
-}
-
-func (m spinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case workDoneMsg:
-		m.workErr = msg.err
-		return m, tea.Quit
-	default:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
-	}
-}
-
-func (m spinnerModel) View() string {
-	return m.spinner.View() + " " + m.label
-}
-
-func formatProgressLabel(p Progress) string {
+func formatProgressLabel(p Progress, running bool) string {
 	var b strings.Builder
 	switch p.Phase {
+	case PhasePrepare:
+		b.WriteString("Preparing")
 	case PhaseRunBenchmark:
 		if p.Total > 1 {
 			fmt.Fprintf(&b, "Running benchmark %d/%d: ", p.Index, p.Total)
@@ -127,58 +100,125 @@ func formatProgressLabel(p Progress) string {
 		if p.Detail != "" {
 			fmt.Fprintf(&b, " (%s)", p.Detail)
 		}
-	case PhaseAnalyzeProfiles:
-		b.WriteString("Analyzing profiles for ")
+	case PhaseCollectFunctionProfiles:
+		b.WriteString("Collecting function profiles for ")
 		b.WriteString(p.Label)
 	}
-	b.WriteString("…")
+	if running {
+		b.WriteString("…")
+	}
 	return b.String()
 }
 
-// RunWhile runs fn while showing a spinner when the session is interactive.
-func (s Session) RunWhile(p Progress, fn func() error) error {
+var dotSpinner = spinner.Dot
+
+// RunWhile runs fn while showing a persistent spinner when the session is interactive.
+func (s *Session) RunWhile(p Progress, fn func() error) error {
 	if fn == nil {
 		return errors.New("termui: nil task")
 	}
-	if !s.interactive {
+	if s == nil || !s.interactive {
 		return fn()
 	}
 
-	label := formatProgressLabel(p)
-	doneCh := make(chan struct{})
+	runningLabel := formatProgressLabel(p, true)
+	doneLabel := formatProgressLabel(p, false)
 
-	model := newSpinnerModel(label)
-	prog := tea.NewProgram(
-		model,
-		tea.WithOutput(s.w),
-		tea.WithInput(nil),
-		tea.WithoutSignalHandler(),
-	)
-
-	go func() {
-		_, _ = prog.Run()
-		close(doneCh)
-	}()
+	s.mu.Lock()
+	s.stageActive = true
+	s.stageWarnings.Store(0)
+	s.startSpinner(runningLabel)
+	s.mu.Unlock()
 
 	fnErr := fn()
-	prog.Send(workDoneMsg{err: fnErr})
-	<-doneCh
+
+	s.mu.Lock()
+	s.finishStage(doneLabel, fnErr != nil)
+	s.stageActive = false
+	s.stageWarnings.Store(0)
+	s.mu.Unlock()
 
 	return fnErr
 }
 
-// Warn writes a styled warning line on interactive terminals.
-func (s Session) Warn(msg string) {
-	if !s.interactive {
+func (s *Session) startSpinner(label string) {
+	stop := make(chan struct{})
+	s.spinnerStop = stop
+
+	styled := LabelStyle.Render(label)
+	frameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(AccentColor))
+	frames := dotSpinner.Frames
+
+	go func() {
+		ticker := time.NewTicker(dotSpinner.FPS)
+		defer ticker.Stop()
+
+		i := 0
+		writeHeader := func() {
+			frame := frameStyle.Render(frames[i%len(frames)])
+			linesUp := int(s.stageWarnings.Load())
+			if linesUp > 0 {
+				fmt.Fprintf(s.w, "\033[%dF", linesUp)
+			}
+			fmt.Fprintf(s.w, "\r%s %s", frame, styled)
+			if linesUp > 0 {
+				fmt.Fprintf(s.w, "\033[%dE", linesUp)
+			}
+		}
+
+		writeHeader()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-ticker.C:
+				i++
+				writeHeader()
+			}
+		}
+	}()
+}
+
+func (s *Session) finishStage(doneLabel string, failed bool) {
+	if s.spinnerStop != nil {
+		close(s.spinnerStop)
+		s.spinnerStop = nil
+	}
+
+	mark := DoneStyle.Render("✓")
+	if failed {
+		mark = FailStyle.Render("✗")
+	}
+
+	linesUp := int(s.stageWarnings.Load())
+	if linesUp > 0 {
+		fmt.Fprintf(s.w, "\033[%dF", linesUp)
+	}
+	fmt.Fprintf(s.w, "\r%s %s\n", mark, doneLabel)
+}
+
+// Warn writes a styled warning indented under the active stage on interactive terminals.
+func (s *Session) Warn(msg string) {
+	if s == nil || !s.interactive {
 		slog.Warn(msg)
 		return
 	}
-	fmt.Fprintln(s.w, WarningStyle.Render("warning: "+msg))
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.stageActive {
+		slog.Warn(msg)
+		return
+	}
+
+	fmt.Fprintln(s.w, WarningStyle.Render("    warning: "+msg))
+	s.stageWarnings.Add(1)
 }
 
 // Success writes a completion message (styled on TTY, slog otherwise).
-func (s Session) Success(msg string) {
-	if !s.interactive {
+func (s *Session) Success(msg string) {
+	if s == nil || !s.interactive {
 		slog.Info(msg)
 		return
 	}

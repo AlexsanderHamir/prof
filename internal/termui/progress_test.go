@@ -16,7 +16,7 @@ func TestFormatProgressLabel_runBenchmark(t *testing.T) {
 		Index:  2,
 		Total:  2,
 		Detail: "count=5",
-	})
+	}, true)
 	want := "Running benchmark 2/2: BenchmarkFibonacci (count=5)…"
 	if got != want {
 		t.Fatalf("formatProgressLabel() = %q, want %q", got, want)
@@ -30,21 +30,21 @@ func TestFormatProgressLabel_collectProfiles(t *testing.T) {
 		Phase:  PhaseCollectProfiles,
 		Label:  "BenchmarkFibonacci",
 		Detail: "cpu, memory",
-	})
+	}, true)
 	want := "Collecting profiles for BenchmarkFibonacci (cpu, memory)…"
 	if got != want {
 		t.Fatalf("formatProgressLabel() = %q, want %q", got, want)
 	}
 }
 
-func TestFormatProgressLabel_analyzeProfiles(t *testing.T) {
+func TestFormatProgressLabel_collectFunctionProfiles(t *testing.T) {
 	t.Parallel()
 
 	got := formatProgressLabel(Progress{
-		Phase: PhaseAnalyzeProfiles,
+		Phase: PhaseCollectFunctionProfiles,
 		Label: "BenchmarkFibonacci",
-	})
-	want := "Analyzing profiles for BenchmarkFibonacci…"
+	}, true)
+	want := "Collecting function profiles for BenchmarkFibonacci…"
 	if got != want {
 		t.Fatalf("formatProgressLabel() = %q, want %q", got, want)
 	}
@@ -58,7 +58,7 @@ func TestFormatProgressLabel_singleBenchmark(t *testing.T) {
 		Label: "BenchmarkOnly",
 		Total: 1,
 		Index: 1,
-	})
+	}, true)
 	if !strings.Contains(got, "Running benchmark: BenchmarkOnly") {
 		t.Fatalf("single benchmark label = %q", got)
 	}
