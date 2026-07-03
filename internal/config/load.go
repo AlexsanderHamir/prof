@@ -176,11 +176,6 @@ func writeFileAtomic(path string, content []byte) error {
 	return nil
 }
 
-// CreateTemplate is deprecated; use CreateDefaultFile.
-func CreateTemplate() error {
-	return CreateDefaultFile()
-}
-
 // PrintAutoConfiguration logs parsed auto-benchmark arguments and configured filters.
 func PrintAutoConfiguration(args *AutoArgs, cfg *Config) {
 	slog.Info(

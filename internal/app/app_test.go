@@ -27,14 +27,10 @@ func TestWithDefaultsFillsAgentWhenNil(t *testing.T) {
 	}
 }
 
-type stubSetup struct{}
-
-func (stubSetup) CreateTemplate() error { return nil }
-
 func TestWithDefaultsNilReceiver(t *testing.T) {
 	var s *Services
 	out := s.WithDefaults()
-	if out == nil || out.Runner == nil || out.Collect == nil || out.Setup == nil || out.Config == nil {
+	if out == nil || out.Runner == nil || out.Collect == nil || out.Config == nil {
 		t.Fatalf("expected all fields set: %#v", out)
 	}
 }
@@ -42,7 +38,7 @@ func TestWithDefaultsNilReceiver(t *testing.T) {
 func TestWithDefaultsAllNilFieldsNonNilReceiver(t *testing.T) {
 	s := &Services{}
 	out := s.WithDefaults()
-	if out.Collect == nil || out.Setup == nil {
+	if out.Collect == nil || out.Config == nil {
 		t.Fatalf("expected defaults for every slot: %#v", out)
 	}
 }
@@ -62,10 +58,9 @@ func TestWithDefaultsFillsOnlyNil(t *testing.T) {
 func TestWithDefaultsPreservesAllNonNil(t *testing.T) {
 	s := &Services{
 		Collect: stubCollect{},
-		Setup:   stubSetup{},
 	}
 	out := s.WithDefaults()
-	if out.Collect != s.Collect || out.Setup != s.Setup {
+	if out.Collect != s.Collect {
 		t.Fatal("WithDefaults replaced a non-nil dependency")
 	}
 }
@@ -105,13 +100,13 @@ func TestDefaultCollectRunManualEmptyFiles(t *testing.T) {
 	}
 }
 
-func TestDefaultSetupCreateTemplate(t *testing.T) {
+func TestDefaultConfigCreateDefaultFile(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module tmpmod\n\ngo 1.24.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)
-	if err := Default().Setup.CreateTemplate(); err != nil {
+	if err := Default().Config.CreateDefaultFile(); err != nil {
 		t.Fatal(err)
 	}
 	p := filepath.Join(root, "prof.json")

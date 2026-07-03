@@ -1,0 +1,52 @@
+---
+description: Where agents start in prof — task routing, Codegraph MCP, and collect flow docs
+alwaysApply: true
+---
+
+# Agent navigation (prof)
+
+Read docs **on demand** when the task matches — do not load everything at session start. Use [AGENTS.md](../../AGENTS.md) as the index; this rule adds routing detail for the two primary playbooks.
+
+## Pick your starting doc
+
+| If the task involves… | Start here |
+| --- | --- |
+| Symbol lookup, call graph, refactor blast radius, or "where is X defined?" | [docs/agents/codegraph-tools.md](../../docs/agents/codegraph-tools.md) |
+| Interactive collect (`prof tui`, `prof ui` → Run Benchmarks), Survey prompts, or engine pipeline after confirm | [docs/collect-request-flow.md](../../docs/collect-request-flow.md) |
+| Package layout, layering, invariants, any command entrypoint | [CODEBASE_DESIGN.md](../../CODEBASE_DESIGN.md) |
+| Tests, coverage, harness | [TESTING.md](../../TESTING.md) |
+| PRs, commits, contribution workflow | [CONTRIBUTING.md](../../CONTRIBUTING.md) |
+| Other agent playbooks | [docs/agents/README.md](../../docs/agents/README.md) |
+
+## Codegraph MCP (Go exploration)
+
+When `.codegraph/` exists, prefer `user-codegraph` over ad-hoc Grep/Read loops for Go symbols. Full tool recipes and fallbacks: **codegraph-tools.md**.
+
+Session habits:
+
+1. **Confirm index** — `codegraph_status` with `projectPath` set to the repo root (this workspace has no default project).
+2. **Orient** — `codegraph_files` on the package dir (e.g. `engine/collect`).
+3. **Before editing a symbol** — `codegraph_search` → `codegraph_node` (pin with `file`/`line`) → `codegraph_callers` / `codegraph_callees` or `codegraph_impact` for refactors.
+4. **`codegraph_explore` is unavailable** — use the four-tool recipe in codegraph-tools.md.
+
+Fall back to Read, Grep, Glob for markdown, YAML/CI, string literals, concept search, or when the index is missing/stale.
+
+## Collect workflow (interactive path)
+
+For Survey → intent → engine → disk, follow **collect-request-flow.md**. Key convergence point: both `prof tui`/`prof ui` and `prof auto` call `collect.RunAuto` via `internal/app` — CLI/intent never import `engine/*` directly.
+
+Quick "where to edit" anchors (details in collect-request-flow.md):
+
+| Change | Start file |
+| --- | --- |
+| Survey prompts / advanced options | `cli/tui.go`, `cli/collect_preview.go` |
+| Intent validation | `internal/intent/collect.go` |
+| Benchmark discovery | `engine/collect/discovery.go` |
+| `go test` argv / profile flags | `engine/collect/gotest.go`, `engine/tooling/catalog.go` |
+| Profile processing / lenient / skip PNG | `engine/collect/profiles.go` |
+| Per-function extracts / filters | `parser/`, `internal/config/filter.go` |
+| Output paths / tag lifecycle | `internal/workspace/layout.go`, `engine/collect/layout.go` |
+
+## Layering reminder
+
+`cli`, `internal/tui`, and `internal/intent` → `internal/app` only → engines. Cross-boundary types live in `internal/app/dto.go`. See CODEBASE_DESIGN.md before adding imports that skip this boundary.

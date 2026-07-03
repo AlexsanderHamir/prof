@@ -16,7 +16,6 @@ func Default() *Services {
 		Runner:  r,
 		Collect: defaultCollect{runner: r},
 		Agent:   defaultAgent{},
-		Setup:   defaultSetup{},
 		Config:  defaultConfig{},
 	}
 }
@@ -45,12 +44,6 @@ type defaultAgent struct{}
 
 func (defaultAgent) Run(ctx context.Context, req cursoragent.RunRequest, opts cursoragent.Options) (cursoragent.RunResult, error) {
 	return cursoragent.NewClient(opts).Run(ctx, req)
-}
-
-type defaultSetup struct{}
-
-func (defaultSetup) CreateTemplate() error {
-	return config.CreateDefaultFile()
 }
 
 type defaultConfig struct{}

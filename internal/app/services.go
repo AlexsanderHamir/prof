@@ -21,11 +21,6 @@ type Agent interface {
 	Run(ctx context.Context, req cursoragent.RunRequest, opts cursoragent.Options) (cursoragent.RunResult, error)
 }
 
-// Setup generates project scaffolding such as the config file.
-type Setup interface {
-	CreateTemplate() error
-}
-
 // Config loads and saves prof.json beside go.mod.
 type Config interface {
 	Load() (*config.Config, error)
@@ -39,7 +34,6 @@ type Services struct {
 	Runner  tooling.Runner
 	Collect Collect
 	Agent   Agent
-	Setup   Setup
 	Config  Config
 }
 
@@ -57,9 +51,6 @@ func (s *Services) WithDefaults() *Services {
 	}
 	if out.Agent == nil {
 		out.Agent = defaultAgent{}
-	}
-	if out.Setup == nil {
-		out.Setup = defaultSetup{}
 	}
 	if out.Config == nil {
 		out.Config = defaultConfig{}

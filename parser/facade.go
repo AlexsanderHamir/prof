@@ -61,8 +61,3 @@ func GetAllFunctionNamesV2(profilePath string, filter config.FunctionFilter) ([]
 	}
 	return names, nil
 }
-
-// GetAllFunctionNames extracts function names from a profile path; equivalent to [GetAllFunctionNamesV2].
-func GetAllFunctionNames(profilePath string, filter config.FunctionFilter) ([]string, error) {
-	return GetAllFunctionNamesV2(profilePath, filter)
-}
