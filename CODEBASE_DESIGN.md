@@ -100,8 +100,7 @@ Benchmark discovery: [`engine/collect/discovery.go`](engine/collect/discovery.go
 
 1. [`collect.RunAuto`](engine/collect/entry.go) loads optional `prof.json` via [`config.Load`](internal/config/load.go).
 2. Creates `bench/<tag>/` via [`collect/layout.go`](engine/collect/layout.go) and [`workspace.CleanOrCreateTag`](internal/workspace/tag.go).
-3. Runs `go test` per benchmark ([`gotest.go`](engine/collect/gotest.go)), writes binaries under `bench/<tag>/bin/<bench>/`.
-4. [`processProfiles`](engine/collect/profiles.go): text, PNG, per-function lists.
+3. Per benchmark, three TTY-gated stderr steps via [`termui.Session`](internal/termui/progress.go) in [`pipeline.go`](engine/collect/pipeline.go), preceded by a **Preparing** stage in [`entry.go`](engine/collect/entry.go): **Running benchmark** (`go test` + artifact move), **Collecting profiles** ([`processProfiles`](engine/collect/profiles.go)), **Collecting function profiles** (parser + per-function `pprof -list`). Interactive TTY keeps a persistent stage log (`✓` done lines + stage-scoped warnings); non-TTY keeps `slog` stage logs.
 
 ### Manual ingest (`prof manual`)
 
@@ -139,8 +138,8 @@ Edit interactively: `prof ui` → Create Configuration File. CLI: `prof config i
 
 | Symptom | Package | Test / note |
 |---------|---------|-------------|
-| Missing profile binary after bench | `engine/collect` | `--lenient-profiles` skips; default fails |
-| PNG / Graphviz missing | `engine/collect` | `--skip-png` warns; default fails |
+| Missing profile binary after bench | `engine/collect` | Warn and skip; fails if zero profiles processed |
+| PNG / Graphviz missing | `engine/collect` | Warn and continue; text profiles still collected |
 | Manual file `cpu.out` → bench `cpu` | `engine/collect` | [`manual_test.go`](engine/collect/manual_test.go) stem rules |
 | Tag dir not empty before run | `internal/workspace` | [`layout_test.go`](internal/workspace/layout_test.go) `CleanOrCreateTag` |
 | Per-bench overrides collection defaults | `internal/config` | [`config_test.go`](internal/config/config_test.go) |

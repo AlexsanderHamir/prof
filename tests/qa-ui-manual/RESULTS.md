@@ -2,7 +2,7 @@
 
 ## Resolution
 
-Remediation tracked in [PROGRESS.md](./PROGRESS.md). Commits on `main`: `1af3bc8`, `4067980`, `671484c`, `52861d6`, `48368ec`, `643db61`, `8f194a2`, `bf04db1`, plus test closure commit.
+Remediation tracked in [PROGRESS.md](./PROGRESS.md). Commits on `main`: `1af3bc8`, `4067980`, `671484c`, `52861d6`, `48368ec`, `643db61`, `8f194a2`, `bf04db1`, plus test closure commit. **2026-07 follow-up (`polish/random-fixes`):** output-options prompt and `--lenient-profiles` / `--skip-png` removed; collect always warns and continues on missing profile binaries and PNG failures (`cad1aa2`–`6f4ee20`).
 
 Original findings below (historical). **Compare Runs** and **External Tools** were removed from prof in 2026; scenarios 3.x and 4.x no longer apply.
 
@@ -60,20 +60,20 @@ Original findings below (historical). **Compare Runs** and **External Tools** we
 
 ### Scenario 2.1 — Collect smoke (`baseline-v1`)
 - **Config persona:** C1
-- **CLI equivalent:** `prof auto --benchmarks BenchmarkFibonacci --profiles cpu --count 1 --tag baseline-v1 --skip-png`
+- **CLI equivalent:** `prof auto --benchmarks BenchmarkFibonacci --profiles cpu --count 1 --tag baseline-v1`
 - **Artifacts:**
   - `bench/baseline-v1/bin/BenchmarkFibonacci/`: 1 file (`*_cpu.out`)
   - `bench/baseline-v1/text/BenchmarkFibonacci/`: 2 files (text + bench output)
   - `bench/baseline-v1/cpu_functions/BenchmarkFibonacci/`: 1 file (`Fibonacci.txt`)
 - **Expected:** Complete layout under `bench/baseline-v1/`
 - **Actual:** PASS. Logs show filter loaded from prof.json.
-- **UX note:** UI collect asks ~8 Survey prompts before work starts; `--skip-png` required on this machine (no Graphviz).
-- **Severity:** none for wiring; UX-gap for Windows default PNG (see 2.5)
+- **UX note (historical):** UI collect asked ~8 Survey prompts before work started; PNG required `--skip-png` on machines without Graphviz. **Remediated:** output-options prompt removed; PNG/missing-profile issues warn instead of failing (`cad1aa2`).
+- **Severity:** none for wiring
 - **Follow-up needed:** no
 
 ### Scenario 2.2 — Multi-bench (`candidate-v2`)
 - **Config persona:** C1
-- **CLI equivalent:** `prof auto --benchmarks BenchmarkFibonacci,BenchmarkStringProcessor --profiles cpu,memory --count 1 --tag candidate-v2 --skip-png`
+- **CLI equivalent:** `prof auto --benchmarks BenchmarkFibonacci,BenchmarkStringProcessor --profiles cpu,memory --count 1 --tag candidate-v2`
 - **Artifacts:**
   - `bin/`: Fibonacci 2 files, StringProcessor 2 files
   - `cpu_functions/BenchmarkStringProcessor/`: 1 (`GenerateStrings.txt`)
@@ -99,7 +99,7 @@ Original findings below (historical). **Compare Runs** and **External Tools** we
 
 ### Scenario 2.3 — All profiles (`all-profiles`)
 - **Config persona:** C1
-- **CLI:** StringProcessor; cpu,memory,mutex,block; count=1; `--skip-png`
+- **CLI:** StringProcessor; cpu,memory,mutex,block; count=1
 - **Artifacts:** 4 profile binaries under `bin/BenchmarkStringProcessor/`
 - **Expected:** Four profile types
 - **Actual:** PASS (~4s). No long-run warning in UI/CLI.
@@ -107,13 +107,14 @@ Original findings below (historical). **Compare Runs** and **External Tools** we
 - **Severity:** UX-gap (no time estimate)
 - **Follow-up needed:** no
 
-### Scenario 2.5 — Skip PNG default No
-- **CLI:** `prof auto … --tag png-fail-test` (no `--skip-png`)
-- **Expected:** Failure with Graphviz hint when PNG fails
-- **Actual:** FAIL — `failed to generate PNG for profile cpu (install graphviz or use --skip-png)`
-- **UX note:** UI default for Skip PNG is **No** ([`cli/tui.go`](../../cli/tui.go)). On Windows without Graphviz, first-time collect likely fails unless user knows to enable Skip PNG.
-- **Severity:** major (Windows friction)
-- **Follow-up needed:** yes — default `--skip-png` on Windows or detect Graphviz
+### Scenario 2.5 — PNG without Graphviz (historical)
+- **CLI:** `prof auto … --tag png-fail-test` (no flags; pre-2026-07 behavior)
+- **Expected (at time of test):** Failure with Graphviz hint when PNG fails
+- **Actual (at time of test):** FAIL — `failed to generate PNG for profile cpu (install graphviz or use --skip-png)`
+- **UX note (historical):** UI default for Skip PNG was **No**; first-time collect failed without Graphviz.
+- **Remediation:** Engine warns and continues; prelude notice during **Preparing** (`cad1aa2`). Flags removed (`fc0294f`).
+- **Severity:** none (resolved)
+- **Follow-up needed:** no
 
 ### Scenario 2.7 — Filter effect C3 vs C1
 - **Config persona:** C3 then C1
@@ -132,10 +133,10 @@ Original findings below (historical). **Compare Runs** and **External Tools** we
 - **Severity:** UX-gap (hypothesis confirmed)
 - **Follow-up needed:** no
 
-### Scenario 2.4 — Lenient profiles
-- **Status:** Not fully simulated (requires missing profile binary after bench). Engine code path exists; deferred to code review.
-- **Severity:** none (untested live)
-- **Follow-up needed:** yes — manual test with partial profile failure
+### Scenario 2.4 — Missing profile binary (historical)
+- **Status:** Not fully simulated in original pass. **Remediated:** engine always warns and skips missing binaries; fails only when zero profiles processed (`cad1aa2`, `profiles_test.go`).
+- **Severity:** none (resolved)
+- **Follow-up needed:** no
 
 ---
 
@@ -280,13 +281,13 @@ Original findings below (historical). **Compare Runs** and **External Tools** we
 | Area | Score (1=best, 5=worst) | Notes |
 |------|-------------------------|-------|
 | **Discoverability** | 3 | Hub labels are plain English; `prof.json` only in help/footer, not main menu. Config and tools findable without `?` but not obvious for first-time users. |
-| **Workflow length** | 4 | Collect requires many Survey steps; sensible defaults exist (cpu profile) but PNG/lenient/group all asked every time. |
+| **Workflow length** | 3 | Collect Survey chain shortened after output-options prompt removal (2026-07); sensible defaults for cpu profile. |
 | **Consistency** | 3 | Bubble Tea hub then Survey forms feels like two apps. Tools submenu alone returns to hub. |
 | **Loop / exit** | 4 | Must re-launch `prof ui` after collect/compare/config — friction for iterative workflows. |
 | **Config mental model** | 4 | Track wizard vs compare "fail on regression" precedence is easy to misunderstand; logs help but UI doesn't explain. |
 | **Error recovery** | 3 | Missing profile/benchstat install/missing benchmark files give errors; some messages are low-level paths not next steps. |
 | **Feedback during long runs** | 2 | Benchmark output banner + INFO logs provide progress; matrix bench ~1.4s here. |
-| **Windows friction** | 4 | PNG default breaks collect without Graphviz; qcachegrind rarely on PATH. |
+| **Windows friction** | 2 | PNG no longer fails collect without Graphviz; qcachegrind rarely on PATH. |
 | **Empty repo** | 3 | Not empty if nested test benchmarks exist; true empty module untested live. |
 
 ---
@@ -296,7 +297,7 @@ Original findings below (historical). **Compare Runs** and **External Tools** we
 | ID | Severity | Scenario | Summary | Suggested fix |
 |----|----------|----------|---------|---------------|
 | QA-01 | UX-gap | 1.4 | No return to hub after Collect/Compare/Config | Return to hub or offer "run another action?" prompt |
-| QA-02 | major | 2.5 | Default Skip PNG=No fails on Windows without Graphviz | Default skip-png on Windows or probe for graphviz |
+| QA-02 | — | 2.5 | ~~Default Skip PNG=No fails on Windows without Graphviz~~ | **Resolved** — warn-and-continue (`cad1aa2`) |
 | QA-03 | UX-gap | 3.3/3.4 | Compare threshold vs prof.json track policy unclear | One-line prompt: "Uses prof.json unless you enable fail-on-regression below" |
 | QA-04 | major | 2.8 | CLI accepts `--count 0` | Reject count < 1 in auto command / engine |
 | QA-05 | UX-gap | 2.7 | Filter effects invisible until post-collect | Show active filter summary before run |
@@ -312,11 +313,11 @@ Original findings below (historical). **Compare Runs** and **External Tools** we
 
 1. **No session loop after hub actions (QA-01)** — Users doing collect→compare→tweak config must restart `prof ui` three times. Highest daily friction.
 
-2. **Windows collect fails on PNG by default (QA-02)** — First-run experience breaks unless user knows Graphviz or Skip PNG. Annoyance score 4.
+2. ~~**Windows collect fails on PNG by default (QA-02)**~~ — Resolved: collect warns and continues without Graphviz.
 
 3. **Config vs compare regression semantics (QA-03)** — Editing "Track gates" in wizard feels like it should control compare; UI threshold overrides silently when enabled. Annoyance score 4.
 
-4. **Long collect prompt chain (Workflow length 4)** — Eight questions before benchmarks run; no memory of prior choices within session.
+4. **Long collect prompt chain** — Fewer prompts after 2026-07 output-options removal; no memory of prior choices within session.
 
 5. **Filter/config invisible at collect time (QA-05)** — Users edit prof.json in wizard but can't see which rules apply until inspecting `bench/` output.
 

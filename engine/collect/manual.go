@@ -79,7 +79,7 @@ func collectPerFunctionLists(runner tooling.Runner, layout workspace.TagLayout, 
 	if err = ensureDirExists(functionDir); err != nil {
 		return err
 	}
-	if err = getFunctionsOutput(runner, listEntries, binPath, functionDir); err != nil {
+	if err = getFunctionsOutput(runner, listEntries, binPath, functionDir, nil); err != nil {
 		return fmt.Errorf("per-function pprof: %w", err)
 	}
 	return nil

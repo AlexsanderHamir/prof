@@ -22,9 +22,9 @@ Prof writes `bench/` under the current working directory, which must be your mod
 
 Failure when generating call-graph PNGs.
 
-PNG generation uses Graphviz `dot` when installed; otherwise generation can error.
+PNG generation uses Graphviz `dot` when installed. Without Graphviz, prof warns during collection and still writes text profiles.
 
-Install [Graphviz](https://graphviz.org/), or pass `--skip-png` on `prof auto`, or disable PNG in interactive flows. See [Collect profiling data](collect.md).
+Install [Graphviz](https://graphviz.org/) for call-graph PNGs. See [Collect profiling data](collect.md).
 
 ## Next steps
 

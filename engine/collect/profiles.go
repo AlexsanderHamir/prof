@@ -7,10 +7,11 @@ import (
 	"os"
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
+	"github.com/AlexsanderHamir/prof/internal/termui"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
-func processProfiles(runner tooling.Runner, benchmarkName string, profiles []string, tag string, lenientProfiles bool, skipPNG bool) ([]string, error) { //nolint:gocognit // sequential profile stages
+func processProfiles(runner tooling.Runner, benchmarkName string, profiles []string, tag string, session *termui.Session) ([]string, error) {
 	layout, err := workspace.TagLayoutFromCWD(tag)
 	if err != nil {
 		return nil, err
@@ -22,11 +23,8 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 		profileFile := layout.Bin(benchmarkName, profile)
 		if _, statErr := os.Stat(profileFile); statErr != nil {
 			if errors.Is(statErr, os.ErrNotExist) {
-				if lenientProfiles {
-					slog.Warn("Profile file not found — skipping", "file", profileFile)
-					continue
-				}
-				return nil, fmt.Errorf("missing profile binary for benchmark %s profile %s: %w", benchmarkName, profile, statErr)
+				warnMissingProfile(session, profileFile)
+				continue
 			}
 			return nil, fmt.Errorf("failed to stat profile file %s: %w", profileFile, statErr)
 		}
@@ -44,14 +42,12 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 
 		pngPath := layout.PNG(profile, benchmarkName)
 		if pngErr := getPNGOutput(runner, profileFile, pngPath); pngErr != nil {
-			if skipPNG {
-				slog.Warn("PNG visualization skipped", "profile", profile, "benchmark", benchmarkName, "err", pngErr)
-			} else {
-				return nil, fmt.Errorf("failed to generate PNG for profile %s (install graphviz or use --skip-png): %w", profile, pngErr)
-			}
+			warnSkippedPNG(session, profile, benchmarkName, pngErr)
 		}
 
-		slog.Info("Processed profile", "profile", profile, "benchmark", benchmarkName)
+		if !session.Interactive() {
+			slog.Info("Processed profile", "profile", profile, "benchmark", benchmarkName)
+		}
 		processed = append(processed, profile)
 	}
 
@@ -60,4 +56,22 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 	}
 
 	return processed, nil
+}
+
+func warnMissingProfile(session *termui.Session, profileFile string) {
+	msg := fmt.Sprintf("profile file not found, skipping: %s", profileFile)
+	if session.Interactive() {
+		session.Warn(msg)
+		return
+	}
+	slog.Warn("Profile file not found — skipping", "file", profileFile)
+}
+
+func warnSkippedPNG(session *termui.Session, profile, benchmarkName string, pngErr error) {
+	msg := fmt.Sprintf("PNG skipped for %s/%s: %v", benchmarkName, profile, pngErr)
+	if session.Interactive() {
+		session.Warn(msg)
+		return
+	}
+	slog.Warn("PNG visualization skipped", "profile", profile, "benchmark", benchmarkName, "err", pngErr)
 }

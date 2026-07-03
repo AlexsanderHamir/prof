@@ -3,12 +3,10 @@ package collect
 
 // AutoOptions configures RunAuto.
 type AutoOptions struct {
-	Benchmarks      []string
-	Profiles        []string
-	Tag             string
-	Count           int
-	LenientProfiles bool
-	SkipPNG         bool
+	Benchmarks []string
+	Profiles   []string
+	Tag        string
+	Count      int
 }
 
 // ManualOptions configures RunManual.

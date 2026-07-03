@@ -52,14 +52,11 @@ func runBenchmarkCommand(runner tooling.Runner, cmd []string, outputFile string,
 	}
 	ctx := context.Background()
 	output, err := runner.Run(ctx, cmd, tooling.RunOpts{Dir: rootDir, Combined: true})
-	fmt.Println("🚀 ==================== BENCHMARK OUTPUT ==================== 🚀")
-	fmt.Println(string(output))
-	fmt.Println("📊 ========================================================== 📊")
 	if err != nil {
 		if strings.Contains(string(output), moduleNotFoundMsg) {
-			return fmt.Errorf("❌ %s - ensure you're in a Go project directory 📁", moduleNotFoundMsg)
+			return fmt.Errorf("%s - ensure you're in a Go project directory", moduleNotFoundMsg)
 		}
-		return fmt.Errorf("💥 BENCHMARK COMMAND FAILED 💥\n%s", string(output))
+		return fmt.Errorf("benchmark command failed:\n%s", string(output))
 	}
 	return os.WriteFile(outputFile, output, workspace.PermFile)
 }

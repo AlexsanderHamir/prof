@@ -39,11 +39,11 @@ Quick "where to edit" anchors (details in collect-request-flow.md):
 
 | Change | Start file |
 | --- | --- |
-| Survey prompts / advanced options | `cli/tui.go`, `cli/collect_preview.go` |
+| Survey prompts / collection filter preview | `cli/tui.go`, `cli/collect_preview.go` |
 | Intent validation | `internal/intent/collect.go` |
 | Benchmark discovery | `engine/collect/discovery.go` |
 | `go test` argv / profile flags | `engine/collect/gotest.go`, `engine/tooling/catalog.go` |
-| Profile processing / lenient / skip PNG | `engine/collect/profiles.go` |
+| Profile processing (missing binary / PNG warn-and-continue) | `engine/collect/profiles.go` |
 | Per-function extracts / filters | `parser/`, `internal/config/filter.go` |
 | Output paths / tag lifecycle | `internal/workspace/layout.go`, `engine/collect/layout.go` |
 

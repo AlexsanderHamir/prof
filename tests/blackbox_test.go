@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/cli"
@@ -82,7 +81,6 @@ func TestProfileValidation(t *testing.T) {
 			"--count", validationCount,
 			"--tag", tag,
 		}
-		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
 			cfg:                  config.Config{},
@@ -102,7 +100,6 @@ func TestProfileValidation(t *testing.T) {
 			"--count", validationCount,
 			"--tag", tag,
 		}
-		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
 			cfg:                  config.Config{},
@@ -121,7 +118,6 @@ func TestProfileValidation(t *testing.T) {
 			"--count", validationCount,
 			"--tag", tag,
 		}
-		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
 			cfg:                     config.Config{},
@@ -145,7 +141,6 @@ func TestCommandValidation(t *testing.T) {
 			"--count", validationCount,
 			"--tag", tag,
 		}
-		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
 			cfg:                  config.Config{},
@@ -164,7 +159,6 @@ func TestCommandValidation(t *testing.T) {
 			"--count", validationCount,
 			"--tag", tag,
 		}
-		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
 			cfg:                  config.Config{},
@@ -218,11 +212,6 @@ func TestManualCommand(t *testing.T) {
 		err = cmd.Run()
 		if err != nil {
 			t.Error(err)
-		}
-
-		// Manual collect logs per-function progress (collector), not InfoCollectionSuccess (auto benchmark pipeline only).
-		if !strings.Contains(stderr.String(), "Collected function") {
-			t.Fatalf("expected stderr to contain collector progress; stderr=%q", stderr.String())
 		}
 
 		benchRoot := filepath.Join(root, workspace.MainDirOutput, tag)

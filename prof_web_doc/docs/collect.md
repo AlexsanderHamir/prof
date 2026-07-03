@@ -6,7 +6,7 @@ This guide explains how to capture benchmark profiles into `bench/<tag>/` using 
 
 - Module root as cwd; benchmarks discoverable from there ([Working directory and paths](workspace.md)).
 - Go and `go test` work for your package.
-- Optional: [Graphviz](https://graphviz.org/) for PNG call graphs; otherwise use `--skip-png` or expect PNG-related failures unless skipped.
+- Optional: [Graphviz](https://graphviz.org/) for PNG call graphs; without it, prof warns and still collects text profiles.
 
 ## What is a profile run?
 
@@ -37,8 +37,6 @@ prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu,memory,mutex,block" --
 | `--profiles` | strings | Yes | n/a | Comma-separated profile IDs: `cpu`, `memory`, `mutex`, `block`. |
 | `--tag` | string | Yes | n/a | Output directory `bench/<tag>/`. |
 | `--count` | int | Yes | n/a | Number of runs; must be positive. |
-| `--lenient-profiles` | bool | No | `false` | Skip missing profile binaries instead of failing. |
-| `--skip-png` | bool | No | `false` | Do not fail the run when PNG generation fails (for example no Graphviz). |
 
 ### What collection stores
 
@@ -64,7 +62,7 @@ Each run writes a single tag directory, `bench/<tag>/`, under your [module root]
 | `description.txt` | Short tag-level note (placeholder until you edit it). | Record why this run exists (branch, experiment, machine). |
 | `bin/<BenchmarkName>/` | One `BenchmarkName_<profile>.out` per profile type collected. | Source of truth for `pprof`; required for regenerating text and PNGs. |
 | `text/<BenchmarkName>/` | For each profile: `BenchmarkName_<profile>.txt` (flat listing). | Read, grep, or diff stacks. |
-| `<profile>_functions/<BenchmarkName>/` | Per-function text files for symbols in scope, plus optional `BenchmarkName_<profile>.png` when Graphviz is available (or omit failure with `--skip-png`). | Deep dive on specific functions; optional call-graph PNG for presentations. |
+| `<profile>_functions/<BenchmarkName>/` | Per-function text files for symbols in scope, plus optional `BenchmarkName_<profile>.png` when Graphviz is available. | Deep dive on specific functions; optional call-graph PNG for presentations. |
 
 Exact names and suffixes are defined in the implementation (`internal` constants and `engine/benchmark` path helpers); the table above matches the usual `prof auto` and `prof manual` layout.
 

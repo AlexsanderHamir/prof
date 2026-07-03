@@ -10,6 +10,7 @@ import (
 	"regexp"
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
+	"github.com/AlexsanderHamir/prof/internal/termui"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 	"github.com/AlexsanderHamir/prof/parser"
 )
@@ -80,17 +81,21 @@ func writeFunctionListPprof(runner tooling.Runner, shortStem, fullSymbol, binary
 		if err = os.WriteFile(outputFile, out, workspace.PermFile); err != nil {
 			return fmt.Errorf("write function content: %w", err)
 		}
-		slog.Info("Collected function", "function", shortStem, "list_pattern", pattern)
+		slog.Debug("Collected function", "function", shortStem, "list_pattern", pattern)
 		return nil
 	}
 	return lastErr
 }
 
-func getFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string) error {
+func getFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string, session *termui.Session) error {
 	for _, e := range entries {
 		out := filepath.Join(basePath, e.OutputStem+"."+workspace.TextExtension)
 		if err := writeFunctionListPprof(runner, e.OutputStem, e.FullSymbol, binaryPath, out); err != nil {
-			slog.Warn("skipping per-function pprof list", "function", e.OutputStem, "binary", binaryPath, "err", err)
+			if session.Interactive() {
+				session.Warn(fmt.Sprintf("skipping per-function pprof list for %s: %v", e.OutputStem, err))
+			} else {
+				slog.Warn("skipping per-function pprof list", "function", e.OutputStem, "binary", binaryPath, "err", err)
+			}
 			continue
 		}
 	}
@@ -99,5 +104,5 @@ func getFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntr
 
 // FunctionsOutput runs pprof -list for each entry (exported for integration tests).
 func FunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string) error {
-	return getFunctionsOutput(runner, entries, binaryPath, basePath)
+	return getFunctionsOutput(runner, entries, binaryPath, basePath, nil)
 }

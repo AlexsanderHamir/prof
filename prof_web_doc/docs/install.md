@@ -8,7 +8,7 @@ This page explains how to install the `prof` binary, what you need on your machi
 | ----------- | ----- |
 | Go | 1.24.3 or newer (matches the `go.mod` in this project). |
 | Module root | Your project’s `go.mod` directory when you run Prof. |
-| Graphviz | Optional; for PNG call graphs. If missing, use `prof auto --skip-png` or skip PNG in `prof ui` or `prof tui`. |
+| Graphviz | Optional; for PNG call graphs. If missing, prof warns and still collects text profiles. |
 
 ## Install the binary
 
