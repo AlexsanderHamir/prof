@@ -13,7 +13,7 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
-func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cfg *config.Config, lenientProfiles bool, skipPNG bool, session *termui.Session) error {
+func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cfg *config.Config, session *termui.Session) error {
 	if !session.Interactive() {
 		slog.Info("Starting benchmark pipeline...")
 	}
@@ -49,7 +49,7 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cf
 		var profilesReady []string
 		if err := session.RunWhile(base.WithPhase(termui.PhaseCollectProfiles).WithDetail(profileDetail), func() error {
 			var procErr error
-			profilesReady, procErr = processProfiles(runner, benchmarkName, autoArgs.Profiles, autoArgs.Tag, lenientProfiles, skipPNG, session)
+			profilesReady, procErr = processProfiles(runner, benchmarkName, autoArgs.Profiles, autoArgs.Tag, session)
 			return procErr
 		}); err != nil {
 			return fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err)

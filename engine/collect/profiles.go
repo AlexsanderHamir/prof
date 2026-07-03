@@ -11,7 +11,7 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
-func processProfiles(runner tooling.Runner, benchmarkName string, profiles []string, tag string, lenientProfiles bool, skipPNG bool, session *termui.Session) ([]string, error) { //nolint:gocognit // sequential profile stages
+func processProfiles(runner tooling.Runner, benchmarkName string, profiles []string, tag string, session *termui.Session) ([]string, error) { //nolint:gocognit // sequential profile stages
 	layout, err := workspace.TagLayoutFromCWD(tag)
 	if err != nil {
 		return nil, err
@@ -23,11 +23,8 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 		profileFile := layout.Bin(benchmarkName, profile)
 		if _, statErr := os.Stat(profileFile); statErr != nil {
 			if errors.Is(statErr, os.ErrNotExist) {
-				if lenientProfiles {
-					warnMissingProfile(session, profileFile)
-					continue
-				}
-				return nil, fmt.Errorf("missing profile binary for benchmark %s profile %s: %w", benchmarkName, profile, statErr)
+				warnMissingProfile(session, profileFile)
+				continue
 			}
 			return nil, fmt.Errorf("failed to stat profile file %s: %w", profileFile, statErr)
 		}
@@ -45,11 +42,7 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 
 		pngPath := layout.PNG(profile, benchmarkName)
 		if pngErr := getPNGOutput(runner, profileFile, pngPath); pngErr != nil {
-			if skipPNG {
-				warnSkippedPNG(session, profile, benchmarkName, pngErr)
-			} else {
-				return nil, fmt.Errorf("failed to generate PNG for profile %s (install graphviz or use --skip-png): %w", profile, pngErr)
-			}
+			warnSkippedPNG(session, profile, benchmarkName, pngErr)
 		}
 
 		if !session.Interactive() {

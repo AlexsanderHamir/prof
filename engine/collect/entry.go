@@ -28,7 +28,7 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 	}
 
 	session := termui.NewSession(os.Stderr, int(os.Stderr.Fd()))
-	autoSkippedPNG := applyAutoSkipPNG(&opts)
+	graphvizMissing := !tooling.GraphvizAvailable()
 
 	cfg, err := config.Load()
 	cfgMissing := err != nil
@@ -48,14 +48,14 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 			if cfgMissing {
 				session.Warn("No prof.json found; proceeding without function filters (run prof config init to add one).")
 			}
-			if autoSkippedPNG {
+			if graphvizMissing {
 				session.Warn(tooling.SkipPNGNotice)
 			}
 			return setupDirectories(opts.Tag, opts.Benchmarks, opts.Profiles, true)
 		}); prepErr != nil {
 			return fmt.Errorf("failed to setup directories: %w", prepErr)
 		}
-		return runBenchAndGetProfiles(runner, autoArgs, cfg, opts.LenientProfiles, opts.SkipPNG, session)
+		return runBenchAndGetProfiles(runner, autoArgs, cfg, session)
 	}
 
 	if cfgMissing {
@@ -66,20 +66,11 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 		return fmt.Errorf("failed to setup directories: %w", err)
 	}
 	config.PrintAutoConfiguration(autoArgs, cfg)
-	if autoSkippedPNG {
+	if graphvizMissing {
 		fmt.Fprintln(os.Stdout, tooling.SkipPNGNotice)
 		slog.Info(tooling.SkipPNGNotice)
 	}
-	return runBenchAndGetProfiles(runner, autoArgs, cfg, opts.LenientProfiles, opts.SkipPNG, session)
-}
-
-// applyAutoSkipPNG enables SkipPNG when Graphviz is unavailable. Returns true if it changed opts.
-func applyAutoSkipPNG(opts *AutoOptions) bool {
-	if opts.SkipPNG || tooling.GraphvizAvailable() {
-		return false
-	}
-	opts.SkipPNG = true
-	return true
+	return runBenchAndGetProfiles(runner, autoArgs, cfg, session)
 }
 
 // DiscoverBenchmarks scans for BenchmarkXxx functions under scope or module root.
