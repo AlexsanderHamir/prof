@@ -26,10 +26,3 @@ func TestPprofListArgs(t *testing.T) {
 		t.Fatalf("got %v", got)
 	}
 }
-
-func TestPprofCallgrindArgs(t *testing.T) {
-	got := PprofCallgrindArgs("x.out")
-	if !slices.Equal(got, []string{"go", "tool", "pprof", "-callgrind", "x.out"}) {
-		t.Fatalf("got %v", got)
-	}
-}

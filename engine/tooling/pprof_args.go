@@ -22,8 +22,3 @@ func PprofPNGArgs(binaryPath string) []string {
 func PprofListArgs(binaryPath, pattern string) []string {
 	return append(goToolPprofPrefix(), "-list="+pattern, binaryPath)
 }
-
-// PprofCallgrindArgs returns argv for: go tool pprof -callgrind <binaryPath>
-func PprofCallgrindArgs(binaryPath string) []string {
-	return append(append(goToolPprofPrefix(), "-callgrind"), binaryPath)
-}

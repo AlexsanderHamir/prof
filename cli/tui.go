@@ -108,9 +108,6 @@ func runTUITrackAuto(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	// Set global variables for the existing tracking logic
-	setGlobalTrackingVariables(selections)
-
 	// Now run the actual tracking command
 	fmt.Printf("\nRunning: prof track auto --base %s --current %s --bench-name %s --profile-type %s --output-format %s",
 		selections.Baseline, selections.Current, selections.BenchmarkName, selections.ProfileType, selections.OutputFormat)

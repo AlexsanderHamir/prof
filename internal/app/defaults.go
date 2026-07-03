@@ -6,8 +6,6 @@ import (
 	"github.com/AlexsanderHamir/prof/engine/collect"
 	"github.com/AlexsanderHamir/prof/engine/cursoragent"
 	"github.com/AlexsanderHamir/prof/engine/tooling"
-	"github.com/AlexsanderHamir/prof/engine/tools/benchstats"
-	"github.com/AlexsanderHamir/prof/engine/tools/qcachegrind"
 	"github.com/AlexsanderHamir/prof/engine/tracker"
 	"github.com/AlexsanderHamir/prof/internal/config"
 )
@@ -19,7 +17,6 @@ func Default() *Services {
 		Runner:  r,
 		Collect: defaultCollect{runner: r},
 		Tracker: defaultTracker{},
-		Tools:   defaultTools{runner: r},
 		Agent:   defaultAgent{},
 		Setup:   defaultSetup{},
 		Config:  defaultConfig{},
@@ -54,18 +51,6 @@ func (defaultTracker) RunTrackAuto(opts TrackOptions) error {
 
 func (defaultTracker) RunTrackManual(opts TrackOptions) error {
 	return tracker.RunTrackManual(tracker.Options(opts))
-}
-
-type defaultTools struct {
-	runner tooling.Runner
-}
-
-func (d defaultTools) RunBenchStats(baseTag, currentTag, benchName string) error {
-	return benchstats.RunBenchStats(d.runner, baseTag, currentTag, benchName)
-}
-
-func (d defaultTools) RunQcacheGrind(tag, benchName, profile string) error {
-	return qcachegrind.RunQcacheGrind(d.runner, tag, benchName, profile)
 }
 
 type defaultAgent struct{}

@@ -18,10 +18,6 @@ const (
 	KindConfigCreate Kind = "config_create"
 	// KindConfigSave saves prof.json after validation.
 	KindConfigSave Kind = "config_save"
-	// KindToolsBenchstat runs benchstat between two tags for one benchmark.
-	KindToolsBenchstat Kind = "tools_benchstat"
-	// KindToolsQcachegrind opens a binary profile in qcachegrind.
-	KindToolsQcachegrind Kind = "tools_qcachegrind"
 )
 
 // KindDescriptor pairs a Kind with a one-line description for listings and tests.
@@ -38,8 +34,6 @@ func AllKinds() []KindDescriptor {
 		{KindSetup, "Create prof.json (Setup.CreateTemplate)"},
 		{KindConfigCreate, "Create default prof.json (Config.CreateDefaultFile)"},
 		{KindConfigSave, "Save prof.json (Config.Save)"},
-		{KindToolsBenchstat, "Benchstat between two tags (Tools.RunBenchStats)"},
-		{KindToolsQcachegrind, "Open profile in qcachegrind (Tools.RunQcacheGrind)"},
 	}
 }
 

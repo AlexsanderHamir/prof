@@ -46,7 +46,6 @@ Documentation: https://alexsanderhamir.github.io/prof/`,
 	root.AddCommand(newConfigCmd(svc))
 	root.AddCommand(newSetupCmd(svc))
 	root.AddCommand(newTrackCmd(svc))
-	root.AddCommand(newToolsCmd(svc))
 
 	return root
 }

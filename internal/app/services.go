@@ -22,12 +22,6 @@ type Tracker interface {
 	RunTrackManual(opts TrackOptions) error
 }
 
-// Tools runs optional post-processing commands on collected data.
-type Tools interface {
-	RunBenchStats(baseTag, currentTag, benchName string) error
-	RunQcacheGrind(tag, benchName, profile string) error
-}
-
 // Agent runs the cursor-agent integration when configured.
 type Agent interface {
 	Run(ctx context.Context, req cursoragent.RunRequest, opts cursoragent.Options) (cursoragent.RunResult, error)
@@ -51,7 +45,6 @@ type Services struct {
 	Runner  tooling.Runner
 	Collect Collect
 	Tracker Tracker
-	Tools   Tools
 	Agent   Agent
 	Setup   Setup
 	Config  Config
@@ -71,9 +64,6 @@ func (s *Services) WithDefaults() *Services {
 	}
 	if out.Tracker == nil {
 		out.Tracker = defaultTracker{}
-	}
-	if out.Tools == nil {
-		out.Tools = defaultTools{runner: out.Runner}
 	}
 	if out.Agent == nil {
 		out.Agent = defaultAgent{}
