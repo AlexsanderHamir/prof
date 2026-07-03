@@ -81,7 +81,6 @@ func TestProfileValidation(t *testing.T) {
 			"--count", validationCount,
 			"--tag", tag,
 		}
-		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
 			cfg:                  config.Config{},
@@ -101,7 +100,6 @@ func TestProfileValidation(t *testing.T) {
 			"--count", validationCount,
 			"--tag", tag,
 		}
-		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
 			cfg:                  config.Config{},
@@ -120,7 +118,6 @@ func TestProfileValidation(t *testing.T) {
 			"--count", validationCount,
 			"--tag", tag,
 		}
-		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
 			cfg:                     config.Config{},
@@ -144,7 +141,6 @@ func TestCommandValidation(t *testing.T) {
 			"--count", validationCount,
 			"--tag", tag,
 		}
-		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
 			cfg:                  config.Config{},
@@ -163,7 +159,6 @@ func TestCommandValidation(t *testing.T) {
 			"--count", validationCount,
 			"--tag", tag,
 		}
-		cmd = append(cmd, autoBenchSkipPNGArgs()...)
 
 		testConfigScenario(t, &TestArgs{
 			cfg:                  config.Config{},

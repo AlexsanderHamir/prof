@@ -107,14 +107,13 @@ func resolveScenarioEnv(t *testing.T, testArgs *TestArgs) string {
 // benchmark, parameterized by --count so callers can pick smokeCount or
 // validationCount without rebuilding the rest of the command.
 func runCmdWithCount(countVal string) []string {
-	cmd := []string{
+	return []string{
 		cli.CmdAuto,
 		"--benchmarks", benchName,
 		"--profiles", fmt.Sprintf("%s,%s", cpuProfile, memProfile),
 		"--count", countVal,
 		"--tag", tag,
 	}
-	return append(cmd, autoBenchSkipPNGArgs()...)
 }
 
 // configWithFilter builds the collection filter scenario that whitelists symbols
@@ -179,10 +178,4 @@ func expectOnlyGenerate() map[fileFullName]*FieldsCheck {
 		functionFile(funcProcess):   newDefaultFieldsCheckNotExpected(),
 		functionFile(funcAddString): newDefaultFieldsCheckNotExpected(),
 	}
-}
-
-// autoBenchSkipPNGArgs avoids requiring Graphviz during integration tests while `prof auto`
-// defaults to strict PNG generation.
-func autoBenchSkipPNGArgs() []string {
-	return []string{"--skip-png"}
 }

@@ -78,12 +78,10 @@ func TestCollectIntent_Run(t *testing.T) {
 	fc := &fakeCollect{}
 	svc := &app.Services{Collect: fc}
 	intent := &CollectIntent{
-		Benchmarks:      []string{"BenchA"},
-		Profiles:        []string{"cpu", "memory"},
-		Tag:             "v1",
-		Count:           3,
-		LenientProfiles: true,
-		SkipPNG:         false,
+		Benchmarks: []string{"BenchA"},
+		Profiles:   []string{"cpu", "memory"},
+		Tag:        "v1",
+		Count:      3,
 	}
 	if err := RunValidated(intent, svc); err != nil {
 		t.Fatal(err)
@@ -96,9 +94,6 @@ func TestCollectIntent_Run(t *testing.T) {
 	}
 	if len(fc.lastAuto.Profiles) != 2 {
 		t.Fatalf("profiles: %#v", fc.lastAuto.Profiles)
-	}
-	if !fc.lastAuto.LenientProfiles || fc.lastAuto.SkipPNG {
-		t.Fatalf("flags: lenient=%v skip=%v", fc.lastAuto.LenientProfiles, fc.lastAuto.SkipPNG)
 	}
 }
 
