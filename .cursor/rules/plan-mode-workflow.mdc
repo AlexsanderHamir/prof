@@ -1,0 +1,93 @@
+---
+description: Plan mode — ask single vs parent/child plans; structure before CreatePlan
+alwaysApply: true
+---
+
+# Plan mode workflow
+
+**Scope gate:** Apply this rule only when the system reminder says **plan mode is active**. Otherwise ignore this file entirely — do not ask plan-structure questions during implementation.
+
+## First step (required)
+
+Before researching or calling `CreatePlan`, use **AskQuestion** to confirm structure:
+
+| Option | Label |
+| --- | --- |
+| `single` | **Single plan** — one PR-sized scope; one executable plan file |
+| `parent_child` | **Parent + child plans** — umbrella index + separate executable child plans |
+
+Do not skip this question unless the user already stated their preference in the same thread (e.g. "split into child plans").
+
+## When to recommend each
+
+**Single plan** — default when most of these are true:
+
+- One review boundary / one PR
+- One primary domain (backend *or* web *or* docs)
+- Fewer than ~8 touched files or one cohesive package
+- No parallel agent sessions needed
+
+**Parent + child** — recommend when any of these apply:
+
+- Multiple PRs with a strict dependency order
+- Cross-stack work (e.g. schema → API → web → worker) that should land separately
+- Distinct executors can run in parallel after a shared prerequisite
+- Large scope where one plan would exceed ~200 lines or mix unrelated exit criteria
+
+State your recommendation briefly after the user answers, then proceed.
+
+## Plan quality bar
+
+- **Simplicity** — smallest model/API that satisfies the request
+- **Elegance** — one clear abstraction per concern; name it
+- **No redundancy** — explicit **deletion list** when removing behavior
+- **Clever, not over-engineered** — defer v2 (multi-replica, fair queues, auto-tuning) unless asked
+
+## File layout
+
+| Role | Location | Naming |
+| --- | --- | --- |
+| Umbrella (index only) | `.cursor/plans/` | `{topic}_*.plan.md` via `CreatePlan` |
+| Child (executable) | `.cursor/plans/` | `{topic}_{phase}.plan.md` — sibling links from parent |
+
+**Umbrella plan contains:** problem, locked decisions, deletion inventory, dependency diagram, links to children, out-of-scope.
+
+**Child plan contains:** goal, non-goals, file map, commit sequence, exit criteria, verification command (`.\scripts\check.ps1`).
+
+Each child must be **runnable alone** in one agent session without re-reading the whole umbrella.
+
+## CreatePlan workflow
+
+1. AskQuestion (single vs parent/child)
+2. Research (readonly) — scoped to the task
+3. If **single:** one `CreatePlan` with actionable todos
+4. If **parent/child:** `CreatePlan` for umbrella first, then **write child `.plan.md` files** with `Write` (full executable content + frontmatter todos)
+5. Do **not** implement until the user explicitly asks to execute
+
+## Child plan frontmatter template
+
+```yaml
+---
+name: Short phase name
+overview: "Plan N of M — one sentence"
+todos:
+  - id: step-id
+    content: Verifiable step
+    status: pending
+isProject: false
+---
+```
+
+Parent overview must link each child: `[Plan 1 — Title](./child_file.plan.md)`.
+
+## Example (this repo)
+
+Umbrella: `.cursor/plans/worktree_harness_refactor_3665a1bb.plan.md`  
+Children: `worktree_model_collapse.plan.md`, `worktree_web_align.plan.md`, `worktree_parallel_pool.plan.md`
+
+## Do not
+
+- Execute code, migrations, or commits in plan mode unless the user explicitly says to execute
+- Create one monolithic plan when the user chose parent/child
+- Create parent/child for trivial one-file changes
+- Poll CI or run check scripts during planning (readonly research only)
