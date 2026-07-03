@@ -100,7 +100,7 @@ Benchmark discovery: [`engine/collect/discovery.go`](engine/collect/discovery.go
 
 1. [`collect.RunAuto`](engine/collect/entry.go) loads optional `prof.json` via [`config.Load`](internal/config/load.go).
 2. Creates `bench/<tag>/` via [`collect/layout.go`](engine/collect/layout.go) and [`workspace.CleanOrCreateTag`](internal/workspace/tag.go).
-3. Runs `go test` per benchmark ([`gotest.go`](engine/collect/gotest.go)), writes binaries under `bench/<tag>/bin/<bench>/`.
+3. Runs `go test` per benchmark ([`gotest.go`](engine/collect/gotest.go)) with a TTY-gated stderr spinner ([`internal/termui`](internal/termui/progress.go)); writes binaries under `bench/<tag>/bin/<bench>/`.
 4. [`processProfiles`](engine/collect/profiles.go): text, PNG, per-function lists.
 
 ### Manual ingest (`prof manual`)

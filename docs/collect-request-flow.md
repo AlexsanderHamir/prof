@@ -139,6 +139,7 @@ For `BenchmarkMatrixMultiplication`, [`runBenchmark`](../engine/collect/gotest.g
 - Locates the package directory containing the benchmark function.
 - Builds `go test -run=^$ -bench=^BenchmarkMatrixMultiplication$ -benchmem -count=5` plus profile flags from the tooling catalog (`cpu`, `memory`).
 - Runs the command in the benchmark package directory via [`tooling.Runner`](../engine/tooling/runner.go).
+- On an interactive TTY, shows a stderr spinner via [`termui.RunWhile`](../internal/termui/progress.go) (e.g. `Running benchmark 1/1: BenchmarkMatrixMultiplication (count=5)…`) instead of streaming `go test` output to stdout. The full transcript is still written to the tag text file; failures still print combined output in the error.
 - Writes combined benchmark output to the tag layout and moves profile binaries (`.out`) into `bench/Baseline/bin/BenchmarkMatrixMultiplication/` via [`moveProfileFiles`](../engine/collect/artifacts.go).
 
 ### 4. Process profiles
@@ -190,6 +191,7 @@ PNG files, when generated, live under `<profile>_functions/<benchmark>/`.
 | You want to change… | Start here |
 | --- | --- |
 | Survey prompts or defaults | [`cli/tui.go`](../cli/tui.go), [`cli/collect_preview.go`](../cli/collect_preview.go) |
+| Benchmark run progress UI | [`internal/termui/progress.go`](../internal/termui/progress.go) |
 | Hub menu labels or actions | [`internal/tui/hub.go`](../internal/tui/hub.go), [`cli/cmd_ui.go`](../cli/cmd_ui.go) |
 | Intent validation rules | [`internal/intent/collect.go`](../internal/intent/collect.go) |
 | Benchmark discovery rules | [`engine/collect/discovery.go`](../engine/collect/discovery.go) |
