@@ -10,10 +10,10 @@ import (
 
 type stubCollect struct{}
 
-func (stubCollect) RunAuto(_ CollectAutoOptions) error             { return nil }
-func (stubCollect) RunManual(_ CollectManualOptions) error         { return nil }
-func (stubCollect) DiscoverBenchmarks(_ string) ([]string, error)  { return nil, nil }
-func (stubCollect) SupportedProfiles() []string                    { return nil }
+func (stubCollect) RunAuto(_ CollectAutoOptions) error            { return nil }
+func (stubCollect) RunManual(_ CollectManualOptions) error        { return nil }
+func (stubCollect) DiscoverBenchmarks(_ string) ([]string, error) { return nil, nil }
+func (stubCollect) SupportedProfiles() []string                   { return nil }
 
 func TestWithDefaultsFillsAgentWhenNil(t *testing.T) {
 	s := &Services{}
