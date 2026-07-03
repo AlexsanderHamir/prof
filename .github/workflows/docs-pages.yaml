@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "prof_web_doc/**"
+      - ".github/workflows/docs-pages.yaml"
   workflow_dispatch:
 
 permissions:
@@ -46,6 +47,9 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      # deploy-pages runs on Node 24; silence upstream punycode DEP0040 until action deps update.
+      NODE_OPTIONS: --disable-warning=DEP0040
     permissions:
       contents: read
       pages: write
