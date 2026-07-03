@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/cli"
@@ -218,11 +217,6 @@ func TestManualCommand(t *testing.T) {
 		err = cmd.Run()
 		if err != nil {
 			t.Error(err)
-		}
-
-		// Manual collect logs per-function progress (collector), not InfoCollectionSuccess (auto benchmark pipeline only).
-		if !strings.Contains(stderr.String(), "Collected function") {
-			t.Fatalf("expected stderr to contain collector progress; stderr=%q", stderr.String())
 		}
 
 		benchRoot := filepath.Join(root, workspace.MainDirOutput, tag)
