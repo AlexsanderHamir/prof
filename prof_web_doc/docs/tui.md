@@ -25,7 +25,7 @@ After you pick an action, Survey-style prompts collect parameters (benchmarks, p
 
 ## What is `prof tui`?
 
-`prof tui` is a collect-only terminal flow: multi-select benchmarks and profiles, set count and tag, then options such as group-by-package, lenient profiles, and skip PNG (same semantics as `prof auto`).
+`prof tui` is a collect-only terminal flow: multi-select benchmarks and profiles, set count and tag, then options such as lenient profiles and skip PNG (same semantics as `prof auto`).
 
 ```bash
 prof tui

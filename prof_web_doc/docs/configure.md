@@ -68,7 +68,7 @@ When you copy optional sections from `prof.json.example`, a typical project file
 
 ## Collection { #collection }
 
-Controls per-function text extracts and grouped package reports after [Collect profiling data](collect.md). Output lands under `bench/<tag>/<profile>_functions/<BenchmarkName>/` when filters match.
+Controls per-function text extracts after [Collect profiling data](collect.md). Output lands under `bench/<tag>/<profile>_functions/<BenchmarkName>/` when filters match.
 
 | Section | Key meaning |
 | ------- | ----------- |
