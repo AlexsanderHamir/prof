@@ -3,7 +3,6 @@ package parser
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/AlexsanderHamir/prof/internal/config"
@@ -83,28 +82,5 @@ func TestGetAllFunctionNamesFromProfileDataFilters(t *testing.T) {
 	pref := GetAllFunctionNamesFromProfileData(d, config.FunctionFilter{IncludePrefixes: []string{"example.com"}})
 	if len(pref) != 1 {
 		t.Fatalf("got %v", pref)
-	}
-}
-
-func TestOrganizeProfileByPackageFromProfileDataEmpty(t *testing.T) {
-	if OrganizeProfileByPackageFromProfileData(nil, config.FunctionFilter{}) != "" {
-		t.Fatal("expected empty string")
-	}
-}
-
-func TestOrganizeProfileByPackageFromProfileDataMarkdown(t *testing.T) {
-	d := &ProfileData{
-		Total: 100,
-		SortedEntries: []FuncEntry{
-			{Name: "github.com/a/b.Foo", Flat: 50},
-		},
-		FlatPercentages: map[string]float64{"github.com/a/b.Foo": 50},
-		CumPercentages:  map[string]float64{"github.com/a/b.Foo": 50},
-		SumPercentages:  map[string]float64{"github.com/a/b.Foo": 50},
-		Cum:             map[string]int64{"github.com/a/b.Foo": 50},
-	}
-	s := OrganizeProfileByPackageFromProfileData(d, config.FunctionFilter{})
-	if !strings.Contains(s, "github.com/a/b") || !strings.Contains(s, "Subtotal") {
-		t.Fatalf("unexpected report: %s", s)
 	}
 }

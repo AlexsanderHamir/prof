@@ -1,26 +1,5 @@
 package parser
 
-// PackageGroup is a module/package bucket for grouped report output.
-type PackageGroup struct {
-	Name           string
-	Functions      []*FunctionInfo
-	TotalFlat      float64
-	TotalCum       float64
-	FlatPercentage float64
-	CumPercentage  float64
-}
-
-// FunctionInfo is one function inside a [PackageGroup].
-type FunctionInfo struct {
-	Name           string
-	FullName       string
-	Flat           float64
-	FlatPercentage float64
-	Cum            float64
-	CumPercentage  float64
-	SumPercentage  float64
-}
-
 // ProfileData holds aggregated flat/cum counters and derived percentages after parsing a profile.
 type ProfileData struct {
 	Flat            map[string]int64
