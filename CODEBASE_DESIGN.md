@@ -167,4 +167,5 @@ Edit interactively: `prof ui` → Create Configuration File. CLI: `prof config i
 ## Related resources
 
 - [readme.md](readme.md) — user-facing install and usage
+- [docs/collect-request-flow.md](docs/collect-request-flow.md) — internal flow for interactive collect (`prof tui` / `prof ui`)
 - [CONTRIBUTING.md](CONTRIBUTING.md) — patch workflow
