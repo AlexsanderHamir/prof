@@ -28,7 +28,7 @@ func ExampleTemplate(modulePath string) string {
     "collection": {
         "defaults": {
             // include_prefixes: if set, only functions whose full pprof symbol contains one of these
-            // substrings (usually your module import path) are saved into per-function extracts and grouped reports.
+            // substrings (usually your module import path) are saved into per-function extracts.
             // Example: "`+includeExample+`" or "`+includeExample+`/internal/foo"
             // Empty [] keeps every function (including stdlib) — usually too broad.
             "include_prefixes": [

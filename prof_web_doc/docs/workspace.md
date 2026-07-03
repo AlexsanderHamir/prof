@@ -23,7 +23,7 @@ Using Prof creates a `bench/` tree next to your module, one folder per run (tag)
 | ---- | ---------- |
 | `bench/<tag>/` | One labeled run: profiles, text extracts, and optional PNGs for that tag. |
 | `bench/<tag>/bin/<BenchmarkName>/` | Binary profiles (`.out`), the durable source for `go tool pprof`. |
-| `bench/<tag>/text/<BenchmarkName>/` | Human-readable profile listings (flat and optional package-grouped). |
+| `bench/<tag>/text/<BenchmarkName>/` | Human-readable profile listings (flat text). |
 | `bench/<tag>/<profile>_functions/<BenchmarkName>/` | Per-function extracts when configured; optional call-graph PNGs if Graphviz is installed. |
 | `prof.json` | Active config next to `go.mod` after `prof config init` or **Manage configuration** in `prof ui`. |
 | `prof.json.example` | Commented reference (not loaded); copy optional sections into `prof.json`. See [Configure — generated files](configure.md#generated-files). |

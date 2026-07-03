@@ -7,16 +7,14 @@ type AutoOptions struct {
 	Profiles        []string
 	Tag             string
 	Count           int
-	GroupByPackage  bool
 	LenientProfiles bool
 	SkipPNG         bool
 }
 
 // ManualOptions configures RunManual.
 type ManualOptions struct {
-	Files          []string
-	Tag            string
-	GroupByPackage bool
+	Files []string
+	Tag   string
 }
 
 // SupportedProfiles lists profile kinds for auto collection.

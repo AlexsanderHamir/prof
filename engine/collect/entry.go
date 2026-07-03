@@ -53,7 +53,7 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 		slog.Info(tooling.SkipPNGNotice)
 	}
 
-	return runBenchAndGetProfiles(runner, autoArgs, cfg, opts.GroupByPackage, opts.LenientProfiles, opts.SkipPNG)
+	return runBenchAndGetProfiles(runner, autoArgs, cfg, opts.LenientProfiles, opts.SkipPNG)
 }
 
 // applyAutoSkipPNG enables SkipPNG when Graphviz is unavailable. Returns true if it changed opts.

@@ -37,7 +37,6 @@ prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu,memory,mutex,block" --
 | `--profiles` | strings | Yes | n/a | Comma-separated profile IDs: `cpu`, `memory`, `mutex`, `block`. |
 | `--tag` | string | Yes | n/a | Output directory `bench/<tag>/`. |
 | `--count` | int | Yes | n/a | Number of runs; must be positive. |
-| `--group-by-package` | bool | No | `false` | Extra grouped-by-package text (`*_grouped.txt`). |
 | `--lenient-profiles` | bool | No | `false` | Skip missing profile binaries instead of failing. |
 | `--skip-png` | bool | No | `false` | Do not fail the run when PNG generation fails (for example no Graphviz). |
 
@@ -64,7 +63,7 @@ Each run writes a single tag directory, `bench/<tag>/`, under your [module root]
 | -------- | ------------- | ----------- |
 | `description.txt` | Short tag-level note (placeholder until you edit it). | Record why this run exists (branch, experiment, machine). |
 | `bin/<BenchmarkName>/` | One `BenchmarkName_<profile>.out` per profile type collected. | Source of truth for `pprof`; required for regenerating text and PNGs. |
-| `text/<BenchmarkName>/` | For each profile: `BenchmarkName_<profile>.txt` (flat listing). With `--group-by-package`, also `BenchmarkName_<profile>_grouped.txt` (package-oriented summary). | Read, grep, or diff stacks; grouped files help when flat output is too noisy. |
+| `text/<BenchmarkName>/` | For each profile: `BenchmarkName_<profile>.txt` (flat listing). | Read, grep, or diff stacks. |
 | `<profile>_functions/<BenchmarkName>/` | Per-function text files for symbols in scope, plus optional `BenchmarkName_<profile>.png` when Graphviz is available (or omit failure with `--skip-png`). | Deep dive on specific functions; optional call-graph PNG for presentations. |
 
 Exact names and suffixes are defined in the implementation (`internal` constants and `engine/benchmark` path helpers); the table above matches the usual `prof auto` and `prof manual` layout.
@@ -77,14 +76,9 @@ Requires `--tag` and one or more profile file paths as positional arguments. Doe
 prof manual --tag "external-profiles" cpu.prof memory.prof
 ```
 
-```bash
-prof manual --tag "external-profiles" --group-by-package cpu.prof memory.prof
-```
-
 | Flag | Type | Required | Default | Description |
 | ---- | ---- | --------- | ------- | ----------- |
 | `--tag` | string | Yes | n/a | Output directory `bench/<tag>/`. |
-| `--group-by-package` | bool | No | `false` | Same as `prof auto`. |
 
 Per-file collection filters use `collection.manual_profiles` in `prof.json`. Keys are profile file stems (e.g. `BenchmarkFoo_cpu` for `BenchmarkFoo_cpu.out`). See [Configure — manual profile overrides](configure.md#collection-manual-profiles).
 

@@ -6,14 +6,12 @@ type CollectAutoOptions struct {
 	Profiles        []string
 	Tag             string
 	Count           int
-	GroupByPackage  bool
 	LenientProfiles bool
 	SkipPNG         bool
 }
 
 // CollectManualOptions describes a prof manual ingest run.
 type CollectManualOptions struct {
-	Files          []string
-	Tag            string
-	GroupByPackage bool
+	Files []string
+	Tag   string
 }

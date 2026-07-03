@@ -115,13 +115,6 @@ Original findings below (historical). **Compare Runs** and **External Tools** we
 - **Severity:** major (Windows friction)
 - **Follow-up needed:** yes — default `--skip-png` on Windows or detect Graphviz
 
-### Scenario 2.6 — Group by package (`grouped-run`)
-- **CLI:** `--group-by-package`
-- **Expected:** `*_grouped.txt` files
-- **Actual:** PASS — `BenchmarkFibonacci_cpu_grouped.txt` present
-- **Severity:** none
-- **Follow-up needed:** no
-
 ### Scenario 2.7 — Filter effect C3 vs C1
 - **Config persona:** C3 then C1
 - **Artifacts (cpu_functions for StringProcessor):**
@@ -278,7 +271,6 @@ Original findings below (historical). **Compare Runs** and **External Tools** we
 | baseline-v1 | Fibonacci | 1 | 1 (Fib) | — |
 | candidate-v2 | Fib + StringProc | 4 | 2 | 1 dir (2 files SP) |
 | all-profiles | StringProc | 4 | 1 | 3 |
-| grouped-run | Fibonacci | 1 | 1 | — |
 | heavy-matrix-cpu | MatrixMult | 3 | 1 | — |
 
 ---

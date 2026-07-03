@@ -82,7 +82,6 @@ func TestCollectIntent_Run(t *testing.T) {
 		Profiles:        []string{"cpu", "memory"},
 		Tag:             "v1",
 		Count:           3,
-		GroupByPackage:  true,
 		LenientProfiles: true,
 		SkipPNG:         false,
 	}
@@ -98,8 +97,8 @@ func TestCollectIntent_Run(t *testing.T) {
 	if len(fc.lastAuto.Profiles) != 2 {
 		t.Fatalf("profiles: %#v", fc.lastAuto.Profiles)
 	}
-	if !fc.lastAuto.GroupByPackage || !fc.lastAuto.LenientProfiles || fc.lastAuto.SkipPNG {
-		t.Fatalf("flags: gbp=%v lenient=%v skip=%v", fc.lastAuto.GroupByPackage, fc.lastAuto.LenientProfiles, fc.lastAuto.SkipPNG)
+	if !fc.lastAuto.LenientProfiles || fc.lastAuto.SkipPNG {
+		t.Fatalf("flags: lenient=%v skip=%v", fc.lastAuto.LenientProfiles, fc.lastAuto.SkipPNG)
 	}
 }
 

@@ -50,13 +50,6 @@ func TestPathBasedFacadeFuncs(t *testing.T) {
 	if err != nil || len(names) == 0 {
 		t.Fatal(err, len(names))
 	}
-	if _, missingErr := OrganizeProfileByPackageV2(filepath.Join(t.TempDir(), "nope"), config.FunctionFilter{}); missingErr == nil {
-		t.Fatal()
-	}
-	s, err := OrganizeProfileByPackageV2(path, config.FunctionFilter{})
-	if err != nil || !strings.Contains(s, "Subtotal") {
-		t.Fatal(err, s)
-	}
 }
 
 func TestValidateProfileCheckValidAndSampleTypes(t *testing.T) {
@@ -143,63 +136,6 @@ func TestSimpleFunctionNameTable(t *testing.T) {
 		if got := simpleFunctionName(tc.in); got != tc.want {
 			t.Errorf("%q: got %q want %q", tc.in, got, tc.want)
 		}
-	}
-}
-
-func TestPackageNameFromSymbolTable(t *testing.T) {
-	cases := []struct{ in, want string }{
-		{"x", ""},
-		{"fmt.Println", "fmt"},
-		{"sync/atomic.Load", "sync/atomic"},
-		{"github.com/a/b.Foo", "github.com/a/b"},
-		{"golang.org/x/y.Z", "golang.org/x/y"},
-		{"other/pkg.Sub", "other/pkg"},
-	}
-	for _, tc := range cases {
-		if got := packageNameFromSymbol(tc.in); got != tc.want {
-			t.Errorf("%q: got %q want %q", tc.in, got, tc.want)
-		}
-	}
-}
-
-func TestShortPackageLabel(t *testing.T) {
-	// One dot in the import path: split yields ["github", "com/foo/bar"]; label is the last segment.
-	if got := shortPackageLabel("github.com/foo/bar"); got != "com/foo/bar" {
-		t.Fatal(got)
-	}
-	if got := shortPackageLabel("github.com/foo.bar.baz"); got != "baz" {
-		t.Fatal(got)
-	}
-	if got := shortPackageLabel("encoding/json"); got != "encoding/json" {
-		t.Fatal(got)
-	}
-}
-
-func TestOrganizeUnknownPackageFormatting(t *testing.T) {
-	d := &ProfileData{
-		Total: 10,
-		SortedEntries: []FuncEntry{
-			{Name: "orphanSymbolWithoutEnoughDots", Flat: 10},
-		},
-		FlatPercentages: map[string]float64{"orphanSymbolWithoutEnoughDots": 100},
-		CumPercentages:  map[string]float64{"orphanSymbolWithoutEnoughDots": 100},
-		SumPercentages:  map[string]float64{"orphanSymbolWithoutEnoughDots": 100},
-		Cum:             map[string]int64{"orphanSymbolWithoutEnoughDots": 10},
-	}
-	s := OrganizeProfileByPackageFromProfileData(d, config.FunctionFilter{})
-	if !strings.Contains(s, "unknown") || !strings.Contains(s, "flat:") {
-		t.Fatal(s)
-	}
-}
-
-func TestSortPackagesByFlatMultiple(t *testing.T) {
-	g := map[string]*PackageGroup{
-		"a": {Name: "a", FlatPercentage: 10},
-		"b": {Name: "b", FlatPercentage: 90},
-	}
-	sorted := sortPackagesByFlatPercentage(g)
-	if len(sorted) != 2 || sorted[0].Name != "b" {
-		t.Fatal(sorted)
 	}
 }
 
@@ -320,55 +256,5 @@ func TestGetAllFunctionNamesFromProfileDataNilAndFilters(t *testing.T) {
 	}
 	if n := GetAllFunctionNamesFromProfileData(d, config.FunctionFilter{IncludePrefixes: []string{"other"}}); len(n) != 1 || n[0] != "C" {
 		t.Fatal(n)
-	}
-}
-
-func TestOrganizeProfileByPackageFromProfileDataNilAndFilters(t *testing.T) {
-	if OrganizeProfileByPackageFromProfileData(nil, config.FunctionFilter{}) != "" {
-		t.Fatal()
-	}
-	d := &ProfileData{
-		Total:           2,
-		SortedEntries:   []FuncEntry{{Name: "p.X", Flat: 1}, {Name: "p.Y", Flat: 1}},
-		FlatPercentages: map[string]float64{"p.X": 50, "p.Y": 50},
-		CumPercentages:  map[string]float64{"p.X": 1, "p.Y": 1},
-		SumPercentages:  map[string]float64{"p.X": 50, "p.Y": 100},
-		Cum:             map[string]int64{"p.X": 1, "p.Y": 1},
-	}
-	if s := OrganizeProfileByPackageFromProfileData(d, config.FunctionFilter{IgnoreFunctions: []string{"X"}}); !strings.Contains(s, "Y") || strings.Contains(s, "X") {
-		t.Fatal(s)
-	}
-	d2 := &ProfileData{
-		Total:           1,
-		SortedEntries:   []FuncEntry{{Name: "keep.M", Flat: 1}},
-		FlatPercentages: map[string]float64{"keep.M": 100},
-		CumPercentages:  map[string]float64{"keep.M": 1},
-		SumPercentages:  map[string]float64{"keep.M": 100},
-		Cum:             map[string]int64{"keep.M": 1},
-	}
-	if s := OrganizeProfileByPackageFromProfileData(d2, config.FunctionFilter{IncludePrefixes: []string{"nomatch"}}); s != "" {
-		t.Fatal(s)
-	}
-	d3 := &ProfileData{
-		Total:           1,
-		SortedEntries:   []FuncEntry{{Name: "NoDotSymbol", Flat: 1}},
-		FlatPercentages: map[string]float64{"NoDotSymbol": 100},
-		CumPercentages:  map[string]float64{"NoDotSymbol": 1},
-		SumPercentages:  map[string]float64{"NoDotSymbol": 100},
-		Cum:             map[string]int64{"NoDotSymbol": 1},
-	}
-	if s := OrganizeProfileByPackageFromProfileData(d3, config.FunctionFilter{}); !strings.Contains(s, "unknown") {
-		t.Fatal(s)
-	}
-	d4 := &ProfileData{
-		Total:           1,
-		SortedEntries:   []FuncEntry{{Name: ".", Flat: 1}},
-		FlatPercentages: map[string]float64{".": 100},
-		CumPercentages:  map[string]float64{".": 1},
-		SumPercentages:  map[string]float64{".": 100},
-		Cum:             map[string]int64{".": 1},
-	}
-	if s := OrganizeProfileByPackageFromProfileData(d4, config.FunctionFilter{}); s != "" {
-		t.Fatalf("expected empty report when all names filter to empty short, got %q", s)
 	}
 }

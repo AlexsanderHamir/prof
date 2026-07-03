@@ -62,75 +62,7 @@ func GetAllFunctionNamesV2(profilePath string, filter config.FunctionFilter) ([]
 	return names, nil
 }
 
-// OrganizeProfileByPackageFromProfileData builds the package-grouped markdown report from [ProfileData].
-func OrganizeProfileByPackageFromProfileData(profileData *ProfileData, filter config.FunctionFilter) string {
-	if profileData == nil {
-		return ""
-	}
-	groups := make(map[string]*PackageGroup)
-	ign := ignoreSet(filter.IgnoreFunctions)
-
-	for _, entry := range profileData.SortedEntries {
-		fn := entry.Name
-		short := simpleFunctionName(fn)
-		if short == "" {
-			continue
-		}
-		if _, skip := ign[short]; skip {
-			continue
-		}
-		if len(filter.IncludePrefixes) > 0 && !matchPrefix(fn, filter.IncludePrefixes) {
-			continue
-		}
-
-		pkgName := packageNameFromSymbol(fn)
-		if pkgName == "" {
-			pkgName = "unknown"
-		}
-		if groups[pkgName] == nil {
-			groups[pkgName] = &PackageGroup{
-				Name:      pkgName,
-				Functions: make([]*FunctionInfo, 0),
-			}
-		}
-		info := &FunctionInfo{
-			Name:           short,
-			FullName:       fn,
-			Flat:           float64(entry.Flat),
-			FlatPercentage: profileData.FlatPercentages[fn],
-			Cum:            float64(profileData.Cum[fn]),
-			CumPercentage:  profileData.CumPercentages[fn],
-			SumPercentage:  profileData.SumPercentages[fn],
-		}
-		g := groups[pkgName]
-		g.Functions = append(g.Functions, info)
-		g.TotalFlat += info.Flat
-		g.TotalCum += info.Cum
-	}
-
-	totalFlat := float64(profileData.Total)
-	for _, pkg := range groups {
-		pkg.FlatPercentage = pkg.TotalFlat / totalFlat * 100
-		pkg.CumPercentage = pkg.TotalCum / totalFlat * 100
-	}
-	return formatPackageReport(sortPackagesByFlatPercentage(groups))
-}
-
-// OrganizeProfileByPackageV2 loads a profile path and returns the package-grouped markdown report.
-func OrganizeProfileByPackageV2(profilePath string, filter config.FunctionFilter) (string, error) {
-	d, err := profileDataFromPath(profilePath)
-	if err != nil {
-		return "", err
-	}
-	return OrganizeProfileByPackageFromProfileData(d, filter), nil
-}
-
 // GetAllFunctionNames extracts function names from a profile path; equivalent to [GetAllFunctionNamesV2].
 func GetAllFunctionNames(profilePath string, filter config.FunctionFilter) ([]string, error) {
 	return GetAllFunctionNamesV2(profilePath, filter)
-}
-
-// OrganizeProfileByPackage loads a profile and builds the package-grouped report; equivalent to [OrganizeProfileByPackageV2].
-func OrganizeProfileByPackage(profilePath string, filter config.FunctionFilter) (string, error) {
-	return OrganizeProfileByPackageV2(profilePath, filter)
 }

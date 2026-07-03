@@ -32,39 +32,48 @@ func formatFilterList(items []string) string {
 	return strings.Join(items, ", ")
 }
 
-func askAdvancedCollectOptions() (groupPkg, lenient, skipPng bool, err error) {
+func printCollectOutputOptionsHelp() {
+	fmt.Fprintln(os.Stdout, "")
+	fmt.Fprintln(os.Stdout, "Collect output options:")
+	fmt.Fprintln(os.Stdout, "  Lenient profiles — if a .prof file is missing after the bench, skip it instead of failing the run")
+	fmt.Fprintln(os.Stdout, "  Skip PNG — ignore call-graph PNG failures; the run still succeeds when text profiles were collected")
+	fmt.Fprintln(os.Stdout, "")
+	if tooling.GraphvizAvailable() {
+		fmt.Fprintln(os.Stdout, "Press Enter for defaults: flat text profiles, strict profile checks, PNG call graphs when possible.")
+	} else {
+		fmt.Fprintln(os.Stdout, "Press Enter for defaults: flat text profiles, strict profile checks, PNG skipped (Graphviz not installed).")
+	}
+}
+
+func askAdvancedCollectOptions() (lenient, skipPng bool, err error) {
+	printCollectOutputOptionsHelp()
+
 	var advanced bool
 	if err = survey.AskOne(&survey.Confirm{
-		Message: "Advanced options (group by package, lenient profiles, skip PNG)?",
+		Message: "Change any of the options above?",
 		Default: false,
 	}, &advanced); err != nil {
-		return false, false, false, err
+		return false, false, err
 	}
 	if !advanced {
-		return false, false, !tooling.GraphvizAvailable(), nil
+		return false, !tooling.GraphvizAvailable(), nil
 	}
 	if err = survey.AskOne(&survey.Confirm{
-		Message: "Group profile output by Go package (writes additional *_grouped.txt style reports under the tag)?",
-		Default: false,
-	}, &groupPkg); err != nil {
-		return false, false, false, err
-	}
-	if err = survey.AskOne(&survey.Confirm{
-		Message: "Lenient profiles: if a profile binary is missing after the bench run, skip it instead of failing?",
+		Message: "Lenient profiles: skip missing .prof files instead of failing the run?",
 		Default: false,
 	}, &lenient); err != nil {
-		return false, false, false, err
+		return false, false, err
 	}
 	skipDefault := !tooling.GraphvizAvailable()
 	if err = survey.AskOne(&survey.Confirm{
-		Message: "Skip PNG generation failures (e.g. when Graphviz is not installed)? The run still succeeds if text profiles were produced.",
+		Message: "Skip PNG: succeed even when call-graph PNG generation fails?",
 		Default: skipDefault,
 	}, &skipPng); err != nil {
-		return false, false, false, err
+		return false, false, err
 	}
 	if !skipPng && !tooling.GraphvizAvailable() {
 		fmt.Fprintln(os.Stdout, tooling.SkipPNGNotice)
 		skipPng = true
 	}
-	return groupPkg, lenient, skipPng, nil
+	return lenient, skipPng, nil
 }

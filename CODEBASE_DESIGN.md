@@ -101,7 +101,7 @@ Benchmark discovery: [`engine/collect/discovery.go`](engine/collect/discovery.go
 1. [`collect.RunAuto`](engine/collect/entry.go) loads optional `prof.json` via [`config.Load`](internal/config/load.go).
 2. Creates `bench/<tag>/` via [`collect/layout.go`](engine/collect/layout.go) and [`workspace.CleanOrCreateTag`](internal/workspace/tag.go).
 3. Runs `go test` per benchmark ([`gotest.go`](engine/collect/gotest.go)), writes binaries under `bench/<tag>/bin/<bench>/`.
-4. [`processProfiles`](engine/collect/profiles.go): text, optional grouped text (with resolved filter), PNG, per-function lists.
+4. [`processProfiles`](engine/collect/profiles.go): text, PNG, per-function lists.
 
 ### Manual ingest (`prof manual`)
 
@@ -117,7 +117,6 @@ bench/
     ├── description.txt
     ├── bin/<BenchmarkName>/<BenchmarkName>_<profile>.out
     ├── text/<BenchmarkName>/<BenchmarkName>_<profile>.txt
-    ├── text/<BenchmarkName>/<BenchmarkName>_<profile>_grouped.txt   # when --group-by-package
     └── <profile>_functions/<BenchmarkName>/<function>.txt
 ```
 
@@ -143,7 +142,6 @@ Edit interactively: `prof ui` → Create Configuration File. CLI: `prof config i
 | Missing profile binary after bench | `engine/collect` | `--lenient-profiles` skips; default fails |
 | PNG / Graphviz missing | `engine/collect` | `--skip-png` warns; default fails |
 | Manual file `cpu.out` → bench `cpu` | `engine/collect` | [`manual_test.go`](engine/collect/manual_test.go) stem rules |
-| Grouped filter ignored in auto | `engine/collect` | Fixed: auto passes `config.ResolveFilter` into grouped generation |
 | Tag dir not empty before run | `internal/workspace` | [`layout_test.go`](internal/workspace/layout_test.go) `CleanOrCreateTag` |
 | Per-bench overrides collection defaults | `internal/config` | [`config_test.go`](internal/config/config_test.go) |
 

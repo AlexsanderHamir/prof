@@ -10,7 +10,6 @@ import (
 	"regexp"
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
-	"github.com/AlexsanderHamir/prof/internal/config"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 	"github.com/AlexsanderHamir/prof/parser"
 )
@@ -101,12 +100,4 @@ func getFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntr
 // FunctionsOutput runs pprof -list for each entry (exported for integration tests).
 func FunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string) error {
 	return getFunctionsOutput(runner, entries, binaryPath, basePath)
-}
-
-func writeGroupedPackageProfile(binaryPath, outputPath string, filter config.FunctionFilter) error {
-	text, err := parser.OrganizeProfileByPackageV2(binaryPath, filter)
-	if err != nil {
-		return fmt.Errorf("organize profile by package: %w", err)
-	}
-	return writeArtifactFile(outputPath, []byte(text))
 }
