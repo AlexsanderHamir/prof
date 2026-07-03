@@ -334,7 +334,9 @@ func (s *Session) Success(msg string) {
 		slog.Info(msg)
 		return
 	}
+	fmt.Fprintln(s.w)
 	fmt.Fprintln(s.w, SuccessStyle.Render(msg))
+	fmt.Fprintln(s.w)
 }
 
 // newSessionForTest builds a session with a forced interactive flag (tests only).
