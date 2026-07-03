@@ -186,32 +186,3 @@ func expectOnlyGenerate() map[fileFullName]*FieldsCheck {
 func autoBenchSkipPNGArgs() []string {
 	return []string{"--skip-png"}
 }
-
-func createBenchForTracker(t *testing.T, label, iterations, tagName string, blockOutputCheck, isEnvironmentSet bool) {
-	cmd := []string{
-		cli.CmdAuto,
-		"--benchmarks", benchName,
-		"--profiles", cpuProfile,
-		"--count", iterations,
-		"--tag", tagName,
-	}
-	cmd = append(cmd, autoBenchSkipPNGArgs()...)
-
-	testArgs := &TestArgs{
-		specifiedFiles:          nil,
-		cfg:                     config.Config{},
-		withConfig:              false,
-		expectNonSpecifiedFiles: true,
-		noConfigFile:            true,
-		cmd:                     cmd,
-		expectedErrorMessage:    "",
-		label:                   label,
-		expectedNumberOfFiles:   3,
-		withCleanUp:             false,
-		expectedProfiles:        nil,
-		blockOutputCheck:        blockOutputCheck,
-		isEnvironmentSet:        isEnvironmentSet,
-	}
-
-	testConfigScenario(t, testArgs)
-}

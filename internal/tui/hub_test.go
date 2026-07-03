@@ -25,7 +25,7 @@ func TestHubSelectFirstItemWithEnter(t *testing.T) {
 	}
 }
 
-func TestHubMoveDownAndSelectCompare(t *testing.T) {
+func TestHubMoveDownAndSelectConfig(t *testing.T) {
 	m := newHubModel()
 	var tm tea.Model = m
 	tm, _ = tm.Update(tea.KeyMsg{Type: tea.KeyDown})
@@ -35,8 +35,8 @@ func TestHubMoveDownAndSelectCompare(t *testing.T) {
 	}
 	tm, _ = tm.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	hm = mustHubModel(t, tm)
-	if hm.result != MainCompare {
-		t.Fatalf("want MainCompare, got %v", hm.result)
+	if hm.result != MainConfig {
+		t.Fatalf("want MainConfig, got %v", hm.result)
 	}
 }
 

@@ -4,8 +4,8 @@ import "testing"
 
 func TestAllKinds(t *testing.T) {
 	got := AllKinds()
-	if len(got) != 5 {
-		t.Fatalf("AllKinds: want 5 entries, got %d", len(got))
+	if len(got) != 4 {
+		t.Fatalf("AllKinds: want 4 entries, got %d", len(got))
 	}
 	seen := map[Kind]bool{}
 	for _, d := range got {
@@ -14,7 +14,7 @@ func TestAllKinds(t *testing.T) {
 		}
 		seen[d.K] = true
 	}
-	for _, k := range []Kind{KindCollect, KindCompare, KindSetup, KindConfigCreate, KindConfigSave} {
+	for _, k := range []Kind{KindCollect, KindSetup, KindConfigCreate, KindConfigSave} {
 		if !seen[k] {
 			t.Errorf("missing kind %q in AllKinds", k)
 		}

@@ -91,31 +91,3 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 	collect.Normalize()
 	return intent.RunValidated(collect, svc)
 }
-
-func runTUITrackAuto(svc *app.Services, _ *cobra.Command, _ []string) error {
-	// Discover available tags
-	tags, err := discoverAvailableTags()
-	if err != nil {
-		return fmt.Errorf("failed to discover available tags: %w", err)
-	}
-	if len(tags) < minTagsForComparison {
-		return errors.New("need at least 2 tags to compare (run prof ui or prof tui to collect data first)")
-	}
-
-	// Get user selections
-	selections, err := getTrackSelections(tags)
-	if err != nil {
-		return err
-	}
-
-	// Now run the actual tracking command
-	fmt.Printf("\nRunning: prof track auto --base %s --current %s --bench-name %s --profile-type %s --output-format %s",
-		selections.Baseline, selections.Current, selections.BenchmarkName, selections.ProfileType, selections.OutputFormat)
-	if selections.UseThreshold {
-		fmt.Printf(" --fail-on-regression --regression-threshold %.1f", selections.RegressionThreshold)
-	}
-	fmt.Println()
-
-	cmp := &intent.CompareIntent{Options: *selections}
-	return intent.RunValidated(cmp, svc)
-}

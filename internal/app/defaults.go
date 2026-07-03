@@ -6,7 +6,6 @@ import (
 	"github.com/AlexsanderHamir/prof/engine/collect"
 	"github.com/AlexsanderHamir/prof/engine/cursoragent"
 	"github.com/AlexsanderHamir/prof/engine/tooling"
-	"github.com/AlexsanderHamir/prof/engine/tracker"
 	"github.com/AlexsanderHamir/prof/internal/config"
 )
 
@@ -16,7 +15,6 @@ func Default() *Services {
 	return &Services{
 		Runner:  r,
 		Collect: defaultCollect{runner: r},
-		Tracker: defaultTracker{},
 		Agent:   defaultAgent{},
 		Setup:   defaultSetup{},
 		Config:  defaultConfig{},
@@ -41,16 +39,6 @@ func (d defaultCollect) DiscoverBenchmarks(scope string) ([]string, error) {
 
 func (d defaultCollect) SupportedProfiles() []string {
 	return collect.SupportedProfiles
-}
-
-type defaultTracker struct{}
-
-func (defaultTracker) RunTrackAuto(opts TrackOptions) error {
-	return tracker.RunTrackAuto(tracker.Options(opts))
-}
-
-func (defaultTracker) RunTrackManual(opts TrackOptions) error {
-	return tracker.RunTrackManual(tracker.Options(opts))
 }
 
 type defaultAgent struct{}

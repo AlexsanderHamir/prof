@@ -10,8 +10,6 @@ type Kind string
 const (
 	// KindCollect runs benchmarks and collects profiles under bench/<tag>/.
 	KindCollect Kind = "collect"
-	// KindCompare compares two tags using the bench/ tree (track auto).
-	KindCompare Kind = "compare"
 	// KindSetup writes prof.json beside go.mod (deprecated alias).
 	KindSetup Kind = "setup"
 	// KindConfigCreate writes the default prof.json beside go.mod.
@@ -30,7 +28,6 @@ type KindDescriptor struct {
 func AllKinds() []KindDescriptor {
 	return []KindDescriptor{
 		{KindCollect, "Collect benchmark profiles (Benchmark.RunBenchmarks)"},
-		{KindCompare, "Compare two tagged runs (Tracker.RunTrackAuto)"},
 		{KindSetup, "Create prof.json (Setup.CreateTemplate)"},
 		{KindConfigCreate, "Create default prof.json (Config.CreateDefaultFile)"},
 		{KindConfigSave, "Save prof.json (Config.Save)"},

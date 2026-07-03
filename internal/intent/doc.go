@@ -9,7 +9,6 @@
 // Supported translations:
 //
 //   - KindCollect / CollectIntent → Collect.RunAuto
-//   - KindCompare / CompareIntent → Tracker.RunTrackAuto (tag layout; not manual file paths)
 //   - KindSetup / SetupIntent → Config.CreateDefaultFile (deprecated alias)
 //   - KindConfigCreate / ConfigCreateIntent → Config.CreateDefaultFile
 //   - KindConfigSave / ConfigSaveIntent → Config.Save

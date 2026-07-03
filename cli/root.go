@@ -17,25 +17,22 @@ func CreateRootCmd(services *app.Services) *cobra.Command {
 
 	root := &cobra.Command{
 		Use:   "prof",
-		Short: "Go benchmark profiling: collect pprof-backed runs under bench/<tag>/ and compare them.",
+		Short: "Go benchmark profiling: collect pprof-backed runs under bench/<tag>/.",
 		Long: `Prof wraps go test and pprof so you can capture CPU, memory, mutex, and block profiles in one
-workflow, store artifacts in a predictable bench/<tag>/ tree, and diff two runs when you change code.
+workflow and store artifacts in a predictable bench/<tag>/ tree.
 
 Start interactively (no flags to memorize):
 
   prof ui
 
-For automation and CI, use prof auto, prof track, and other subcommands — see prof -h and prof <command> -h.
+For automation, use prof auto, prof manual, and other subcommands — see prof -h and prof <command> -h.
 
 Documentation: https://alexsanderhamir.github.io/prof/`,
 		Example: `  # Guided menu (recommended first run)
   prof ui
 
   # Collect profiles (non-interactive)
-  prof auto --benchmarks "BenchmarkFoo" --profiles "cpu,memory" --count 5 --tag baseline
-
-  # Compare two tags
-  prof track auto --base baseline --current candidate --profile-type cpu --bench-name BenchmarkFoo --output-format summary`,
+  prof auto --benchmarks "BenchmarkFoo" --profiles "cpu,memory" --count 5 --tag baseline`,
 		Version: Version,
 	}
 
@@ -45,7 +42,6 @@ Documentation: https://alexsanderhamir.github.io/prof/`,
 	root.AddCommand(newTuiCmd(svc))
 	root.AddCommand(newConfigCmd(svc))
 	root.AddCommand(newSetupCmd(svc))
-	root.AddCommand(newTrackCmd(svc))
 
 	return root
 }

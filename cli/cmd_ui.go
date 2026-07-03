@@ -17,10 +17,10 @@ const profDocumentationURL = "https://alexsanderhamir.github.io/prof/"
 func newUICmd(svc *app.Services) *cobra.Command {
 	return &cobra.Command{
 		Use:   "ui",
-		Short: "Interactive menu: collect, compare, or create prof.json without memorizing subcommands.",
+		Short: "Interactive menu: collect profiles or create prof.json without memorizing subcommands.",
 		Long: `Open a guided menu for the most common prof workflows.
 
-Use this when you prefer prompts to typing flags. For scripts and CI, use prof auto, prof track, and other subcommands directly.
+Use this when you prefer prompts to typing flags. For scripts and automation, use prof auto and other subcommands directly.
 
 Documentation: ` + profDocumentationURL,
 		RunE: func(_ *cobra.Command, _ []string) error {
@@ -31,7 +31,7 @@ Documentation: ` + profDocumentationURL,
 
 func requireInteractiveTerminal() error {
 	if !term.IsTerminal(int(os.Stdin.Fd())) || !term.IsTerminal(int(os.Stdout.Fd())) {
-		return errors.New("prof ui requires an interactive terminal (stdin and stdout must be TTYs). For non-interactive use, run: prof auto, prof track, prof tui, or prof -h")
+		return errors.New("prof ui requires an interactive terminal (stdin and stdout must be TTYs). For non-interactive use, run: prof auto, prof tui, or prof -h")
 	}
 	return nil
 }
@@ -61,8 +61,6 @@ func runUILauncherOnce(svc *app.Services) error {
 	switch choice {
 	case tui.MainCollect:
 		runErr = runTUI(svc, nil, nil)
-	case tui.MainCompare:
-		runErr = runTUITrackAuto(svc, nil, nil)
 	case tui.MainConfig, tui.MainSetup:
 		runErr = runUIConfigCreate(svc)
 	case tui.MainDocs:

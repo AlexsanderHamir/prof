@@ -15,11 +15,6 @@ func (stubCollect) RunManual(_ CollectManualOptions) error        { return nil }
 func (stubCollect) DiscoverBenchmarks(_ string) ([]string, error) { return nil, nil }
 func (stubCollect) SupportedProfiles() []string                   { return nil }
 
-type stubTracker struct{}
-
-func (stubTracker) RunTrackAuto(_ TrackOptions) error   { return nil }
-func (stubTracker) RunTrackManual(_ TrackOptions) error { return nil }
-
 func TestWithDefaultsFillsAgentWhenNil(t *testing.T) {
 	s := &Services{}
 	out := s.WithDefaults()
@@ -39,7 +34,7 @@ func (stubSetup) CreateTemplate() error { return nil }
 func TestWithDefaultsNilReceiver(t *testing.T) {
 	var s *Services
 	out := s.WithDefaults()
-	if out == nil || out.Runner == nil || out.Collect == nil || out.Tracker == nil || out.Setup == nil || out.Config == nil {
+	if out == nil || out.Runner == nil || out.Collect == nil || out.Setup == nil || out.Config == nil {
 		t.Fatalf("expected all fields set: %#v", out)
 	}
 }
@@ -47,7 +42,7 @@ func TestWithDefaultsNilReceiver(t *testing.T) {
 func TestWithDefaultsAllNilFieldsNonNilReceiver(t *testing.T) {
 	s := &Services{}
 	out := s.WithDefaults()
-	if out.Collect == nil || out.Tracker == nil || out.Setup == nil {
+	if out.Collect == nil || out.Setup == nil {
 		t.Fatalf("expected defaults for every slot: %#v", out)
 	}
 }
@@ -59,7 +54,7 @@ func TestWithDefaultsFillsOnlyNil(t *testing.T) {
 	if out.Collect != custom {
 		t.Fatal("should preserve custom Collect")
 	}
-	if out.Tracker == nil {
+	if out.Config == nil {
 		t.Fatal("should fill nil dependencies")
 	}
 }
@@ -67,11 +62,10 @@ func TestWithDefaultsFillsOnlyNil(t *testing.T) {
 func TestWithDefaultsPreservesAllNonNil(t *testing.T) {
 	s := &Services{
 		Collect: stubCollect{},
-		Tracker: stubTracker{},
 		Setup:   stubSetup{},
 	}
 	out := s.WithDefaults()
-	if out.Collect != s.Collect || out.Tracker != s.Tracker || out.Setup != s.Setup {
+	if out.Collect != s.Collect || out.Setup != s.Setup {
 		t.Fatal("WithDefaults replaced a non-nil dependency")
 	}
 }
@@ -108,17 +102,6 @@ func TestDefaultCollectRunManualEmptyFiles(t *testing.T) {
 	t.Chdir(root)
 	if err := Default().Collect.RunManual(CollectManualOptions{Tag: "tag"}); err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestDefaultTrackerInvalidFormat(t *testing.T) {
-	d := Default()
-	opts := TrackOptions{OutputFormat: "nope"}
-	if d.Tracker.RunTrackAuto(opts) == nil {
-		t.Fatal("expected invalid format error")
-	}
-	if d.Tracker.RunTrackManual(opts) == nil {
-		t.Fatal("expected invalid format error")
 	}
 }
 

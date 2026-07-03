@@ -61,42 +61,6 @@ func ExampleTemplate(modulePath string) string {
                 "include_prefixes": ["`+includeExample+`/pkg/foo"]
             }
         }
-    },
-
-    // track — built-in regression check (prof track / UI compare): when to ignore noise and when to fail.
-    // Docs: `+docSiteBase+`/configure/#track
-    //       `+docSiteBase+`/compare/#regression-gate
-    //       `+docSiteBase+`/ci/#json-in-profjson
-    "track": {
-        "defaults": {
-            // ignore_prefixes: skip functions whose full name starts with one of these strings (runtime/test noise).
-            "ignore_prefixes": [
-                "runtime.",
-                "reflect.",
-                "testing."
-            ],
-
-            // ignore_functions: skip exact full symbol names from regression reports (optional).
-            "ignore_functions": [],
-
-            // min_change_percent: ignore regressions smaller than this percent (noise floor).
-            "min_change_percent": 5.0,
-
-            // max_regression_percent: fail when worst flat regression meets or exceeds this percent (0 = never fail).
-            "max_regression_percent": 15.0,
-
-            // fail_on_improvement: set true to fail on unexpected speedups too (unusual; default is false).
-            "fail_on_improvement": false
-        },
-
-        // Optional — stricter limits for one benchmark:
-        // Docs: `+docSiteBase+`/configure/#track-benchmarks
-        //       `+docSiteBase+`/ci/#json-in-profjson
-        "benchmarks": {
-            "BenchmarkCritical": {
-                "max_regression_percent": 5.0
-            }
-        }
     }
 }
 `, "\n") + "\n"

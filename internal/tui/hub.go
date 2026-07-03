@@ -18,8 +18,6 @@ const (
 	MainQuit
 	// MainCollect runs interactive benchmark collection.
 	MainCollect
-	// MainCompare runs interactive compare between two tags.
-	MainCompare
 	// MainSetup is a deprecated alias for MainConfig.
 	MainSetup
 	// MainConfig creates prof.json when missing.
@@ -55,7 +53,6 @@ func newHubModel() *hubModel {
 		result: MainNone,
 		items: []mainItem{
 			{"Collect Profiles", MainCollect},
-			{"Compare Runs", MainCompare},
 			{"Create Configuration File", MainConfig},
 			{"Documentation Site", MainDocs},
 			{"Quit", MainQuit},
@@ -145,7 +142,6 @@ func (m *hubModel) View() string {
 	if m.showHelp {
 		b.WriteString(helpStyle.Render(
 			"Collect Profiles: run benchmarks and store output under bench/<tag>/.\n" +
-				"Compare Runs: diff two saved runs function-by-function; optional regression limits from prof.json or CLI.\n" +
 				"Create Configuration File: writes prof.json and prof.json.example beside go.mod.\n" +
 				"Press ? again to hide this help.",
 		))
