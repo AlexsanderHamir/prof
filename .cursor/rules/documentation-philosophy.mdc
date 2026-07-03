@@ -1,439 +1,84 @@
 ---
-description: Rewrite and enforce documentation standards combining Stripe and Twilio philosophy. Apply when writing, reviewing, or rewriting any developer-facing documentation, API references, guides, or tutorials.
-globs: ["**/*.md", "**/*.mdx", "docs/**/*", "README.md"]
+description: Enforce Microsoft Learn documentation standards when writing or reviewing developer-facing docs. Rewrite existing content only when it violates these rules.
 alwaysApply: false
 ---
+# Documentation Standards (Microsoft Learn)
 
-# Documentation Philosophy: Stripe × Twilio Standard
+Follow the [Microsoft Writing Style Guide](https://learn.microsoft.com/en-us/style-guide/welcome/) and [Microsoft Learn contributor guidance](https://learn.microsoft.com/en-us/contribute/content/style-quick-start) when writing or editing documentation. Apply these rules to new content. When reviewing or touching existing docs, fix violations you encounter — don't rewrite pages that already comply.
 
-You are a documentation rewriter operating under a strict quality standard inspired by the documentation philosophies of Stripe and Twilio — the two most developer-loved documentation systems in the industry. Your job is to transform any documentation input into output that matches this standard in structure, tone, depth, and developer utility.
+## Voice
 
----
+Be **warm and relaxed**, **crisp and clear**, and **ready to lend a hand**.
 
-## Core Philosophy
+- Write to one reader in second person ("you"). Use active voice and contractions.
+- Front-load what matters. Short sentences. Scan first, read second.
+- Assume developers know programming basics. Focus on product-specific information.
+- No marketing language ("powerful", "seamless") or filler ("simply", "just", "obviously").
+- Use inclusive, bias-free language.
+- Present tense over future tense. Sentence case for all headings.
 
-### The Prime Directive
-Documentation is a product, not an afterthought. It must be so clear, so complete, and so usable that a developer can go from zero to working integration **without ever opening a support ticket**. Every page has one job: unblock the developer as fast as possible.
+## Content types
 
-### The Two Schools You Embody
+Each page serves one primary intent (Diátaxis). Don't mix types on one page.
 
-**Stripe School — Clarity through minimalism and precision**
-Stripe's documentation is celebrated for making complex systems feel simple. It achieves this through surgical writing, a consistent three-column layout (nav / content / code), and an obsessive focus on first-time developer success. Every word earns its place. No padding, no marketing language, no assumptions about what the reader already knows — yet no condescension either.
+| Type | When to use |
+|------|-------------|
+| **Tutorial** | Reader is learning — guide them to a first success step by step. |
+| **How-to** | Reader has a specific task — give numbered steps, assume baseline competence. |
+| **Reference** | Reader is looking something up — parameters, commands, errors, concisely. |
+| **Explanation** | Reader wants context — define concepts and explain why, don't instruct. |
 
-**Twilio School — Depth through explanation and empathy**
-Twilio's documentation is celebrated for actually explaining *why*, not just *how*. It treats every concept as worthy of a real explanation, down to fundamentals like "What's a REST API, anyway?" It provides multilingual code examples, real-world use cases, step-by-step tutorials, and integrates community resources. It meets developers at their level.
+Before writing, identify the reader, their task, and the content type.
 
-**Together:** Be precise like Stripe. Be thorough like Twilio.
+## Structure
 
----
+- Open with what the page is and what the reader will accomplish or understand.
+- List prerequisites explicitly — never assume implicit knowledge.
+- Break content with headings, lists, tables, and code blocks. No walls of text.
+- End with **Next steps** or **See also**.
+- New concepts: define **what it is** before explaining **why it matters**.
 
-## Rewriting Rules
+## Procedures
 
-### 1. Structure Every Page Like a Funnel
+- Numbered lists for sequential steps. Imperative verb, complete sentence, period at end.
+- Say where the action happens before what to do (terminal, config file, UI location).
+- Keep procedures ≤12 steps; split longer ones into sections.
+- Don't interrupt steps with commentary — put detail in code comments instead.
+- Bold UI labels: Select **Settings** > **Advanced**.
 
-Every documentation page must be structured from broadest to most specific. The reader should be able to stop reading at any point and still have gotten value.
+## Code examples
 
-```
-Page Structure:
-  1. One-sentence description of what this is and why it matters
-  2. Prerequisites (if any) — be explicit, never implicit
-  3. Quickstart / minimal working example
-  4. Core concepts explained
-  5. Full reference (parameters, options, errors)
-  6. Advanced usage / edge cases
-  7. Related resources
-```
+- Runnable with imports/setup where needed. Clear placeholders (`YOUR_API_KEY`).
+- Primary languages for this project: **Go** and **shell**. Don't add other languages unless readers need them.
+- State expected output after each example. Show responses when they matter.
 
-Never bury the quickstart. It must appear before full concept explanation.
+## Reference entries
 
-### 2. Write the First Sentence as a Definition
+For each parameter, option, or field document: type, required/optional, units, limits, and enum values. Document errors with cause and fix — not "contact support."
 
-Every page, section, and concept must open with a plain-English definition. The first sentence answers: **"What is this, in one sentence?"**
+## Callouts
 
-✅ Good:
-> Webhooks let Stripe notify your application when an event happens in your account, such as a successful payment or a failed charge.
+Use sparingly (≤1 per major section): **Note**, **Important**, **Warning**, **Tip**.
 
-❌ Bad:
-> This section covers our webhook system and its configuration options.
+## Deprecation and testing
 
-### 3. Lead with Working Code, Not Prose
+- Breaking changes need a migration guide with replacement and example.
+- Deprecated items need deprecation date, sunset date, and replacement.
+- Feature guides cover success verification and common failure scenarios.
 
-For any integration, API call, or feature — show working code **before** explaining it. Developers read code first. The explanation follows the example, not the other way around.
+## Localization
 
-**Pattern:**
-```
-Brief one-sentence description.
+Short sentences. Simple construction. Consistent terminology. Avoid idioms and long clause chains.
 
-[code example]
+## Review checklist
 
-The above example does X by Y. The `param_name` field controls Z.
-```
+When finishing a doc change, confirm:
 
-Never write three paragraphs of explanation before showing a single line of code.
-
-### 4. Code Examples Are Mandatory and Must Be Runnable
-
-Every code example must:
-- Be **complete** — copy-paste runnable, not pseudocode
-- Use **real values** (use placeholder strings like `sk_test_...` or `YOUR_ACCOUNT_SID` that make it obvious what to substitute)
-- Include **import/require statements** where applicable
-- Be provided in **at minimum 3 languages** for any API-level operation (e.g., curl, Python, Node.js — add Go, Ruby, PHP where the audience warrants it)
-- Include **inline comments** that explain non-obvious lines
-
-**Language tab order (default):** curl → Node.js → Python → Go → Ruby → PHP
-
-```bash
-# curl always comes first — it's language-agnostic and immediately runnable
-curl https://api.example.com/v1/resource \
-  -u sk_test_YOUR_KEY: \
-  -d amount=2000 \
-  -d currency=usd
-```
-
-### 5. Use the Three-Column Mental Model
-
-Even in linear Markdown, structure content as if it were three columns:
-
-- **Left (navigation context):** Where am I? What section is this?
-- **Center (explanation):** What does this do and why?
-- **Right (code):** Show me exactly how.
-
-In practice: every concept explanation must have a corresponding code block on the same page. No concepts without code. No code without explanation.
-
-### 6. Error Documentation Is Not Optional
-
-Every error code, failure mode, and edge case must be documented. For each error:
-
-```
-### ERROR_CODE_NAME
-**HTTP Status:** 4xx / 5xx
-**When it occurs:** [specific triggering condition]
-**What it means:** [plain English explanation]
-**How to fix it:** [actionable steps, not "contact support"]
-
-Example response:
-{
-  "error": {
-    "code": "ERROR_CODE_NAME",
-    "message": "Human-readable message",
-    "param": "affected_field"
-  }
-}
-```
-
-If the fix is "contact support," you haven't documented the error — you've deferred it. Dig deeper.
-
-### 7. Explain Every Parameter
-
-For every API endpoint, configuration option, or function parameter:
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | The customer's full name. Maximum 100 characters. |
-| `amount` | integer | Yes | Amount in the smallest currency unit (e.g., cents for USD). Must be > 0. |
-| `currency` | string | Yes | Three-letter ISO 4217 currency code in lowercase. |
-| `metadata` | object | No | Key-value pairs for storing additional structured information. Keys max 40 chars, values max 500 chars. Up to 50 keys. |
-
-Rules for parameter docs:
-- State the **type** explicitly
-- State whether it's **required or optional**
-- Give the **unit** for numeric fields (bytes, milliseconds, cents)
-- State **limits** (min, max, character limits)
-- Give an **example value** for non-obvious fields
-- For enums, list **every valid value** with a description of each
-
-### 8. Write Twilio-Style Concept Explanations
-
-For every non-trivial concept, write a short "What is X?" section before using it. This is Twilio's signature move — never assume the reader knows what something is.
-
-Template:
-```
-## What is [concept]?
-
-[Plain English explanation in 2-4 sentences. Use an analogy if it helps.]
-
-For example, [concrete real-world scenario showing the concept in action].
-
-[Optional: link to a deeper explainer or RFC/spec if relevant]
-```
-
-Examples of concepts that always need this treatment:
-- Webhooks
-- Idempotency keys
-- Pagination cursors
-- Authentication flows
-- Rate limiting
-- Async operations / polling
-
-### 9. Tone and Voice
-
-**Be direct.** Use imperative voice for instructions.
-- ✅ "Set the `Content-Type` header to `application/json`."
-- ❌ "You will want to make sure that you set the `Content-Type` header."
-
-**Be precise.** Use exact terms, not approximations.
-- ✅ "Returns a 429 status code after 100 requests per second."
-- ❌ "May return errors if you send too many requests."
-
-**Be empathetic, not condescending.** Explain without belittling.
-- ✅ "If you're new to webhooks, see [What is a webhook?](#) before continuing."
-- ❌ "Obviously, you'll need to understand what a webhook is first."
-
-**Never use marketing language in technical docs.**
-- ❌ "Our powerful, best-in-class API makes it easy..."
-- ✅ "The API accepts..."
-
-**Use second person ("you"), not third person ("the developer") or first person plural ("we recommend").**
-- ✅ "You can authenticate by passing your API key in the header."
-- ❌ "Developers should authenticate by passing their API key."
-
-**Avoid filler phrases.** Delete these on sight:
-- "Simply...", "Just...", "Easily...", "Obviously...", "As you can see...", "It's worth noting that..."
-
-### 10. Quickstart Must Reach "Hello World" in Under 5 Steps
-
-Every product, feature, or integration must have a Quickstart that:
-
-1. Has fewer than 5 steps
-2. Results in something **observable** (a response in the terminal, a webhook received, a charge created)
-3. Uses test/sandbox credentials — never requires production setup
-4. Takes under 10 minutes for an experienced developer
-
-**Quickstart template:**
-```markdown
-## Quickstart
-
-You'll have [outcome] running in about [X] minutes.
-
-**Before you begin:**
-- [Prerequisite 1]
-- [Prerequisite 2]
-
-**Step 1: Install the library**
-[code]
-
-**Step 2: Set your API key**
-[code]
-
-**Step 3: Make your first call**
-[code]
-
-**Step 4: Verify the result**
-You should see [expected output]. If you see [error], check [specific thing].
-```
-
-### 11. Navigation and Discoverability
-
-Structure all documentation with these principles:
-
-- **Descriptive headers:** Headers must be searchable phrases developers would actually type. Use "How to handle webhook signature verification" not "Webhook Security."
-- **Anchor links:** Every H2 and H3 must have a stable anchor ID.
-- **Cross-links aggressively:** Every concept should link to its reference page. Every reference page should link back to the relevant guide.
-- **No dead ends:** Every page must end with "Next steps" or "Related resources" — never leave the developer stranded.
-- **Sidebar labels:** Use verb-noun pairs ("Create a charge", "Handle errors", "Test webhooks") not noun-only ("Charges", "Errors", "Testing").
-
-### 12. Testing and Sandbox Documentation
-
-Every integration guide must include a dedicated testing section that covers:
-
-- How to use test/sandbox credentials
-- A list of test values that trigger specific scenarios (e.g., Stripe's `4000000000000002` triggers a card decline)
-- How to verify the integration worked (what to look for in logs, dashboards, or response bodies)
-- How to simulate error conditions
-
-**Never ship a guide that only documents the happy path.**
-
-### 13. Versioning and Changelog Hygiene
-
-- Every breaking change must be documented with a migration guide, not just a changelog entry.
-- Deprecated fields/endpoints must include:
-  - The deprecation date
-  - The sunset date (when it will stop working)
-  - The replacement and a migration example
-- Version-specific behavior differences must be called out inline with a badge or callout block.
-
-```markdown
-> **API Version Note (2024-06-01+):** The `card` field is now returned as `payment_method`. 
-> See the [migration guide](#) if you're upgrading from an earlier version.
-```
-
-### 14. Callout Blocks
-
-Use callout blocks consistently and sparingly. Overuse dilutes their impact.
-
-| Block Type | When to Use |
-|------------|-------------|
-| `> **Note:**` | Supplementary info that's useful but not critical |
-| `> **Important:**` | Info the developer must know to avoid a mistake |
-| `> **Warning:**` | Actions that can cause data loss, billing, or irreversible changes |
-| `> **Tip:**` | A non-obvious shortcut or best practice |
-
-Limit to **one callout per major section**. If you find yourself writing three warnings in a row, restructure the content.
-
-### 15. Multilingual Code — Twilio Standard
-
-For any API operation documented with code, you must provide tabs or sections for each major language your users work in. The example must be **semantically equivalent** across languages — same operation, same parameters, just idiomatically written for each language.
-
-Label each block clearly:
-
-```bash
-# bash / curl
-```
-```javascript
-// Node.js
-```
-```python
-# Python
-```
-```go
-// Go
-```
-
-Do not provide a Node.js example and then "translate" it literally into Python with Python-unfriendly patterns. Each example must be idiomatic.
-
----
-
-## Rewrite Checklist
-
-Before finalizing any documentation page, verify:
-
-- [ ] First sentence defines what this is in plain English
-- [ ] Prerequisites are listed explicitly at the top
-- [ ] Quickstart appears before deep-dive content
-- [ ] Every concept has a working code example
-- [ ] Code examples are complete and runnable (not pseudocode)
-- [ ] Code is provided in at least 3 languages for API operations
-- [ ] Every parameter is documented with type, required/optional, and limits
-- [ ] All error codes are documented with causes and fixes
-- [ ] "What is X?" explanations exist for non-trivial concepts
-- [ ] No marketing language ("powerful", "easy", "seamless")
-- [ ] No filler phrases ("simply", "just", "obviously")
-- [ ] Testing section covers failure scenarios, not just happy path
-- [ ] Page ends with next steps or related resources
-- [ ] Deprecated features include sunset dates and migration paths
-- [ ] Callout blocks are used sparingly and consistently
-
----
-
-## Anti-Patterns to Eliminate
-
-When rewriting, actively hunt for and remove these:
-
-**1. The Assumptive Intro**
-> "As you know, our API uses REST..."
-→ Remove "as you know." Either define it or don't mention it.
-
-**2. The Floating Code Block**
-A code example with no explanation of what it does or what to look for in the output.
-→ Every code block gets a one-sentence explanation before it and a "you should see X" after it.
-
-**3. The Noun Header**
-> "## Authentication"
-→ Rewrite as: "## How to authenticate your requests"
-
-**4. The Wall of Text**
-More than 5 sentences in a row with no code, list, or visual break.
-→ Break it up. Developers scan, they don't read linearly.
-
-**5. The Support Deflection**
-> "If you encounter issues, contact support."
-→ Always try to document the solution first. Support deflection is a documentation failure.
-
-**6. The Incomplete Example**
-```python
-# Make the API call
-response = client.charges.create(...)
-```
-→ Fill in the `...`. Always. The reader cannot guess what goes there.
-
-**7. The Unexplained Return Value**
-Showing a request but not showing the response body or explaining what fields matter.
-→ Show the full example response and annotate the important fields.
-
----
-
-## Page Templates
-
-### API Reference Page
-```markdown
-# [Method] [Resource]  
-`[HTTP_METHOD] /v1/endpoint`
-
-[One sentence: what this endpoint does and when to use it.]
-
-## Parameters
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| ...   | ...  | ...      | ...         |
-
-## Returns
-
-[What the response object is. Link to the object reference.]
-
-## Example request
-
-[Code tabs: curl, Node.js, Python, Go]
-
-## Example response
-
-[Full JSON response body]
-
-## Errors
-
-| Code | Description | Resolution |
-|------|-------------|------------|
-| ...  | ...         | ...        |
-
-## Related
-- [Link 1]
-- [Link 2]
-```
-
-### Conceptual Guide Page
-```markdown
-# How to [accomplish goal]
-
-[One sentence: what this guide covers and what you'll have at the end.]
-
-## What is [core concept]?
-
-[2-4 sentence plain English explanation. Analogy if helpful.]
-
-## Before you begin
-
-- [Prerequisite 1]
-- [Prerequisite 2]
-
-## Step 1: [Imperative verb phrase]
-
-[1-2 sentences of context]
-
-[Code example]
-
-[What you should see / verify]
-
-## Step 2: [Imperative verb phrase]
-
-...
-
-## Testing
-
-[How to test this in sandbox/staging. Include failure scenarios.]
-
-## Next steps
-
-- [Related guide 1]
-- [Related guide 2]
-- [API reference for objects used]
-```
-
----
-
-## Final Principle
-
-**If a developer has to ask a question that the documentation could have answered, the documentation has failed.**
-
-Every support ticket, every confused forum post, every "how do I...?" on Stack Overflow is a documentation bug. Treat it as one. The goal is not comprehensive documentation — it is *sufficient* documentation. Sufficient means: a developer with the prerequisites can complete the integration without external help.
-
-Write for that developer. Every time.
+- [ ] Content type matches reader intent
+- [ ] Opening states purpose; prerequisites are explicit
+- [ ] Headings are sentence case; page is scannable
+- [ ] Procedures are numbered imperatives (≤12 steps)
+- [ ] Code examples run; output is described
+- [ ] Reference fields and errors are fully documented
+- [ ] No filler, marketing language, or support deflection
+- [ ] Page ends with next steps or see also
