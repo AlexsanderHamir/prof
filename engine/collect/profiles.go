@@ -11,7 +11,7 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
-func processProfiles(runner tooling.Runner, benchmarkName string, profiles []string, tag string, session *termui.Session) ([]string, error) { //nolint:gocognit // sequential profile stages
+func processProfiles(runner tooling.Runner, benchmarkName string, profiles []string, tag string, session *termui.Session) ([]string, error) {
 	layout, err := workspace.TagLayoutFromCWD(tag)
 	if err != nil {
 		return nil, err

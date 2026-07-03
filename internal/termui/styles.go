@@ -28,8 +28,8 @@ var (
 	PromptHintStyle = lipgloss.NewStyle().Faint(true)
 	// PromptCalloutStyle styles environment notices (amber left rule + text).
 	PromptCalloutStyle = lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder(), false, false, false, true).
-		BorderForeground(lipgloss.Color("214")).
-		PaddingLeft(1).
-		Foreground(lipgloss.Color("214"))
+				Border(lipgloss.NormalBorder(), false, false, false, true).
+				BorderForeground(lipgloss.Color("214")).
+				PaddingLeft(1).
+				Foreground(lipgloss.Color("214"))
 )
