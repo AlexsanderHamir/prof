@@ -63,9 +63,6 @@ func runUILauncherOnce(svc *app.Services) error {
 		runErr = runTUI(svc, nil, nil)
 	case tui.MainConfig, tui.MainSetup:
 		runErr = runUIConfigCreate(svc)
-	case tui.MainDocs:
-		fmt.Fprintf(os.Stdout, "Prof documentation:\n  %s\n", profDocumentationURL)
-		runErr = nil
 	case tui.MainQuit, tui.MainNone:
 		return errUILoopExit
 	default:

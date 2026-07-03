@@ -22,8 +22,6 @@ const (
 	MainSetup
 	// MainConfig creates prof.json when missing.
 	MainConfig
-	// MainDocs prints the documentation URL only.
-	MainDocs
 )
 
 type mainItem struct {
@@ -52,9 +50,8 @@ func newHubModel() *hubModel {
 		cursor: 0,
 		result: MainNone,
 		items: []mainItem{
-			{"Collect Profiles", MainCollect},
+			{"Run Benchmarks & Collect Profiles", MainCollect},
 			{"Create Configuration File", MainConfig},
-			{"Documentation Site", MainDocs},
 			{"Quit", MainQuit},
 		},
 	}
@@ -141,7 +138,7 @@ func (m *hubModel) View() string {
 
 	if m.showHelp {
 		b.WriteString(helpStyle.Render(
-			"Collect Profiles: run benchmarks and store output under bench/<tag>/.\n" +
+			"Run Benchmarks & Collect Profiles: run existing benchmarks and store profiles under bench/<tag>/.\n" +
 				"Create Configuration File: writes prof.json and prof.json.example beside go.mod.\n" +
 				"Press ? again to hide this help.",
 		))
