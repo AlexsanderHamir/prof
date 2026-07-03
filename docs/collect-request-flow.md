@@ -108,12 +108,11 @@ Once `RunAuto` runs, the same pipeline executes for every selected benchmark. Th
 
 ```mermaid
 flowchart TB
-  runAuto["RunAuto"] --> loadCfg["config.Load prof.json"]
-  loadCfg --> setup["setupDirectories CleanOrCreateTag"]
-  setup --> loop["for each benchmark"]
+  runAuto["RunAuto"] --> prep["Preparing setup + prelude warns"]
+  prep --> loop["for each benchmark"]
   loop --> s1["1 Running benchmark go test + move"]
   s1 --> s2["2 Collecting profiles text + PNG"]
-  s2 --> s3["3 Analyzing profiles parser + pprof"]
+  s2 --> s3["3 Collecting function profiles parser + pprof"]
   s3 --> loop
   loop --> done["session.Success"]
 ```
@@ -124,12 +123,13 @@ flowchart TB
 
 - Rejects empty benchmarks/profiles and count `< 1`.
 - Calls `applyAutoSkipPNG` — if Graphviz is unavailable and skip PNG was not set, enables `SkipPNG` and logs a notice (second guard after the Survey layer).
-- Loads optional `prof.json` via [`config.Load`](../internal/config/load.go). Missing config is non-fatal; collection proceeds with empty filters. On an interactive TTY, a single styled warning replaces the two `slog.Info` lines; non-TTY keeps both info logs.
+- Loads optional `prof.json` via [`config.Load`](../internal/config/load.go). Missing config is non-fatal; collection proceeds with empty filters.
 - Skips [`config.PrintAutoConfiguration`](../internal/config/load.go) on an interactive TTY (options were already confirmed in Survey).
+- On an interactive TTY, runs a **Preparing** stage ([`PhasePrepare`](../internal/termui/progress.go)) that creates the tag layout and emits prelude warnings (missing `prof.json`, global Graphviz skip notice) indented under that stage. Non-TTY keeps separate `slog.Info` lines and runs [`setupDirectories`](../engine/collect/layout.go) before the benchmark loop.
 
 ### 2. Create output layout
 
-[`setupDirectories`](../engine/collect/layout.go):
+[`setupDirectories`](../engine/collect/layout.go) (inside **Preparing** on TTY, or before config print on non-TTY):
 
 - Resolves `bench/<tag>/` with [`workspace.CleanOrCreateTag`](../internal/workspace/tag.go).
 - Creates `bin/<benchmark>/`, `text/<benchmark>/`, `<profile>_functions/<benchmark>/`, and `description.txt`.
@@ -142,17 +142,31 @@ flowchart TB
 | --- | --- | --- |
 | 1 | `Running benchmark 1/2: BenchmarkX (count=5)…` | [`runBenchmark`](../engine/collect/gotest.go): `go test`, write bench text, [`moveProfileFiles`](../engine/collect/artifacts.go) |
 | 2 | `Collecting profiles for BenchmarkX (cpu, memory)…` | [`processProfiles`](../engine/collect/profiles.go): text + PNG |
-| 3 | `Analyzing profiles for BenchmarkX…` | [`collectProfileFunctions`](../engine/collect/pipeline.go): parser + per-function `pprof -list` |
+| 3 | `Collecting function profiles for BenchmarkX…` | [`collectProfileFunctions`](../engine/collect/pipeline.go): parser + per-function `pprof -list` |
 
 On an interactive TTY after Survey:
 
-- **Stderr:** one updating spinner per step, styled warnings via `Session.Warn`, and a single faint success line (`Session.Success`) when all benchmarks finish.
+- **Stderr:** a **persistent stage log** — each step shows a spinner while running, then a `✓` line that stays on screen; the next step appears below. Warnings from `Session.Warn` print indented (`    warning: …`) under the **active** stage and remain after that stage completes.
 - **Stdout:** stays clean for Survey/hub.
 - **No** per-function `Collected function` lines or stage `slog.Info` spam.
+- One faint success line (`Session.Success`) after all benchmarks finish.
+
+Example (two benchmarks, no Graphviz):
+
+```text
+✓ Preparing
+    warning: No prof.json found; …
+    warning: Graphviz not found; …
+✓ Running benchmark 1/2: BenchmarkStringProcessor (count=5)
+✓ Collecting profiles for BenchmarkStringProcessor (cpu, memory)
+    warning: PNG skipped for BenchmarkStringProcessor/cpu: …
+✓ Collecting function profiles for BenchmarkStringProcessor
+⠋ Running benchmark 2/2: BenchmarkFibonacci (count=5)…
+```
 
 Non-TTY (CI, piped `prof auto`): no spinners; stage `slog.Info` / `slog.Warn` unchanged; success still logged via `Session.Success` → `slog.Info` for [`tests/run.go`](../tests/run.go).
 
-Recoverable issues on TTY route through `Session.Warn` (lenient missing profile, skipped PNG, per-function list skip, optional missing `prof.json`).
+Recoverable issues on TTY route through `Session.Warn` under the active stage (lenient missing profile and skipped PNG under **Collecting profiles**; per-function list skip under **Collecting function profiles**; prelude issues under **Preparing**).
 
 #### Step 1 — Run benchmark (`go test` + move)
 
