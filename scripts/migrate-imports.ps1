@@ -30,16 +30,9 @@ Get-ChildItem -Path $root -Recurse -Filter '*.go' | Where-Object {
         'internal\.TextExtension' = 'workspace.TextExtension'
         'internal\.ProfileArtifactExtension' = 'workspace.ProfileArtifactExtension'
         'internal\.FunctionsDirSuffix' = 'workspace.FunctionsDirSuffix'
-        'internal\.ToolDir' = 'workspace.ToolDir'
-        'internal\.ToolNameBenchstat' = 'workspace.ToolNameBenchstat'
-        'internal\.ToolNameQcachegrind' = 'workspace.ToolNameQcachegrind'
-        'internal\.ToolsResultsSuffix' = 'workspace.ToolsResultsSuffix'
         'internal\.CleanOrCreateTag' = 'workspace.CleanOrCreateTag'
         'internal\.FindGoModuleRoot' = 'workspace.FindModuleRoot'
         'internal\.InfoCollectionSuccess' = 'workspace.InfoCollectionSuccess'
-        'internal\.REGRESSION' = 'tracker.ChangeRegression'
-        'internal\.IMPROVEMENT' = 'tracker.ChangeImprovement'
-        'internal\.STABLE' = 'tracker.ChangeStable'
         'internal\.AUTOCMD' = 'cli.CmdAuto'
         'internal\.MANUALCMD' = 'cli.CmdManual'
         'internal\.BenchArgs' = 'config.AutoArgs'
@@ -49,7 +42,7 @@ Get-ChildItem -Path $root -Recurse -Filter '*.go' | Where-Object {
     foreach ($k in $replacements.Keys) {
         $c = [regex]::Replace($c, $k, $replacements[$k])
     }
-    if ($c -match 'config\.|workspace\.|tracker\.Change|cli\.Cmd') {
+    if ($c -match 'config\.|workspace\.|cli\.Cmd') {
         if ($c -notmatch 'internal/config') {
             $c = $c -replace '"github.com/AlexsanderHamir/prof/internal"', "`"github.com/AlexsanderHamir/prof/internal/config`"`n`t`"github.com/AlexsanderHamir/prof/internal/workspace`""
         }

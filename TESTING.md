@@ -87,7 +87,7 @@ There are **no merge-blocking coverage gates**. Run the script, pick the lowest 
 Full suite (`./scripts/test-cover.sh` or `.ps1` with `-coverpkg=./...`):
 
 - **Total statement coverage:** ~51.5% (from `go tool cover -func`)
-- **Lowest packages (add tests here first):** `cmd/prof`, `engine/tools/*`, `engine/collect` (~29% function mean)
+- **Lowest packages (add tests here first):** `cmd/prof`, `engine/collect` (~29% function mean)
 
 Re-run the script after adding tests and note the new total in your PR if coverage changed materially.
 
@@ -97,7 +97,6 @@ Re-run the script after adding tests and note the new total in your PR if covera
 |--------|------------|-------------|
 | `internal/config`, `internal/workspace` | `*_test.go` in package | — |
 | `engine/collect` | `engine/collect/*_test.go`, `edge_test.go` (expand) | `TestAutoEndToEnd`, `TestManualCommand` |
-| `engine/tracker` | `engine/tracker/*_test.go`, `compare_fixture_test.go` | `TestTrackerBasicRun` |
 | `parser` | `parser/*_test.go`, `parser/edge_test.go` | — |
 | `cli`, `internal/intent`, `internal/tui` | stub `app.Services` | command validation in `tests/` |
 | `engine/tooling` | `engine/tooling/*_test.go` | — |

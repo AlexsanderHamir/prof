@@ -7,7 +7,7 @@
 ## Before you begin
 
 - Run tests from the **repository root** (`go test ./...`). Some packages resolve fixtures under `tests/`.
-- **Subprocess policy:** do not add `exec.Command` / `exec.CommandContext` outside [`engine/tooling/exec_runner.go`](engine/tooling/exec_runner.go), [`engine/tooling/exec_spawn.go`](engine/tooling/exec_spawn.go), or the `tests/` tree. CI enforces this via `forbidigo` and `depguard` in [`.golangci.yml`](.golangci.yml).
+- **Subprocess policy:** do not add `exec.Command` / `exec.CommandContext` outside [`engine/tooling/exec_runner.go`](engine/tooling/exec_runner.go), [`engine/tooling/lookpath.go`](engine/tooling/lookpath.go), or the `tests/` tree. CI enforces this via `forbidigo` and `depguard` in [`.golangci.yml`](.golangci.yml).
 - **Layering:** `cli`, `internal/intent`, and `internal/tui` import [`internal/app`](internal/app) only — not `engine/*` directly. Engine types cross the boundary as DTOs in [`internal/app/dto.go`](internal/app/dto.go).
 
 ## How to use this page
@@ -47,8 +47,6 @@ flowchart TB
 ```mermaid
 flowchart TB
   collect["engine/collect"]
-  track["engine/tracker"]
-  tools["engine/tools"]
   agent["engine/cursoragent"]
   config["internal/config"]
   ws["internal/workspace"]
@@ -56,22 +54,16 @@ flowchart TB
   parser["parser"]
   app["internal/app"]
   app --> collect
-  app --> track
-  app --> tools
   app --> agent
   collect --> config
   collect --> ws
   collect --> parser
   collect --> ttool
-  track --> ws
-  track --> parser
-  tools --> ws
-  tools --> ttool
   agent --> ttool
   parser --> config
 ```
 
-**Defaults:** [`app.Default()`](internal/app/defaults.go) wires `engine/collect`, `engine/tracker`, `engine/tools/*`, `engine/cursoragent`, and `internal/config` (setup template).
+**Defaults:** [`app.Default()`](internal/app/defaults.go) wires `engine/collect`, `engine/cursoragent`, and `internal/config` (setup template).
 
 ## Package layout (by path)
 
@@ -80,14 +72,12 @@ flowchart TB
 | [`cmd/prof`](cmd/prof) | `main`; delegates to `cli.Execute` |
 | [`cli`](cli) | Cobra commands, per-command flag structs, Survey/TUI glue |
 | [`internal/app`](internal/app) | Composition root: `Services`, DTOs, default adapters |
-| [`internal/intent`](internal/intent) | Validates UI-shaped input (`CollectIntent`, `CompareIntent`, …) |
+| [`internal/intent`](internal/intent) | Validates UI-shaped input (`CollectIntent`, config intents) |
 | [`internal/tui`](internal/tui) | Bubble Tea hub for `prof ui` |
 | [`internal/config`](internal/config) | `prof.json` types, Load/Save/Validate, resolvers |
 | [`internal/workspace`](internal/workspace) | `TagLayout`, tag lifecycle, module root, path constants |
 | [`engine/collect`](engine/collect) | Unified auto + manual collection (`RunAuto`, `RunManual`) |
-| [`engine/tracker`](engine/tracker) | Compare two profiles, reports, CI apply |
 | [`engine/tooling`](engine/tooling) | Subprocess `Runner`, profile catalog, `go tool pprof` argv |
-| [`engine/tools/*`](engine/tools) | Benchstat and qcachegrind wrappers |
 | [`engine/cursoragent`](engine/cursoragent) | Optional `cursor-agent` driver via `app.Agent` |
 | [`parser`](parser) | In-process pprof decode; imports `internal/config` for filters only |
 
@@ -97,13 +87,10 @@ flowchart TB
 |---------|-------------|------|
 | `prof auto` | [`cli/cmd_collect.go`](cli/cmd_collect.go) → [`engine/collect/entry.go`](engine/collect/entry.go) | Flags → `app.CollectAutoOptions` → layout → `go test` → artifacts |
 | `prof manual` | [`cli/cmd_collect.go`](cli/cmd_collect.go) → [`engine/collect/manual.go`](engine/collect/manual.go) | Same `TagLayout` as auto; infers bench/profile from filename |
-| `prof track auto` / `manual` | [`cli/cmd_track.go`](cli/cmd_track.go) → [`engine/tracker/run.go`](engine/tracker/run.go) | `app.TrackOptions` → compare → format |
 | `prof ui` | [`cli/cmd_ui.go`](cli/cmd_ui.go), [`internal/tui`](internal/tui), [`internal/intent`](internal/intent) | Intents → `app.Services` |
-| `prof tui` | [`cli/tui.go`](cli/tui.go) | Survey prompts → intents |
+| `prof tui` | [`cli/tui.go`](cli/tui.go) | Survey prompts → collect intent |
 | `prof config init` | [`cli/cmd_config.go`](cli/cmd_config.go) → [`internal/config/load.go`](internal/config/load.go) | Writes `prof.json` beside `go.mod` |
 | `prof setup` | [`cli/cmd_setup.go`](cli/cmd_setup.go) | Hidden alias for `prof config init` |
-| `prof ui` → Manage configuration | [`cli/config_wizard.go`](cli/config_wizard.go) | Survey editor for `prof.json` |
-| `prof tools …` | [`cli/cmd_tools.go`](cli/cmd_tools.go) → `engine/tools/*` | Benchstat / qcachegrind |
 
 Benchmark discovery: [`engine/collect/discovery.go`](engine/collect/discovery.go). Profile names: [`engine/tooling/catalog.go`](engine/tooling/catalog.go) (surfaced via `app.KnownProfileIDs()`).
 
@@ -139,9 +126,8 @@ bench/
 [`internal/config`](internal/config) defines version 1 JSON beside `go.mod`:
 
 - **`collection`**: `defaults`, `benchmarks` (prof auto), `manual_profiles` (prof manual). Resolved via [`config.ResolveCollectionFilter`](internal/config/filter.go).
-- **`track`**: regression ignores and thresholds for `prof track` ([`engine/tracker/ci_apply.go`](engine/tracker/ci_apply.go)). Resolved via [`config.ResolveTrackPolicy`](internal/config/track.go).
 
-Edit interactively: `prof ui` → Manage configuration. CLI: `prof config init|validate|path`.
+Edit interactively: `prof ui` → Create Configuration File. CLI: `prof config init|validate|path`.
 
 ## Invariants
 
@@ -159,7 +145,6 @@ Edit interactively: `prof ui` → Manage configuration. CLI: `prof config init|v
 | Manual file `cpu.out` → bench `cpu` | `engine/collect` | [`manual_test.go`](engine/collect/manual_test.go) stem rules |
 | Grouped filter ignored in auto | `engine/collect` | Fixed: auto passes `config.ResolveFilter` into grouped generation |
 | Tag dir not empty before run | `internal/workspace` | [`layout_test.go`](internal/workspace/layout_test.go) `CleanOrCreateTag` |
-| Invalid track output format | `engine/tracker` | Validated in CLI/intent via `app.ValidTrackOutputFormat` |
 | Per-bench overrides collection defaults | `internal/config` | [`config_test.go`](internal/config/config_test.go) |
 
 ## Testing and lint policy
@@ -183,4 +168,3 @@ Edit interactively: `prof ui` → Manage configuration. CLI: `prof config init|v
 
 - [readme.md](readme.md) — user-facing install and usage
 - [CONTRIBUTING.md](CONTRIBUTING.md) — patch workflow
-- [docs/cicd_configuration.md](docs/cicd_configuration.md) — CI schema for operators

@@ -22,16 +22,5 @@
                 ]
             }
         }
-    },
-    "track": {
-        "defaults": {
-            "ignore_prefixes": [
-                "runtime.",
-                "reflect.",
-                "testing."
-            ],
-            "min_change_percent": 5,
-            "max_regression_percent": 15
-        }
     }
 }
