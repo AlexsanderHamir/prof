@@ -1,6 +1,6 @@
 # Working directory and paths
 
-This page explains where Prof reads your module, where it writes `bench/`, and how paths are laid out under each tag so compare and tools can find data.
+This page explains where Prof reads your module, where it writes `bench/`, and how paths are laid out under each tag so `pprof` and your own tooling can find data.
 
 ## Before you begin
 
@@ -17,7 +17,7 @@ Prof uses your current working directory to find the Go module and to write `ben
 
 ## Directory layout under `bench/<tag>/`
 
-Using Prof creates a `bench/` tree next to your module, one folder per run (tag). That layout is how compare, tools, and `go tool pprof` find the same data.
+Using Prof creates a `bench/` tree next to your module, one folder per run (tag). That layout is how `go tool pprof` and per-function extracts find the same data.
 
 | Path | What it is |
 | ---- | ---------- |
@@ -34,7 +34,7 @@ Details on collection flags and behavior: [Collect profiling data](collect.md). 
 
 Both files live beside `go.mod` at the module root:
 
-- **`prof.json`** — active config (valid JSON). Created minimal by `prof config init`; add `collection` and `track` sections as needed.
+- **`prof.json`** — active config (valid JSON). Created minimal by `prof config init`; add a `collection` section as needed.
 - **`prof.json.example`** — commented reference with doc links; not loaded by prof.
 
 ## Testing / verify

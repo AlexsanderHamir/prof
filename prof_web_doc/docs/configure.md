@@ -1,6 +1,6 @@
-# Configure collection and track policy
+# Configure collection
 
-This guide explains `prof.json`: how to create it, how `collection` selects per-function extracts, and how `track` configures regression gates for CI.
+This guide explains `prof.json`: how to create it and how `collection` selects per-function extracts.
 
 ## Before you begin
 
@@ -13,7 +13,7 @@ This guide explains `prof.json`: how to create it, how `collection` selects per-
 prof config init
 ```
 
-Or in `prof ui`, choose **Manage prof.json configuration**. That creates or edits `prof.json` next to `go.mod`.
+Or in `prof ui`, choose **Create Configuration File**. That creates `prof.json` next to `go.mod`.
 
 `prof setup` is a hidden alias for `prof config init`.
 
@@ -34,7 +34,7 @@ Or in `prof ui`, choose **Manage prof.json configuration**. That creates or edit
 }
 ```
 
-Copy sections from `prof.json.example` into `prof.json` when you want collection filters or track policy. The example file shows every optional key with inline comments.
+Copy sections from `prof.json.example` into `prof.json` when you want collection filters. The example file shows every optional key with inline comments.
 
 ## Benchmark discovery
 
@@ -61,13 +61,6 @@ When you copy optional sections from `prof.json.example`, a typical project file
       "BenchmarkGenPool_cpu": {
         "include_prefixes": ["github.com/example/myproject/pkg/pool"]
       }
-    }
-  },
-  "track": {
-    "defaults": {
-      "ignore_prefixes": ["runtime.", "reflect.", "testing."],
-      "min_change_percent": 5.0,
-      "max_regression_percent": 15.0
     }
   }
 }
@@ -121,35 +114,6 @@ Use `collection.manual_profiles` for profiles ingested by `prof manual`. The key
 
 See [Collect profiling data — prof manual](collect.md#prof-manual).
 
-## Track { #track }
-
-Regression policy for `prof track` and UI compare. When you omit `--fail-on-regression` and `--regression-threshold`, prof uses the merged `track` policy from `prof.json`. When both CLI flags are set with a positive threshold, **CLI overrides config** for that run.
-
-Add a `track` section to `prof.json` if you want config-only gates — a freshly generated file has no `track` block until you copy it from `prof.json.example`.
-
-| Field | Description |
-| ----- | ----------- |
-| `ignore_prefixes` | Skip functions whose full name **starts with** one of these strings (e.g. `runtime.`) |
-| `ignore_functions` | Skip functions by **exact** full symbol name |
-| `min_change_percent` | Noise floor: regressions below this percent do not fail the run; also minimum magnitude when `fail_on_improvement` is true |
-| `max_regression_percent` | Fail when worst flat regression meets or exceeds this percent (`0` = disabled) |
-| `fail_on_improvement` | Fail on significant speedups (unusual; default `false`) |
-
-See [Compare runs — regression gate](compare.md#regression-gate) and [CI and regressions](ci.md). Full schema and Actions examples: [CI/CD configuration](https://github.com/AlexsanderHamir/prof/blob/main/docs/cicd_configuration.md).
-
-### Per-benchmark track overrides { #track-benchmarks }
-
-Use `track.benchmarks` to tighten or relax policy for one benchmark. Keys are benchmark names; unset fields inherit from `track.defaults`:
-
-```json
-"benchmarks": {
-  "BenchmarkCriticalPath": {
-    "max_regression_percent": 5.0,
-    "min_change_percent": 1.0
-  }
-}
-```
-
 ## CLI helpers
 
 ```bash
@@ -160,11 +124,6 @@ prof config validate  # load and validate; exit 1 on error
 ## Testing / verify
 
 After `prof config init`, confirm `prof.json` and `prof.json.example` exist beside `go.mod`. Add a `collection` section, run a small `prof auto` collect, and check that `<profile>_functions/<BenchmarkName>/` contains files when your filter matches hot symbols.
-
-## Next steps
-
-- [Compare runs](compare.md)
-- [CI and regressions](ci.md)
 
 ## Related
 

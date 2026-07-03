@@ -10,7 +10,7 @@ This guide explains how to capture benchmark profiles into `bench/<tag>/` using 
 
 ## What is a profile run?
 
-A run is one labeled experiment: benchmarks executed (or files ingested), profiles of selected types written under `bench/<tag>/`, plus text listings and optional per-function extracts. The tag is how you label that run for later compare.
+A run is one labeled experiment: benchmarks executed (or files ingested), profiles of selected types written under `bench/<tag>/`, plus text listings and optional per-function extracts.
 
 ## Commands
 
@@ -54,8 +54,7 @@ Each run writes a single tag directory, `bench/<tag>/`, under your [module root]
 
 #### How that helps
 
-- Compare runs: `prof track` pairs two tags; consistent paths under each tag make baselines and candidates comparable.
-- Investigate regressions: jump from a worse `benchstat` number to CPU or alloc stacks, then into specific functions, using files you already saved.
+- Open profiles in `pprof`: binary and text files under each tag share predictable paths.
 - Share context: zip `bench/<tag>/` or attach key `text/` files to an issue or PR so others see the same profile view you did.
 - Re-open in pprof: point `go tool pprof` at `bin/<BenchmarkName>/<BenchmarkName>_<profile>.out` for ad-hoc queries on the stored binary.
 
@@ -97,8 +96,7 @@ If `go test` fails, Prof exits non-zero. Fix the test failure first. For PNG or 
 
 ## Next steps
 
-- [Compare runs](compare.md) to diff two tags.
-- [Configure collection](configure.md) for `collection` and `track` in `prof.json`.
+- [Configure collection](configure.md) for `collection` in `prof.json`.
 
 ## Related
 

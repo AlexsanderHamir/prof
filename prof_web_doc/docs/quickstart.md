@@ -1,6 +1,6 @@
 # Quickstart
 
-This guide gets you from an installed `prof` binary to one tagged collect and one compare between two tags in about 10 minutes, using either menus or flags.
+This guide gets you from an installed `prof` binary to a tagged collect in about 10 minutes, using either menus or flags.
 
 ## Before you begin
 
@@ -11,7 +11,7 @@ This guide gets you from an installed `prof` binary to one tagged collect and on
 
 ## What is a tag?
 
-A tag is a short label for one profiling run. Prof writes all artifacts for that run under `bench/<tag>/`. You compare two tags (for example `baseline` and `candidate`) to see what changed between runs.
+A tag is a short label for one profiling run. Prof writes all artifacts for that run under `bench/<tag>/`.
 
 ## Path A: menus (default)
 
@@ -21,55 +21,33 @@ A tag is a short label for one profiling run. Prof writes all artifacts for that
 prof ui
 ```
 
-### Step 2: collect twice
+### Step 2: collect
 
-In the menu, run Run benchmarks and collect profiles once with tag `baseline`, then change code (or stay on the same commit for a dry run), run again with tag `candidate`.
+In the menu, choose Collect Profiles, pick your benchmarks and profile types, and enter a tag such as `baseline`.
 
-### Step 3: compare
-
-Choose Compare two tagged runs, pick `baseline` and `candidate`, your benchmark, and profile type `cpu`.
-
-Verify: you should see compare output in the terminal and directories `bench/baseline/` and `bench/candidate/` with `bin/` and `text/` populated.
+Verify: you should see `bench/baseline/` with `bin/` and `text/` populated.
 
 If the UI does not start, your environment may not expose a TTY. Use Path B or see [Troubleshooting](troubleshooting.md#prof-ui-or-prof-tui-fails-in-ci-or-ides).
 
 ## Path B: flags (CI or scripts)
 
-### Step 1: collect baseline
-
 ```bash
 prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --count 10 --tag "baseline"
 ```
 
-### Step 2: collect after your change
-
-```bash
-prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --count 10 --tag "candidate"
-```
-
-### Step 3: compare
-
-```bash
-prof track auto --base "baseline" --current "candidate" \
-  --profile-type "cpu" --bench-name "BenchmarkExample" \
-  --output-format "summary"
-```
-
 Verify:
 
-- On disk: `bench/baseline/` and `bench/candidate/` each contain `bin/BenchmarkExample/` and `text/BenchmarkExample/`.
-- In the terminal: `prof track auto` prints a report; with `--output-format summary` the report is shorter than the default `detailed` format ([Compare runs](compare.md)).
+- On disk: `bench/baseline/` contains `bin/BenchmarkExample/` and `text/BenchmarkExample/`.
 
 ## If something fails
 
-See [Troubleshooting](troubleshooting.md) (wrong cwd, missing tags, Graphviz, regression exit codes).
+See [Troubleshooting](troubleshooting.md) (wrong cwd, missing tags, Graphviz).
 
 ## Next steps
 
-- [Configure collection](configure.md) for per-function extracts and CI rules.
-- [CI and regressions](ci.md) to fail pipelines on regressions.
+- [Configure collection](configure.md) for per-function extracts.
 - [CLI reference](cli-reference.md) for every flag and default.
 
 ## Related
 
-- [Collect profiling data](collect.md) · [Compare runs](compare.md) · [Interactive UI and TUI](tui.md)
+- [Collect profiling data](collect.md) · [Interactive UI and TUI](tui.md)

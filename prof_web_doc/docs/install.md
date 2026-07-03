@@ -22,7 +22,7 @@ go install github.com/AlexsanderHamir/prof/cmd/prof@latest
 prof --help
 ```
 
-You should see the root command help with subcommands (`ui`, `auto`, `track`, and others).
+You should see the root command help with subcommands (`ui`, `auto`, `manual`, and others).
 
 From the module root, run `prof ui` or follow [Quickstart](quickstart.md).
 
@@ -33,7 +33,7 @@ From the module root, run `prof ui` or follow [Quickstart](quickstart.md).
 
 ## Next steps
 
-- [Quickstart](quickstart.md) for your first collect and compare.
+- [Quickstart](quickstart.md) for your first collect.
 - [CLI reference](cli-reference.md) for every subcommand.
 
 ## Related
