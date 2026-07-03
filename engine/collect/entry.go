@@ -8,6 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/termui"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
@@ -26,16 +27,21 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 		return errors.New("count must be at least 1")
 	}
 
+	session := termui.NewSession(os.Stderr, int(os.Stderr.Fd()))
 	autoSkippedPNG := applyAutoSkipPNG(&opts)
 
 	cfg, err := config.Load()
 	if err != nil {
-		slog.Info("No config file found at repository root; proceeding without function filters.", "expected", config.Filename)
-		slog.Info("You can generate one with 'prof config init' or Create prof.json in prof ui.")
+		if session.Interactive() {
+			session.Warn("No prof.json found; proceeding without function filters (run prof config init to add one).")
+		} else {
+			slog.Info("No config file found at repository root; proceeding without function filters.", "expected", config.Filename)
+			slog.Info("You can generate one with 'prof config init' or Create prof.json in prof ui.")
+		}
 		cfg = &config.Config{}
 	}
 
-	if err = setupDirectories(opts.Tag, opts.Benchmarks, opts.Profiles); err != nil {
+	if err = setupDirectories(opts.Tag, opts.Benchmarks, opts.Profiles, session.Interactive()); err != nil {
 		return fmt.Errorf("failed to setup directories: %w", err)
 	}
 
@@ -46,14 +52,20 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 		Tag:        opts.Tag,
 	}
 
-	config.PrintAutoConfiguration(autoArgs, cfg)
-
-	if autoSkippedPNG {
-		fmt.Fprintln(os.Stdout, tooling.SkipPNGNotice)
-		slog.Info(tooling.SkipPNGNotice)
+	if !session.Interactive() {
+		config.PrintAutoConfiguration(autoArgs, cfg)
 	}
 
-	return runBenchAndGetProfiles(runner, autoArgs, cfg, opts.LenientProfiles, opts.SkipPNG)
+	if autoSkippedPNG {
+		if session.Interactive() {
+			session.Warn(tooling.SkipPNGNotice)
+		} else {
+			fmt.Fprintln(os.Stdout, tooling.SkipPNGNotice)
+			slog.Info(tooling.SkipPNGNotice)
+		}
+	}
+
+	return runBenchAndGetProfiles(runner, autoArgs, cfg, opts.LenientProfiles, opts.SkipPNG, session)
 }
 
 // applyAutoSkipPNG enables SkipPNG when Graphviz is unavailable. Returns true if it changed opts.

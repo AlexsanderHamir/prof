@@ -23,7 +23,7 @@ func TestCreateBenchDirectories(t *testing.T) {
 	}
 
 	benchmarks := []string{"BenchmarkFoo", "BenchmarkBar"}
-	if err := createBenchDirectories(tagDir, benchmarks); err != nil {
+	if err := createBenchDirectories(tagDir, benchmarks, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -57,7 +57,7 @@ func TestCreateProfileFunctionDirectories(t *testing.T) {
 	profiles := []string{"cpu", "memory"}
 	benchmarks := []string{"BenchmarkFoo"}
 
-	if err := createProfileFunctionDirectories(tagDir, profiles, benchmarks); err != nil {
+	if err := createProfileFunctionDirectories(tagDir, profiles, benchmarks, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -76,7 +76,7 @@ func TestSetupDirectories_createsTagLayout(t *testing.T) {
 	benchmarks := []string{"BenchmarkFoo"}
 	profiles := []string{"cpu", "memory"}
 
-	if err := setupDirectories(tag, benchmarks, profiles); err != nil {
+	if err := setupDirectories(tag, benchmarks, profiles, false); err != nil {
 		t.Fatal(err)
 	}
 

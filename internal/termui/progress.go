@@ -40,6 +40,12 @@ func (p Progress) WithPhase(phase Phase) Progress {
 	return p
 }
 
+// WithDetail returns a copy of p with the given detail suffix.
+func (p Progress) WithDetail(detail string) Progress {
+	p.Detail = detail
+	return p
+}
+
 // Session drives TTY progress UI for a collect run. Zero value is non-interactive.
 type Session struct {
 	w           io.Writer

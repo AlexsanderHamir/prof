@@ -9,7 +9,7 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
-func createBenchDirectories(tagDir string, benchmarks []string) error {
+func createBenchDirectories(tagDir string, benchmarks []string, quiet bool) error {
 	binDir := filepath.Join(tagDir, workspace.ProfileBinDir)
 	textDir := filepath.Join(tagDir, workspace.ProfileTextDir)
 	descFile := filepath.Join(tagDir, workspace.BenchDescriptionFileName)
@@ -34,11 +34,13 @@ func createBenchDirectories(tagDir string, benchmarks []string) error {
 		return fmt.Errorf("failed to create description file: %w", err)
 	}
 
-	slog.Info("Created directory structure", "dir", tagDir)
+	if !quiet {
+		slog.Info("Created directory structure", "dir", tagDir)
+	}
 	return nil
 }
 
-func createProfileFunctionDirectories(tagDir string, profiles, benchmarks []string) error {
+func createProfileFunctionDirectories(tagDir string, profiles, benchmarks []string, quiet bool) error {
 	for _, profileName := range profiles {
 		profileDirPath := filepath.Join(tagDir, profileName+workspace.FunctionsDirSuffix)
 		if err := os.Mkdir(profileDirPath, workspace.PermDir); err != nil {
@@ -51,11 +53,13 @@ func createProfileFunctionDirectories(tagDir string, profiles, benchmarks []stri
 			}
 		}
 	}
-	slog.Info("Created profile function directories")
+	if !quiet {
+		slog.Info("Created profile function directories")
+	}
 	return nil
 }
 
-func setupDirectories(tag string, benchmarks, profiles []string) error {
+func setupDirectories(tag string, benchmarks, profiles []string, quiet bool) error {
 	tagDir, err := workspace.TagDirFromCWD(tag)
 	if err != nil {
 		return err
@@ -63,8 +67,8 @@ func setupDirectories(tag string, benchmarks, profiles []string) error {
 	if err = workspace.CleanOrCreateTag(tagDir); err != nil {
 		return fmt.Errorf("CleanOrCreateTag failed: %w", err)
 	}
-	if err = createBenchDirectories(tagDir, benchmarks); err != nil {
+	if err = createBenchDirectories(tagDir, benchmarks, quiet); err != nil {
 		return err
 	}
-	return createProfileFunctionDirectories(tagDir, profiles, benchmarks)
+	return createProfileFunctionDirectories(tagDir, profiles, benchmarks, quiet)
 }
