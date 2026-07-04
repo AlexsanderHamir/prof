@@ -11,6 +11,22 @@ import (
 // SurveySectionTitle is the heading printed before interactive collect prompts.
 const SurveySectionTitle = "Configure collection"
 
+// ConfigureDetailPrefix indents warnings in the configure-collection section.
+const ConfigureDetailPrefix = "    "
+
+// FormatWarningLine renders a styled warning line for interactive terminals.
+func FormatWarningLine(prefix, msg string) string {
+	return WarningPrefixStyle.Render(prefix+"warning: ") + WarningStyle.Render(msg)
+}
+
+// PrintWarning writes one styled warning line to w.
+func PrintWarning(w io.Writer, prefix, msg string) {
+	if w == nil {
+		return
+	}
+	fmt.Fprintln(w, FormatWarningLine(prefix, msg))
+}
+
 // PrintSection writes a titled section break: blank line, bold title, faint rule, blank line.
 func PrintSection(w io.Writer, fd int, title string) {
 	if w == nil || title == "" {

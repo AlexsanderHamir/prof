@@ -351,7 +351,7 @@ func (s *Session) overwriteLineLocked(content string, newline bool) {
 }
 
 func formatWarningLine(prefix, msg string) string {
-	return WarningPrefixStyle.Render(prefix+"warning: ") + WarningStyle.Render(msg)
+	return FormatWarningLine(prefix, msg)
 }
 
 // StageDetailKind identifies a stage-scoped diagnostic line.

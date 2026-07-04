@@ -33,11 +33,7 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 	if term.IsTerminal(int(os.Stdout.Fd())) {
 		termui.PrintSection(os.Stdout, int(os.Stdout.Fd()), termui.SurveySectionTitle)
 	}
-	surveyGap := func() {
-		if term.IsTerminal(int(os.Stdout.Fd())) {
-			termui.StepGap(os.Stdout)
-		}
-	}
+	surveyTTY := term.IsTerminal(int(os.Stdout.Fd()))
 
 	var selectedBenches []string
 	benchPrompt := &survey.MultiSelect{
@@ -48,10 +44,8 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 	if err = survey.AskOne(benchPrompt, &selectedBenches, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
-	surveyGap()
 
-	printCollectionFilterPreview(svc, selectedBenches)
-	surveyGap()
+	printCollectionFilterPreview(os.Stdout, surveyTTY, svc, selectedBenches)
 
 	profilesOptions := svc.Collect.SupportedProfiles()
 	var selectedProfiles []string
@@ -64,7 +58,6 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 	if err = survey.AskOne(profilesPrompt, &selectedProfiles, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
-	surveyGap()
 
 	var countStr string
 	if err = survey.AskOne(&cleanInput{Input: survey.Input{
@@ -77,7 +70,6 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 	if convErr != nil || runCount < 1 {
 		return fmt.Errorf("invalid count: %s", countStr)
 	}
-	surveyGap()
 
 	var tagStr string
 	if err = survey.AskOne(&cleanInput{Input: survey.Input{
@@ -86,7 +78,7 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if term.IsTerminal(int(os.Stdout.Fd())) {
+	if surveyTTY {
 		termui.EndSection(os.Stdout)
 	}
 

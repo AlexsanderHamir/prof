@@ -159,6 +159,16 @@ func TestSession_PreparingThenBenchmark(t *testing.T) {
 	}
 }
 
+func TestPrintWarning_writesStyledLine(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	PrintWarning(&buf, ConfigureDetailPrefix, "oops")
+	if !strings.Contains(buf.String(), "warning:") {
+		t.Fatalf("output = %q", buf.String())
+	}
+}
+
 func TestStepGap_writesBlankLine(t *testing.T) {
 	t.Parallel()
 
