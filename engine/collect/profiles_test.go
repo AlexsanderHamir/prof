@@ -28,9 +28,9 @@ func setupProcessProfilesEnv(t *testing.T, tag, bench string, profiles []string)
 	return layout, fixture
 }
 
-func copyFixtureToBin(t *testing.T, layout workspace.TagLayout, bench, profile, src string) {
+func copyFixtureToProfile(t *testing.T, layout workspace.TagLayout, bench, profile, src string) {
 	t.Helper()
-	dst := layout.Bin(bench, profile)
+	dst := layout.ProfileBinary(bench, profile)
 	if err := os.MkdirAll(filepath.Dir(dst), workspace.PermDir); err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestProcessProfiles_skipsMissingBinary(t *testing.T) {
 		bench = "BenchmarkFoo"
 	)
 	layout, fixture := setupProcessProfilesEnv(t, tag, bench, []string{"cpu", "memory"})
-	copyFixtureToBin(t, layout, bench, "cpu", fixture)
+	copyFixtureToProfile(t, layout, bench, "cpu", fixture)
 
 	runner := &tooling.FakeRunner{
 		Out: [][]byte{[]byte("flat profile text"), []byte("png-bytes")},
@@ -82,7 +82,7 @@ func TestProcessProfiles_continuesOnPNGFailure(t *testing.T) {
 		bench = "BenchmarkFoo"
 	)
 	layout, fixture := setupProcessProfilesEnv(t, tag, bench, []string{"cpu"})
-	copyFixtureToBin(t, layout, bench, "cpu", fixture)
+	copyFixtureToProfile(t, layout, bench, "cpu", fixture)
 
 	runner := &tooling.FakeRunner{
 		Out: [][]byte{[]byte("flat profile text")},
@@ -95,7 +95,7 @@ func TestProcessProfiles_continuesOnPNGFailure(t *testing.T) {
 	if len(processed) != 1 || processed[0] != "cpu" {
 		t.Fatalf("processed: %#v", processed)
 	}
-	if _, statErr := os.Stat(layout.Text(bench, "cpu")); statErr != nil {
-		t.Fatalf("expected text profile: %v", statErr)
+	if _, statErr := os.Stat(layout.Hotspot(bench, "cpu")); statErr != nil {
+		t.Fatalf("expected hotspot summary: %v", statErr)
 	}
 }

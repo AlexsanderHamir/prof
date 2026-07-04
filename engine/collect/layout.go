@@ -10,28 +10,27 @@ import (
 )
 
 func createBenchDirectories(tagDir string, benchmarks []string, quiet bool) error {
-	binDir := filepath.Join(tagDir, workspace.ProfileBinDir)
-	textDir := filepath.Join(tagDir, workspace.ProfileTextDir)
-	descFile := filepath.Join(tagDir, workspace.BenchDescriptionFileName)
+	profilesDir := filepath.Join(tagDir, workspace.ProfilesDir)
+	measurementsDir := filepath.Join(tagDir, workspace.MeasurementsDir)
+	hotspotsDir := filepath.Join(tagDir, workspace.HotspotsDir)
+	notesFile := filepath.Join(tagDir, workspace.TagNotesFileName)
 
-	if err := os.Mkdir(binDir, workspace.PermDir); err != nil {
-		return fmt.Errorf("failed to create bin directory: %w", err)
-	}
-	if err := os.Mkdir(textDir, workspace.PermDir); err != nil {
-		return fmt.Errorf("failed to create text directory: %w", err)
+	for _, dir := range []string{profilesDir, measurementsDir, hotspotsDir} {
+		if err := os.Mkdir(dir, workspace.PermDir); err != nil {
+			return fmt.Errorf("failed to create %s directory: %w", filepath.Base(dir), err)
+		}
 	}
 
 	for _, b := range benchmarks {
-		if err := os.Mkdir(filepath.Join(binDir, b), workspace.PermDir); err != nil {
-			return fmt.Errorf("failed to create bin subdirectory for %s: %w", b, err)
-		}
-		if err := os.Mkdir(filepath.Join(textDir, b), workspace.PermDir); err != nil {
-			return fmt.Errorf("failed to create text subdirectory for %s: %w", b, err)
+		for _, dir := range []string{profilesDir, measurementsDir, hotspotsDir} {
+			if err := os.Mkdir(filepath.Join(dir, b), workspace.PermDir); err != nil {
+				return fmt.Errorf("failed to create %s subdirectory for %s: %w", filepath.Base(dir), b, err)
+			}
 		}
 	}
 
-	if err := os.WriteFile(descFile, []byte(workspace.BenchDescriptionPlaceholder), workspace.PermFile); err != nil {
-		return fmt.Errorf("failed to create description file: %w", err)
+	if err := os.WriteFile(notesFile, []byte(workspace.TagNotesPlaceholder), workspace.PermFile); err != nil {
+		return fmt.Errorf("failed to create notes file: %w", err)
 	}
 
 	if !quiet {
@@ -40,21 +39,25 @@ func createBenchDirectories(tagDir string, benchmarks []string, quiet bool) erro
 	return nil
 }
 
-func createProfileFunctionDirectories(tagDir string, profiles, benchmarks []string, quiet bool) error {
+func createSourceLinesDirectories(tagDir string, profiles, benchmarks []string, quiet bool) error {
+	sourceLinesRoot := filepath.Join(tagDir, workspace.SourceLinesDir)
+	if err := os.Mkdir(sourceLinesRoot, workspace.PermDir); err != nil {
+		return fmt.Errorf("failed to create source_lines directory: %w", err)
+	}
 	for _, profileName := range profiles {
-		profileDirPath := filepath.Join(tagDir, profileName+workspace.FunctionsDirSuffix)
-		if err := os.Mkdir(profileDirPath, workspace.PermDir); err != nil {
-			return fmt.Errorf("failed to create profile directory %s: %w", profileDirPath, err)
+		profileRoot := filepath.Join(sourceLinesRoot, profileName)
+		if err := os.Mkdir(profileRoot, workspace.PermDir); err != nil {
+			return fmt.Errorf("failed to create source_lines/%s directory: %w", profileName, err)
 		}
 		for _, b := range benchmarks {
-			benchmarkDirPath := filepath.Join(profileDirPath, b)
+			benchmarkDirPath := filepath.Join(profileRoot, b)
 			if err := os.Mkdir(benchmarkDirPath, workspace.PermDir); err != nil {
 				return fmt.Errorf("failed to create benchmark directory %s: %w", benchmarkDirPath, err)
 			}
 		}
 	}
 	if !quiet {
-		slog.Info("Created profile function directories")
+		slog.Info("Created source_lines directories")
 	}
 	return nil
 }
@@ -70,5 +73,5 @@ func setupDirectories(tag string, benchmarks, profiles []string, quiet bool) err
 	if err = createBenchDirectories(tagDir, benchmarks, quiet); err != nil {
 		return err
 	}
-	return createProfileFunctionDirectories(tagDir, profiles, benchmarks, quiet)
+	return createSourceLinesDirectories(tagDir, profiles, benchmarks, quiet)
 }

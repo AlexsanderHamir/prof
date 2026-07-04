@@ -1,4 +1,5 @@
 // Package collect runs prof auto (go test) and prof manual (ingest) pipelines under bench/<tag>/.
+// Output domains: profiles/, measurements/, hotspots/, source_lines/, call_graphs/.
 package collect
 
 // AutoOptions configures RunAuto.

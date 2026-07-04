@@ -67,7 +67,7 @@ func moveProfileFiles(benchmarkName string, profiles []string, rootDir string, b
 		if latestPath == "" {
 			continue
 		}
-		destPath := filepath.Join(binDir, fmt.Sprintf("%s_%s.%s", benchmarkName, profile, workspace.ProfileArtifactExtension))
+		destPath := filepath.Join(binDir, fmt.Sprintf("%s.%s", profile, workspace.ProfileArtifactExtension))
 		if err = os.Rename(latestPath, destPath); err != nil {
 			return fmt.Errorf("failed to move profile file %s: %w", latestPath, err)
 		}
