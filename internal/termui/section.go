@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"golang.org/x/term"
 )
 
@@ -61,4 +65,46 @@ func StepGap(w io.Writer) {
 // EndSection prints a trailing blank line after a section's content.
 func EndSection(w io.Writer) {
 	StepGap(w)
+}
+
+const collectTransitionDuration = 500 * time.Millisecond
+
+var sectionSpinner = spinner.Dot
+
+// PrintTransition shows a brief in-place spinner while handing off to the collect pipeline.
+func PrintTransition(w io.Writer, fd int, message string) {
+	if w == nil || message == "" {
+		return
+	}
+	if fd >= 0 && !term.IsTerminal(fd) {
+		return
+	}
+
+	width := defaultTermWidth
+	if fd >= 0 {
+		if _, tw, err := term.GetSize(fd); err == nil && tw > 0 {
+			width = tw
+		}
+	}
+
+	frames := sectionSpinner.Frames
+	ticker := time.NewTicker(sectionSpinner.FPS)
+	defer ticker.Stop()
+
+	deadline := time.Now().Add(collectTransitionDuration)
+	label := message + "…"
+	i := 0
+	for time.Now().Before(deadline) {
+		frame := frames[i%len(frames)]
+		content := spinnerFrameStyle.Render(frame) + " " + LabelStyle.Render(label)
+		visible := lipgloss.Width(content)
+		padding := width - visible
+		if padding < 0 {
+			padding = 0
+		}
+		fmt.Fprint(w, "\r"+content+strings.Repeat(" ", padding))
+		i++
+		<-ticker.C
+	}
+	fmt.Fprint(w, ansi.EraseEntireLine+"\r")
 }

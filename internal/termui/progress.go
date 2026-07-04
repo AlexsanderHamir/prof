@@ -137,11 +137,12 @@ func phasePrefixes(phase Phase) (linePrefix, warnPrefix string) {
 	return "  ", "      "
 }
 
-// BeginCollect prints a section break before the prepare stage (interactive only).
+// BeginCollect plays a short transition then prints the collect section header.
 func (s *Session) BeginCollect() {
 	if s == nil || !s.interactive {
 		return
 	}
+	PrintTransition(s.w, s.fd, CollectSectionTitle)
 	PrintSection(s.w, s.fd, CollectSectionTitle)
 }
 
