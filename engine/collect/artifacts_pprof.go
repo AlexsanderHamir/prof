@@ -88,16 +88,25 @@ func writeFunctionListPprof(runner tooling.Runner, shortStem, fullSymbol, binary
 }
 
 func getFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string, session *termui.Session) error {
+	const maxPerFunctionWarnings = 3
+	var skipped int
+
 	for _, e := range entries {
 		out := filepath.Join(basePath, e.OutputStem+"."+workspace.TextExtension)
 		if err := writeFunctionListPprof(runner, e.OutputStem, e.FullSymbol, binaryPath, out); err != nil {
-			if session.Interactive() {
-				session.Warn(fmt.Sprintf("skipping per-function pprof list for %s: %v", e.OutputStem, err))
+			skipped++
+			if session != nil && session.Interactive() {
+				if skipped <= maxPerFunctionWarnings {
+					session.Warn(fmt.Sprintf("skipping per-function pprof list for %s: %v", e.OutputStem, err))
+				}
 			} else {
 				slog.Warn("skipping per-function pprof list", "function", e.OutputStem, "binary", binaryPath, "err", err)
 			}
 			continue
 		}
+	}
+	if skipped > maxPerFunctionWarnings && session != nil && session.Interactive() {
+		session.Warn(fmt.Sprintf("… and %d more functions skipped", skipped-maxPerFunctionWarnings))
 	}
 	return nil
 }

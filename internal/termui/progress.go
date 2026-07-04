@@ -67,20 +67,24 @@ func (p Progress) WithDetail(detail string) Progress {
 //
 // The step line updates in place while running (spinner), then becomes ✓ when done.
 type Session struct {
-	w           io.Writer
-	fd          int
-	interactive bool
+	w                 io.Writer
+	fd                int
+	interactive       bool
+	termWidthOverride int // tests only; when > 0, used instead of terminal size
 
-	mu                sync.Mutex
-	stageActive       bool
-	headerLocked      bool
-	warningCount      int
-	runningLabel      string
-	warnPrefix        string
-	lastFrame         string
-	spinnerStop       chan struct{}
-	spinnerDone       sync.WaitGroup
-	benchmarksStarted int
+	mu                 sync.Mutex
+	stageActive        bool
+	headerLocked       bool
+	detailLines        int
+	warnCount          int
+	errorDetailEmitted bool
+	errorDisplayed     bool
+	runningLabel       string
+	warnPrefix         string
+	lastFrame          string
+	spinnerStop        chan struct{}
+	spinnerDone        sync.WaitGroup
+	benchmarksStarted  int
 }
 
 // NewSession reports whether w/fd is an interactive terminal.
@@ -133,6 +137,22 @@ func phasePrefixes(phase Phase) (linePrefix, warnPrefix string) {
 	return "  ", "      "
 }
 
+// BeginCollect prints a section break before the prepare stage (interactive only).
+func (s *Session) BeginCollect() {
+	if s == nil || !s.interactive {
+		return
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	fmt.Fprintln(s.w)
+	fmt.Fprintln(s.w, BenchmarkTitleStyle.Render(CollectSectionTitle))
+	width := s.termWidth()
+	fmt.Fprintln(s.w, SectionRuleStyle.Render(strings.Repeat("─", width)))
+	fmt.Fprintln(s.w)
+}
+
 // BeginBenchmark prints a section header before the three steps for one benchmark.
 func (s *Session) BeginBenchmark(index, total int, name string) {
 	if s == nil || !s.interactive {
@@ -156,6 +176,22 @@ func (s *Session) BeginBenchmark(index, total int, name string) {
 
 var dotSpinner = spinner.Dot
 
+// ErrStagedDisplay marks an error whose message was already printed under a stage header.
+var ErrStagedDisplay = errors.New("termui: error rendered under stage")
+
+// StagedDisplay wraps err when the interactive session already showed it under a stage.
+func StagedDisplay(err error) error {
+	if err == nil {
+		return nil
+	}
+	return fmt.Errorf("%w: %w", ErrStagedDisplay, err)
+}
+
+// ErrorWasStaged reports whether err was wrapped with ErrStagedDisplay.
+func ErrorWasStaged(err error) bool {
+	return errors.Is(err, ErrStagedDisplay)
+}
+
 // RunWhile runs fn while showing a persistent spinner when the session is interactive.
 func (s *Session) RunWhile(p Progress, fn func() error) error {
 	if fn == nil {
@@ -168,7 +204,9 @@ func (s *Session) RunWhile(p Progress, fn func() error) error {
 	s.mu.Lock()
 	s.stageActive = true
 	s.headerLocked = false
-	s.warningCount = 0
+	s.detailLines = 0
+	s.warnCount = 0
+	s.errorDetailEmitted = false
 	_, s.warnPrefix = phasePrefixes(p.Phase)
 	s.runningLabel = formatProgressLabel(p, true)
 	s.startSpinnerLocked()
@@ -185,6 +223,9 @@ func (s *Session) RunWhile(p Progress, fn func() error) error {
 	s.spinnerDone.Wait()
 
 	s.mu.Lock()
+	if fnErr != nil {
+		s.captureStageErrorLocked(fnErr)
+	}
 	s.finishStageLocked(doneLabel, failed)
 	s.stageActive = false
 	s.mu.Unlock()
@@ -254,8 +295,11 @@ func (s *Session) finishStageLocked(doneLabel string, failed bool) {
 		mark = FailStyle.Render("✗")
 	}
 	line := mark + " " + doneLabel
+	if !failed && s.warnCount > 0 {
+		line += warnCountSuffix(s.warnCount)
+	}
 
-	if s.warningCount > 0 {
+	if s.detailLines > 0 {
 		s.seekStageHeaderLocked()
 		s.overwriteLineLocked(line, false)
 		s.seekAfterStageBlockLocked()
@@ -265,16 +309,23 @@ func (s *Session) finishStageLocked(doneLabel string, failed bool) {
 	s.overwriteLineLocked(line, true)
 }
 
+func warnCountSuffix(count int) string {
+	noun := "warnings"
+	if count == 1 {
+		noun = "warning"
+	}
+	return FaintStyle.Render(fmt.Sprintf(" (%d %s)", count, noun))
+}
+
 func (s *Session) seekStageHeaderLocked() {
-	// Header line, then warningCount warning lines below; cursor starts after the block.
-	n := s.warningCount + 1
+	n := s.detailLines + 1
 	if n > 0 {
 		fmt.Fprint(s.w, ansi.CursorUp(n))
 	}
 }
 
 func (s *Session) seekAfterStageBlockLocked() {
-	n := s.warningCount + 1
+	n := s.detailLines + 1
 	if n > 0 {
 		fmt.Fprint(s.w, ansi.CursorDown(n))
 		// Width-padded overwrite leaves the cursor at the terminal edge; reset column
@@ -284,6 +335,9 @@ func (s *Session) seekAfterStageBlockLocked() {
 }
 
 func (s *Session) termWidth() int {
+	if s.termWidthOverride > 0 {
+		return s.termWidthOverride
+	}
 	_, width, err := term.GetSize(s.fd)
 	if err != nil || width <= 0 {
 		return defaultTermWidth
@@ -308,10 +362,99 @@ func formatWarningLine(prefix, msg string) string {
 	return WarningPrefixStyle.Render(prefix+"warning: ") + WarningStyle.Render(msg)
 }
 
-// Warn writes a styled warning on its own line below the active stage header.
-func (s *Session) Warn(msg string) {
+// StageDetailKind identifies a stage-scoped diagnostic line.
+type StageDetailKind int
+
+const (
+	// StageWarn is a recoverable issue; the stage may still succeed.
+	StageWarn StageDetailKind = iota
+	// StageError is a failure tied to the active stage.
+	StageError
+)
+
+func formatStageDetailLine(kind StageDetailKind, prefix, msg string) string {
+	switch kind {
+	case StageError:
+		return ErrorPrefixStyle.Render(prefix+"error: ") + ErrorStyle.Render(msg)
+	case StageWarn:
+		return formatWarningLine(prefix, msg)
+	default:
+		return formatWarningLine(prefix, msg)
+	}
+}
+
+func shortUserMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+	msg := err.Error()
+	if idx := strings.IndexByte(msg, '\n'); idx >= 0 {
+		first := strings.TrimSpace(msg[:idx])
+		if first != "" {
+			return first + " (truncated)"
+		}
+	}
+	return msg
+}
+
+func (s *Session) writeStageDetailLinesLocked(kind StageDetailKind, msg string) {
+	for _, line := range splitDetailMessage(msg) {
+		formatted := truncateDetailLine(kind, s.warnPrefix, line, s.termWidth())
+		fmt.Fprintln(s.w, formatted)
+		s.detailLines++
+		if kind == StageWarn {
+			s.warnCount++
+		}
+	}
+}
+
+func splitDetailMessage(msg string) []string {
+	parts := strings.Split(msg, "\n")
+	var lines []string
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			lines = append(lines, p)
+		}
+	}
+	if len(lines) == 0 {
+		return []string{msg}
+	}
+	return lines
+}
+
+func truncateDetailLine(kind StageDetailKind, prefix, msg string, maxWidth int) string {
+	const ellipsis = "…"
+	runes := []rune(msg)
+	for {
+		candidate := formatStageDetailLine(kind, prefix, string(runes))
+		if lipgloss.Width(candidate) <= maxWidth {
+			return candidate
+		}
+		if len(runes) == 0 {
+			return formatStageDetailLine(kind, prefix, ellipsis)
+		}
+		runes = runes[:len(runes)-1]
+	}
+}
+
+func (s *Session) captureStageErrorLocked(err error) {
+	if err == nil || s.errorDetailEmitted {
+		return
+	}
+	s.lockHeaderLocked()
+	s.writeStageDetailLinesLocked(StageError, shortUserMessage(err))
+	s.errorDetailEmitted = true
+	s.errorDisplayed = true
+}
+
+func (s *Session) stageDetail(kind StageDetailKind, msg string) {
 	if s == nil || !s.interactive {
-		slog.Warn(msg)
+		if kind == StageWarn {
+			slog.Warn(msg)
+		} else {
+			slog.Error(msg)
+		}
 		return
 	}
 
@@ -319,13 +462,40 @@ func (s *Session) Warn(msg string) {
 	defer s.mu.Unlock()
 
 	if !s.stageActive {
-		slog.Warn(msg)
+		if kind == StageWarn {
+			slog.Warn(msg)
+		} else {
+			slog.Error(msg)
+		}
 		return
 	}
 
 	s.lockHeaderLocked()
-	fmt.Fprintln(s.w, formatWarningLine(s.warnPrefix, msg))
-	s.warningCount++
+	s.writeStageDetailLinesLocked(kind, msg)
+	if kind == StageError {
+		s.errorDetailEmitted = true
+		s.errorDisplayed = true
+	}
+}
+
+// Error writes a styled error on its own line below the active stage header.
+func (s *Session) Error(msg string) {
+	s.stageDetail(StageError, msg)
+}
+
+// ErrorDisplayed reports whether an error was rendered under a stage header.
+func (s *Session) ErrorDisplayed() bool {
+	if s == nil {
+		return false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.errorDisplayed
+}
+
+// Warn writes a styled warning on its own line below the active stage header.
+func (s *Session) Warn(msg string) {
+	s.stageDetail(StageWarn, msg)
 }
 
 // Success writes a completion message (styled on TTY, slog otherwise).
@@ -341,7 +511,12 @@ func (s *Session) Success(msg string) {
 
 // newSessionForTest builds a session with a forced interactive flag (tests only).
 func newSessionForTest(w io.Writer) *Session {
-	return &Session{w: w, interactive: true}
+	return &Session{w: w, interactive: true, termWidthOverride: defaultTermWidth}
+}
+
+// newNarrowSessionForTest builds an interactive session with a narrow terminal width.
+func newNarrowSessionForTest(w io.Writer, width int) *Session {
+	return &Session{w: w, interactive: true, termWidthOverride: width}
 }
 
 var spinnerFrameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(AccentColor))

@@ -7,6 +7,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlexsanderHamir/prof/internal/app"
+	"github.com/AlexsanderHamir/prof/internal/termui"
 	"github.com/AlexsanderHamir/prof/internal/tui"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -73,7 +74,7 @@ func runUILauncherOnce(svc *app.Services) error {
 }
 
 func finishUIWorkflow(runErr error) error {
-	if runErr != nil {
+	if runErr != nil && !termui.ErrorWasStaged(runErr) {
 		fmt.Fprintf(os.Stderr, "%v\n", runErr)
 	}
 	if err := promptReturnToHub(); err != nil {

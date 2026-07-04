@@ -44,6 +44,7 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 	}
 
 	if session.Interactive() {
+		session.BeginCollect()
 		if prepErr := session.RunWhile(termui.Progress{Phase: termui.PhasePrepare}, func() error {
 			if cfgMissing {
 				session.Warn("No prof.json found; proceeding without function filters (run prof config init to add one).")
@@ -53,9 +54,9 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 			}
 			return setupDirectories(opts.Tag, opts.Benchmarks, opts.Profiles, true)
 		}); prepErr != nil {
-			return fmt.Errorf("failed to setup directories: %w", prepErr)
+			return finalizeInteractiveErr(session, fmt.Errorf("failed to setup directories: %w", prepErr))
 		}
-		return runBenchAndGetProfiles(runner, autoArgs, cfg, session)
+		return finalizeInteractiveErr(session, runBenchAndGetProfiles(runner, autoArgs, cfg, session))
 	}
 
 	if cfgMissing {
