@@ -38,34 +38,34 @@ func TagDirFromCWD(tag string) (string, error) {
 	return l.Root, nil
 }
 
-// Bin returns the profile binary path for a benchmark and profile kind.
-func (l TagLayout) Bin(bench, profile string) string {
-	return filepath.Join(l.Root, ProfileBinDir, bench, fmt.Sprintf("%s_%s.%s", bench, profile, ProfileArtifactExtension))
+// ProfileBinary returns the raw pprof profile path for a benchmark and profile kind.
+func (l TagLayout) ProfileBinary(bench, profile string) string {
+	return filepath.Join(l.Root, ProfilesDir, bench, fmt.Sprintf("%s.%s", profile, ProfileArtifactExtension))
 }
 
-// Text returns the flat text profile path for a benchmark and profile kind.
-func (l TagLayout) Text(bench, profile string) string {
-	return filepath.Join(l.Root, ProfileTextDir, bench, fmt.Sprintf("%s_%s.%s", bench, profile, TextExtension))
+// Hotspot returns the function-ranked stack summary path for a benchmark and profile kind.
+func (l TagLayout) Hotspot(bench, profile string) string {
+	return filepath.Join(l.Root, HotspotsDir, bench, fmt.Sprintf("%s.%s", profile, TextExtension))
 }
 
-// BenchText returns the combined benchmark text listing path.
-func (l TagLayout) BenchText(bench string) string {
-	return filepath.Join(l.Root, ProfileTextDir, bench, fmt.Sprintf("%s.%s", bench, TextExtension))
+// Measurement returns the go test benchmark run transcript path.
+func (l TagLayout) Measurement(bench string) string {
+	return filepath.Join(l.Root, MeasurementsDir, bench, MeasurementRunFile)
 }
 
-// FunctionsDir returns the per-function pprof list output directory.
-func (l TagLayout) FunctionsDir(profile, bench string) string {
-	return filepath.Join(l.Root, profile+FunctionsDirSuffix, bench)
+// SourceLinesDir returns the per-function pprof -list output directory.
+func (l TagLayout) SourceLinesDir(profile, bench string) string {
+	return filepath.Join(l.Root, SourceLinesDir, profile, bench)
 }
 
-// PNG returns the Graphviz PNG visualization path for a profile.
-func (l TagLayout) PNG(profile, bench string) string {
-	return filepath.Join(l.FunctionsDir(profile, bench), fmt.Sprintf("%s_%s.png", bench, profile))
+// CallGraph returns the Graphviz call-graph PNG path for a profile.
+func (l TagLayout) CallGraph(profile, bench string) string {
+	return filepath.Join(l.Root, CallGraphsDir, profile, bench, fmt.Sprintf("%s.png", profile))
 }
 
-// ResolveBin returns the binary profile path when it exists and is readable.
-func (l TagLayout) ResolveBin(bench, profile string) (string, error) {
-	p := l.Bin(bench, profile)
+// ResolveProfileBinary returns the binary profile path when it exists and is readable.
+func (l TagLayout) ResolveProfileBinary(bench, profile string) (string, error) {
+	p := l.ProfileBinary(bench, profile)
 	if _, err := os.Stat(p); err != nil {
 		return "", err
 	}
