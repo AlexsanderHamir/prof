@@ -295,6 +295,9 @@ func (s *Session) finishStageLocked(doneLabel string, failed bool) {
 		mark = FailStyle.Render("✗")
 	}
 	line := mark + " " + doneLabel
+	if !failed && s.warnCount > 0 {
+		line += warnCountSuffix(s.warnCount)
+	}
 
 	if s.detailLines > 0 {
 		s.seekStageHeaderLocked()
@@ -304,6 +307,14 @@ func (s *Session) finishStageLocked(doneLabel string, failed bool) {
 	}
 
 	s.overwriteLineLocked(line, true)
+}
+
+func warnCountSuffix(count int) string {
+	noun := "warnings"
+	if count == 1 {
+		noun = "warning"
+	}
+	return FaintStyle.Render(fmt.Sprintf(" (%d %s)", count, noun))
 }
 
 func (s *Session) seekStageHeaderLocked() {

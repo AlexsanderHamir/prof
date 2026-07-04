@@ -374,6 +374,25 @@ func detailBelowStageHeader(out, stage, prefix string) bool {
 	return strings.Contains(out[stageIdx:stageIdx+detailIdx], "\n")
 }
 
+func TestSession_RunWhile_warnedSuccessShowsCountSuffix(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newSessionForTest(&buf)
+	err := s.RunWhile(Progress{Phase: PhaseCollectProfiles, Detail: "cpu, memory"}, func() error {
+		s.Warn("first")
+		s.Warn("second")
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("RunWhile() err = %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "2 warnings") {
+		t.Fatalf("expected warning count suffix: %q", out)
+	}
+}
+
 func TestSession_Warn_truncatesOnNarrowTerminal(t *testing.T) {
 	t.Parallel()
 
