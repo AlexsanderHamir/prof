@@ -83,7 +83,7 @@ func runBenchmark(runner tooling.Runner, benchmarkName string, profiles []string
 	if err = runBenchmarkCommand(runner, cmd, outputFile, pkgDir); err != nil {
 		return err
 	}
-	if err = moveProfileFiles(benchmarkName, profiles, pkgDir, binDir); err != nil {
+	if err = moveProfileFiles(profiles, pkgDir, binDir); err != nil {
 		return err
 	}
 	return moveTestFiles(benchmarkName, pkgDir, binDir)

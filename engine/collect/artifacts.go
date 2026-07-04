@@ -54,7 +54,7 @@ func isGoTestBinary(name string) bool {
 	return strings.HasSuffix(strings.ToLower(name), ".test.exe")
 }
 
-func moveProfileFiles(benchmarkName string, profiles []string, rootDir string, binDir string) error {
+func moveProfileFiles(profiles []string, rootDir string, binDir string) error {
 	for _, profile := range profiles {
 		profileFile, ok := getExpectedProfileFileName(profile)
 		if !ok {

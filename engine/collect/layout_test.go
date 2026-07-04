@@ -28,8 +28,8 @@ func TestCreateBenchDirectories(t *testing.T) {
 	}
 
 	cases := []struct {
-		name string
-		path string
+		name  string
+		path  string
 		isDir bool
 	}{
 		{"profiles root", filepath.Join(tagDir, workspace.ProfilesDir), true},
