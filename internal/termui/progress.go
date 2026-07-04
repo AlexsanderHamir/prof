@@ -142,15 +142,7 @@ func (s *Session) BeginCollect() {
 	if s == nil || !s.interactive {
 		return
 	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	fmt.Fprintln(s.w)
-	fmt.Fprintln(s.w, BenchmarkTitleStyle.Render(CollectSectionTitle))
-	width := s.termWidth()
-	fmt.Fprintln(s.w, SectionRuleStyle.Render(strings.Repeat("─", width)))
-	fmt.Fprintln(s.w)
+	PrintSection(s.w, s.fd, CollectSectionTitle)
 }
 
 // BeginBenchmark prints a section header before the three steps for one benchmark.

@@ -159,6 +159,23 @@ func TestSession_PreparingThenBenchmark(t *testing.T) {
 	}
 }
 
+func TestPrintSection_writesTitleAndRule(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	PrintSection(&buf, -1, SurveySectionTitle)
+	out := buf.String()
+	if !strings.HasPrefix(out, "\n") {
+		t.Fatalf("expected leading blank line: %q", out)
+	}
+	if !strings.Contains(out, SurveySectionTitle) {
+		t.Fatalf("missing title: %q", out)
+	}
+	if !strings.Contains(out, "─") {
+		t.Fatalf("missing rule: %q", out)
+	}
+}
+
 func TestSession_BeginCollect_printsSectionBreak(t *testing.T) {
 	t.Parallel()
 

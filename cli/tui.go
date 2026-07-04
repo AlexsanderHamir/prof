@@ -9,7 +9,9 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlexsanderHamir/prof/internal/app"
 	"github.com/AlexsanderHamir/prof/internal/intent"
+	"github.com/AlexsanderHamir/prof/internal/termui"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
@@ -26,6 +28,10 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 
 	if len(benchNames) == 0 {
 		return errors.New("no benchmarks found in this directory or its subdirectories (look for func BenchmarkXxx(b *testing.B) in *_test.go)")
+	}
+
+	if term.IsTerminal(int(os.Stdout.Fd())) {
+		termui.PrintSection(os.Stdout, int(os.Stdout.Fd()), termui.SurveySectionTitle)
 	}
 
 	var selectedBenches []string
@@ -69,6 +75,10 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		Message: "Tag name (used to group results under bench/<tag>):",
 	}}, &tagStr, survey.WithValidator(survey.Required)); err != nil {
 		return err
+	}
+
+	if term.IsTerminal(int(os.Stdout.Fd())) {
+		termui.EndSection(os.Stdout)
 	}
 
 	collect := &intent.CollectIntent{
