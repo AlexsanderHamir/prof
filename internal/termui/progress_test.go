@@ -374,6 +374,28 @@ func detailBelowStageHeader(out, stage, prefix string) bool {
 	return strings.Contains(out[stageIdx:stageIdx+detailIdx], "\n")
 }
 
+func TestSession_Warn_truncatesOnNarrowTerminal(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newNarrowSessionForTest(&buf, 36)
+	longMsg := strings.Repeat("x", 80)
+	err := s.RunWhile(Progress{Phase: PhasePrepare}, func() error {
+		s.Warn(longMsg)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("RunWhile() err = %v", err)
+	}
+	out := buf.String()
+	if strings.Count(out, longMsg) > 0 {
+		t.Fatalf("expected truncated message, got full repeat in %q", out)
+	}
+	if !strings.Contains(out, "✓") {
+		t.Fatalf("expected success marker after truncate: %q", out)
+	}
+}
+
 func TestSession_WarningsStayBelowHeaderWithMultipleWarns(t *testing.T) {
 	t.Parallel()
 

@@ -70,6 +70,7 @@ type Session struct {
 	w           io.Writer
 	fd          int
 	interactive bool
+	termWidthOverride int // tests only; when > 0, used instead of terminal size
 
 	mu                sync.Mutex
 	stageActive       bool
@@ -323,6 +324,9 @@ func (s *Session) seekAfterStageBlockLocked() {
 }
 
 func (s *Session) termWidth() int {
+	if s.termWidthOverride > 0 {
+		return s.termWidthOverride
+	}
 	_, width, err := term.GetSize(s.fd)
 	if err != nil || width <= 0 {
 		return defaultTermWidth
@@ -382,13 +386,53 @@ func shortUserMessage(err error) string {
 	return msg
 }
 
+func (s *Session) writeStageDetailLinesLocked(kind StageDetailKind, msg string) {
+	for _, line := range splitDetailMessage(msg) {
+		formatted := truncateDetailLine(kind, s.warnPrefix, line, s.termWidth())
+		fmt.Fprintln(s.w, formatted)
+		s.detailLines++
+		if kind == StageWarn {
+			s.warnCount++
+		}
+	}
+}
+
+func splitDetailMessage(msg string) []string {
+	parts := strings.Split(msg, "\n")
+	var lines []string
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			lines = append(lines, p)
+		}
+	}
+	if len(lines) == 0 {
+		return []string{msg}
+	}
+	return lines
+}
+
+func truncateDetailLine(kind StageDetailKind, prefix, msg string, maxWidth int) string {
+	const ellipsis = "…"
+	runes := []rune(msg)
+	for {
+		candidate := formatStageDetailLine(kind, prefix, string(runes))
+		if lipgloss.Width(candidate) <= maxWidth {
+			return candidate
+		}
+		if len(runes) == 0 {
+			return formatStageDetailLine(kind, prefix, ellipsis)
+		}
+		runes = runes[:len(runes)-1]
+	}
+}
+
 func (s *Session) captureStageErrorLocked(err error) {
 	if err == nil || s.errorDetailEmitted {
 		return
 	}
 	s.lockHeaderLocked()
-	fmt.Fprintln(s.w, formatStageDetailLine(StageError, s.warnPrefix, shortUserMessage(err)))
-	s.detailLines++
+	s.writeStageDetailLinesLocked(StageError, shortUserMessage(err))
 	s.errorDetailEmitted = true
 	s.errorDisplayed = true
 }
@@ -416,11 +460,7 @@ func (s *Session) stageDetail(kind StageDetailKind, msg string) {
 	}
 
 	s.lockHeaderLocked()
-	fmt.Fprintln(s.w, formatStageDetailLine(kind, s.warnPrefix, msg))
-	s.detailLines++
-	if kind == StageWarn {
-		s.warnCount++
-	}
+	s.writeStageDetailLinesLocked(kind, msg)
 	if kind == StageError {
 		s.errorDetailEmitted = true
 		s.errorDisplayed = true
@@ -460,7 +500,12 @@ func (s *Session) Success(msg string) {
 
 // newSessionForTest builds a session with a forced interactive flag (tests only).
 func newSessionForTest(w io.Writer) *Session {
-	return &Session{w: w, interactive: true}
+	return &Session{w: w, interactive: true, termWidthOverride: defaultTermWidth}
+}
+
+// newNarrowSessionForTest builds an interactive session with a narrow terminal width.
+func newNarrowSessionForTest(w io.Writer, width int) *Session {
+	return &Session{w: w, interactive: true, termWidthOverride: width}
 }
 
 var spinnerFrameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(AccentColor))
