@@ -10,7 +10,7 @@ import (
 func TestFormatWarningLine_matchesPipelineStyle(t *testing.T) {
 	t.Parallel()
 
-	got := termui.FormatWarningLine(termui.ConfigureDetailPrefix, "test warn")
+	got := termui.FormatWarningLine(termui.ConfigureWarningPrefix, "test warn")
 	if !strings.Contains(got, "warning:") {
 		t.Fatalf("missing warning prefix: %q", got)
 	}

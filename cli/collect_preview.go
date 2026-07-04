@@ -18,8 +18,7 @@ func printCollectionFilterPreview(w io.Writer, interactive bool, svc *app.Servic
 	cfg, err := svc.Config.Load()
 	if err != nil {
 		if interactive {
-			termui.StepGap(w)
-			termui.PrintWarning(w, termui.ConfigureDetailPrefix, missingConfigFilterWarning)
+			termui.PrintWarning(w, termui.ConfigureWarningPrefix, missingConfigFilterWarning)
 			termui.StepGap(w)
 			return true
 		}

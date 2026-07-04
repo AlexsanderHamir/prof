@@ -163,7 +163,7 @@ func TestPrintWarning_writesStyledLine(t *testing.T) {
 	t.Parallel()
 
 	var buf bytes.Buffer
-	PrintWarning(&buf, ConfigureDetailPrefix, "oops")
+	PrintWarning(&buf, ConfigureWarningPrefix, "oops")
 	if !strings.Contains(buf.String(), "warning:") {
 		t.Fatalf("output = %q", buf.String())
 	}

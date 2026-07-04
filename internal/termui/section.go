@@ -11,7 +11,11 @@ import (
 // SurveySectionTitle is the heading printed before interactive collect prompts.
 const SurveySectionTitle = "Configure collection"
 
-// ConfigureDetailPrefix indents warnings in the configure-collection section.
+// ConfigureWarningPrefix is the left margin for warnings in the configure-collection section.
+// Survey questions start at column 0, so warnings align with them.
+const ConfigureWarningPrefix = ""
+
+// ConfigureDetailPrefix indents detail lines under a configure-collection stage header.
 const ConfigureDetailPrefix = "    "
 
 // FormatWarningLine renders a styled warning line for interactive terminals.
