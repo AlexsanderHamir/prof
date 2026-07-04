@@ -102,7 +102,7 @@ Unset fields inherit from `collection.defaults`.
 
 ### Manual profile overrides { #collection-manual-profiles }
 
-Use `collection.manual_profiles` for profiles ingested by `prof manual`. The key is the profile file **stem** under `bench/<tag>/bin/`, e.g. `BenchmarkFoo_cpu` for `BenchmarkFoo_cpu.out`:
+Use `collection.manual_profiles` for profiles ingested by `prof manual`. The key is the profile file **stem** from the path you pass on the command line, e.g. `BenchmarkFoo_cpu` for `BenchmarkFoo_cpu.out` (stored as `profiles/BenchmarkFoo/cpu.out`):
 
 ```json
 "manual_profiles": {

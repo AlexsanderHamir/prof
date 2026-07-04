@@ -113,10 +113,12 @@ All paths come from [`workspace.TagLayout`](internal/workspace/layout.go):
 ```text
 bench/
 └── <tag>/
-    ├── description.txt
-    ├── bin/<BenchmarkName>/<BenchmarkName>_<profile>.out
-    ├── text/<BenchmarkName>/<BenchmarkName>_<profile>.txt
-    └── <profile>_functions/<BenchmarkName>/<function>.txt
+    ├── notes.txt
+    ├── profiles/<BenchmarkName>/<profile>.out
+    ├── measurements/<BenchmarkName>/run.txt
+    ├── hotspots/<BenchmarkName>/<profile>.txt
+    ├── source_lines/<profile>/<BenchmarkName>/<function>.txt
+    └── call_graphs/<profile>/<BenchmarkName>/<profile>.png
 ```
 
 ## Configuration (`prof.json`)

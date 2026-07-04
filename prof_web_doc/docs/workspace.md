@@ -17,14 +17,17 @@ Prof uses your current working directory to find the Go module and to write `ben
 
 ## Directory layout under `bench/<tag>/`
 
-Using Prof creates a `bench/` tree next to your module, one folder per run (tag). That layout is how `go tool pprof` and per-function extracts find the same data.
+Using Prof creates a `bench/` tree next to your module, one folder per run (tag). Domains describe the data they hold (`domain/<BenchmarkName>/artifact`).
 
 | Path | What it is |
 | ---- | ---------- |
-| `bench/<tag>/` | One labeled run: profiles, text extracts, and optional PNGs for that tag. |
-| `bench/<tag>/bin/<BenchmarkName>/` | Binary profiles (`.out`), the durable source for `go tool pprof`. |
-| `bench/<tag>/text/<BenchmarkName>/` | Human-readable profile listings (flat text). |
-| `bench/<tag>/<profile>_functions/<BenchmarkName>/` | Per-function extracts when configured; optional call-graph PNGs if Graphviz is installed. |
+| `bench/<tag>/` | One labeled run: profiles, measurements, hotspots, and optional extracts for that tag. |
+| `bench/<tag>/profiles/<BenchmarkName>/` | Raw pprof profile binaries (`.out`); durable source for `go tool pprof`. |
+| `bench/<tag>/measurements/<BenchmarkName>/` | `go test` benchmark run stats (`run.txt`: ns/op, allocs). |
+| `bench/<tag>/hotspots/<BenchmarkName>/` | Function-ranked stack summaries per profile (`cpu.txt`, `memory.txt`). |
+| `bench/<tag>/source_lines/<profile>/<BenchmarkName>/` | Per-function `pprof -list` extracts when configured. |
+| `bench/<tag>/call_graphs/<profile>/<BenchmarkName>/` | Optional Graphviz PNG call graphs when installed. |
+| `bench/<tag>/notes.txt` | Short tag-level note (placeholder until you edit it). |
 | `prof.json` | Active config next to `go.mod` after `prof config init` or **Manage configuration** in `prof ui`. |
 | `prof.json.example` | Commented reference (not loaded); copy optional sections into `prof.json`. See [Configure — generated files](configure.md#generated-files). |
 
@@ -39,7 +42,7 @@ Both files live beside `go.mod` at the module root:
 
 ## Testing / verify
 
-From the module root, after a successful collect, you should see a new directory `bench/<your-tag>/` with at least `bin/<BenchmarkName>/` and `text/<BenchmarkName>/` populated for the profiles you enabled.
+From the module root, after a successful collect, you should see a new directory `bench/<your-tag>/` with at least `profiles/<BenchmarkName>/`, `measurements/<BenchmarkName>/`, and `hotspots/<BenchmarkName>/` populated for the profiles you enabled.
 
 If `bench/` never appears, see [Troubleshooting](troubleshooting.md#wrong-directory-or-no-bench-folder).
 

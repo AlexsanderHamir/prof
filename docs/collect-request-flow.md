@@ -122,7 +122,7 @@ flowchart TB
 [`setupDirectories`](../engine/collect/layout.go) (inside **Preparing** on TTY, or before config print on non-TTY):
 
 - Resolves `bench/<tag>/` with [`workspace.CleanOrCreateTag`](../internal/workspace/tag.go).
-- Creates `bin/<benchmark>/`, `text/<benchmark>/`, `<profile>_functions/<benchmark>/`, and `description.txt`.
+- Creates `profiles/<benchmark>/`, `measurements/<benchmark>/`, `hotspots/<benchmark>/`, `source_lines/<profile>/<benchmark>/`, and `notes.txt`.
 
 ### 3–5. Per-benchmark progress (TTY)
 
@@ -130,8 +130,8 @@ flowchart TB
 
 | Step | Label (TTY stderr) | Internal work |
 | --- | --- | --- |
-| 1 | `Running benchmark 1/2: BenchmarkX (count=5)…` | [`runBenchmark`](../engine/collect/gotest.go): `go test`, write bench text, [`moveProfileFiles`](../engine/collect/artifacts.go) |
-| 2 | `Collecting profiles for BenchmarkX (cpu, memory)…` | [`processProfiles`](../engine/collect/profiles.go): text + PNG |
+| 1 | `Running benchmark 1/2: BenchmarkX (count=5)…` | [`runBenchmark`](../engine/collect/gotest.go): `go test`, write `measurements/.../run.txt`, [`moveProfileFiles`](../engine/collect/artifacts.go) |
+| 2 | `Collecting profiles for BenchmarkX (cpu, memory)…` | [`processProfiles`](../engine/collect/profiles.go): hotspots + call graphs |
 | 3 | `Collecting function profiles for BenchmarkX…` | [`collectProfileFunctions`](../engine/collect/pipeline.go): parser + per-function `pprof -list` |
 
 On an interactive TTY after Survey:
@@ -165,7 +165,7 @@ For `BenchmarkMatrixMultiplication`, [`runBenchmark`](../engine/collect/gotest.g
 - Locates the package directory containing the benchmark function.
 - Builds `go test -run=^$ -bench=^BenchmarkMatrixMultiplication$ -benchmem -count=5` plus profile flags from the tooling catalog (`cpu`, `memory`).
 - Runs the command in the benchmark package directory via [`tooling.Runner`](../engine/tooling/runner.go).
-- Writes combined benchmark output to the tag text file; moves profile binaries (`.out`) into `bench/Baseline/bin/BenchmarkMatrixMultiplication/`. Failures return combined output in the error.
+- Writes combined benchmark output to `measurements/<benchmark>/run.txt`; moves profile binaries (`.out`) into `bench/Baseline/profiles/BenchmarkMatrixMultiplication/`. Failures return combined output in the error.
 
 #### Step 2 — Process profiles
 
@@ -174,8 +174,8 @@ For `BenchmarkMatrixMultiplication`, [`runBenchmark`](../engine/collect/gotest.g
 | Step | Output | Notes for this example |
 | --- | --- | --- |
 | Stat binary | — | Missing `.out` logs a warning and skips that profile instead of failing |
-| Text profile | `text/.../BenchmarkMatrixMultiplication_cpu.txt` (and `_memory.txt`) | Via `go tool pprof` |
-| PNG | `<profile>_functions/.../BenchmarkMatrixMultiplication.png` | PNG failure logs a warning; run still succeeds if text profiles were produced |
+| Hotspot summary | `hotspots/.../cpu.txt` (and `memory.txt`) | Via `go tool pprof` |
+| PNG | `call_graphs/<profile>/.../cpu.png` | PNG failure logs a warning; run still succeeds if hotspot summaries were produced |
 
 Resolved function filters for each benchmark come from `config.ResolveCollectionFilter` (same rules previewed during the Survey step).
 
@@ -184,7 +184,7 @@ Resolved function filters for each benchmark come from `config.ResolveCollection
 [`collectProfileFunctions`](../engine/collect/pipeline.go):
 
 - For each successfully processed profile, [`parser.GetFunctionListEntriesV2`](../parser/) reads the binary and applies config filters.
-- `go tool pprof -list` output is written under `cpu_functions/BenchmarkMatrixMultiplication/` and `memory_functions/BenchmarkMatrixMultiplication/`.
+- `go tool pprof -list` output is written under `source_lines/cpu/BenchmarkMatrixMultiplication/` and `source_lines/memory/BenchmarkMatrixMultiplication/`.
 
 When all benchmarks finish, prof logs collection success and returns.
 
@@ -195,20 +195,22 @@ All paths come from [`workspace.TagLayout`](../internal/workspace/layout.go). Fo
 ```text
 bench/
 └── Baseline/
-    ├── description.txt
-    ├── bin/BenchmarkMatrixMultiplication/
-    │   ├── BenchmarkMatrixMultiplication_cpu.out
-    │   └── BenchmarkMatrixMultiplication_memory.out
-    ├── text/BenchmarkMatrixMultiplication/
-    │   ├── BenchmarkMatrixMultiplication_cpu.txt
-    │   └── BenchmarkMatrixMultiplication_memory.txt
-    ├── cpu_functions/BenchmarkMatrixMultiplication/
+    ├── notes.txt
+    ├── profiles/BenchmarkMatrixMultiplication/
+    │   ├── cpu.out
+    │   └── memory.out
+    ├── measurements/BenchmarkMatrixMultiplication/
+    │   └── run.txt
+    ├── hotspots/BenchmarkMatrixMultiplication/
+    │   ├── cpu.txt
+    │   └── memory.txt
+    ├── source_lines/cpu/BenchmarkMatrixMultiplication/
     │   └── <function>.txt
-    └── memory_functions/BenchmarkMatrixMultiplication/
+    └── source_lines/memory/BenchmarkMatrixMultiplication/
         └── <function>.txt
 ```
 
-PNG files, when generated, live under `<profile>_functions/<benchmark>/`.
+PNG files, when generated, live under `call_graphs/<profile>/<benchmark>/`.
 
 ## Where to change behavior
 

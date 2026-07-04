@@ -52,19 +52,21 @@ Each run writes a single tag directory, `bench/<tag>/`, under your [module root]
 #### How that helps
 
 - Open profiles in `pprof`: binary and text files under each tag share predictable paths.
-- Share context: zip `bench/<tag>/` or attach key `text/` files to an issue or PR so others see the same profile view you did.
-- Re-open in pprof: point `go tool pprof` at `bin/<BenchmarkName>/<BenchmarkName>_<profile>.out` for ad-hoc queries on the stored binary.
+- Share context: zip `bench/<tag>/` or attach key `hotspots/` or `measurements/` files to an issue or PR so others see the same profile view you did.
+- Re-open in pprof: point `go tool pprof` at `profiles/<BenchmarkName>/<profile>.out` for ad-hoc queries on the stored binary.
 
 ### Artifact layout under `bench/<tag>/` { #artifact-layout-under-benchtag }
 
 | Location | What you get | Typical use |
 | -------- | ------------- | ----------- |
-| `description.txt` | Short tag-level note (placeholder until you edit it). | Record why this run exists (branch, experiment, machine). |
-| `bin/<BenchmarkName>/` | One `BenchmarkName_<profile>.out` per profile type collected. | Source of truth for `pprof`; required for regenerating text and PNGs. |
-| `text/<BenchmarkName>/` | For each profile: `BenchmarkName_<profile>.txt` (flat listing). | Read, grep, or diff stacks. |
-| `<profile>_functions/<BenchmarkName>/` | Per-function text files for symbols in scope, plus optional `BenchmarkName_<profile>.png` when Graphviz is available. | Deep dive on specific functions; optional call-graph PNG for presentations. |
+| `notes.txt` | Short tag-level note (placeholder until you edit it). | Record why this run exists (branch, experiment, machine). |
+| `profiles/<BenchmarkName>/` | One `<profile>.out` per profile type collected. | Source of truth for `pprof`; required for regenerating hotspots and PNGs. |
+| `measurements/<BenchmarkName>/` | `run.txt` with `go test -bench` output (ns/op, allocs). | Compare throughput across runs. |
+| `hotspots/<BenchmarkName>/` | For each profile: `<profile>.txt` (function-ranked stacks). | Read, grep, or diff stacks. |
+| `source_lines/<profile>/<BenchmarkName>/` | Per-function text files for symbols in scope. | Deep dive on specific functions with line attribution. |
+| `call_graphs/<profile>/<BenchmarkName>/` | Optional `<profile>.png` when Graphviz is available. | Call-graph PNG for presentations. |
 
-Exact names and suffixes are defined in the implementation (`internal` constants and `engine/benchmark` path helpers); the table above matches the usual `prof auto` and `prof manual` layout.
+Exact paths are defined in [`internal/workspace.TagLayout`](https://github.com/AlexsanderHamir/prof/blob/main/internal/workspace/layout.go); the table above matches the usual `prof auto` and `prof manual` layout.
 
 ## `prof manual` { #prof-manual }
 
@@ -82,7 +84,7 @@ Per-file collection filters use `collection.manual_profiles` in `prof.json`. Key
 
 ## Testing / verify
 
-After `prof auto`, you should see `bench/<tag>/bin/<BenchmarkName>/` containing `BenchmarkName_<profile>.out` for each profile you requested, and matching files under `text/<BenchmarkName>/`.
+After `prof auto`, you should see `bench/<tag>/profiles/<BenchmarkName>/` containing `<profile>.out` for each profile you requested, `measurements/<BenchmarkName>/run.txt`, and matching files under `hotspots/<BenchmarkName>/`.
 
 If `go test` fails, Prof exits non-zero. Fix the test failure first. For PNG or Graphviz issues, see [Troubleshooting](troubleshooting.md#graphviz-png-errors).
 
