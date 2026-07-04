@@ -429,12 +429,12 @@ func TestSession_RunWhile_warnedSuccessShowsCountSuffix(t *testing.T) {
 	}
 }
 
-func TestSession_Warn_truncatesOnNarrowTerminal(t *testing.T) {
+func TestSession_Warn_wrapsOnNarrowTerminal(t *testing.T) {
 	t.Parallel()
 
 	var buf bytes.Buffer
 	s := newNarrowSessionForTest(&buf, 36)
-	longMsg := strings.Repeat("x", 80)
+	longMsg := strings.Repeat("word ", 20)
 	err := s.RunWhile(Progress{Phase: PhasePrepare}, func() error {
 		s.Warn(longMsg)
 		return nil
@@ -443,11 +443,17 @@ func TestSession_Warn_truncatesOnNarrowTerminal(t *testing.T) {
 		t.Fatalf("RunWhile() err = %v", err)
 	}
 	out := buf.String()
-	if strings.Count(out, longMsg) > 0 {
-		t.Fatalf("expected truncated message, got full repeat in %q", out)
+	if !strings.Contains(out, "warning:") {
+		t.Fatalf("expected warning prefix: %q", out)
+	}
+	if strings.Count(out, "warning:") != 1 {
+		t.Fatalf("expected single warning prefix on first line: %q", out)
+	}
+	if strings.Count(out, "\n") < 2 {
+		t.Fatalf("expected wrapped warning across multiple lines: %q", out)
 	}
 	if !strings.Contains(out, "✓") {
-		t.Fatalf("expected success marker after truncate: %q", out)
+		t.Fatalf("expected success marker after wrap: %q", out)
 	}
 }
 
