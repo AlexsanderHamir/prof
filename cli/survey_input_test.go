@@ -6,7 +6,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 )
 
-func TestCleanInput_CleanupIsNoop(t *testing.T) {
+func TestCleanInput_CleanupErasesTrailingLine(t *testing.T) {
 	t.Parallel()
 
 	var p survey.Prompt = &cleanInput{Input: survey.Input{Message: "test"}}
