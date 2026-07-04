@@ -22,13 +22,13 @@ func ExampleTemplate(modulePath string) string {
 {
     "version": 1,
 
-    // collection — which functions prof keeps when saving CPU/memory profiles after benchmarks.
+    // collection — which functions prof keeps when saving line-level extracts under source_lines/<profile>/.
     // Docs: `+docSiteBase+`/configure/#collection
     //       `+docSiteBase+`/collect/#artifact-layout-under-benchtag
     "collection": {
         "defaults": {
             // include_prefixes: if set, only functions whose full pprof symbol contains one of these
-            // substrings (usually your module import path) are saved into per-function extracts.
+            // substrings (usually your module import path) are saved under source_lines/<profile>/<benchmark>/.
             // Example: "`+includeExample+`" or "`+includeExample+`/internal/foo"
             // Empty [] keeps every function (including stdlib) — usually too broad.
             "include_prefixes": [

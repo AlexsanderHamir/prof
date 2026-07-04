@@ -53,7 +53,7 @@ func processOneManualFile(runner tooling.Runner, fullBinaryPath string, layout w
 	stem := stemFromPath(fullBinaryPath)
 	filter := config.ResolveCollectionFilter(cfg, config.CollectionTargetManual(stem))
 
-	binDest := layout.Bin(benchName, profile)
+	binDest := layout.ProfileBinary(benchName, profile)
 	if err := copyProfileBinary(fullBinaryPath, binDest); err != nil {
 		return err
 	}
@@ -65,8 +65,11 @@ func processOneManualFile(runner tooling.Runner, fullBinaryPath string, layout w
 }
 
 func emitProfileArtifacts(runner tooling.Runner, binPath string, layout workspace.TagLayout, benchName, profile string) error {
-	textOut := layout.Text(benchName, profile)
-	return getProfileTextOutput(runner, binPath, textOut)
+	hotspotOut := layout.Hotspot(benchName, profile)
+	if err := os.MkdirAll(filepath.Dir(hotspotOut), workspace.PermDir); err != nil {
+		return fmt.Errorf("mkdir hotspots dest: %w", err)
+	}
+	return getProfileTextOutput(runner, binPath, hotspotOut)
 }
 
 func collectPerFunctionLists(runner tooling.Runner, layout workspace.TagLayout, benchName, profile, binPath string, functionFilter config.FunctionFilter) error {
@@ -75,7 +78,7 @@ func collectPerFunctionLists(runner tooling.Runner, layout workspace.TagLayout, 
 		return fmt.Errorf("extract function names: %w", err)
 	}
 
-	functionDir := layout.FunctionsDir(profile, benchName)
+	functionDir := layout.SourceLinesDir(profile, benchName)
 	if err = ensureDirExists(functionDir); err != nil {
 		return err
 	}
@@ -87,7 +90,7 @@ func collectPerFunctionLists(runner tooling.Runner, layout workspace.TagLayout, 
 
 func copyProfileBinary(src, dest string) error {
 	if err := os.MkdirAll(filepath.Dir(dest), workspace.PermDir); err != nil {
-		return fmt.Errorf("mkdir bin dest: %w", err)
+		return fmt.Errorf("mkdir profile dest: %w", err)
 	}
 	in, err := os.Open(src)
 	if err != nil {
@@ -96,7 +99,7 @@ func copyProfileBinary(src, dest string) error {
 	defer in.Close()
 	out, err := os.Create(dest)
 	if err != nil {
-		return fmt.Errorf("create bin dest: %w", err)
+		return fmt.Errorf("create profile dest: %w", err)
 	}
 	defer out.Close()
 	if _, err = io.Copy(out, in); err != nil {

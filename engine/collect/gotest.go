@@ -78,12 +78,12 @@ func runBenchmark(runner tooling.Runner, benchmarkName string, profiles []string
 	if err != nil {
 		return fmt.Errorf("failed to locate benchmark %s: %w", benchmarkName, err)
 	}
-	outputFile := layout.BenchText(benchmarkName)
-	binDir := filepath.Join(layout.Root, workspace.ProfileBinDir, benchmarkName)
+	outputFile := layout.Measurement(benchmarkName)
+	binDir := filepath.Join(layout.Root, workspace.ProfilesDir, benchmarkName)
 	if err = runBenchmarkCommand(runner, cmd, outputFile, pkgDir); err != nil {
 		return err
 	}
-	if err = moveProfileFiles(benchmarkName, profiles, pkgDir, binDir); err != nil {
+	if err = moveProfileFiles(profiles, pkgDir, binDir); err != nil {
 		return err
 	}
 	return moveTestFiles(benchmarkName, pkgDir, binDir)

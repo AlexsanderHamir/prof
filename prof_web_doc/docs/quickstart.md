@@ -25,7 +25,7 @@ prof ui
 
 In the menu, choose Collect Profiles, pick your benchmarks and profile types, and enter a tag such as `baseline`.
 
-Verify: you should see `bench/baseline/` with `bin/` and `text/` populated.
+Verify: you should see `bench/baseline/` with `profiles/`, `measurements/`, and `hotspots/` populated.
 
 If the UI does not start, your environment may not expose a TTY. Use Path B or see [Troubleshooting](troubleshooting.md#prof-ui-or-prof-tui-fails-in-ci-or-ides).
 
@@ -37,7 +37,7 @@ prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --
 
 Verify:
 
-- On disk: `bench/baseline/` contains `bin/BenchmarkExample/` and `text/BenchmarkExample/`.
+- On disk: `bench/baseline/` contains `profiles/BenchmarkExample/`, `measurements/BenchmarkExample/`, and `hotspots/BenchmarkExample/`.
 
 ## If something fails
 

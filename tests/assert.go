@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -67,31 +66,34 @@ func checkOutput(t *testing.T, envPath string, testArgs *TestArgs) {
 	tagPath := filepath.Join(benchPath, tag)
 	checkDirectory(t, tagPath, tag)
 
-	binPath := filepath.Join(tagPath, workspace.ProfileBinDir)
-	textPath := filepath.Join(tagPath, workspace.ProfileTextDir)
-	binBenchPath := filepath.Join(binPath, benchName)
-	textBenchPath := filepath.Join(textPath, benchName)
+	profilesPath := filepath.Join(tagPath, workspace.ProfilesDir)
+	measurementsPath := filepath.Join(tagPath, workspace.MeasurementsDir)
+	hotspotsPath := filepath.Join(tagPath, workspace.HotspotsDir)
+	profilesBenchPath := filepath.Join(profilesPath, benchName)
+	measurementsBenchPath := filepath.Join(measurementsPath, benchName)
+	hotspotsBenchPath := filepath.Join(hotspotsPath, benchName)
 
 	configDoesntApply := false
 
-	checkDirectory(t, binPath, "bin directory")
-	checkDirectory(t, binBenchPath, "benchmark directory inside of bin")
-	checkDirectoryFiles(t, binBenchPath, "bin files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, configDoesntApply, specifiedFiles)
+	checkDirectory(t, profilesPath, "profiles directory")
+	checkDirectory(t, profilesBenchPath, "benchmark directory inside profiles")
+	checkDirectoryFiles(t, profilesBenchPath, "profile files inside benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, configDoesntApply, specifiedFiles)
 
-	checkDirectory(t, textPath, "text directory")
-	checkDirectory(t, textBenchPath, "benchmark directory inside of text")
-	checkDirectoryFiles(t, textBenchPath, "text files inside of benchmark directory", expectedNumberOfFiles, expectNonSpecifiedFiles, configDoesntApply, specifiedFiles)
+	checkDirectory(t, measurementsPath, "measurements directory")
+	checkDirectory(t, measurementsBenchPath, "benchmark directory inside measurements")
+	checkDirectoryFiles(t, measurementsBenchPath, "measurement files inside benchmark directory", 1, expectNonSpecifiedFiles, configDoesntApply, specifiedFiles)
+
+	checkDirectory(t, hotspotsPath, "hotspots directory")
+	checkDirectory(t, hotspotsBenchPath, "benchmark directory inside hotspots")
+	checkDirectoryFiles(t, hotspotsBenchPath, "hotspot files inside benchmark directory", len(expectedProfiles), expectNonSpecifiedFiles, configDoesntApply, specifiedFiles)
 
 	for _, profile := range expectedProfiles {
-		profileFunctionsDir := fmt.Sprintf("%s%s", profile, workspace.FunctionsDirSuffix)
-		profileFunctionsPath := filepath.Join(tagPath, profileFunctionsDir)
-		checkDirectory(t, profileFunctionsPath, "profile functions directory e.g cpu_functions")
-
-		benchDir := filepath.Join(profileFunctionsPath, benchName)
-		checkDirectory(t, benchDir, "benchmark directory inside profile functions directory e.g cpu_functions/BenchmarkName")
+		sourceLinesBenchPath := filepath.Join(tagPath, workspace.SourceLinesDir, profile, benchName)
+		checkDirectory(t, filepath.Join(tagPath, workspace.SourceLinesDir, profile), "source_lines/"+profile+" directory")
+		checkDirectory(t, sourceLinesBenchPath, "benchmark directory inside source_lines/"+profile)
 
 		// Per-function dir size depends on filter sampling jitter so we don't enforce a count.
-		checkDirectoryFiles(t, benchDir, "individual function files inside benchmark directory", 0, expectNonSpecifiedFiles, withConfig, specifiedFiles)
+		checkDirectoryFiles(t, sourceLinesBenchPath, "individual function files inside benchmark directory", 0, expectNonSpecifiedFiles, withConfig, specifiedFiles)
 	}
 }
 

@@ -35,7 +35,7 @@ Navigation: arrow keys; Space toggles in multi-select; type to filter long lists
 
 ## Testing / verify
 
-After finishing `prof tui` or the collect path in `prof ui`, confirm `bench/<tag>/` exists with `bin/` and `text/` populated.
+After finishing `prof tui` or the collect path in `prof ui`, confirm `bench/<tag>/` exists with `profiles/`, `measurements/`, and `hotspots/` populated.
 
 ## Next steps
 

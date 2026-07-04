@@ -86,12 +86,12 @@ func collectProfileFunctions(runner tooling.Runner, args *config.CollectionArgs,
 	}
 
 	for _, profile := range args.Profiles {
-		fnDir := layout.FunctionsDir(profile, args.BenchmarkName)
+		fnDir := layout.SourceLinesDir(profile, args.BenchmarkName)
 		if mkdirErr := os.MkdirAll(fnDir, workspace.PermDir); mkdirErr != nil {
 			return fmt.Errorf("failed to create output directory: %w", mkdirErr)
 		}
 
-		binPath := layout.Bin(args.BenchmarkName, profile)
+		binPath := layout.ProfileBinary(args.BenchmarkName, profile)
 		listEntries, listErr := parser.GetFunctionListEntriesV2(binPath, args.BenchmarkConfig)
 		if listErr != nil {
 			return fmt.Errorf("failed to extract function names: %w", listErr)

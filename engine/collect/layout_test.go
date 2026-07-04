@@ -28,14 +28,17 @@ func TestCreateBenchDirectories(t *testing.T) {
 	}
 
 	cases := []struct {
-		name string
-		path string
+		name  string
+		path  string
+		isDir bool
 	}{
-		{"bin root", filepath.Join(tagDir, workspace.ProfileBinDir)},
-		{"text root", filepath.Join(tagDir, workspace.ProfileTextDir)},
-		{"description", filepath.Join(tagDir, workspace.BenchDescriptionFileName)},
-		{"bin bench foo", filepath.Join(tagDir, workspace.ProfileBinDir, "BenchmarkFoo")},
-		{"text bench bar", filepath.Join(tagDir, workspace.ProfileTextDir, "BenchmarkBar")},
+		{"profiles root", filepath.Join(tagDir, workspace.ProfilesDir), true},
+		{"measurements root", filepath.Join(tagDir, workspace.MeasurementsDir), true},
+		{"hotspots root", filepath.Join(tagDir, workspace.HotspotsDir), true},
+		{"notes", filepath.Join(tagDir, workspace.TagNotesFileName), false},
+		{"profiles bench foo", filepath.Join(tagDir, workspace.ProfilesDir, "BenchmarkFoo"), true},
+		{"measurements bench bar", filepath.Join(tagDir, workspace.MeasurementsDir, "BenchmarkBar"), true},
+		{"hotspots bench bar", filepath.Join(tagDir, workspace.HotspotsDir, "BenchmarkBar"), true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -44,24 +47,27 @@ func TestCreateBenchDirectories(t *testing.T) {
 			if err != nil {
 				t.Fatalf("stat %s: %v", tc.path, err)
 			}
-			if !st.IsDir() && tc.name != "description" {
+			if tc.isDir && !st.IsDir() {
 				t.Fatalf("%s should be a directory", tc.path)
+			}
+			if !tc.isDir && st.IsDir() {
+				t.Fatalf("%s should be a file", tc.path)
 			}
 		})
 	}
 }
 
-func TestCreateProfileFunctionDirectories(t *testing.T) {
+func TestCreateSourceLinesDirectories(t *testing.T) {
 	t.Parallel()
 	tagDir := t.TempDir()
 	profiles := []string{"cpu", "memory"}
 	benchmarks := []string{"BenchmarkFoo"}
 
-	if err := createProfileFunctionDirectories(tagDir, profiles, benchmarks, false); err != nil {
+	if err := createSourceLinesDirectories(tagDir, profiles, benchmarks, false); err != nil {
 		t.Fatal(err)
 	}
 
-	want := filepath.Join(tagDir, "cpu"+workspace.FunctionsDirSuffix, "BenchmarkFoo")
+	want := filepath.Join(tagDir, workspace.SourceLinesDir, "cpu", "BenchmarkFoo")
 	if st, err := os.Stat(want); err != nil || !st.IsDir() {
 		t.Fatalf("expected directory %s: err=%v isDir=%v", want, err, st != nil && st.IsDir())
 	}
@@ -91,23 +97,28 @@ func TestSetupDirectories_createsTagLayout(t *testing.T) {
 		dir  bool
 	}{
 		{
-			"bin bench dir",
-			filepath.Join(layout.Root, workspace.ProfileBinDir, "BenchmarkFoo"),
+			"profiles bench dir",
+			filepath.Join(layout.Root, workspace.ProfilesDir, "BenchmarkFoo"),
 			true,
 		},
 		{
-			"text bench dir",
-			filepath.Join(layout.Root, workspace.ProfileTextDir, "BenchmarkFoo"),
+			"measurements bench dir",
+			filepath.Join(layout.Root, workspace.MeasurementsDir, "BenchmarkFoo"),
 			true,
 		},
 		{
-			"functions dir",
-			layout.FunctionsDir("cpu", "BenchmarkFoo"),
+			"hotspots bench dir",
+			filepath.Join(layout.Root, workspace.HotspotsDir, "BenchmarkFoo"),
 			true,
 		},
 		{
-			"memory functions dir",
-			layout.FunctionsDir("memory", "BenchmarkFoo"),
+			"source lines dir",
+			layout.SourceLinesDir("cpu", "BenchmarkFoo"),
+			true,
+		},
+		{
+			"memory source lines dir",
+			layout.SourceLinesDir("memory", "BenchmarkFoo"),
 			true,
 		},
 	}

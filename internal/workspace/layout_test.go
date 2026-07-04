@@ -20,10 +20,31 @@ func TestTagLayout_paths(t *testing.T) {
 		got  string
 		want string
 	}{
-		{"bin", l.Bin("BenchmarkFoo", "cpu"), filepath.Join(root, "bench", "v1", "bin", "BenchmarkFoo", "BenchmarkFoo_cpu.out")},
-		{"text", l.Text("BenchmarkFoo", "cpu"), filepath.Join(root, "bench", "v1", "text", "BenchmarkFoo", "BenchmarkFoo_cpu.txt")},
-		{"functions", l.FunctionsDir("cpu", "BenchmarkFoo"), filepath.Join(root, "bench", "v1", "cpu_functions", "BenchmarkFoo")},
-		{"bench text", l.BenchText("BenchmarkFoo"), filepath.Join(root, "bench", "v1", "text", "BenchmarkFoo", "BenchmarkFoo.txt")},
+		{
+			"profile binary",
+			l.ProfileBinary("BenchmarkFoo", "cpu"),
+			filepath.Join(root, "bench", "v1", "profiles", "BenchmarkFoo", "cpu.out"),
+		},
+		{
+			"hotspot",
+			l.Hotspot("BenchmarkFoo", "cpu"),
+			filepath.Join(root, "bench", "v1", "hotspots", "BenchmarkFoo", "cpu.txt"),
+		},
+		{
+			"source lines",
+			l.SourceLinesDir("cpu", "BenchmarkFoo"),
+			filepath.Join(root, "bench", "v1", "source_lines", "cpu", "BenchmarkFoo"),
+		},
+		{
+			"measurement",
+			l.Measurement("BenchmarkFoo"),
+			filepath.Join(root, "bench", "v1", "measurements", "BenchmarkFoo", "run.txt"),
+		},
+		{
+			"call graph",
+			l.CallGraph("cpu", "BenchmarkFoo"),
+			filepath.Join(root, "bench", "v1", "call_graphs", "cpu", "BenchmarkFoo", "cpu.png"),
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -35,11 +56,11 @@ func TestTagLayout_paths(t *testing.T) {
 	}
 }
 
-func TestTagLayout_ResolveBin_missing(t *testing.T) {
+func TestTagLayout_ResolveProfileBinary_missing(t *testing.T) {
 	t.Parallel()
 	l := workspace.NewTagLayout(t.TempDir(), "t")
-	if _, err := l.ResolveBin("B", "cpu"); err == nil {
-		t.Fatal("expected error for missing bin")
+	if _, err := l.ResolveProfileBinary("B", "cpu"); err == nil {
+		t.Fatal("expected error for missing profile binary")
 	}
 }
 
