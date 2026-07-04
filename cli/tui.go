@@ -45,7 +45,7 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	printCollectionFilterPreview(os.Stdout, surveyTTY, svc, selectedBenches)
+	missingConfigWarnShown := printCollectionFilterPreview(os.Stdout, surveyTTY, svc, selectedBenches)
 
 	profilesOptions := svc.Collect.SupportedProfiles()
 	var selectedProfiles []string
@@ -74,10 +74,11 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 	}
 
 	collect := &intent.CollectIntent{
-		Benchmarks: selectedBenches,
-		Profiles:   selectedProfiles,
-		Tag:        tagStr,
-		Count:      runCount,
+		Benchmarks:             selectedBenches,
+		Profiles:               selectedProfiles,
+		Tag:                    tagStr,
+		Count:                  runCount,
+		MissingConfigWarnShown: missingConfigWarnShown,
 	}
 	collect.Normalize()
 	return intent.RunValidated(collect, svc)

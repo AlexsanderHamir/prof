@@ -10,10 +10,10 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/termui"
 )
 
-const missingConfigFilterWarning = "No prof.json found; proceeding without function filters (run prof config init to add one)."
+const missingConfigFilterWarning = config.MissingConfigUserWarning
 
 // printCollectionFilterPreview reports filter settings after benchmark selection.
-// It returns true when a warning was printed (TTY only); gaps are added around warnings.
+// It returns true when the missing-config warning was printed (TTY only).
 func printCollectionFilterPreview(w io.Writer, interactive bool, svc *app.Services, benchNames []string) bool {
 	cfg, err := svc.Config.Load()
 	if err != nil {
