@@ -53,8 +53,10 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 	}
 
 	var countStr string
-	countPrompt := &survey.Input{Message: "Number of runs (count):", Default: "1"}
-	if err = survey.AskOne(countPrompt, &countStr, survey.WithValidator(survey.Required)); err != nil {
+	if err = survey.AskOne(&cleanInput{Input: survey.Input{
+		Message: "Number of runs (count):",
+		Default: "1",
+	}}, &countStr, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
 	runCount, convErr := strconv.Atoi(countStr)
@@ -63,8 +65,9 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 	}
 
 	var tagStr string
-	tagPrompt := &survey.Input{Message: "Tag name (used to group results under bench/<tag>):"}
-	if err = survey.AskOne(tagPrompt, &tagStr, survey.WithValidator(survey.Required)); err != nil {
+	if err = survey.AskOne(&cleanInput{Input: survey.Input{
+		Message: "Tag name (used to group results under bench/<tag>):",
+	}}, &tagStr, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
 
