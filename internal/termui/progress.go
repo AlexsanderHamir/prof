@@ -392,10 +392,8 @@ func shortUserMessage(err error) string {
 
 func (s *Session) writeStageDetailLinesLocked(kind StageDetailKind, msg string) {
 	for _, line := range splitDetailMessage(msg) {
-		for _, formatted := range wrapDetailLines(kind, s.warnPrefix, line, s.termWidth()) {
-			fmt.Fprintln(s.w, formatted)
-			s.detailLines++
-		}
+		fmt.Fprintln(s.w, formatStageDetailLine(kind, s.warnPrefix, line))
+		s.detailLines++
 	}
 }
 
@@ -412,129 +410,6 @@ func splitDetailMessage(msg string) []string {
 		return []string{msg}
 	}
 	return lines
-}
-
-func stageDetailHead(kind StageDetailKind, prefix string) string {
-	switch kind {
-	case StageError:
-		return ErrorPrefixStyle.Render(prefix + "error: ")
-	default:
-		return WarningPrefixStyle.Render(prefix + "warning: ")
-	}
-}
-
-func stageDetailBodyStyle(kind StageDetailKind) lipgloss.Style {
-	switch kind {
-	case StageError:
-		return ErrorStyle
-	default:
-		return WarningStyle
-	}
-}
-
-// wrapDetailLines splits a long diagnostic into terminal-width lines. The first
-// line includes the styled prefix; continuations align under the message text.
-func wrapDetailLines(kind StageDetailKind, prefix, msg string, maxWidth int) []string {
-	full := formatStageDetailLine(kind, prefix, msg)
-	if maxWidth <= 0 || lipgloss.Width(full) <= maxWidth {
-		return []string{full}
-	}
-
-	head := stageDetailHead(kind, prefix)
-	headWidth := lipgloss.Width(head)
-	bodyStyle := stageDetailBodyStyle(kind)
-	contPad := strings.Repeat(" ", headWidth)
-
-	firstMax := maxWidth - headWidth
-	if firstMax < 1 {
-		firstMax = 1
-	}
-	contMax := maxWidth - headWidth
-	if contMax < 1 {
-		contMax = 1
-	}
-
-	var lines []string
-	remaining := strings.TrimSpace(msg)
-	first := true
-	for remaining != "" {
-		limit := contMax
-		if first {
-			limit = firstMax
-		}
-		chunk, rest := takeWrappedChunk(remaining, limit)
-		if chunk == "" {
-			break
-		}
-		body := bodyStyle.Render(chunk)
-		if first {
-			lines = append(lines, head+body)
-			first = false
-		} else {
-			lines = append(lines, contPad+body)
-		}
-		remaining = strings.TrimSpace(rest)
-	}
-	if len(lines) == 0 {
-		return []string{full}
-	}
-	return lines
-}
-
-// takeWrappedChunk returns the largest prefix of text that fits in limit visible
-// columns, preferring word boundaries; a single overlong word is hard-broken.
-func takeWrappedChunk(text string, limit int) (chunk, rest string) {
-	if limit <= 0 {
-		return "", text
-	}
-	text = strings.TrimLeft(text, " ")
-	if text == "" {
-		return "", ""
-	}
-	if runeWidth(text) <= limit {
-		return text, ""
-	}
-
-	words := strings.Fields(text)
-	if len(words) == 0 {
-		return hardBreakRunes(text, limit)
-	}
-
-	var b strings.Builder
-	for i, word := range words {
-		sep := ""
-		if b.Len() > 0 {
-			sep = " "
-		}
-		candidate := sep + word
-		if runeWidth(candidate) > limit && b.Len() == 0 {
-			return hardBreakRunes(word, limit)
-		}
-		if runeWidth(b.String()+candidate) > limit {
-			restWords := words[i:]
-			return strings.TrimSpace(b.String()), strings.Join(restWords, " ")
-		}
-		b.WriteString(candidate)
-	}
-	return b.String(), ""
-}
-
-func runeWidth(s string) int {
-	return lipgloss.Width(s)
-}
-
-func hardBreakRunes(text string, limit int) (chunk, rest string) {
-	runes := []rune(text)
-	if len(runes) == 0 {
-		return "", ""
-	}
-	for n := len(runes); n > 0; n-- {
-		part := string(runes[:n])
-		if runeWidth(part) <= limit {
-			return part, string(runes[n:])
-		}
-	}
-	return string(runes[:1]), string(runes[1:])
 }
 
 func (s *Session) captureStageErrorLocked(err error) {
