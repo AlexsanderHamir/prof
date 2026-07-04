@@ -1,22 +1,37 @@
 package cli
 
 import (
+	"bufio"
+	"bytes"
+	"io"
+	"strings"
 	"testing"
-
-	"github.com/AlecAivazis/survey/v2"
 )
 
-func TestCleanInput_CleanupErasesTrailingLine(t *testing.T) {
+func TestAskConfigureLine_usesDefault(t *testing.T) {
 	t.Parallel()
 
-	var p survey.Prompt = &cleanInput{Input: survey.Input{Message: "test"}}
-	c, ok := p.(interface {
-		Cleanup(*survey.PromptConfig, interface{}) error
-	})
-	if !ok {
-		t.Fatal("cleanInput should implement Cleanup")
+	var out bytes.Buffer
+	got, err := askConfigureLine(bufio.NewReader(strings.NewReader("\n")), &out, "Number of runs (count):", "1")
+	if err != nil {
+		t.Fatalf("askConfigureLine() err = %v", err)
 	}
-	if err := c.Cleanup(&survey.PromptConfig{}, "answer"); err != nil {
-		t.Fatalf("Cleanup() = %v", err)
+	if got != "1" {
+		t.Fatalf("got %q, want 1", got)
+	}
+	if !strings.Contains(out.String(), "Number of runs (count):") {
+		t.Fatalf("output = %q", out.String())
+	}
+	if !strings.Contains(out.String(), configureQuestionIcon.Render("?")) {
+		t.Fatalf("missing styled question icon: %q", out.String())
+	}
+}
+
+func TestAskConfigureLine_required(t *testing.T) {
+	t.Parallel()
+
+	_, err := askConfigureLine(bufio.NewReader(strings.NewReader("\n")), io.Discard, "Tag name:", "")
+	if err == nil {
+		t.Fatal("expected required error")
 	}
 }

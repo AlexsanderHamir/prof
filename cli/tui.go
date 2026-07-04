@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -15,7 +16,6 @@ import (
 )
 
 func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
-	// Get current working directory for scope-aware benchmark discovery
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current working directory: %w", err)
@@ -30,10 +30,10 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return errors.New("no benchmarks found in this directory or its subdirectories (look for func BenchmarkXxx(b *testing.B) in *_test.go)")
 	}
 
-	if term.IsTerminal(int(os.Stdout.Fd())) {
+	surveyTTY := term.IsTerminal(int(os.Stdout.Fd()))
+	if surveyTTY {
 		termui.PrintSection(os.Stdout, int(os.Stdout.Fd()), termui.SurveySectionTitle)
 	}
-	surveyTTY := term.IsTerminal(int(os.Stdout.Fd()))
 
 	var selectedBenches []string
 	benchPrompt := &survey.MultiSelect{
@@ -54,16 +54,13 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		Options: profilesOptions,
 		Default: []string{"cpu"},
 	}
-
 	if err = survey.AskOne(profilesPrompt, &selectedProfiles, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
 
-	var countStr string
-	if err = survey.AskOne(&cleanInput{Input: survey.Input{
-		Message: "Number of runs (count):",
-		Default: "1",
-	}}, &countStr, survey.WithValidator(survey.Required)); err != nil {
+	reader := bufio.NewReader(os.Stdin)
+	countStr, err := askConfigureLine(reader, os.Stdout, "Number of runs (count):", "1")
+	if err != nil {
 		return err
 	}
 	runCount, convErr := strconv.Atoi(countStr)
@@ -71,15 +68,9 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return fmt.Errorf("invalid count: %s", countStr)
 	}
 
-	var tagStr string
-	if err = survey.AskOne(&cleanInput{Input: survey.Input{
-		Message: "Tag name (used to group results under bench/<tag>):",
-	}}, &tagStr, survey.WithValidator(survey.Required)); err != nil {
+	tagStr, err := askConfigureLine(reader, os.Stdout, "Tag name (used to group results under bench/<tag>):", "")
+	if err != nil {
 		return err
-	}
-
-	if surveyTTY {
-		termui.EndSection(os.Stdout)
 	}
 
 	collect := &intent.CollectIntent{
