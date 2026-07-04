@@ -12,11 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// surveyInputOpts shows the terminal cursor on free-text Survey prompts (hidden by default).
-var surveyInputOpts = []survey.AskOpt{
-	survey.WithShowCursor(true),
-}
-
 func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 	// Get current working directory for scope-aware benchmark discovery
 	currentDir, err := os.Getwd()
@@ -59,7 +54,7 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 
 	var countStr string
 	countPrompt := &survey.Input{Message: "Number of runs (count):", Default: "1"}
-	if err = survey.AskOne(countPrompt, &countStr, append(surveyInputOpts, survey.WithValidator(survey.Required))...); err != nil {
+	if err = survey.AskOne(countPrompt, &countStr, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
 	runCount, convErr := strconv.Atoi(countStr)
@@ -69,7 +64,7 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 
 	var tagStr string
 	tagPrompt := &survey.Input{Message: "Tag name (used to group results under bench/<tag>):"}
-	if err = survey.AskOne(tagPrompt, &tagStr, append(surveyInputOpts, survey.WithValidator(survey.Required))...); err != nil {
+	if err = survey.AskOne(tagPrompt, &tagStr, survey.WithValidator(survey.Required)); err != nil {
 		return err
 	}
 
