@@ -232,6 +232,135 @@ func warningBelowStageHeader(out, stage string) bool {
 	return strings.Contains(out[stageIdx:stageIdx+warnIdx], "\n")
 }
 
+func TestSession_RunWhile_failedStageShowsErrorDetail(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newSessionForTest(&buf)
+	runErr := errors.New("setup failed")
+	err := s.RunWhile(Progress{Phase: PhasePrepare}, func() error {
+		return runErr
+	})
+	if !errors.Is(err, runErr) {
+		t.Fatalf("RunWhile() err = %v, want %v", err, runErr)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "✗") {
+		t.Fatalf("output missing failure marker: %q", out)
+	}
+	if !strings.Contains(out, "error:") {
+		t.Fatalf("output missing error detail: %q", out)
+	}
+	if !strings.Contains(out, "setup failed") {
+		t.Fatalf("output missing error message: %q", out)
+	}
+	if !detailBelowStageHeader(out, "Preparing", "error:") {
+		t.Fatalf("error should be below Preparing header: %q", out)
+	}
+}
+
+func TestSession_RunWhile_failedAfterWarnings(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newSessionForTest(&buf)
+	err := s.RunWhile(Progress{Phase: PhaseCollectProfiles, Detail: "cpu"}, func() error {
+		s.Warn("png skipped")
+		return errors.New("profile text failed")
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	out := buf.String()
+	if !strings.Contains(out, "warning:") || !strings.Contains(out, "error:") {
+		t.Fatalf("expected warning and error lines: %q", out)
+	}
+	if !strings.Contains(out, "✗") {
+		t.Fatalf("expected failure marker: %q", out)
+	}
+}
+
+func TestSession_RunWhile_stageErrorsPerPhase(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		phase Phase
+		label string
+	}{
+		{PhaseRunBenchmark, "0) Run benchmark"},
+		{PhaseCollectProfiles, "1) Collect profiles"},
+		{PhaseCollectFunctionProfiles, "2) Collect per-function text profiles"},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(string(tc.phase), func(t *testing.T) {
+			t.Parallel()
+			var buf bytes.Buffer
+			s := newSessionForTest(&buf)
+			err := s.RunWhile(Progress{Phase: tc.phase}, func() error {
+				return errors.New("phase failed")
+			})
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			out := buf.String()
+			if !strings.Contains(out, tc.label) {
+				t.Fatalf("missing label %q in %q", tc.label, out)
+			}
+			if !detailBelowStageHeader(out, tc.label, "error:") {
+				t.Fatalf("error not below header for %s: %q", tc.phase, out)
+			}
+		})
+	}
+}
+
+func TestSession_RunWhile_stage2Warnings(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newSessionForTest(&buf)
+	err := s.RunWhile(Progress{Phase: PhaseCollectFunctionProfiles}, func() error {
+		s.Warn("skipping Foo")
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("RunWhile() err = %v", err)
+	}
+	out := buf.String()
+	if !detailBelowStageHeader(out, "2) Collect per-function text profiles", "warning:") {
+		t.Fatalf("stage 2 warning not below header: %q", out)
+	}
+}
+
+func TestSession_ErrorDisplayed(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newSessionForTest(&buf)
+	if s.ErrorDisplayed() {
+		t.Fatal("expected false before run")
+	}
+	_ = s.RunWhile(Progress{Phase: PhasePrepare}, func() error {
+		return errors.New("boom")
+	})
+	if !s.ErrorDisplayed() {
+		t.Fatal("expected true after staged error")
+	}
+	_ = buf.String()
+}
+
+func detailBelowStageHeader(out, stage, prefix string) bool {
+	stageIdx := strings.Index(out, stage)
+	if stageIdx < 0 {
+		return false
+	}
+	detailIdx := strings.Index(out[stageIdx:], prefix)
+	if detailIdx < 0 {
+		return false
+	}
+	return strings.Contains(out[stageIdx:stageIdx+detailIdx], "\n")
+}
+
 func TestSession_WarningsStayBelowHeaderWithMultipleWarns(t *testing.T) {
 	t.Parallel()
 
