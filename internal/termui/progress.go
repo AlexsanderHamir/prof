@@ -175,6 +175,22 @@ func (s *Session) BeginBenchmark(index, total int, name string) {
 
 var dotSpinner = spinner.Dot
 
+// ErrStagedDisplay marks an error whose message was already printed under a stage header.
+var ErrStagedDisplay = errors.New("termui: error rendered under stage")
+
+// StagedDisplay wraps err when the interactive session already showed it under a stage.
+func StagedDisplay(err error) error {
+	if err == nil {
+		return nil
+	}
+	return fmt.Errorf("%w: %w", ErrStagedDisplay, err)
+}
+
+// ErrorWasStaged reports whether err was wrapped with ErrStagedDisplay.
+func ErrorWasStaged(err error) bool {
+	return errors.Is(err, ErrStagedDisplay)
+}
+
 // RunWhile runs fn while showing a persistent spinner when the session is interactive.
 func (s *Session) RunWhile(p Progress, fn func() error) error {
 	if fn == nil {

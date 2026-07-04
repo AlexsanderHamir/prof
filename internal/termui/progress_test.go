@@ -332,6 +332,19 @@ func TestSession_RunWhile_stage2Warnings(t *testing.T) {
 	}
 }
 
+func TestErrorWasStaged(t *testing.T) {
+	t.Parallel()
+
+	base := errors.New("boom")
+	if ErrorWasStaged(base) {
+		t.Fatal("expected false for plain error")
+	}
+	wrapped := StagedDisplay(base)
+	if !ErrorWasStaged(wrapped) {
+		t.Fatal("expected true for staged error")
+	}
+}
+
 func TestSession_ErrorDisplayed(t *testing.T) {
 	t.Parallel()
 

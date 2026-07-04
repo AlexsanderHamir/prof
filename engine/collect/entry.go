@@ -54,9 +54,9 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 			}
 			return setupDirectories(opts.Tag, opts.Benchmarks, opts.Profiles, true)
 		}); prepErr != nil {
-			return fmt.Errorf("failed to setup directories: %w", prepErr)
+			return finalizeInteractiveErr(session, fmt.Errorf("failed to setup directories: %w", prepErr))
 		}
-		return runBenchAndGetProfiles(runner, autoArgs, cfg, session)
+		return finalizeInteractiveErr(session, runBenchAndGetProfiles(runner, autoArgs, cfg, session))
 	}
 
 	if cfgMissing {

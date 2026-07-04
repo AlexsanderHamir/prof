@@ -13,6 +13,13 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
+func finalizeInteractiveErr(session *termui.Session, err error) error {
+	if err == nil || session == nil || !session.Interactive() || !session.ErrorDisplayed() {
+		return err
+	}
+	return termui.StagedDisplay(err)
+}
+
 func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cfg *config.Config, session *termui.Session) error {
 	if !session.Interactive() {
 		slog.Info("Starting benchmark pipeline...")
@@ -38,7 +45,7 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cf
 		if err := session.RunWhile(base.WithPhase(termui.PhaseRunBenchmark).WithDetail(countDetail), func() error {
 			return runBenchmark(runner, benchmarkName, autoArgs.Profiles, autoArgs.Count, autoArgs.Tag)
 		}); err != nil {
-			return fmt.Errorf("failed to run %s: %w", benchmarkName, err)
+			return finalizeInteractiveErr(session, fmt.Errorf("failed to run %s: %w", benchmarkName, err))
 		}
 
 		filter := config.ResolveCollectionFilter(cfg, config.CollectionTargetAuto(benchmarkName))
@@ -52,7 +59,7 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cf
 			profilesReady, procErr = processProfiles(runner, benchmarkName, autoArgs.Profiles, autoArgs.Tag, session)
 			return procErr
 		}); err != nil {
-			return fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err)
+			return finalizeInteractiveErr(session, fmt.Errorf("failed to process profiles for %s: %w", benchmarkName, err))
 		}
 
 		if !session.Interactive() {
@@ -67,7 +74,7 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cf
 		if err := session.RunWhile(base.WithPhase(termui.PhaseCollectFunctionProfiles), func() error {
 			return collectProfileFunctions(runner, args, session)
 		}); err != nil {
-			return fmt.Errorf("failed to collect function profiles for %s: %w", benchmarkName, err)
+			return finalizeInteractiveErr(session, fmt.Errorf("failed to collect function profiles for %s: %w", benchmarkName, err))
 		}
 
 		if !session.Interactive() {
