@@ -292,7 +292,6 @@ func TestSession_RunWhile_stageErrorsPerPhase(t *testing.T) {
 		{PhaseCollectFunctionProfiles, "2) Collect per-function text profiles"},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(string(tc.phase), func(t *testing.T) {
 			t.Parallel()
 			var buf bytes.Buffer

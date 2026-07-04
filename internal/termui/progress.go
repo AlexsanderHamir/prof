@@ -67,24 +67,24 @@ func (p Progress) WithDetail(detail string) Progress {
 //
 // The step line updates in place while running (spinner), then becomes ✓ when done.
 type Session struct {
-	w           io.Writer
-	fd          int
-	interactive bool
+	w                 io.Writer
+	fd                int
+	interactive       bool
 	termWidthOverride int // tests only; when > 0, used instead of terminal size
 
-	mu                sync.Mutex
-	stageActive       bool
-	headerLocked      bool
-	detailLines       int
-	warnCount         int
+	mu                 sync.Mutex
+	stageActive        bool
+	headerLocked       bool
+	detailLines        int
+	warnCount          int
 	errorDetailEmitted bool
-	errorDisplayed    bool
-	runningLabel      string
-	warnPrefix        string
-	lastFrame         string
-	spinnerStop       chan struct{}
-	spinnerDone       sync.WaitGroup
-	benchmarksStarted int
+	errorDisplayed     bool
+	runningLabel       string
+	warnPrefix         string
+	lastFrame          string
+	spinnerStop        chan struct{}
+	spinnerDone        sync.WaitGroup
+	benchmarksStarted  int
 }
 
 // NewSession reports whether w/fd is an interactive terminal.
