@@ -22,4 +22,9 @@ var (
 	FailStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
 	// BenchmarkTitleStyle styles the benchmark group header in the progress log.
 	BenchmarkTitleStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(AccentColor))
+	// SectionRuleStyle styles the faint rule under the collect section title.
+	SectionRuleStyle = lipgloss.NewStyle().Faint(true)
 )
+
+// CollectSectionTitle is the heading printed before the prepare stage.
+const CollectSectionTitle = "Collecting profiles"

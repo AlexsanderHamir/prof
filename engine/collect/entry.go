@@ -44,6 +44,7 @@ func RunAuto(runner tooling.Runner, opts AutoOptions) error {
 	}
 
 	if session.Interactive() {
+		session.BeginCollect()
 		if prepErr := session.RunWhile(termui.Progress{Phase: termui.PhasePrepare}, func() error {
 			if cfgMissing {
 				session.Warn("No prof.json found; proceeding without function filters (run prof config init to add one).")

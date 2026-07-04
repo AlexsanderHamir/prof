@@ -159,6 +159,33 @@ func TestSession_PreparingThenBenchmark(t *testing.T) {
 	}
 }
 
+func TestSession_BeginCollect_printsSectionBreak(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	s := newSessionForTest(&buf)
+	s.BeginCollect()
+	err := s.RunWhile(Progress{Phase: PhasePrepare}, func() error { return nil })
+	if err != nil {
+		t.Fatalf("RunWhile() err = %v", err)
+	}
+	out := buf.String()
+	if !strings.HasPrefix(out, "\n") {
+		t.Fatalf("expected leading blank line, got %q", out)
+	}
+	if !strings.Contains(out, CollectSectionTitle) {
+		t.Fatalf("missing section title: %q", out)
+	}
+	if !strings.Contains(out, "─") {
+		t.Fatalf("missing section rule: %q", out)
+	}
+	titleIdx := strings.Index(out, CollectSectionTitle)
+	prepIdx := strings.Index(out, "Preparing")
+	if titleIdx < 0 || prepIdx < 0 || prepIdx <= titleIdx {
+		t.Fatalf("Preparing should follow section title: %q", out)
+	}
+}
+
 func TestSession_BeginBenchmark_leadingSeparator(t *testing.T) {
 	t.Parallel()
 
