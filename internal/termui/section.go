@@ -30,10 +30,15 @@ func PrintSection(w io.Writer, fd int, title string) {
 	fmt.Fprintln(w)
 }
 
-// EndSection prints a trailing blank line after a section's content.
-func EndSection(w io.Writer) {
+// StepGap prints a blank line between steps in a multi-step terminal flow.
+func StepGap(w io.Writer) {
 	if w == nil {
 		return
 	}
 	fmt.Fprintln(w)
+}
+
+// EndSection prints a trailing blank line after a section's content.
+func EndSection(w io.Writer) {
+	StepGap(w)
 }

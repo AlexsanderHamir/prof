@@ -159,6 +159,16 @@ func TestSession_PreparingThenBenchmark(t *testing.T) {
 	}
 }
 
+func TestStepGap_writesBlankLine(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	StepGap(&buf)
+	if buf.String() != "\n" {
+		t.Fatalf("StepGap() = %q, want newline", buf.String())
+	}
+}
+
 func TestPrintSection_writesTitleAndRule(t *testing.T) {
 	t.Parallel()
 
