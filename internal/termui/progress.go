@@ -76,6 +76,8 @@ type Session struct {
 	headerLocked      bool
 	detailLines       int
 	warnCount         int
+	errorDetailEmitted bool
+	errorDisplayed    bool
 	runningLabel      string
 	warnPrefix        string
 	lastFrame         string
@@ -187,6 +189,7 @@ func (s *Session) RunWhile(p Progress, fn func() error) error {
 	s.headerLocked = false
 	s.detailLines = 0
 	s.warnCount = 0
+	s.errorDetailEmitted = false
 	_, s.warnPrefix = phasePrefixes(p.Phase)
 	s.runningLabel = formatProgressLabel(p, true)
 	s.startSpinnerLocked()
@@ -203,6 +206,9 @@ func (s *Session) RunWhile(p Progress, fn func() error) error {
 	s.spinnerDone.Wait()
 
 	s.mu.Lock()
+	if fnErr != nil {
+		s.captureStageErrorLocked(fnErr)
+	}
 	s.finishStageLocked(doneLabel, failed)
 	s.stageActive = false
 	s.mu.Unlock()
@@ -331,15 +337,44 @@ type StageDetailKind int
 const (
 	// StageWarn is a recoverable issue; the stage may still succeed.
 	StageWarn StageDetailKind = iota
+	// StageError is a failure tied to the active stage.
+	StageError
 )
 
 func formatStageDetailLine(kind StageDetailKind, prefix, msg string) string {
 	switch kind {
+	case StageError:
+		return ErrorPrefixStyle.Render(prefix+"error: ") + ErrorStyle.Render(msg)
 	case StageWarn:
 		return formatWarningLine(prefix, msg)
 	default:
 		return formatWarningLine(prefix, msg)
 	}
+}
+
+func shortUserMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+	msg := err.Error()
+	if idx := strings.IndexByte(msg, '\n'); idx >= 0 {
+		first := strings.TrimSpace(msg[:idx])
+		if first != "" {
+			return first + " (truncated)"
+		}
+	}
+	return msg
+}
+
+func (s *Session) captureStageErrorLocked(err error) {
+	if err == nil || s.errorDetailEmitted {
+		return
+	}
+	s.lockHeaderLocked()
+	fmt.Fprintln(s.w, formatStageDetailLine(StageError, s.warnPrefix, shortUserMessage(err)))
+	s.detailLines++
+	s.errorDetailEmitted = true
+	s.errorDisplayed = true
 }
 
 func (s *Session) stageDetail(kind StageDetailKind, msg string) {
@@ -370,6 +405,25 @@ func (s *Session) stageDetail(kind StageDetailKind, msg string) {
 	if kind == StageWarn {
 		s.warnCount++
 	}
+	if kind == StageError {
+		s.errorDetailEmitted = true
+		s.errorDisplayed = true
+	}
+}
+
+// Error writes a styled error on its own line below the active stage header.
+func (s *Session) Error(msg string) {
+	s.stageDetail(StageError, msg)
+}
+
+// ErrorDisplayed reports whether an error was rendered under a stage header.
+func (s *Session) ErrorDisplayed() bool {
+	if s == nil {
+		return false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.errorDisplayed
 }
 
 // Warn writes a styled warning on its own line below the active stage header.

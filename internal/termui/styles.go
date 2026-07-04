@@ -14,6 +14,10 @@ var (
 	WarningStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
 	// WarningPrefixStyle styles the fixed warning prefix (indented, faint).
 	WarningPrefixStyle = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("214"))
+	// ErrorStyle styles the error message body on interactive terminals.
+	ErrorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
+	// ErrorPrefixStyle styles the fixed error prefix (indented, faint).
+	ErrorPrefixStyle = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("196"))
 	// SuccessStyle styles the final success line on interactive terminals.
 	SuccessStyle = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("42"))
 	// DoneStyle styles the completion marker on finished stages.
