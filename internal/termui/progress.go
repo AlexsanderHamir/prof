@@ -74,7 +74,8 @@ type Session struct {
 	mu                sync.Mutex
 	stageActive       bool
 	headerLocked      bool
-	warningCount      int
+	detailLines       int
+	warnCount         int
 	runningLabel      string
 	warnPrefix        string
 	lastFrame         string
@@ -184,7 +185,8 @@ func (s *Session) RunWhile(p Progress, fn func() error) error {
 	s.mu.Lock()
 	s.stageActive = true
 	s.headerLocked = false
-	s.warningCount = 0
+	s.detailLines = 0
+	s.warnCount = 0
 	_, s.warnPrefix = phasePrefixes(p.Phase)
 	s.runningLabel = formatProgressLabel(p, true)
 	s.startSpinnerLocked()
@@ -271,7 +273,7 @@ func (s *Session) finishStageLocked(doneLabel string, failed bool) {
 	}
 	line := mark + " " + doneLabel
 
-	if s.warningCount > 0 {
+	if s.detailLines > 0 {
 		s.seekStageHeaderLocked()
 		s.overwriteLineLocked(line, false)
 		s.seekAfterStageBlockLocked()
@@ -282,15 +284,14 @@ func (s *Session) finishStageLocked(doneLabel string, failed bool) {
 }
 
 func (s *Session) seekStageHeaderLocked() {
-	// Header line, then warningCount warning lines below; cursor starts after the block.
-	n := s.warningCount + 1
+	n := s.detailLines + 1
 	if n > 0 {
 		fmt.Fprint(s.w, ansi.CursorUp(n))
 	}
 }
 
 func (s *Session) seekAfterStageBlockLocked() {
-	n := s.warningCount + 1
+	n := s.detailLines + 1
 	if n > 0 {
 		fmt.Fprint(s.w, ansi.CursorDown(n))
 		// Width-padded overwrite leaves the cursor at the terminal edge; reset column
@@ -324,10 +325,30 @@ func formatWarningLine(prefix, msg string) string {
 	return WarningPrefixStyle.Render(prefix+"warning: ") + WarningStyle.Render(msg)
 }
 
-// Warn writes a styled warning on its own line below the active stage header.
-func (s *Session) Warn(msg string) {
+// StageDetailKind identifies a stage-scoped diagnostic line.
+type StageDetailKind int
+
+const (
+	// StageWarn is a recoverable issue; the stage may still succeed.
+	StageWarn StageDetailKind = iota
+)
+
+func formatStageDetailLine(kind StageDetailKind, prefix, msg string) string {
+	switch kind {
+	case StageWarn:
+		return formatWarningLine(prefix, msg)
+	default:
+		return formatWarningLine(prefix, msg)
+	}
+}
+
+func (s *Session) stageDetail(kind StageDetailKind, msg string) {
 	if s == nil || !s.interactive {
-		slog.Warn(msg)
+		if kind == StageWarn {
+			slog.Warn(msg)
+		} else {
+			slog.Error(msg)
+		}
 		return
 	}
 
@@ -335,13 +356,25 @@ func (s *Session) Warn(msg string) {
 	defer s.mu.Unlock()
 
 	if !s.stageActive {
-		slog.Warn(msg)
+		if kind == StageWarn {
+			slog.Warn(msg)
+		} else {
+			slog.Error(msg)
+		}
 		return
 	}
 
 	s.lockHeaderLocked()
-	fmt.Fprintln(s.w, formatWarningLine(s.warnPrefix, msg))
-	s.warningCount++
+	fmt.Fprintln(s.w, formatStageDetailLine(kind, s.warnPrefix, msg))
+	s.detailLines++
+	if kind == StageWarn {
+		s.warnCount++
+	}
+}
+
+// Warn writes a styled warning on its own line below the active stage header.
+func (s *Session) Warn(msg string) {
+	s.stageDetail(StageWarn, msg)
 }
 
 // Success writes a completion message (styled on TTY, slog otherwise).
