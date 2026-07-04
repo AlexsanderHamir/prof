@@ -159,6 +159,43 @@ func TestSession_PreparingThenBenchmark(t *testing.T) {
 	}
 }
 
+func TestPrintWarning_writesStyledLine(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	PrintWarning(&buf, ConfigureWarningPrefix, "oops")
+	if !strings.Contains(buf.String(), "warning:") {
+		t.Fatalf("output = %q", buf.String())
+	}
+}
+
+func TestStepGap_writesBlankLine(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	StepGap(&buf)
+	if buf.String() != "\n" {
+		t.Fatalf("StepGap() = %q, want newline", buf.String())
+	}
+}
+
+func TestPrintSection_writesTitleAndRule(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	PrintSection(&buf, -1, SurveySectionTitle)
+	out := buf.String()
+	if !strings.HasPrefix(out, "\n") {
+		t.Fatalf("expected leading blank line: %q", out)
+	}
+	if !strings.Contains(out, SurveySectionTitle) {
+		t.Fatalf("missing title: %q", out)
+	}
+	if !strings.Contains(out, "─") {
+		t.Fatalf("missing rule: %q", out)
+	}
+}
+
 func TestSession_BeginCollect_printsSectionBreak(t *testing.T) {
 	t.Parallel()
 
@@ -392,12 +429,12 @@ func TestSession_RunWhile_warnedSuccessShowsCountSuffix(t *testing.T) {
 	}
 }
 
-func TestSession_Warn_truncatesOnNarrowTerminal(t *testing.T) {
+func TestSession_Warn_keepsFullLineOnNarrowTerminal(t *testing.T) {
 	t.Parallel()
 
 	var buf bytes.Buffer
 	s := newNarrowSessionForTest(&buf, 36)
-	longMsg := strings.Repeat("x", 80)
+	longMsg := strings.TrimSpace(strings.Repeat("word ", 20))
 	err := s.RunWhile(Progress{Phase: PhasePrepare}, func() error {
 		s.Warn(longMsg)
 		return nil
@@ -406,11 +443,14 @@ func TestSession_Warn_truncatesOnNarrowTerminal(t *testing.T) {
 		t.Fatalf("RunWhile() err = %v", err)
 	}
 	out := buf.String()
-	if strings.Count(out, longMsg) > 0 {
-		t.Fatalf("expected truncated message, got full repeat in %q", out)
+	if !strings.Contains(out, longMsg) {
+		t.Fatalf("expected full warning on one line: %q", out)
+	}
+	if strings.Count(out, "warning:") != 1 {
+		t.Fatalf("expected single warning prefix: %q", out)
 	}
 	if !strings.Contains(out, "✓") {
-		t.Fatalf("expected success marker after truncate: %q", out)
+		t.Fatalf("expected success marker: %q", out)
 	}
 }
 

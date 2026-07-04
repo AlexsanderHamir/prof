@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -62,6 +63,8 @@ func RunMainMenu() (MainAction, error) {
 	if err != nil {
 		return MainNone, err
 	}
+	// Bubble Tea may leave the cursor hidden after alt-screen; survey needs it visible.
+	fmt.Fprint(os.Stdout, "\033[?25h")
 	fm, ok := final.(*hubModel)
 	if !ok {
 		return MainNone, fmt.Errorf("internal error: unexpected model type %T", final)

@@ -72,7 +72,7 @@ func warnMissingProfile(session *termui.Session, profileFile string) {
 }
 
 func warnSkippedPNG(session *termui.Session, profile, benchmarkName string, pngErr error) {
-	msg := fmt.Sprintf("PNG skipped for %s/%s: %v", benchmarkName, profile, pngErr)
+	msg := fmt.Sprintf("PNG skipped for %s/%s", benchmarkName, profile)
 	if session.Interactive() {
 		session.Warn(msg)
 		return

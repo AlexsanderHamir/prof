@@ -137,20 +137,13 @@ func phasePrefixes(phase Phase) (linePrefix, warnPrefix string) {
 	return "  ", "      "
 }
 
-// BeginCollect prints a section break before the prepare stage (interactive only).
+// BeginCollect plays a short transition then prints the collect section header.
 func (s *Session) BeginCollect() {
 	if s == nil || !s.interactive {
 		return
 	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	fmt.Fprintln(s.w)
-	fmt.Fprintln(s.w, BenchmarkTitleStyle.Render(CollectSectionTitle))
-	width := s.termWidth()
-	fmt.Fprintln(s.w, SectionRuleStyle.Render(strings.Repeat("─", width)))
-	fmt.Fprintln(s.w)
+	PrintTransition(s.w, s.fd, CollectSectionTitle)
+	PrintSection(s.w, s.fd, CollectSectionTitle)
 }
 
 // BeginBenchmark prints a section header before the three steps for one benchmark.
@@ -359,7 +352,7 @@ func (s *Session) overwriteLineLocked(content string, newline bool) {
 }
 
 func formatWarningLine(prefix, msg string) string {
-	return WarningPrefixStyle.Render(prefix+"warning: ") + WarningStyle.Render(msg)
+	return FormatWarningLine(prefix, msg)
 }
 
 // StageDetailKind identifies a stage-scoped diagnostic line.
@@ -399,12 +392,8 @@ func shortUserMessage(err error) string {
 
 func (s *Session) writeStageDetailLinesLocked(kind StageDetailKind, msg string) {
 	for _, line := range splitDetailMessage(msg) {
-		formatted := truncateDetailLine(kind, s.warnPrefix, line, s.termWidth())
-		fmt.Fprintln(s.w, formatted)
+		fmt.Fprintln(s.w, formatStageDetailLine(kind, s.warnPrefix, line))
 		s.detailLines++
-		if kind == StageWarn {
-			s.warnCount++
-		}
 	}
 }
 
@@ -421,21 +410,6 @@ func splitDetailMessage(msg string) []string {
 		return []string{msg}
 	}
 	return lines
-}
-
-func truncateDetailLine(kind StageDetailKind, prefix, msg string, maxWidth int) string {
-	const ellipsis = "…"
-	runes := []rune(msg)
-	for {
-		candidate := formatStageDetailLine(kind, prefix, string(runes))
-		if lipgloss.Width(candidate) <= maxWidth {
-			return candidate
-		}
-		if len(runes) == 0 {
-			return formatStageDetailLine(kind, prefix, ellipsis)
-		}
-		runes = runes[:len(runes)-1]
-	}
 }
 
 func (s *Session) captureStageErrorLocked(err error) {
@@ -472,6 +446,9 @@ func (s *Session) stageDetail(kind StageDetailKind, msg string) {
 
 	s.lockHeaderLocked()
 	s.writeStageDetailLinesLocked(kind, msg)
+	if kind == StageWarn {
+		s.warnCount++
+	}
 	if kind == StageError {
 		s.errorDetailEmitted = true
 		s.errorDisplayed = true

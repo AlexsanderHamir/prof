@@ -4,10 +4,11 @@ package collect
 
 // AutoOptions configures RunAuto.
 type AutoOptions struct {
-	Benchmarks []string
-	Profiles   []string
-	Tag        string
-	Count      int
+	Benchmarks             []string
+	Profiles               []string
+	Tag                    string
+	Count                  int
+	MissingConfigWarnShown bool // survey already printed config.MissingConfigUserWarning
 }
 
 // ManualOptions configures RunManual.

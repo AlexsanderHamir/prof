@@ -9,10 +9,11 @@ import (
 
 // CollectIntent mirrors prof auto / prof tui collect → Collect.RunAuto.
 type CollectIntent struct {
-	Benchmarks []string
-	Profiles   []string
-	Tag        string
-	Count      int
+	Benchmarks             []string
+	Profiles               []string
+	Tag                    string
+	Count                  int
+	MissingConfigWarnShown bool
 }
 
 // Kind implements [Executable].
@@ -45,10 +46,11 @@ func (i *CollectIntent) Validate() error {
 // Run implements [Executable].
 func (i *CollectIntent) Run(svc *app.Services) error {
 	return svc.Collect.RunAuto(app.CollectAutoOptions{
-		Benchmarks: i.Benchmarks,
-		Profiles:   i.Profiles,
-		Tag:        i.Tag,
-		Count:      i.Count,
+		Benchmarks:             i.Benchmarks,
+		Profiles:               i.Profiles,
+		Tag:                    i.Tag,
+		Count:                  i.Count,
+		MissingConfigWarnShown: i.MissingConfigWarnShown,
 	})
 }
 
