@@ -13,7 +13,7 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
-// RunManual organizes manual profile files under bench/<tag>/ using the auto layout.
+// RunManual organizes manual profile files under .prof/<tag>/ using the auto layout.
 func RunManual(runner tooling.Runner, opts ManualOptions) error {
 	if runner == nil {
 		return errors.New("tooling runner is nil")

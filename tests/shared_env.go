@@ -13,7 +13,7 @@ import (
 // TestProfileValidation, TestCommandValidation). The module is materialized
 // at most once per `go test` process and torn down by TestMain on exit.
 //
-// `prof auto` always cleans bench/<tag>/ before each run (see internal/workspace),
+// `prof auto` always cleans .prof/<tag>/ before each run (see internal/workspace),
 // so reusing the same tag across scenarios is safe — leftover artifacts from a
 // previous test never leak into the next test's assertions.
 var (

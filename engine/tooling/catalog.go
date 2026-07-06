@@ -87,7 +87,7 @@ func (c *Catalog) GoTestProfileArgs(ids []string) ([]string, error) {
 	return out, nil
 }
 
-// OutFileName returns the intermediate output basename go test writes for this profile (before move to bench/).
+// OutFileName returns the intermediate output basename go test writes for this profile (before move to .prof/).
 func (c *Catalog) OutFileName(profileID string) (string, bool) {
 	if c == nil {
 		return "", false

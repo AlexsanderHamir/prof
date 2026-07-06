@@ -22,7 +22,7 @@ func skipSlowIntegration(t *testing.T) {
 }
 
 // TestAutoEndToEnd validates the full `prof auto` pipeline once: build the
-// prof binary, run `go test -bench`, collect profiles, write the bench/<tag>/
+// prof binary, run `go test -bench`, collect profiles, write the .prof/<tag>/
 // layout. Runs at smokeCount because we're asserting wiring + layout, not
 // CPU sampling stability — filter behavior is covered by TestFunctionFilter
 // against deterministic committed fixtures.
