@@ -39,13 +39,13 @@ func TestWriteArtifactFile_createsParent(t *testing.T) {
 	}
 }
 
-func TestGetProfileTextOutput_fakeRunner(t *testing.T) {
+func TestRunPprofReport_fakeRunner(t *testing.T) {
 	t.Parallel()
 	runner := &tooling.FakeRunner{
 		Out: [][]byte{[]byte("flat  flat%   sum%        cum   cum%")},
 	}
 	out := filepath.Join(t.TempDir(), "top.txt")
-	if err := getProfileTextOutput(runner, "cpu.out", out); err != nil {
+	if err := runPprofReport(runner, tooling.PprofTextReportArgs("top", "cpu.out"), out); err != nil {
 		t.Fatal(err)
 	}
 	if len(runner.Runs) != 1 {
@@ -56,9 +56,9 @@ func TestGetProfileTextOutput_fakeRunner(t *testing.T) {
 	}
 }
 
-func TestGetProfileTextOutput_nilRunner(t *testing.T) {
+func TestRunPprofReport_nilRunner(t *testing.T) {
 	t.Parallel()
-	if err := getProfileTextOutput(nil, "cpu.out", "out.txt"); err == nil {
+	if err := runPprofReport(nil, tooling.PprofTextReportArgs("top", "cpu.out"), "out.txt"); err == nil {
 		t.Fatal("expected error for nil runner")
 	}
 }

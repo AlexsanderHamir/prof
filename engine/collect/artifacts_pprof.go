@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -15,42 +14,16 @@ import (
 	"github.com/AlexsanderHamir/prof/parser"
 )
 
-func getProfileTextOutput(runner tooling.Runner, binaryFile, outputFile string) error {
+func runPprofReport(runner tooling.Runner, argv []string, outputFile string) error {
 	if runner == nil {
 		return errors.New("tooling runner is nil")
 	}
 	ctx := context.Background()
-	out, err := runner.Run(ctx, tooling.PprofTextTopArgs(binaryFile), tooling.RunOpts{})
+	out, err := runner.Run(ctx, argv, tooling.RunOpts{})
 	if err != nil {
 		return fmt.Errorf("pprof command failed: %w", err)
 	}
 	return writeArtifactFile(outputFile, out)
-}
-
-func getProfileTreeTextOutput(runner tooling.Runner, binaryFile, outputFile string) error {
-	if runner == nil {
-		return errors.New("tooling runner is nil")
-	}
-	ctx := context.Background()
-	out, err := runner.Run(ctx, tooling.PprofTextTreeArgs(binaryFile), tooling.RunOpts{})
-	if err != nil {
-		return fmt.Errorf("pprof tree command failed: %w", err)
-	}
-	return writeArtifactFile(outputFile, out)
-}
-
-func emitCallTreeArtifacts(runner tooling.Runner, binPath string, layout workspace.TagLayout, bench, profile string) error {
-	if err := getProfileTreeTextOutput(runner, binPath, layout.CallTreeText(bench, profile)); err != nil {
-		return err
-	}
-	cg, err := parser.CallGraphFromPath(binPath)
-	if err != nil {
-		return fmt.Errorf("call graph: %w", err)
-	}
-	if writeErr := parser.WriteCallGraphJSON(layout.CallTreeJSON(bench, profile), cg); writeErr != nil {
-		return fmt.Errorf("write call graph json: %w", writeErr)
-	}
-	return nil
 }
 
 func getPNGOutput(runner tooling.Runner, binaryFile, outputFile string) error {
@@ -107,7 +80,6 @@ func writeFunctionListPprof(runner tooling.Runner, shortStem, fullSymbol, binary
 		if err = os.WriteFile(outputFile, out, workspace.PermFile); err != nil {
 			return fmt.Errorf("write function content: %w", err)
 		}
-		slog.Debug("Collected function", "function", shortStem, "list_pattern", pattern)
 		return nil
 	}
 	return lastErr
@@ -125,8 +97,6 @@ func getFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntr
 				if skipped <= maxPerFunctionWarnings {
 					session.Warn(fmt.Sprintf("skipping per-function pprof list for %s: %v", e.OutputStem, err))
 				}
-			} else {
-				slog.Warn("skipping per-function pprof list", "function", e.OutputStem, "binary", binaryPath, "err", err)
 			}
 			continue
 		}

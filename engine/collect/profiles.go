@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/termui"
@@ -44,27 +43,13 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 }
 
 func processOneProfile(runner tooling.Runner, layout workspace.TagLayout, benchmarkName, profile, profileFile string, session *termui.Session) error {
-	outputFile := layout.Hotspot(benchmarkName, profile)
+	if err := emitParsedProfileArtifacts(runner, profileFile, layout, benchmarkName, profile, session); err != nil {
+		return fmt.Errorf("failed to process profile %s: %w", profile, err)
+	}
+
 	sourceLinesDir := layout.SourceLinesDir(profile, benchmarkName)
-
-	if textErr := getProfileTextOutput(runner, profileFile, outputFile); textErr != nil {
-		return fmt.Errorf("failed to generate hotspot summary for %s: %w", profile, textErr)
-	}
-
-	if treeErr := emitCallTreeArtifacts(runner, profileFile, layout, benchmarkName, profile); treeErr != nil {
-		return fmt.Errorf("failed to generate call tree for %s: %w", profile, treeErr)
-	}
-
 	if mkdirErr := os.MkdirAll(sourceLinesDir, workspace.PermDir); mkdirErr != nil {
 		return fmt.Errorf("failed to create source_lines directory: %w", mkdirErr)
-	}
-
-	pngPath := layout.CallGraph(profile, benchmarkName)
-	if mkdirErr := os.MkdirAll(filepath.Dir(pngPath), workspace.PermDir); mkdirErr != nil {
-		return fmt.Errorf("failed to create call_graphs directory: %w", mkdirErr)
-	}
-	if pngErr := getPNGOutput(runner, profileFile, pngPath); pngErr != nil {
-		warnSkippedPNG(session, profile, benchmarkName, pngErr)
 	}
 
 	if !session.Interactive() {

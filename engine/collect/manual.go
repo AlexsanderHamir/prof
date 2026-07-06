@@ -65,14 +65,7 @@ func processOneManualFile(runner tooling.Runner, fullBinaryPath string, layout w
 }
 
 func emitProfileArtifacts(runner tooling.Runner, binPath string, layout workspace.TagLayout, benchName, profile string) error {
-	hotspotOut := layout.Hotspot(benchName, profile)
-	if err := os.MkdirAll(filepath.Dir(hotspotOut), workspace.PermDir); err != nil {
-		return fmt.Errorf("mkdir hotspots dest: %w", err)
-	}
-	if err := getProfileTextOutput(runner, binPath, hotspotOut); err != nil {
-		return err
-	}
-	return emitCallTreeArtifacts(runner, binPath, layout, benchName, profile)
+	return emitParsedProfileArtifacts(runner, binPath, layout, benchName, profile, nil)
 }
 
 func collectPerFunctionLists(runner tooling.Runner, layout workspace.TagLayout, benchName, profile, binPath string, functionFilter config.FunctionFilter) error {
