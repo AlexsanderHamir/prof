@@ -25,6 +25,7 @@ Using Prof creates a `.prof/` tree next to your module, one folder per run (tag)
 | `.prof/<tag>/profiles/<BenchmarkName>/` | Raw pprof profile binaries (`.out`); durable source for `go tool pprof`. |
 | `.prof/<tag>/measurements/<BenchmarkName>/` | `go test` benchmark run stats (`run.txt`: ns/op, allocs). |
 | `.prof/<tag>/hotspots/<BenchmarkName>/` | Function-ranked stack summaries per profile (`cpu.txt`, `memory.txt`). |
+| `.prof/<tag>/call_trees/<BenchmarkName>/` | Call-tree text (`pprof -tree`) per profile. |
 | `.prof/<tag>/source_lines/<profile>/<BenchmarkName>/` | Per-function `pprof -list` extracts when configured. |
 | `.prof/<tag>/call_graphs/<profile>/<BenchmarkName>/` | Optional Graphviz PNG call graphs when installed. |
 | `.prof/<tag>/notes.txt` | Short tag-level note (placeholder until you edit it). |

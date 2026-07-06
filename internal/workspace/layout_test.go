@@ -31,6 +31,11 @@ func TestTagLayout_paths(t *testing.T) {
 			filepath.Join(root, workspace.MainDirOutput, "v1", "hotspots", "BenchmarkFoo", "cpu.txt"),
 		},
 		{
+			"call tree text",
+			l.CallTreeText("BenchmarkFoo", "cpu"),
+			filepath.Join(root, workspace.MainDirOutput, "v1", "call_trees", "BenchmarkFoo", "cpu.txt"),
+		},
+		{
 			"source lines",
 			l.SourceLinesDir("cpu", "BenchmarkFoo"),
 			filepath.Join(root, workspace.MainDirOutput, "v1", "source_lines", "cpu", "BenchmarkFoo"),

@@ -5,12 +5,22 @@ func goToolPprofPrefix() []string {
 	return []string{"go", "tool", "pprof"}
 }
 
-// PprofTextTopArgs returns argv for: go tool pprof -cum -edgefraction=0 -nodefraction=0 -top <binaryPath>
-func PprofTextTopArgs(binaryPath string) []string {
+// PprofTextReportArgs returns argv for: go tool pprof -cum -edgefraction=0 -nodefraction=0 -<format> <binaryPath>
+func PprofTextReportArgs(format, binaryPath string) []string {
 	return append(goToolPprofPrefix(),
-		"-cum", "-edgefraction=0", "-nodefraction=0", "-top",
+		"-cum", "-edgefraction=0", "-nodefraction=0", "-"+format,
 		binaryPath,
 	)
+}
+
+// PprofTextTopArgs returns argv for: go tool pprof -cum -edgefraction=0 -nodefraction=0 -top <binaryPath>
+func PprofTextTopArgs(binaryPath string) []string {
+	return PprofTextReportArgs("top", binaryPath)
+}
+
+// PprofTextTreeArgs returns argv for: go tool pprof -cum -edgefraction=0 -nodefraction=0 -tree <binaryPath>
+func PprofTextTreeArgs(binaryPath string) []string {
+	return PprofTextReportArgs("tree", binaryPath)
 }
 
 // PprofPNGArgs returns argv for: go tool pprof -png <binaryPath>

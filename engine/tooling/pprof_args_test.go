@@ -5,9 +5,25 @@ import (
 	"testing"
 )
 
+func TestPprofTextReportArgs(t *testing.T) {
+	got := PprofTextReportArgs("top", "/tmp/cpu.out")
+	want := []string{"go", "tool", "pprof", "-cum", "-edgefraction=0", "-nodefraction=0", "-top", "/tmp/cpu.out"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("got %v", got)
+	}
+}
+
 func TestPprofTextTopArgs(t *testing.T) {
 	got := PprofTextTopArgs("/tmp/cpu.out")
 	want := []string{"go", "tool", "pprof", "-cum", "-edgefraction=0", "-nodefraction=0", "-top", "/tmp/cpu.out"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("got %v", got)
+	}
+}
+
+func TestPprofTextTreeArgs(t *testing.T) {
+	got := PprofTextTreeArgs("/tmp/cpu.out")
+	want := []string{"go", "tool", "pprof", "-cum", "-edgefraction=0", "-nodefraction=0", "-tree", "/tmp/cpu.out"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("got %v", got)
 	}

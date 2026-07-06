@@ -7,6 +7,7 @@ const (
 	ProfilesDir              = "profiles"
 	MeasurementsDir          = "measurements"
 	HotspotsDir              = "hotspots"
+	CallTreesDir             = "call_trees"
 	SourceLinesDir           = "source_lines"
 	CallGraphsDir            = "call_graphs"
 	MeasurementRunFile       = "run.txt"
