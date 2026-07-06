@@ -48,6 +48,16 @@ func (l TagLayout) Hotspot(bench, profile string) string {
 	return filepath.Join(l.Root, HotspotsDir, bench, fmt.Sprintf("%s.%s", profile, TextExtension))
 }
 
+// CallTreeText returns the pprof -tree report path for a benchmark and profile kind.
+func (l TagLayout) CallTreeText(bench, profile string) string {
+	return filepath.Join(l.Root, CallTreesDir, bench, fmt.Sprintf("%s.%s", profile, TextExtension))
+}
+
+// CallTreeJSON returns the structured call-graph JSON path for a benchmark and profile kind.
+func (l TagLayout) CallTreeJSON(bench, profile string) string {
+	return filepath.Join(l.Root, CallTreesDir, bench, fmt.Sprintf("%s.%s", profile, JSONExtension))
+}
+
 // Measurement returns the go test benchmark run transcript path.
 func (l TagLayout) Measurement(bench string) string {
 	return filepath.Join(l.Root, MeasurementsDir, bench, MeasurementRunFile)

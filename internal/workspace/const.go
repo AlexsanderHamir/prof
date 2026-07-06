@@ -7,6 +7,7 @@ const (
 	ProfilesDir              = "profiles"
 	MeasurementsDir          = "measurements"
 	HotspotsDir              = "hotspots"
+	CallTreesDir             = "call_trees"
 	SourceLinesDir           = "source_lines"
 	CallGraphsDir            = "call_graphs"
 	MeasurementRunFile       = "run.txt"
@@ -15,6 +16,7 @@ const (
 	PermDir                  = 0o755
 	PermFile                 = 0o644
 	TextExtension            = "txt"
+	JSONExtension            = "json"
 	ExpectedTestSuffix       = ".test"
 	ProfileArtifactExtension = "out"
 	GoBinaryName             = "go"
