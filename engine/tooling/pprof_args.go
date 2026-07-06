@@ -13,6 +13,14 @@ func PprofTextTopArgs(binaryPath string) []string {
 	)
 }
 
+// PprofTextTreeArgs returns argv for: go tool pprof -cum -edgefraction=0 -nodefraction=0 -tree <binaryPath>
+func PprofTextTreeArgs(binaryPath string) []string {
+	return append(goToolPprofPrefix(),
+		"-cum", "-edgefraction=0", "-nodefraction=0", "-tree",
+		binaryPath,
+	)
+}
+
 // PprofPNGArgs returns argv for: go tool pprof -png <binaryPath>
 func PprofPNGArgs(binaryPath string) []string {
 	return append(append(goToolPprofPrefix(), "-png"), binaryPath)

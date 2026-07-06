@@ -13,6 +13,14 @@ func TestPprofTextTopArgs(t *testing.T) {
 	}
 }
 
+func TestPprofTextTreeArgs(t *testing.T) {
+	got := PprofTextTreeArgs("/tmp/cpu.out")
+	want := []string{"go", "tool", "pprof", "-cum", "-edgefraction=0", "-nodefraction=0", "-tree", "/tmp/cpu.out"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("got %v", got)
+	}
+}
+
 func TestPprofPNGArgs(t *testing.T) {
 	got := PprofPNGArgs("b.out")
 	if got[len(got)-1] != "b.out" || got[3] != "-png" {
