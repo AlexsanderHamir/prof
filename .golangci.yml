@@ -125,7 +125,7 @@ linters-settings:
           - pkg: "github.com/AlexsanderHamir/prof/cli"
           - pkg: "github.com/AlexsanderHamir/prof/engine"
           - pkg: "github.com/AlexsanderHamir/prof/internal/workspace"
-            desc: "parser decodes profiles; it does not know bench/ layout."
+            desc: "parser decodes profiles; it does not know .prof/ layout."
       "layering-exec":
         files:
           - "cli/**"
