@@ -2,6 +2,7 @@ package parser
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -31,17 +32,17 @@ func CallGraphFromPath(path string) (*CallGraphData, error) {
 // WriteCallGraphJSON encodes data as indented JSON at path.
 func WriteCallGraphJSON(path string, data *CallGraphData) error {
 	if data == nil {
-		return fmt.Errorf("nil call graph data")
+		return errors.New("nil call graph data")
 	}
 	encoded, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal call graph json: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Dir(path), workspace.PermDir); err != nil {
-		return fmt.Errorf("mkdir call graph json parent: %w", err)
+	if mkdirErr := os.MkdirAll(filepath.Dir(path), workspace.PermDir); mkdirErr != nil {
+		return fmt.Errorf("mkdir call graph json parent: %w", mkdirErr)
 	}
-	if err := os.WriteFile(path, encoded, workspace.PermFile); err != nil {
-		return fmt.Errorf("write call graph json: %w", err)
+	if writeErr := os.WriteFile(path, encoded, workspace.PermFile); writeErr != nil {
+		return fmt.Errorf("write call graph json: %w", writeErr)
 	}
 	return nil
 }

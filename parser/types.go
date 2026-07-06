@@ -29,9 +29,9 @@ type FunctionListEntry struct {
 
 // CallGraphData holds aggregated call-graph nodes and edges from a profile.
 type CallGraphData struct {
-	Total int64            `json:"total"`
-	Nodes []CallGraphNode  `json:"nodes"`
-	Edges []CallGraphEdge  `json:"edges"`
+	Total int64           `json:"total"`
+	Nodes []CallGraphNode `json:"nodes"`
+	Edges []CallGraphEdge `json:"edges"`
 }
 
 // CallGraphNode is one function with flat/cumulative sample totals.

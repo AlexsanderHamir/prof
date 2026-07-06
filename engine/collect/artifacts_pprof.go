@@ -47,8 +47,8 @@ func emitCallTreeArtifacts(runner tooling.Runner, binPath string, layout workspa
 	if err != nil {
 		return fmt.Errorf("call graph: %w", err)
 	}
-	if err := parser.WriteCallGraphJSON(layout.CallTreeJSON(bench, profile), cg); err != nil {
-		return fmt.Errorf("write call graph json: %w", err)
+	if writeErr := parser.WriteCallGraphJSON(layout.CallTreeJSON(bench, profile), cg); writeErr != nil {
+		return fmt.Errorf("write call graph json: %w", writeErr)
 	}
 	return nil
 }

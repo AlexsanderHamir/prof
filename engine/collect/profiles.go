@@ -30,31 +30,8 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 			return nil, fmt.Errorf("failed to stat profile file %s: %w", profileFile, statErr)
 		}
 
-		outputFile := layout.Hotspot(benchmarkName, profile)
-		sourceLinesDir := layout.SourceLinesDir(profile, benchmarkName)
-
-		if textErr := getProfileTextOutput(runner, profileFile, outputFile); textErr != nil {
-			return nil, fmt.Errorf("failed to generate hotspot summary for %s: %w", profile, textErr)
-		}
-
-		if treeErr := emitCallTreeArtifacts(runner, profileFile, layout, benchmarkName, profile); treeErr != nil {
-			return nil, fmt.Errorf("failed to generate call tree for %s: %w", profile, treeErr)
-		}
-
-		if mkdirErr := os.MkdirAll(sourceLinesDir, workspace.PermDir); mkdirErr != nil {
-			return nil, fmt.Errorf("failed to create source_lines directory: %w", mkdirErr)
-		}
-
-		pngPath := layout.CallGraph(profile, benchmarkName)
-		if mkdirErr := os.MkdirAll(filepath.Dir(pngPath), workspace.PermDir); mkdirErr != nil {
-			return nil, fmt.Errorf("failed to create call_graphs directory: %w", mkdirErr)
-		}
-		if pngErr := getPNGOutput(runner, profileFile, pngPath); pngErr != nil {
-			warnSkippedPNG(session, profile, benchmarkName, pngErr)
-		}
-
-		if !session.Interactive() {
-			slog.Info("Processed profile", "profile", profile, "benchmark", benchmarkName)
+		if procErr := processOneProfile(runner, layout, benchmarkName, profile, profileFile, session); procErr != nil {
+			return nil, procErr
 		}
 		processed = append(processed, profile)
 	}
@@ -64,6 +41,36 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 	}
 
 	return processed, nil
+}
+
+func processOneProfile(runner tooling.Runner, layout workspace.TagLayout, benchmarkName, profile, profileFile string, session *termui.Session) error {
+	outputFile := layout.Hotspot(benchmarkName, profile)
+	sourceLinesDir := layout.SourceLinesDir(profile, benchmarkName)
+
+	if textErr := getProfileTextOutput(runner, profileFile, outputFile); textErr != nil {
+		return fmt.Errorf("failed to generate hotspot summary for %s: %w", profile, textErr)
+	}
+
+	if treeErr := emitCallTreeArtifacts(runner, profileFile, layout, benchmarkName, profile); treeErr != nil {
+		return fmt.Errorf("failed to generate call tree for %s: %w", profile, treeErr)
+	}
+
+	if mkdirErr := os.MkdirAll(sourceLinesDir, workspace.PermDir); mkdirErr != nil {
+		return fmt.Errorf("failed to create source_lines directory: %w", mkdirErr)
+	}
+
+	pngPath := layout.CallGraph(profile, benchmarkName)
+	if mkdirErr := os.MkdirAll(filepath.Dir(pngPath), workspace.PermDir); mkdirErr != nil {
+		return fmt.Errorf("failed to create call_graphs directory: %w", mkdirErr)
+	}
+	if pngErr := getPNGOutput(runner, profileFile, pngPath); pngErr != nil {
+		warnSkippedPNG(session, profile, benchmarkName, pngErr)
+	}
+
+	if !session.Interactive() {
+		slog.Info("Processed profile", "profile", profile, "benchmark", benchmarkName)
+	}
+	return nil
 }
 
 func warnMissingProfile(session *termui.Session, profileFile string) {

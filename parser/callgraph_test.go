@@ -53,16 +53,16 @@ func TestCallGraphFromPath_fixture(t *testing.T) {
 
 	dir := t.TempDir()
 	out := dir + "/cg.json"
-	if err := WriteCallGraphJSON(out, cg); err != nil {
-		t.Fatal(err)
+	if writeErr := WriteCallGraphJSON(out, cg); writeErr != nil {
+		t.Fatal(writeErr)
 	}
-	raw, err := os.ReadFile(out)
-	if err != nil {
-		t.Fatal(err)
+	raw, readErr := os.ReadFile(out)
+	if readErr != nil {
+		t.Fatal(readErr)
 	}
 	var decoded CallGraphData
-	if err := json.Unmarshal(raw, &decoded); err != nil {
-		t.Fatal(err)
+	if unmarshalErr := json.Unmarshal(raw, &decoded); unmarshalErr != nil {
+		t.Fatal(unmarshalErr)
 	}
 	if decoded.Total != cg.Total || len(decoded.Nodes) != len(cg.Nodes) {
 		t.Fatalf("round-trip mismatch total=%d nodes=%d", decoded.Total, len(decoded.Nodes))
