@@ -23,27 +23,27 @@ func TestTagLayout_paths(t *testing.T) {
 		{
 			"profile binary",
 			l.ProfileBinary("BenchmarkFoo", "cpu"),
-			filepath.Join(root, "bench", "v1", "profiles", "BenchmarkFoo", "cpu.out"),
+			filepath.Join(root, workspace.MainDirOutput, "v1", "profiles", "BenchmarkFoo", "cpu.out"),
 		},
 		{
 			"hotspot",
 			l.Hotspot("BenchmarkFoo", "cpu"),
-			filepath.Join(root, "bench", "v1", "hotspots", "BenchmarkFoo", "cpu.txt"),
+			filepath.Join(root, workspace.MainDirOutput, "v1", "hotspots", "BenchmarkFoo", "cpu.txt"),
 		},
 		{
 			"source lines",
 			l.SourceLinesDir("cpu", "BenchmarkFoo"),
-			filepath.Join(root, "bench", "v1", "source_lines", "cpu", "BenchmarkFoo"),
+			filepath.Join(root, workspace.MainDirOutput, "v1", "source_lines", "cpu", "BenchmarkFoo"),
 		},
 		{
 			"measurement",
 			l.Measurement("BenchmarkFoo"),
-			filepath.Join(root, "bench", "v1", "measurements", "BenchmarkFoo", "run.txt"),
+			filepath.Join(root, workspace.MainDirOutput, "v1", "measurements", "BenchmarkFoo", "run.txt"),
 		},
 		{
 			"call graph",
 			l.CallGraph("cpu", "BenchmarkFoo"),
-			filepath.Join(root, "bench", "v1", "call_graphs", "cpu", "BenchmarkFoo", "cpu.png"),
+			filepath.Join(root, workspace.MainDirOutput, "v1", "call_graphs", "cpu", "BenchmarkFoo", "cpu.png"),
 		},
 	}
 	for _, tc := range cases {

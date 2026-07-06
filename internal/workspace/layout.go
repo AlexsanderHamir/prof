@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 )
 
-// TagLayout is the canonical bench/<tag>/ artifact path contract.
+// TagLayout is the canonical .prof/<tag>/ artifact path contract.
 type TagLayout struct {
 	Tag  string
-	Root string // absolute bench/<tag>/
+	Root string // absolute .prof/<tag>/
 }
 
-// NewTagLayout builds layout paths under moduleRoot/bench/tag.
+// NewTagLayout builds layout paths under moduleRoot/.prof/tag.
 func NewTagLayout(moduleRoot, tag string) TagLayout {
 	return TagLayout{
 		Tag:  tag,
@@ -29,7 +29,7 @@ func TagLayoutFromCWD(tag string) (TagLayout, error) {
 	return NewTagLayout(root, tag), nil
 }
 
-// TagDirFromCWD returns bench/<tag>/ under the current module root.
+// TagDirFromCWD returns .prof/<tag>/ under the current module root.
 func TagDirFromCWD(tag string) (string, error) {
 	l, err := TagLayoutFromCWD(tag)
 	if err != nil {
