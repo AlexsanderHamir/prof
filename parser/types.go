@@ -27,6 +27,12 @@ type FunctionListEntry struct {
 	FullSymbol string
 }
 
+// ProfileBundle holds flat/cum and call-graph views from a single profile parse.
+type ProfileBundle struct {
+	FlatCum   *ProfileData
+	CallGraph *CallGraphData
+}
+
 // CallGraphData holds aggregated call-graph nodes and edges from a profile.
 type CallGraphData struct {
 	Total int64           `json:"total"`

@@ -12,21 +12,11 @@ import (
 
 // CallGraphFromPath parses path and returns aggregated call-graph data.
 func CallGraphFromPath(path string) (*CallGraphData, error) {
-	p, err := ParseProfileFromPath(path)
+	bundle, err := BundleFromPath(path)
 	if err != nil {
 		return nil, err
 	}
-	if err = ValidateProfile(p); err != nil {
-		return nil, err
-	}
-	idx, err := PrimarySampleValueIndex(p)
-	if err != nil {
-		return nil, err
-	}
-	if err = ValidateSamplesHaveValueAt(p, idx); err != nil {
-		return nil, err
-	}
-	return BuildCallGraphFromProfile(p, idx), nil
+	return bundle.CallGraph, nil
 }
 
 // WriteCallGraphJSON encodes data as indented JSON at path.

@@ -38,6 +38,23 @@ func TestBuildCallGraphFromProfile_syntheticStack(t *testing.T) {
 	}
 }
 
+func TestBundleFromPath_fixture(t *testing.T) {
+	path := benchmarkGenPoolCPUFixturePath(t)
+	bundle, err := BundleFromPath(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bundle.FlatCum == nil || len(bundle.FlatCum.SortedEntries) == 0 {
+		t.Fatal("expected flat/cum data")
+	}
+	if bundle.CallGraph == nil || bundle.CallGraph.Total <= 0 {
+		t.Fatal("expected call graph data")
+	}
+	if bundle.CallGraph.Total != bundle.FlatCum.Total {
+		t.Fatalf("flat total=%d call graph total=%d", bundle.FlatCum.Total, bundle.CallGraph.Total)
+	}
+}
+
 func TestCallGraphFromPath_fixture(t *testing.T) {
 	path := benchmarkGenPoolCPUFixturePath(t)
 	cg, err := CallGraphFromPath(path)

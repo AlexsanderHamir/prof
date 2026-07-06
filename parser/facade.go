@@ -2,6 +2,11 @@ package parser
 
 import "github.com/AlexsanderHamir/prof/internal/config"
 
+// BundleFromPath loads a profile path and returns flat/cum plus call-graph data from one parse.
+func BundleFromPath(path string) (*ProfileBundle, error) {
+	return stdPipeline.RunBundleFromPath(path)
+}
+
 // GetFunctionListEntriesFromProfileData returns per-function list targets after the same
 // filtering as [GetAllFunctionNamesFromProfileData].
 func GetFunctionListEntriesFromProfileData(d *ProfileData, filter config.FunctionFilter) []FunctionListEntry {
