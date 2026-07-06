@@ -14,7 +14,7 @@ This page traces what happens **inside prof** when you run interactive benchmark
 
 ## Before you begin
 
-- You know Go module layout and that prof writes under `bench/<tag>/`.
+- You know Go module layout and that prof writes under `.prof/<tag>/`.
 - For installing and running prof as a user, read [readme.md](../readme.md) and [prof_web_doc/docs/tui.md](../prof_web_doc/docs/tui.md).
 - For package boundaries and invariants, read [CODEBASE_DESIGN.md](../CODEBASE_DESIGN.md).
 
@@ -79,11 +79,11 @@ Each Survey step maps to a function, validation rule, and field on [`CollectInte
 
 | Prompt | Effect |
 | --- | --- |
-| Select benchmarks | Regex scan of `*_test.go` under cwd; skips `vendor`, `bench`, `tests`, and nested `go.mod` trees |
+| Select benchmarks | Regex scan of `*_test.go` under cwd; skips dot-prefixed dirs, `vendor`, `bench` (legacy), `tests`, and nested `go.mod` trees |
 | Collection filters line | Read-only preview via `config.Load` + `ResolveCollectionFilter`; does not block the run |
 | Select profiles | Profile IDs from [`engine/tooling/catalog.go`](../engine/tooling/catalog.go) |
 | Number of runs | Rejects count `< 1` in `runTUI` before intent validation |
-| Tag name | Trimmed tag becomes `bench/<tag>/` via [`workspace.TagLayout`](../internal/workspace/layout.go) |
+| Tag name | Trimmed tag becomes `.prof/<tag>/` via [`workspace.TagLayout`](../internal/workspace/layout.go) |
 
 `CollectIntent.Run` copies fields into `app.CollectAutoOptions` ([`internal/app/dto.go`](../internal/app/dto.go)) before calling `collect.RunAuto`.
 
@@ -121,7 +121,7 @@ flowchart TB
 
 [`setupDirectories`](../engine/collect/layout.go) (inside **Preparing** on TTY, or before config print on non-TTY):
 
-- Resolves `bench/<tag>/` with [`workspace.CleanOrCreateTag`](../internal/workspace/tag.go).
+- Resolves `.prof/<tag>/` with [`workspace.CleanOrCreateTag`](../internal/workspace/tag.go).
 - Creates `profiles/<benchmark>/`, `measurements/<benchmark>/`, `hotspots/<benchmark>/`, `source_lines/<profile>/<benchmark>/`, and `notes.txt`.
 
 ### 3–5. Per-benchmark progress (TTY)
@@ -165,7 +165,7 @@ For `BenchmarkMatrixMultiplication`, [`runBenchmark`](../engine/collect/gotest.g
 - Locates the package directory containing the benchmark function.
 - Builds `go test -run=^$ -bench=^BenchmarkMatrixMultiplication$ -benchmem -count=5` plus profile flags from the tooling catalog (`cpu`, `memory`).
 - Runs the command in the benchmark package directory via [`tooling.Runner`](../engine/tooling/runner.go).
-- Writes combined benchmark output to `measurements/<benchmark>/run.txt`; moves profile binaries (`.out`) into `bench/Baseline/profiles/BenchmarkMatrixMultiplication/`. Failures return combined output in the error.
+- Writes combined benchmark output to `measurements/<benchmark>/run.txt`; moves profile binaries (`.out`) into `.prof/baseline/profiles/BenchmarkMatrixMultiplication/`. Failures return combined output in the error.
 
 #### Step 2 — Process profiles
 
@@ -193,7 +193,7 @@ When all benchmarks finish, prof logs collection success and returns.
 All paths come from [`workspace.TagLayout`](../internal/workspace/layout.go). For the running example:
 
 ```text
-bench/
+.prof/
 └── Baseline/
     ├── notes.txt
     ├── profiles/BenchmarkMatrixMultiplication/

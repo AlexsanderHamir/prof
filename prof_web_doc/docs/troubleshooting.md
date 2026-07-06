@@ -10,11 +10,11 @@ Menus never appear, or you see an error about stdin or stdout not being a TTY.
 
 Use non-interactive commands instead: `prof auto` and `prof manual`. See [Quickstart](quickstart.md) Path B and [CLI reference](cli-reference.md).
 
-### Wrong directory or no bench folder {#wrong-directory-or-no-bench-folder}
+### Wrong directory or no bench folder {#wrong-directory-or-no-prof-folder}
 
 Collect succeeds elsewhere, or `bench/` appears in the wrong repo.
 
-Prof writes `bench/` under the current working directory, which must be your module root (where `go.mod` lives).
+Prof writes `.prof/` under the current working directory, which must be your module root (where `go.mod` lives).
 
 `cd` to the same directory you use for `go test`, then run Prof again. See [Working directory and paths](workspace.md).
 

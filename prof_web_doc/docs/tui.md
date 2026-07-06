@@ -1,6 +1,6 @@
 # Interactive UI and TUI
 
-This guide covers `prof ui` (full-screen menus) and `prof tui` (terminal collect). They call the same engines as `prof auto`; artifacts land under `bench/<tag>/`.
+This guide covers `prof ui` (full-screen menus) and `prof tui` (terminal collect). They call the same engines as `prof auto`; artifacts land under `.prof/<tag>/`.
 
 ## Before you begin
 
@@ -35,7 +35,7 @@ Navigation: arrow keys; Space toggles in multi-select; type to filter long lists
 
 ## Testing / verify
 
-After finishing `prof tui` or the collect path in `prof ui`, confirm `bench/<tag>/` exists with `profiles/`, `measurements/`, and `hotspots/` populated.
+After finishing `prof tui` or the collect path in `prof ui`, confirm `.prof/<tag>/` exists with `profiles/`, `measurements/`, and `hotspots/` populated.
 
 ## Next steps
 

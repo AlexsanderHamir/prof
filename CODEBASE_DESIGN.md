@@ -15,7 +15,7 @@
 1. **See how packages depend on each other** → [How packages connect at runtime](#how-packages-connect-at-runtime)
 2. **Look up what a directory is for** → [Package layout (by path)](#package-layout-by-path)
 3. **Change a command or UI flow** → [How to find the code for each command](#how-to-find-the-code-for-each-command)
-4. **Change on-disk output or JSON / pipeline behavior** → [Profile pipelines](#profile-pipelines), [Output layout under `bench/`](#output-layout-under-bench), [Configuration](#configuration-profjson)
+4. **Change on-disk output or JSON / pipeline behavior** → [Profile pipelines](#profile-pipelines), [Output layout under `.prof/`](#output-layout-under-prof), [Configuration](#configuration-profjson)
 5. **Avoid surprises** → [Invariants](#invariants), [Edge-case catalog](#edge-case-catalog), [Testing and lint policy](#testing-and-lint-policy)
 
 ## How packages connect at runtime
@@ -99,19 +99,19 @@ Benchmark discovery: [`engine/collect/discovery.go`](engine/collect/discovery.go
 ### Automated benchmark (`prof auto`)
 
 1. [`collect.RunAuto`](engine/collect/entry.go) loads optional `prof.json` via [`config.Load`](internal/config/load.go).
-2. Creates `bench/<tag>/` via [`collect/layout.go`](engine/collect/layout.go) and [`workspace.CleanOrCreateTag`](internal/workspace/tag.go).
+2. Creates `.prof/<tag>/` via [`collect/layout.go`](engine/collect/layout.go) and [`workspace.CleanOrCreateTag`](internal/workspace/tag.go).
 3. Per benchmark, three TTY-gated stderr steps via [`termui.Session`](internal/termui/progress.go) in [`pipeline.go`](engine/collect/pipeline.go), preceded by a **Preparing** stage in [`entry.go`](engine/collect/entry.go): **Running benchmark** (`go test` + artifact move), **Collecting profiles** ([`processProfiles`](engine/collect/profiles.go)), **Collecting function profiles** (parser + per-function `pprof -list`). Interactive TTY keeps a persistent stage log (`✓` done lines + stage-scoped warnings); non-TTY keeps `slog` stage logs.
 
 ### Manual ingest (`prof manual`)
 
 [`collect.RunManual`](engine/collect/manual.go): cleans tag dir, copies binaries into auto layout, emits the same artifact types. Does not run `go test`.
 
-## Output layout under `bench/`
+## Output layout under `.prof/`
 
 All paths come from [`workspace.TagLayout`](internal/workspace/layout.go):
 
 ```text
-bench/
+.prof/
 └── <tag>/
     ├── notes.txt
     ├── profiles/<BenchmarkName>/<profile>.out

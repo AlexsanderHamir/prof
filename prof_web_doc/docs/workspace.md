@@ -1,6 +1,6 @@
 # Working directory and paths
 
-This page explains where Prof reads your module, where it writes `bench/`, and how paths are laid out under each tag so `pprof` and your own tooling can find data.
+This page explains where Prof reads your module, where it writes `.prof/`, and how paths are laid out under each tag so `pprof` and your own tooling can find data.
 
 ## Before you begin
 
@@ -9,25 +9,25 @@ This page explains where Prof reads your module, where it writes `bench/`, and h
 
 ## What Prof uses from cwd
 
-Prof uses your current working directory to find the Go module and to write `bench/`. Run from the same place you run `go test` for that module (usually the [module root](index.md#terminology)).
+Prof uses your current working directory to find the Go module and to write `.prof/`. Run from the same place you run `go test` for that module (usually the [module root](index.md#terminology)).
 
 - Benchmark discovery is relative to cwd (same rules as `go test`).
-- Output goes to `bench/<tag>/` under cwd ([terminology](index.md#terminology)).
+- Output goes to `.prof/<tag>/` under cwd ([terminology](index.md#terminology)).
 - `prof config init` writes minimal `prof.json` and commented `prof.json.example` next to `go.mod` at the module root. Keep cwd aligned with that root when you expect those files to be found.
 
-## Directory layout under `bench/<tag>/`
+## Directory layout under `.prof/<tag>/`
 
-Using Prof creates a `bench/` tree next to your module, one folder per run (tag). Domains describe the data they hold (`domain/<BenchmarkName>/artifact`).
+Using Prof creates a `.prof/` tree next to your module, one folder per run (tag). Domains describe the data they hold (`domain/<BenchmarkName>/artifact`).
 
 | Path | What it is |
 | ---- | ---------- |
-| `bench/<tag>/` | One labeled run: profiles, measurements, hotspots, and optional extracts for that tag. |
-| `bench/<tag>/profiles/<BenchmarkName>/` | Raw pprof profile binaries (`.out`); durable source for `go tool pprof`. |
-| `bench/<tag>/measurements/<BenchmarkName>/` | `go test` benchmark run stats (`run.txt`: ns/op, allocs). |
-| `bench/<tag>/hotspots/<BenchmarkName>/` | Function-ranked stack summaries per profile (`cpu.txt`, `memory.txt`). |
-| `bench/<tag>/source_lines/<profile>/<BenchmarkName>/` | Per-function `pprof -list` extracts when configured. |
-| `bench/<tag>/call_graphs/<profile>/<BenchmarkName>/` | Optional Graphviz PNG call graphs when installed. |
-| `bench/<tag>/notes.txt` | Short tag-level note (placeholder until you edit it). |
+| `.prof/<tag>/` | One labeled run: profiles, measurements, hotspots, and optional extracts for that tag. |
+| `.prof/<tag>/profiles/<BenchmarkName>/` | Raw pprof profile binaries (`.out`); durable source for `go tool pprof`. |
+| `.prof/<tag>/measurements/<BenchmarkName>/` | `go test` benchmark run stats (`run.txt`: ns/op, allocs). |
+| `.prof/<tag>/hotspots/<BenchmarkName>/` | Function-ranked stack summaries per profile (`cpu.txt`, `memory.txt`). |
+| `.prof/<tag>/source_lines/<profile>/<BenchmarkName>/` | Per-function `pprof -list` extracts when configured. |
+| `.prof/<tag>/call_graphs/<profile>/<BenchmarkName>/` | Optional Graphviz PNG call graphs when installed. |
+| `.prof/<tag>/notes.txt` | Short tag-level note (placeholder until you edit it). |
 | `prof.json` | Active config next to `go.mod` after `prof config init` or **Manage configuration** in `prof ui`. |
 | `prof.json.example` | Commented reference (not loaded); copy optional sections into `prof.json`. See [Configure — generated files](configure.md#generated-files). |
 
@@ -42,9 +42,9 @@ Both files live beside `go.mod` at the module root:
 
 ## Testing / verify
 
-From the module root, after a successful collect, you should see a new directory `bench/<your-tag>/` with at least `profiles/<BenchmarkName>/`, `measurements/<BenchmarkName>/`, and `hotspots/<BenchmarkName>/` populated for the profiles you enabled.
+From the module root, after a successful collect, you should see a new directory `.prof/<your-tag>/` with at least `profiles/<BenchmarkName>/`, `measurements/<BenchmarkName>/`, and `hotspots/<BenchmarkName>/` populated for the profiles you enabled.
 
-If `bench/` never appears, see [Troubleshooting](troubleshooting.md#wrong-directory-or-no-bench-folder).
+If `.prof/` never appears, see [Troubleshooting](troubleshooting.md#wrong-directory-or-no-prof-folder).
 
 ## Next steps
 

@@ -1,6 +1,6 @@
 # Collect profiling data
 
-This guide explains how to capture benchmark profiles into `bench/<tag>/` using `prof auto` (runs `go test`) or `prof manual` (ingests existing profile files), so you can compare runs or open them in `pprof` later.
+This guide explains how to capture benchmark profiles into `.prof/<tag>/` using `prof auto` (runs `go test`) or `prof manual` (ingests existing profile files), so you can compare runs or open them in `pprof` later.
 
 ## Before you begin
 
@@ -10,7 +10,7 @@ This guide explains how to capture benchmark profiles into `bench/<tag>/` using 
 
 ## What is a profile run?
 
-A run is one labeled experiment: benchmarks executed (or files ingested), profiles of selected types written under `bench/<tag>/`, plus text listings and optional per-function extracts.
+A run is one labeled experiment: benchmarks executed (or files ingested), profiles of selected types written under `.prof/<tag>/`, plus text listings and optional per-function extracts.
 
 ## Commands
 
@@ -35,12 +35,12 @@ prof auto --benchmarks "BenchmarkGenPool" --profiles "cpu,memory,mutex,block" --
 | ---- | ---- | --------- | ------- | ----------- |
 | `--benchmarks` | strings | Yes | n/a | Benchmark names to run. |
 | `--profiles` | strings | Yes | n/a | Comma-separated profile IDs: `cpu`, `memory`, `mutex`, `block`. |
-| `--tag` | string | Yes | n/a | Output directory `bench/<tag>/`. |
+| `--tag` | string | Yes | n/a | Output directory `.prof/<tag>/`. |
 | `--count` | int | Yes | n/a | Number of runs; must be positive. |
 
 ### What collection stores
 
-Each run writes a single tag directory, `bench/<tag>/`, under your [module root](index.md#terminology) (same cwd rules as [Working directory and paths](workspace.md)). That folder is the durable record of one experiment: which benchmarks ran, how many iterations you requested, and which profile types you enabled.
+Each run writes a single tag directory, `.prof/<tag>/`, under your [module root](index.md#terminology) (same cwd rules as [Working directory and paths](workspace.md)). That folder is the durable record of one experiment: which benchmarks ran, how many iterations you requested, and which profile types you enabled.
 
 #### What is being collected
 
@@ -52,10 +52,10 @@ Each run writes a single tag directory, `bench/<tag>/`, under your [module root]
 #### How that helps
 
 - Open profiles in `pprof`: binary and text files under each tag share predictable paths.
-- Share context: zip `bench/<tag>/` or attach key `hotspots/` or `measurements/` files to an issue or PR so others see the same profile view you did.
+- Share context: zip `.prof/<tag>/` or attach key `hotspots/` or `measurements/` files to an issue or PR so others see the same profile view you did.
 - Re-open in pprof: point `go tool pprof` at `profiles/<BenchmarkName>/<profile>.out` for ad-hoc queries on the stored binary.
 
-### Artifact layout under `bench/<tag>/` { #artifact-layout-under-benchtag }
+### Artifact layout under `.prof/<tag>/` { #artifact-layout-under-benchtag }
 
 | Location | What you get | Typical use |
 | -------- | ------------- | ----------- |
@@ -78,13 +78,13 @@ prof manual --tag "external-profiles" cpu.prof memory.prof
 
 | Flag | Type | Required | Default | Description |
 | ---- | ---- | --------- | ------- | ----------- |
-| `--tag` | string | Yes | n/a | Output directory `bench/<tag>/`. |
+| `--tag` | string | Yes | n/a | Output directory `.prof/<tag>/`. |
 
 Per-file collection filters use `collection.manual_profiles` in `prof.json`. Keys are profile file stems (e.g. `BenchmarkFoo_cpu` for `BenchmarkFoo_cpu.out`). See [Configure — manual profile overrides](configure.md#collection-manual-profiles).
 
 ## Testing / verify
 
-After `prof auto`, you should see `bench/<tag>/profiles/<BenchmarkName>/` containing `<profile>.out` for each profile you requested, `measurements/<BenchmarkName>/run.txt`, and matching files under `hotspots/<BenchmarkName>/`.
+After `prof auto`, you should see `.prof/<tag>/profiles/<BenchmarkName>/` containing `<profile>.out` for each profile you requested, `measurements/<BenchmarkName>/run.txt`, and matching files under `hotspots/<BenchmarkName>/`.
 
 If `go test` fails, Prof exits non-zero. Fix the test failure first. For PNG or Graphviz issues, see [Troubleshooting](troubleshooting.md#graphviz-png-errors).
 

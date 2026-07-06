@@ -11,7 +11,7 @@ This guide gets you from an installed `prof` binary to a tagged collect in about
 
 ## What is a tag?
 
-A tag is a short label for one profiling run. Prof writes all artifacts for that run under `bench/<tag>/`.
+A tag is a short label for one profiling run. Prof writes all artifacts for that run under `.prof/<tag>/`.
 
 ## Path A: menus (default)
 
@@ -25,7 +25,7 @@ prof ui
 
 In the menu, choose Collect Profiles, pick your benchmarks and profile types, and enter a tag such as `baseline`.
 
-Verify: you should see `bench/baseline/` with `profiles/`, `measurements/`, and `hotspots/` populated.
+Verify: you should see `.prof/baseline/` with `profiles/`, `measurements/`, and `hotspots/` populated.
 
 If the UI does not start, your environment may not expose a TTY. Use Path B or see [Troubleshooting](troubleshooting.md#prof-ui-or-prof-tui-fails-in-ci-or-ides).
 
@@ -37,7 +37,7 @@ prof auto --benchmarks "BenchmarkExample" --profiles "cpu,memory,mutex,block" --
 
 Verify:
 
-- On disk: `bench/baseline/` contains `profiles/BenchmarkExample/`, `measurements/BenchmarkExample/`, and `hotspots/BenchmarkExample/`.
+- On disk: `.prof/baseline/` contains `profiles/BenchmarkExample/`, `measurements/BenchmarkExample/`, and `hotspots/BenchmarkExample/`.
 
 ## If something fails
 
