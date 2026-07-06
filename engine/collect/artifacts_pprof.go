@@ -27,6 +27,32 @@ func getProfileTextOutput(runner tooling.Runner, binaryFile, outputFile string) 
 	return writeArtifactFile(outputFile, out)
 }
 
+func getProfileTreeTextOutput(runner tooling.Runner, binaryFile, outputFile string) error {
+	if runner == nil {
+		return errors.New("tooling runner is nil")
+	}
+	ctx := context.Background()
+	out, err := runner.Run(ctx, tooling.PprofTextTreeArgs(binaryFile), tooling.RunOpts{})
+	if err != nil {
+		return fmt.Errorf("pprof tree command failed: %w", err)
+	}
+	return writeArtifactFile(outputFile, out)
+}
+
+func emitCallTreeArtifacts(runner tooling.Runner, binPath string, layout workspace.TagLayout, bench, profile string) error {
+	if err := getProfileTreeTextOutput(runner, binPath, layout.CallTreeText(bench, profile)); err != nil {
+		return err
+	}
+	cg, err := parser.CallGraphFromPath(binPath)
+	if err != nil {
+		return fmt.Errorf("call graph: %w", err)
+	}
+	if err := parser.WriteCallGraphJSON(layout.CallTreeJSON(bench, profile), cg); err != nil {
+		return fmt.Errorf("write call graph json: %w", err)
+	}
+	return nil
+}
+
 func getPNGOutput(runner tooling.Runner, binaryFile, outputFile string) error {
 	if runner == nil {
 		return errors.New("tooling runner is nil")

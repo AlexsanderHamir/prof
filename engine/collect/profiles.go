@@ -37,6 +37,10 @@ func processProfiles(runner tooling.Runner, benchmarkName string, profiles []str
 			return nil, fmt.Errorf("failed to generate hotspot summary for %s: %w", profile, textErr)
 		}
 
+		if treeErr := emitCallTreeArtifacts(runner, profileFile, layout, benchmarkName, profile); treeErr != nil {
+			return nil, fmt.Errorf("failed to generate call tree for %s: %w", profile, treeErr)
+		}
+
 		if mkdirErr := os.MkdirAll(sourceLinesDir, workspace.PermDir); mkdirErr != nil {
 			return nil, fmt.Errorf("failed to create source_lines directory: %w", mkdirErr)
 		}

@@ -52,7 +52,7 @@ func TestProcessProfiles_skipsMissingBinary(t *testing.T) {
 	copyFixtureToProfile(t, layout, bench, "cpu", fixture)
 
 	runner := &tooling.FakeRunner{
-		Out: [][]byte{[]byte("flat profile text"), []byte("png-bytes")},
+		Out: [][]byte{[]byte("flat profile text"), []byte("tree profile text"), []byte("png-bytes")},
 	}
 	processed, err := processProfiles(runner, bench, []string{"cpu", "memory"}, tag, nil)
 	if err != nil {
@@ -85,8 +85,8 @@ func TestProcessProfiles_continuesOnPNGFailure(t *testing.T) {
 	copyFixtureToProfile(t, layout, bench, "cpu", fixture)
 
 	runner := &tooling.FakeRunner{
-		Out: [][]byte{[]byte("flat profile text")},
-		Err: []error{nil, errors.New("graphviz unavailable")},
+		Out: [][]byte{[]byte("flat profile text"), []byte("tree profile text")},
+		Err: []error{nil, nil, errors.New("graphviz unavailable")},
 	}
 	processed, err := processProfiles(runner, bench, []string{"cpu"}, tag, nil)
 	if err != nil {
@@ -97,5 +97,11 @@ func TestProcessProfiles_continuesOnPNGFailure(t *testing.T) {
 	}
 	if _, statErr := os.Stat(layout.Hotspot(bench, "cpu")); statErr != nil {
 		t.Fatalf("expected hotspot summary: %v", statErr)
+	}
+	if _, statErr := os.Stat(layout.CallTreeText(bench, "cpu")); statErr != nil {
+		t.Fatalf("expected call tree text: %v", statErr)
+	}
+	if _, statErr := os.Stat(layout.CallTreeJSON(bench, "cpu")); statErr != nil {
+		t.Fatalf("expected call tree json: %v", statErr)
 	}
 }
