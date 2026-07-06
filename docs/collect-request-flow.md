@@ -175,7 +175,7 @@ For `BenchmarkMatrixMultiplication`, [`runBenchmark`](../engine/collect/gotest.g
 | --- | --- | --- |
 | Stat binary | — | Missing `.out` logs a warning and skips that profile instead of failing |
 | Hotspot summary | `hotspots/.../cpu.txt` (and `memory.txt`) | Via `go tool pprof -top` |
-| Call tree | `call_trees/.../cpu.txt` and `cpu.json` | Via `go tool pprof -tree` plus in-process call-graph JSON |
+| Call tree | `call_trees/.../cpu.txt` | Via `go tool pprof -tree` |
 | PNG | `call_graphs/<profile>/.../cpu.png` | PNG failure logs a warning; run still succeeds if hotspot summaries were produced |
 
 Resolved function filters for each benchmark come from `config.ResolveCollectionFilter` (same rules previewed during the Survey step).
@@ -207,9 +207,7 @@ All paths come from [`workspace.TagLayout`](../internal/workspace/layout.go). Fo
     │   └── memory.txt
     ├── call_trees/BenchmarkMatrixMultiplication/
     │   ├── cpu.txt
-    │   ├── cpu.json
-    │   ├── memory.txt
-    │   └── memory.json
+    │   └── memory.txt
     ├── source_lines/cpu/BenchmarkMatrixMultiplication/
     │   └── <function>.txt
     └── source_lines/memory/BenchmarkMatrixMultiplication/

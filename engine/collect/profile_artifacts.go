@@ -1,13 +1,11 @@
 package collect
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/termui"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
-	"github.com/AlexsanderHamir/prof/parser"
 )
 
 // FailurePolicy controls whether a profile artifact failure fails collection.
@@ -23,7 +21,6 @@ const (
 const (
 	artifactHotspots     = "hotspots"
 	artifactCallTreeText = "call_tree_text"
-	artifactCallTreeJSON = "call_tree_json"
 	artifactCallGraphPNG = "call_graph_png"
 )
 
@@ -34,7 +31,6 @@ type ProduceContext struct {
 	Bench   string
 	Profile string
 	BinPath string
-	Bundle  *parser.ProfileBundle
 	Session *termui.Session
 }
 
@@ -70,17 +66,6 @@ func profileArtifacts() []ProfileArtifact {
 			},
 		},
 		{
-			ID:     artifactCallTreeJSON,
-			Policy: Required,
-			Path:   workspace.TagLayout.CallTreeJSON,
-			Produce: func(ctx ProduceContext) error {
-				if ctx.Bundle == nil || ctx.Bundle.CallGraph == nil {
-					return errors.New("missing call graph in profile bundle")
-				}
-				return parser.WriteCallGraphJSON(ctx.Layout.CallTreeJSON(ctx.Bench, ctx.Profile), ctx.Bundle.CallGraph)
-			},
-		},
-		{
 			ID:     artifactCallGraphPNG,
 			Policy: BestEffort,
 			Path:   workspace.TagLayout.CallGraph,
@@ -107,18 +92,12 @@ func emitProfileArtifactsFromCatalog(ctx ProduceContext) error {
 }
 
 func emitParsedProfileArtifacts(runner tooling.Runner, binPath string, layout workspace.TagLayout, bench, profile string, session *termui.Session) error {
-	bundle, err := parser.BundleFromPath(binPath)
-	if err != nil {
-		return fmt.Errorf("parse profile bundle: %w", err)
-	}
-	ctx := ProduceContext{
+	return emitProfileArtifactsFromCatalog(ProduceContext{
 		Runner:  runner,
 		Layout:  layout,
 		Bench:   bench,
 		Profile: profile,
 		BinPath: binPath,
-		Bundle:  bundle,
 		Session: session,
-	}
-	return emitProfileArtifactsFromCatalog(ctx)
+	})
 }

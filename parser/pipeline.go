@@ -120,40 +120,6 @@ func (pl Pipeline) RunFromPath(path string) (*ProfileData, error) {
 	return pl.RunFromReader(rc)
 }
 
-// RunBundleFromReader executes decode → validate → index → check → flat/cum + call graph.
-func (pl Pipeline) RunBundleFromReader(r io.Reader) (*ProfileBundle, error) {
-	pl = pl.withDefaults()
-	p, err := pl.Decoder.Decode(r)
-	if err != nil {
-		return nil, err
-	}
-	if err = pl.Validator.Validate(p); err != nil {
-		return nil, err
-	}
-	idx, err := pl.IndexSelect.PrimaryIndex(p)
-	if err != nil {
-		return nil, err
-	}
-	if err = pl.IndexCheck.EnsureValueAt(p, idx); err != nil {
-		return nil, err
-	}
-	return &ProfileBundle{
-		FlatCum:   pl.Aggregator.Aggregate(p, idx),
-		CallGraph: BuildCallGraphFromProfile(p, idx),
-	}, nil
-}
-
-// RunBundleFromPath executes open → RunBundleFromReader.
-func (pl Pipeline) RunBundleFromPath(path string) (*ProfileBundle, error) {
-	pl = pl.withDefaults()
-	rc, err := pl.Opener.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer rc.Close()
-	return pl.RunBundleFromReader(rc)
-}
-
 // --- Default implementations (replace by embedding these and overriding, or implement interfaces yourself) ---
 
 // FileProfileOpener opens a local file path.

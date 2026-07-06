@@ -16,7 +16,6 @@ const (
 	PermDir                  = 0o755
 	PermFile                 = 0o644
 	TextExtension            = "txt"
-	JSONExtension            = "json"
 	ExpectedTestSuffix       = ".test"
 	ProfileArtifactExtension = "out"
 	GoBinaryName             = "go"

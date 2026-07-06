@@ -63,7 +63,7 @@ Each run writes a single tag directory, `.prof/<tag>/`, under your [module root]
 | `profiles/<BenchmarkName>/` | One `<profile>.out` per profile type collected. | Source of truth for `pprof`; required for regenerating hotspots and PNGs. |
 | `measurements/<BenchmarkName>/` | `run.txt` with `go test -bench` output (ns/op, allocs). | Compare throughput across runs. |
 | `hotspots/<BenchmarkName>/` | For each profile: `<profile>.txt` (function-ranked stacks). | Read, grep, or diff stacks. |
-| `call_trees/<BenchmarkName>/` | For each profile: `<profile>.txt` (pprof tree) and `<profile>.json` (nodes and edges). | Caller/callee context; machine-readable graph. |
+| `call_trees/<BenchmarkName>/` | For each profile: `<profile>.txt` (pprof tree). | Caller/callee context from pprof. |
 | `source_lines/<profile>/<BenchmarkName>/` | Per-function text files for symbols in scope. | Deep dive on specific functions with line attribution. |
 | `call_graphs/<profile>/<BenchmarkName>/` | Optional `<profile>.png` when Graphviz is available. | Call-graph PNG for presentations. |
 
@@ -85,7 +85,7 @@ Per-file collection filters use `collection.manual_profiles` in `prof.json`. Key
 
 ## Testing / verify
 
-After `prof auto`, you should see `.prof/<tag>/profiles/<BenchmarkName>/` containing `<profile>.out` for each profile you requested, `measurements/<BenchmarkName>/run.txt`, matching files under `hotspots/<BenchmarkName>/`, and matching `<profile>.txt` plus `<profile>.json` under `call_trees/<BenchmarkName>/`.
+After `prof auto`, you should see `.prof/<tag>/profiles/<BenchmarkName>/` containing `<profile>.out` for each profile you requested, `measurements/<BenchmarkName>/run.txt`, matching files under `hotspots/<BenchmarkName>/`, and matching `<profile>.txt` under `call_trees/<BenchmarkName>/`.
 
 If `go test` fails, Prof exits non-zero. Fix the test failure first. For PNG or Graphviz issues, see [Troubleshooting](troubleshooting.md#graphviz-png-errors).
 

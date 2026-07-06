@@ -101,7 +101,4 @@ func TestProcessProfiles_continuesOnPNGFailure(t *testing.T) {
 	if _, statErr := os.Stat(layout.CallTreeText(bench, "cpu")); statErr != nil {
 		t.Fatalf("expected call tree text: %v", statErr)
 	}
-	if _, statErr := os.Stat(layout.CallTreeJSON(bench, "cpu")); statErr != nil {
-		t.Fatalf("expected call tree json: %v", statErr)
-	}
 }

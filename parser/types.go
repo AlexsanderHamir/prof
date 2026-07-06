@@ -26,32 +26,3 @@ type FunctionListEntry struct {
 	OutputStem string
 	FullSymbol string
 }
-
-// ProfileBundle holds flat/cum and call-graph views from a single profile parse.
-type ProfileBundle struct {
-	FlatCum   *ProfileData
-	CallGraph *CallGraphData
-}
-
-// CallGraphData holds aggregated call-graph nodes and edges from a profile.
-type CallGraphData struct {
-	Total int64           `json:"total"`
-	Nodes []CallGraphNode `json:"nodes"`
-	Edges []CallGraphEdge `json:"edges"`
-}
-
-// CallGraphNode is one function with flat/cumulative sample totals.
-type CallGraphNode struct {
-	Name    string  `json:"name"`
-	Flat    int64   `json:"flat"`
-	FlatPct float64 `json:"flat_pct"`
-	Cum     int64   `json:"cum"`
-	CumPct  float64 `json:"cum_pct"`
-}
-
-// CallGraphEdge is a directed caller→callee link weighted by sample value.
-type CallGraphEdge struct {
-	Caller string `json:"caller"`
-	Callee string `json:"callee"`
-	Weight int64  `json:"weight"`
-}

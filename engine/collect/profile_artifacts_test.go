@@ -9,22 +9,21 @@ import (
 	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/testpaths"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
-	"github.com/AlexsanderHamir/prof/parser"
 )
 
 func TestProfileArtifacts_catalogOrder(t *testing.T) {
 	arts := profileArtifacts()
-	if len(arts) != 4 {
-		t.Fatalf("expected 4 artifacts, got %d", len(arts))
+	if len(arts) != 3 {
+		t.Fatalf("expected 3 artifacts, got %d", len(arts))
 	}
-	want := []string{artifactHotspots, artifactCallTreeText, artifactCallTreeJSON, artifactCallGraphPNG}
+	want := []string{artifactHotspots, artifactCallTreeText, artifactCallGraphPNG}
 	for i, id := range want {
 		if arts[i].ID != id {
 			t.Fatalf("artifact[%d]=%q want %q", i, arts[i].ID, id)
 		}
 	}
-	if arts[3].Policy != BestEffort {
-		t.Fatalf("png policy=%v want BestEffort", arts[3].Policy)
+	if arts[2].Policy != BestEffort {
+		t.Fatalf("png policy=%v want BestEffort", arts[2].Policy)
 	}
 }
 
@@ -52,7 +51,6 @@ func TestEmitProfileArtifactsFromCatalog_requiredFailure(t *testing.T) {
 		Bench:   bench,
 		Profile: "cpu",
 		BinPath: "cpu.out",
-		Bundle:  &parser.ProfileBundle{CallGraph: &parser.CallGraphData{Total: 1}},
 	}
 	if emitErr := emitProfileArtifactsFromCatalog(ctx); emitErr == nil {
 		t.Fatal("expected required hotspot failure")
@@ -87,10 +85,6 @@ func TestEmitProfileArtifactsFromCatalog_bestEffortPNG(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bundle, err := parser.BundleFromPath(dst)
-	if err != nil {
-		t.Fatal(err)
-	}
 	runner := &tooling.FakeRunner{
 		Out: [][]byte{[]byte("top"), []byte("tree")},
 		Err: []error{nil, nil, errors.New("graphviz unavailable")},
@@ -101,7 +95,6 @@ func TestEmitProfileArtifactsFromCatalog_bestEffortPNG(t *testing.T) {
 		Bench:   bench,
 		Profile: "cpu",
 		BinPath: dst,
-		Bundle:  bundle,
 	}
 	if emitErr := emitProfileArtifactsFromCatalog(ctx); emitErr != nil {
 		t.Fatal(emitErr)
@@ -109,7 +102,6 @@ func TestEmitProfileArtifactsFromCatalog_bestEffortPNG(t *testing.T) {
 	for _, path := range []string{
 		layout.Hotspot(bench, "cpu"),
 		layout.CallTreeText(bench, "cpu"),
-		layout.CallTreeJSON(bench, "cpu"),
 	} {
 		if _, statErr := os.Stat(path); statErr != nil {
 			t.Fatalf("missing %s: %v", path, statErr)
