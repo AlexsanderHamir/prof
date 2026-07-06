@@ -7,6 +7,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
 // MainAction is the user's choice from the hub; the CLI dispatches to engines.
@@ -139,7 +141,7 @@ func (m *hubModel) View() string {
 
 	if m.showHelp {
 		b.WriteString(helpStyle.Render(
-			"Run Benchmarks & Collect Profiles: run existing benchmarks and store profiles under bench/<tag>/.\n" +
+			fmt.Sprintf("Run Benchmarks & Collect Profiles: run existing benchmarks and store profiles under %s/<tag>/.\n", workspace.MainDirOutput) +
 				"Create Configuration File: writes prof.json and prof.json.example beside go.mod.\n" +
 				"Press ? again to hide this help.",
 		))

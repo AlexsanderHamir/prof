@@ -11,6 +11,7 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/app"
 	"github.com/AlexsanderHamir/prof/internal/intent"
 	"github.com/AlexsanderHamir/prof/internal/termui"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -68,7 +69,7 @@ func runTUI(svc *app.Services, _ *cobra.Command, _ []string) error {
 		return fmt.Errorf("invalid count: %s", countStr)
 	}
 
-	tagStr, err := askConfigureLine(reader, os.Stdout, "Tag name (used to group results under bench/<tag>):", "")
+	tagStr, err := askConfigureLine(reader, os.Stdout, fmt.Sprintf("Tag name (used to group results under %s/<tag>):", workspace.MainDirOutput), "")
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,7 @@ import (
 type Kind string
 
 const (
-	// KindCollect runs benchmarks and collects profiles under bench/<tag>/.
+	// KindCollect runs benchmarks and collects profiles under .prof/<tag>/.
 	KindCollect Kind = "collect"
 	// KindConfigCreate writes the default prof.json beside go.mod.
 	KindConfigCreate Kind = "config_create"
