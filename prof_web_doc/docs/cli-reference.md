@@ -19,7 +19,7 @@ Static site output is written to `prof_web_doc/site/` when you run `mkdocs build
 | ------- | ------- |
 | `prof ui` | Full-screen menu: collect profiles, create configuration, documentation link. |
 | `prof tui` | Terminal collect flow (multi-select benchmarks and profiles). |
-| `prof auto` | Run `go test` benchmarks and collect listed profiles into `bench/<tag>/`. |
+| `prof auto` | Run `go test` benchmarks and collect listed profiles into `.prof/<tag>/`. |
 | `prof manual` | Ingest existing profile files into the same layout style (no `go test`). |
 | `prof config init` | Create minimal `prof.json` and commented `prof.json.example` next to `go.mod`. |
 | `prof config validate` | Load and validate `prof.json`; exit non-zero on error. |
@@ -43,7 +43,7 @@ These IDs are the ones `go test` integration supports (comma-separated for `--pr
 | ---- | ---- | --------- | ------- | ----------- |
 | `--benchmarks` | strings (repeatable, comma-separated) | Yes | n/a | Benchmark names to run (for example `BenchmarkGenPool`). |
 | `--profiles` | strings | Yes | n/a | Profile IDs, comma-separated (for example `cpu,memory,mutex,block`). |
-| `--tag` | string | Yes | n/a | Tag directory name under `bench/`. |
+| `--tag` | string | Yes | n/a | Tag directory name under `.prof/`. |
 | `--count` | int | Yes | n/a | Number of benchmark iterations or runs `go test` should perform (must be positive). |
 
 ## `prof manual`
@@ -52,7 +52,7 @@ Positional arguments are one or more profile file paths to ingest.
 
 | Flag | Type | Required | Default | Description |
 | ---- | ---- | --------- | ------- | ----------- |
-| `--tag` | string | Yes | n/a | Tag directory name under `bench/`. |
+| `--tag` | string | Yes | n/a | Tag directory name under `.prof/`. |
 
 ## Exit codes
 

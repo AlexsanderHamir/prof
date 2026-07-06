@@ -1,7 +1,10 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/AlexsanderHamir/prof/internal/app"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
@@ -17,9 +20,9 @@ func CreateRootCmd(services *app.Services) *cobra.Command {
 
 	root := &cobra.Command{
 		Use:   "prof",
-		Short: "Go benchmark profiling: collect pprof-backed runs under bench/<tag>/.",
-		Long: `Prof wraps go test and pprof so you can capture CPU, memory, mutex, and block profiles in one
-workflow and store artifacts in a predictable bench/<tag>/ tree.
+		Short: fmt.Sprintf("Go benchmark profiling: collect pprof-backed runs under %s/<tag>/.", workspace.MainDirOutput),
+		Long: fmt.Sprintf(`Prof wraps go test and pprof so you can capture CPU, memory, mutex, and block profiles in one
+workflow and store artifacts in a predictable %s/<tag>/ tree.
 
 Start interactively (no flags to memorize):
 
@@ -27,7 +30,7 @@ Start interactively (no flags to memorize):
 
 For automation, use prof auto, prof manual, and other subcommands — see prof -h and prof <command> -h.
 
-Documentation: https://alexsanderhamir.github.io/prof/`,
+Documentation: https://alexsanderhamir.github.io/prof/`, workspace.MainDirOutput),
 		Example: `  # Guided menu (recommended first run)
   prof ui
 

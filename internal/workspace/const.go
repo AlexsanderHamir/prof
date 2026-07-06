@@ -1,9 +1,9 @@
 package workspace
 
-// Path and permission constants for bench/<tag>/ layout.
+// Path and permission constants for .prof/<tag>/ layout.
 // Domains follow domain/<benchmark>/artifact (profile kind is a segment under source_lines/ and call_graphs/).
 const (
-	MainDirOutput            = "bench"
+	MainDirOutput            = ".prof"
 	ProfilesDir              = "profiles"
 	MeasurementsDir          = "measurements"
 	HotspotsDir              = "hotspots"

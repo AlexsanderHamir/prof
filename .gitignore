@@ -11,6 +11,7 @@ tasks.md
 /prof.exe
 
 # Runtime profiling output (prof auto / prof tui); example benchmarks live in benchmarks/
+/.prof/
 /bench/
 
 # Release builds

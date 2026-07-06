@@ -1,4 +1,4 @@
-// Package workspace defines bench/<tag>/ layout paths and tag lifecycle helpers.
+// Package workspace defines .prof/<tag>/ layout paths and tag lifecycle helpers.
 //
 // Artifact domains under each tag describe the data they hold (domain/benchmark/artifact):
 //

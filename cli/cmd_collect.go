@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/AlexsanderHamir/prof/internal/app"
+	"github.com/AlexsanderHamir/prof/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +23,7 @@ func newManualCollectCmd(svc *app.Services) *cobra.Command {
 	f := &manualCollectFlags{}
 	cmd := &cobra.Command{
 		Use:     CmdManual,
-		Short:   "Ingest existing pprof profile binaries and organize them under bench/<tag>/ (does not run go test).",
+		Short:   fmt.Sprintf("Ingest existing pprof profile binaries and organize them under %s/<tag>/ (does not run go test).", workspace.MainDirOutput),
 		Args:    cobra.MinimumNArgs(1),
 		Example: fmt.Sprintf("prof %s --tag tagName cpu.prof memory.prof block.prof mutex.prof", CmdManual),
 		RunE: func(_ *cobra.Command, args []string) error {

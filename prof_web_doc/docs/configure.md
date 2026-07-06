@@ -38,7 +38,7 @@ Copy sections from `prof.json.example` into `prof.json` when you want collection
 
 ## Benchmark discovery
 
-`prof auto` and `prof ui` discover benchmarks by scanning `*_test.go` files under your module root. Directories named `tests/`, `bench/`, and `vendor/`, plus nested directories that contain their own `go.mod` (separate Go modules), are skipped so fixtures and QA sandboxes under `tests/` do not appear in your benchmark list.
+`prof auto` and `prof ui` discover benchmarks by scanning `*_test.go` files under your module root. Directories named `tests/`, `.prof/`, `bench/` (legacy output), and `vendor/`, plus nested directories that contain their own `go.mod` (separate Go modules), are skipped so fixtures and QA sandboxes under `tests/` do not appear in your benchmark list.
 
 ## Full shape (version 1)
 
@@ -68,7 +68,7 @@ When you copy optional sections from `prof.json.example`, a typical project file
 
 ## Collection { #collection }
 
-Controls per-function text extracts after [Collect profiling data](collect.md). Output lands under `bench/<tag>/<profile>_functions/<BenchmarkName>/` when filters match.
+Controls per-function text extracts after [Collect profiling data](collect.md). Output lands under `.prof/<tag>/<profile>_functions/<BenchmarkName>/` when filters match.
 
 | Section | Key meaning |
 | ------- | ----------- |

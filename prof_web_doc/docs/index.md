@@ -1,6 +1,6 @@
 # Prof
 
-Prof is a command-line tool for Go that runs benchmarks with `go test`, captures CPU, memory, mutex, and block profiles, and stores everything under a predictable `bench/<tag>/` tree for analysis with `pprof` and your own tooling.
+Prof is a command-line tool for Go that runs benchmarks with `go test`, captures CPU, memory, mutex, and block profiles, and stores everything under a predictable `.prof/<tag>/` tree for analysis with `pprof` and your own tooling.
 
 Use it when you want comparable profiles across experiments and a stable on-disk layout without memorizing `go test` and `pprof` flags.
 
@@ -22,20 +22,20 @@ Use it when you want comparable profiles across experiments and a stable on-disk
 ```mermaid
 flowchart LR
   collect[Collect_prof_auto_or_ui]
-  bench["bench/tag_layout"]
+  bench[".prof/tag_layout"]
   analyze[pprof_or_your_tools]
   collect --> bench
   bench --> analyze
 ```
 
-You label each run with a tag. Prof writes `bench/<tag>/` with binary profiles, text summaries, and optional per-function extracts.
+You label each run with a tag. Prof writes `.prof/<tag>/` with binary profiles, text summaries, and optional per-function extracts.
 
 ## Terminology
 
 | Term | Meaning |
 | ---- | ------- |
 | Module root | Directory containing your `go.mod`; run Prof from here, same as for `go test`. |
-| Tag | Label for one run; artifacts live in `bench/<tag>/`. |
+| Tag | Label for one run; artifacts live in `.prof/<tag>/`. |
 | Profile type | One of `cpu`, `memory`, `mutex`, `block`. |
 
 ## Source
