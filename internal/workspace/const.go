@@ -10,6 +10,8 @@ const (
 	CallTreesDir             = "call_trees"
 	SourceLinesDir           = "source_lines"
 	CallGraphsDir            = "call_graphs"
+	DataMappingDir           = "data_mapping"
+	DataMappingFile          = "map.json"
 	MeasurementRunFile       = "run.txt"
 	TagNotesFileName         = "notes.txt"
 	TagNotesPlaceholder      = "The explanation for this profiling session goes here"

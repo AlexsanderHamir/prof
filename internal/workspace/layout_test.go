@@ -50,6 +50,11 @@ func TestTagLayout_paths(t *testing.T) {
 			l.CallGraph("cpu", "BenchmarkFoo"),
 			filepath.Join(root, workspace.MainDirOutput, "v1", "call_graphs", "cpu", "BenchmarkFoo", "cpu.png"),
 		},
+		{
+			"data mapping",
+			l.DataMapping("BenchmarkFoo"),
+			filepath.Join(root, workspace.MainDirOutput, "v1", "data_mapping", "BenchmarkFoo", "map.json"),
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -58,6 +63,20 @@ func TestTagLayout_paths(t *testing.T) {
 				t.Fatalf("got %q want %q", tc.got, tc.want)
 			}
 		})
+	}
+}
+
+func TestRelFromTagRoot(t *testing.T) {
+	t.Parallel()
+	tagRoot := filepath.Join(t.TempDir(), ".prof", "v1")
+	abs := filepath.Join(tagRoot, "hotspots", "BenchmarkFoo", "cpu.txt")
+	got, err := workspace.RelFromTagRoot(tagRoot, abs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "hotspots/BenchmarkFoo/cpu.txt"
+	if got != want {
+		t.Fatalf("got %q want %q", got, want)
 	}
 }
 

@@ -42,11 +42,17 @@ func GetAllFunctionNamesFromProfileData(d *ProfileData, filter config.FunctionFi
 
 // GetFunctionListEntriesV2 loads a profile path and returns [FunctionListEntry] values using filter rules.
 func GetFunctionListEntriesV2(profilePath string, filter config.FunctionFilter) ([]FunctionListEntry, error) {
+	entries, _, err := GetFunctionListEntriesWithProfileData(profilePath, filter)
+	return entries, err
+}
+
+// GetFunctionListEntriesWithProfileData loads a profile once and returns list entries plus aggregated data.
+func GetFunctionListEntriesWithProfileData(profilePath string, filter config.FunctionFilter) ([]FunctionListEntry, *ProfileData, error) {
 	d, err := profileDataFromPath(profilePath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return GetFunctionListEntriesFromProfileData(d, filter), nil
+	return GetFunctionListEntriesFromProfileData(d, filter), d, nil
 }
 
 // GetAllFunctionNamesV2 extracts short function names from a profile path using filter rules.

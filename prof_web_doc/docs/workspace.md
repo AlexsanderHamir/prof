@@ -28,6 +28,7 @@ Using Prof creates a `.prof/` tree next to your module, one folder per run (tag)
 | `.prof/<tag>/call_trees/<BenchmarkName>/` | Call-tree text (`pprof -tree`) per profile. |
 | `.prof/<tag>/source_lines/<profile>/<BenchmarkName>/` | Per-function `pprof -list` extracts when configured. |
 | `.prof/<tag>/call_graphs/<profile>/<BenchmarkName>/` | Optional Graphviz PNG call graphs when installed. |
+| `.prof/<tag>/data_mapping/<BenchmarkName>/map.json` | Machine-readable index of artifacts for this benchmark (paths, semantics, top symbols, function inventory). |
 | `.prof/<tag>/notes.txt` | Short tag-level note (placeholder until you edit it). |
 | `prof.json` | Active config next to `go.mod` after `prof config init` or **Manage configuration** in `prof ui`. |
 | `prof.json.example` | Commented reference (not loaded); copy optional sections into `prof.json`. See [Configure — generated files](configure.md#generated-files). |

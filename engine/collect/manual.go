@@ -9,6 +9,7 @@ import (
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/datamap"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 	"github.com/AlexsanderHamir/prof/parser"
 )
@@ -61,27 +62,44 @@ func processOneManualFile(runner tooling.Runner, fullBinaryPath string, layout w
 	if err := emitProfileArtifacts(runner, binDest, layout, benchName, profile); err != nil {
 		return err
 	}
-	return collectPerFunctionLists(runner, layout, benchName, profile, binDest, filter)
+	snap, err := collectPerFunctionLists(runner, layout, benchName, profile, binDest, filter)
+	if err != nil {
+		return err
+	}
+	emitBenchmarkMap(nil, layout, emitMapParams{
+		Tag:            layout.Tag,
+		Benchmark:      benchName,
+		Profiles:       []string{profile},
+		Filter:         filter,
+		CollectionMode: datamapCollectionManual,
+		PerProfile:     []datamap.ProfileSnapshot{snap},
+	})
+	return nil
 }
 
 func emitProfileArtifacts(runner tooling.Runner, binPath string, layout workspace.TagLayout, benchName, profile string) error {
 	return emitParsedProfileArtifacts(runner, binPath, layout, benchName, profile, nil)
 }
 
-func collectPerFunctionLists(runner tooling.Runner, layout workspace.TagLayout, benchName, profile, binPath string, functionFilter config.FunctionFilter) error {
-	listEntries, err := parser.GetFunctionListEntriesV2(binPath, functionFilter)
+func collectPerFunctionLists(runner tooling.Runner, layout workspace.TagLayout, benchName, profile, binPath string, functionFilter config.FunctionFilter) (datamap.ProfileSnapshot, error) {
+	listEntries, profileData, err := parser.GetFunctionListEntriesWithProfileData(binPath, functionFilter)
 	if err != nil {
-		return fmt.Errorf("extract function names: %w", err)
+		return datamap.ProfileSnapshot{}, fmt.Errorf("extract function names: %w", err)
 	}
 
 	functionDir := layout.SourceLinesDir(profile, benchName)
 	if err = ensureDirExists(functionDir); err != nil {
-		return err
+		return datamap.ProfileSnapshot{}, err
 	}
-	if err = getFunctionsOutput(runner, listEntries, binPath, functionDir, nil); err != nil {
-		return fmt.Errorf("per-function pprof: %w", err)
-	}
-	return nil
+	listResult := getFunctionsOutput(runner, listEntries, binPath, functionDir, nil)
+	return datamap.ProfileSnapshot{
+		Profile:              profile,
+		ProfileData:          profileData,
+		ListEntries:          listEntries,
+		SourceLinesCollected: listResult.Collected,
+		SourceLinesSkipped:   listResult.Skipped,
+		FailedStems:          listResult.FailedStems,
+	}, nil
 }
 
 func copyProfileBinary(src, dest string) error {

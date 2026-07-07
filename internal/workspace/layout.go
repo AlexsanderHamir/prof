@@ -68,6 +68,20 @@ func (l TagLayout) CallGraph(profile, bench string) string {
 	return filepath.Join(l.Root, CallGraphsDir, profile, bench, fmt.Sprintf("%s.png", profile))
 }
 
+// DataMapping returns the per-benchmark navigation map JSON path.
+func (l TagLayout) DataMapping(bench string) string {
+	return filepath.Join(l.Root, DataMappingDir, bench, DataMappingFile)
+}
+
+// RelFromTagRoot returns absPath relative to tagRoot using forward slashes for portable JSON.
+func RelFromTagRoot(tagRoot, absPath string) (string, error) {
+	rel, err := filepath.Rel(tagRoot, absPath)
+	if err != nil {
+		return "", fmt.Errorf("rel from tag root: %w", err)
+	}
+	return filepath.ToSlash(rel), nil
+}
+
 // ResolveProfileBinary returns the binary profile path when it exists and is readable.
 func (l TagLayout) ResolveProfileBinary(bench, profile string) (string, error) {
 	p := l.ProfileBinary(bench, profile)
@@ -75,4 +89,9 @@ func (l TagLayout) ResolveProfileBinary(bench, profile string) (string, error) {
 		return "", err
 	}
 	return p, nil
+}
+
+// RelFromLayout returns path relative to the tag root for one layout-resolved absolute path.
+func (l TagLayout) RelFromLayout(absPath string) (string, error) {
+	return RelFromTagRoot(l.Root, absPath)
 }

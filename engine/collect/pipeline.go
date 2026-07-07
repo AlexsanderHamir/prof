@@ -8,6 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/prof/engine/tooling"
 	"github.com/AlexsanderHamir/prof/internal/config"
+	"github.com/AlexsanderHamir/prof/internal/datamap"
 	"github.com/AlexsanderHamir/prof/internal/termui"
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 	"github.com/AlexsanderHamir/prof/parser"
@@ -72,7 +73,7 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cf
 			BenchmarkConfig: filter,
 		}
 		if err := session.RunWhile(base.WithPhase(termui.PhaseCollectFunctionProfiles), func() error {
-			return collectProfileFunctions(runner, args, session)
+			return collectFunctionsAndEmitMap(runner, args, session, autoArgs, benchmarkName, filter, profilesReady)
 		}); err != nil {
 			return finalizeInteractiveErr(session, fmt.Errorf("failed to collect function profiles for %s: %w", benchmarkName, err))
 		}
@@ -86,13 +87,44 @@ func runBenchAndGetProfiles(runner tooling.Runner, autoArgs *config.AutoArgs, cf
 	return nil
 }
 
-func collectProfileFunctions(runner tooling.Runner, args *config.CollectionArgs, session *termui.Session) error {
-	layout, err := workspace.TagLayoutFromCWD(args.Tag)
+func collectFunctionsAndEmitMap(
+	runner tooling.Runner,
+	args *config.CollectionArgs,
+	session *termui.Session,
+	autoArgs *config.AutoArgs,
+	benchmarkName string,
+	filter config.FunctionFilter,
+	profilesReady []string,
+) error {
+	snapshots, err := collectProfileFunctions(runner, args, session)
 	if err != nil {
 		return err
 	}
+	layout, err := workspace.TagLayoutFromCWD(autoArgs.Tag)
+	if err != nil {
+		return err
+	}
+	emitBenchmarkMap(session, layout, emitMapParams{
+		Tag:              autoArgs.Tag,
+		Benchmark:        benchmarkName,
+		Profiles:         profilesReady,
+		Filter:           filter,
+		BenchCount:       autoArgs.Count,
+		CollectionMode:   datamapCollectionAuto,
+		PerProfile:       snapshots,
+		IncludeMeasuring: true,
+	})
+	return nil
+}
+
+func collectProfileFunctions(runner tooling.Runner, args *config.CollectionArgs, session *termui.Session) ([]datamap.ProfileSnapshot, error) {
+	layout, err := workspace.TagLayoutFromCWD(args.Tag)
+	if err != nil {
+		return nil, err
+	}
 
 	profiles := args.Profiles
+	snapshots := make([]datamap.ProfileSnapshot, len(profiles))
 	errs := parallelFor(len(profiles), sourceLinesWorkers(len(profiles)), func(i int) error {
 		profile := profiles[i]
 		fnDir := layout.SourceLinesDir(profile, args.BenchmarkName)
@@ -101,21 +133,27 @@ func collectProfileFunctions(runner tooling.Runner, args *config.CollectionArgs,
 		}
 
 		binPath := layout.ProfileBinary(args.BenchmarkName, profile)
-		listEntries, listErr := parser.GetFunctionListEntriesV2(binPath, args.BenchmarkConfig)
+		listEntries, profileData, listErr := parser.GetFunctionListEntriesWithProfileData(binPath, args.BenchmarkConfig)
 		if listErr != nil {
 			return fmt.Errorf("failed to extract function names: %w", listErr)
 		}
 
-		if fnErr := getFunctionsOutput(runner, listEntries, binPath, fnDir, session); fnErr != nil {
-			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", fnErr)
+		listResult := getFunctionsOutput(runner, listEntries, binPath, fnDir, session)
+		snapshots[i] = datamap.ProfileSnapshot{
+			Profile:              profile,
+			ProfileData:          profileData,
+			ListEntries:          listEntries,
+			SourceLinesCollected: listResult.Collected,
+			SourceLinesSkipped:   listResult.Skipped,
+			FailedStems:          listResult.FailedStems,
 		}
 		return nil
 	})
 
 	for i, err := range errs {
 		if err != nil {
-			return fmt.Errorf("profile %s: %w", profiles[i], err)
+			return nil, fmt.Errorf("profile %s: %w", profiles[i], err)
 		}
 	}
-	return nil
+	return snapshots, nil
 }
