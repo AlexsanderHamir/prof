@@ -118,6 +118,7 @@ All paths come from [`workspace.TagLayout`](internal/workspace/layout.go):
     ├── measurements/<BenchmarkName>/run.txt
     ├── hotspots/<BenchmarkName>/<profile>.txt
     ├── source_lines/<profile>/<BenchmarkName>/<function>.txt
+    ├── data_mapping/<BenchmarkName>/map.json
     └── call_graphs/<profile>/<BenchmarkName>/<profile>.png
 ```
 

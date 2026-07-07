@@ -189,6 +189,10 @@ Resolved function filters for each benchmark come from `config.ResolveCollection
 
 **Concurrency:** profile kinds and per-function `-list` subprocesses run with a bounded worker pool (`min(jobCount, GOMAXPROCS, 8)`). Artifacts, filters, and argv are unchanged; see [source-lines-parallelism.md](../design/source-lines-parallelism.md).
 
+#### Step 4 — Benchmark data map
+
+After step 3, [`emitBenchmarkMap`](../engine/collect/datamap_emit.go) writes `data_mapping/<Benchmark>/map.json` — a JSON index of measurements, profiles, hotspots, call trees, and source-line function inventory for LLM/agent navigation. Paths in the file are relative to `.prof/<tag>/`. Map emit failures warn and continue; they do not fail the collect run. See [benchmark-data-map.md](../design/benchmark-data-map.md).
+
 When all benchmarks finish, prof logs collection success and returns.
 
 ## Output layout (example)
@@ -214,6 +218,8 @@ All paths come from [`workspace.TagLayout`](../internal/workspace/layout.go). Fo
     │   └── <function>.txt
     └── source_lines/memory/BenchmarkMatrixMultiplication/
         └── <function>.txt
+    └── data_mapping/BenchmarkMatrixMultiplication/
+        └── map.json
 ```
 
 PNG files, when generated, live under `call_graphs/<profile>/<benchmark>/`.
@@ -231,6 +237,7 @@ PNG files, when generated, live under `call_graphs/<profile>/<benchmark>/`.
 | Artifact paths or tag lifecycle | [`internal/workspace/layout.go`](../internal/workspace/layout.go), [`engine/collect/layout.go`](../engine/collect/layout.go) |
 | Missing profile / PNG handling | [`engine/collect/profiles.go`](../engine/collect/profiles.go) |
 | Per-function file list and filters | [`parser/`](../parser/), [`internal/config/filter.go`](../internal/config/filter.go) |
+| Benchmark map.json index | [`internal/datamap/`](../internal/datamap/), [`engine/collect/datamap_emit.go`](../engine/collect/datamap_emit.go) |
 
 ## Layering
 
