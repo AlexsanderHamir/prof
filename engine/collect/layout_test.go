@@ -35,10 +35,12 @@ func TestCreateBenchDirectories(t *testing.T) {
 		{"profiles root", filepath.Join(tagDir, workspace.ProfilesDir), true},
 		{"measurements root", filepath.Join(tagDir, workspace.MeasurementsDir), true},
 		{"hotspots root", filepath.Join(tagDir, workspace.HotspotsDir), true},
+		{"data mapping root", filepath.Join(tagDir, workspace.DataMappingDir), true},
 		{"notes", filepath.Join(tagDir, workspace.TagNotesFileName), false},
 		{"profiles bench foo", filepath.Join(tagDir, workspace.ProfilesDir, "BenchmarkFoo"), true},
 		{"measurements bench bar", filepath.Join(tagDir, workspace.MeasurementsDir, "BenchmarkBar"), true},
 		{"hotspots bench bar", filepath.Join(tagDir, workspace.HotspotsDir, "BenchmarkBar"), true},
+		{"data mapping bench foo", filepath.Join(tagDir, workspace.DataMappingDir, "BenchmarkFoo"), true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -109,6 +111,11 @@ func TestSetupDirectories_createsTagLayout(t *testing.T) {
 		{
 			"hotspots bench dir",
 			filepath.Join(layout.Root, workspace.HotspotsDir, "BenchmarkFoo"),
+			true,
+		},
+		{
+			"data mapping bench dir",
+			filepath.Join(layout.Root, workspace.DataMappingDir, "BenchmarkFoo"),
 			true,
 		},
 		{

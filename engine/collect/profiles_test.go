@@ -11,8 +11,9 @@ import (
 	"github.com/AlexsanderHamir/prof/internal/workspace"
 )
 
-func setupProcessProfilesEnv(t *testing.T, tag, bench string, profiles []string) (workspace.TagLayout, string) {
+func setupProcessProfilesEnv(t *testing.T, tag string, profiles []string) (workspace.TagLayout, string) {
 	t.Helper()
+	const bench = "BenchmarkFoo"
 	fixture := testpaths.MustAsset(t, "fixtures", filterFixtureCPU)
 	modRoot := t.TempDir()
 	writeModuleRoot(t, modRoot)
@@ -48,7 +49,7 @@ func TestProcessProfiles_skipsMissingBinary(t *testing.T) {
 		tag   = "t1"
 		bench = "BenchmarkFoo"
 	)
-	layout, fixture := setupProcessProfilesEnv(t, tag, bench, []string{"cpu", "memory"})
+	layout, fixture := setupProcessProfilesEnv(t, tag, []string{"cpu", "memory"})
 	copyFixtureToProfile(t, layout, bench, "cpu", fixture)
 
 	runner := &tooling.FakeRunner{
@@ -68,7 +69,7 @@ func TestProcessProfiles_failsWhenAllMissing(t *testing.T) {
 		tag   = "t2"
 		bench = "BenchmarkFoo"
 	)
-	_, _ = setupProcessProfilesEnv(t, tag, bench, []string{"cpu", "memory"})
+	_, _ = setupProcessProfilesEnv(t, tag, []string{"cpu", "memory"})
 
 	_, err := processProfiles(&tooling.FakeRunner{}, bench, []string{"cpu", "memory"}, tag, nil)
 	if err == nil {
@@ -81,7 +82,7 @@ func TestProcessProfiles_continuesOnPNGFailure(t *testing.T) {
 		tag   = "t3"
 		bench = "BenchmarkFoo"
 	)
-	layout, fixture := setupProcessProfilesEnv(t, tag, bench, []string{"cpu"})
+	layout, fixture := setupProcessProfilesEnv(t, tag, []string{"cpu"})
 	copyFixtureToProfile(t, layout, bench, "cpu", fixture)
 
 	runner := &tooling.FakeRunner{

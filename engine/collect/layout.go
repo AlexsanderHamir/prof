@@ -13,16 +13,17 @@ func createBenchDirectories(tagDir string, benchmarks []string, quiet bool) erro
 	profilesDir := filepath.Join(tagDir, workspace.ProfilesDir)
 	measurementsDir := filepath.Join(tagDir, workspace.MeasurementsDir)
 	hotspotsDir := filepath.Join(tagDir, workspace.HotspotsDir)
+	dataMappingDir := filepath.Join(tagDir, workspace.DataMappingDir)
 	notesFile := filepath.Join(tagDir, workspace.TagNotesFileName)
 
-	for _, dir := range []string{profilesDir, measurementsDir, hotspotsDir} {
+	for _, dir := range []string{profilesDir, measurementsDir, hotspotsDir, dataMappingDir} {
 		if err := os.Mkdir(dir, workspace.PermDir); err != nil {
 			return fmt.Errorf("failed to create %s directory: %w", filepath.Base(dir), err)
 		}
 	}
 
 	for _, b := range benchmarks {
-		for _, dir := range []string{profilesDir, measurementsDir, hotspotsDir} {
+		for _, dir := range []string{profilesDir, measurementsDir, hotspotsDir, dataMappingDir} {
 			if err := os.Mkdir(filepath.Join(dir, b), workspace.PermDir); err != nil {
 				return fmt.Errorf("failed to create %s subdirectory for %s: %w", filepath.Base(dir), b, err)
 			}
