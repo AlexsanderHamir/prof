@@ -14,8 +14,6 @@ import (
 )
 
 const (
-	topSymbolLimit   = 10
-	hotPathLimit     = 5
 	statusOK         = "ok"
 	statusSkipped    = "skipped"
 	collectionAuto   = "auto"
@@ -24,11 +22,11 @@ const (
 
 var (
 	defaultRecommendedFlow = []string{"measurements", "hotspots", "call_trees", "source_lines", "profiles"}
-	defaultReadingGuide    = map[string]string{
+	defaultReadingGuide = map[string]string{
 		"measurements": "Go benchmark output (ns/op, B/op, allocs/op). Start here to confirm the run succeeded.",
-		"hotspots":     "pprof -top table; see profile_cost_columns for flat/cum column meanings.",
+		"hotspots":     "pprof -top text at path; flat/cum metrics live there, not in map.json. See profile_cost_columns.",
 		"call_trees":   "pprof -tree: caller/callee context for top nodes.",
-		"source_lines": "pprof -list extracts per function; use on symbols chosen from hotspots.",
+		"source_lines": "pprof -list extract paths per function; open the linked .txt for line-level detail.",
 		"profiles":     "Raw .out binaries; re-query with go tool pprof when text is insufficient.",
 	}
 	defaultProfileCostColumns = map[string]string{
@@ -39,6 +37,7 @@ var (
 		"cum_pct":  "cum as % of total profile samples. Same as cum% in hotspots/*.txt; map.json field cum_pct.",
 	}
 	defaultProfileCostTriage = "High flat: optimize this function's body. High cum but low flat: work is mostly in callees — check call_trees or child symbols."
+	hotspotsMetricsNote      = "flat/cum rankings and sample values are in the hotspots text at path (go tool pprof -top). map.json links artifacts only; use profile_cost_columns when reading that file."
 )
 
 // ProfileSnapshot captures in-memory state for one profile kind at map emit time.
@@ -190,13 +189,11 @@ func (m *BenchmarkMap) addProfileArtifacts(in BuildInput, profile string, snap P
 		return err
 	}
 	m.Hotspots[profile] = HotspotSection{
-		Path:        hotRel,
-		Purpose:     PurposeFlatCumulativeRanking,
-		Description: "go tool pprof -top output: flat time in function body, cum time including callees.",
-		Producer:    "go tool pprof -top",
-		SampleUnit:  sampleUnit(snap.ProfileData),
-		OutputUnit:  profileOutputUnit(snap.ProfileData),
-		TopSymbols:  topSymbols(snap.ProfileData, topSymbolLimit),
+		Path:               hotRel,
+		Purpose:            PurposeFlatCumulativeRanking,
+		Description:        "go tool pprof -top output: flat time in function body, cum time including callees.",
+		Producer:           "go tool pprof -top",
+		HotspotsMetricsNote: hotspotsMetricsNote,
 	}
 	m.Status.Hotspots[profile] = statusOK
 
@@ -209,7 +206,6 @@ func (m *BenchmarkMap) addProfileArtifacts(in BuildInput, profile string, snap P
 		Purpose:     PurposeCallerCalleeContext,
 		Description: "go tool pprof -tree output: caller/callee context for ranked nodes.",
 		Producer:    "go tool pprof -tree",
-		HotPath:     hotPathSummary(snap.ProfileData, hotPathLimit),
 	}
 	m.Status.CallTrees[profile] = statusOK
 
@@ -269,52 +265,6 @@ func sampleUnit(d *parser.ProfileData) string {
 	return d.SampleUnit
 }
 
-func topSymbols(d *parser.ProfileData, limit int) []TopSymbol {
-	if d == nil || len(d.SortedEntries) == 0 {
-		return nil
-	}
-	n := limit
-	if len(d.SortedEntries) < n {
-		n = len(d.SortedEntries)
-	}
-	unit := d.SampleUnit
-	outUnit := profileOutputUnit(d)
-	out := make([]TopSymbol, 0, n)
-	for i := range n {
-		entry := d.SortedEntries[i]
-		cum := d.Cum[entry.Name]
-		flatDisp, cumDisp, flatSec, cumSec := sampleDisplays(entry.Flat, cum, unit, outUnit)
-		out = append(out, TopSymbol{
-			Rank:        i + 1,
-			Symbol:      entry.Name,
-			Flat:        entry.Flat,
-			Cum:         cum,
-			FlatDisplay: flatDisp,
-			CumDisplay:  cumDisp,
-			FlatSeconds: flatSec,
-			CumSeconds:  cumSec,
-			FlatPct:     d.FlatPercentages[entry.Name],
-			CumPct:      d.CumPercentages[entry.Name],
-		})
-	}
-	return out
-}
-
-func hotPathSummary(d *parser.ProfileData, limit int) []string {
-	if d == nil {
-		return nil
-	}
-	n := limit
-	if len(d.SortedEntries) < n {
-		n = len(d.SortedEntries)
-	}
-	out := make([]string, 0, n)
-	for i := range n {
-		out = append(out, d.SortedEntries[i].Name)
-	}
-	return out
-}
-
 func functionRefs(in BuildInput, profile string, snap ProfileSnapshot) map[string]FunctionRef {
 	functions := make(map[string]FunctionRef, len(snap.ListEntries))
 	for _, e := range snap.ListEntries {
@@ -333,20 +283,6 @@ func functionRefs(in BuildInput, profile string, snap ProfileSnapshot) map[strin
 			Path:       rel,
 			FullSymbol: e.FullSymbol,
 			Status:     status,
-		}
-		if snap.ProfileData != nil {
-			outUnit := profileOutputUnit(snap.ProfileData)
-			flat := snap.ProfileData.Flat[e.FullSymbol]
-			cum := snap.ProfileData.Cum[e.FullSymbol]
-			flatDisp, cumDisp, flatSec, cumSec := sampleDisplays(flat, cum, snap.ProfileData.SampleUnit, outUnit)
-			ref.Flat = flat
-			ref.Cum = cum
-			ref.FlatDisplay = flatDisp
-			ref.CumDisplay = cumDisp
-			ref.FlatSeconds = flatSec
-			ref.CumSeconds = cumSec
-			ref.FlatPct = snap.ProfileData.FlatPercentages[e.FullSymbol]
-			ref.CumPct = snap.ProfileData.CumPercentages[e.FullSymbol]
 		}
 		functions[e.OutputStem] = ref
 	}

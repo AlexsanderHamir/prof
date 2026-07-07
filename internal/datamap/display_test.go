@@ -23,8 +23,8 @@ func cpuFixturePath(t *testing.T) string {
 	return ""
 }
 
-// Top rows must match go tool pprof -top display strings (same Scale/ScaledLabel as pprof).
-func TestTopSymbolDisplay_matchesPprofTop(t *testing.T) {
+// Display helpers must match go tool pprof -top for profile totals (used on profiles section).
+func TestPprofDisplay_matchesPprofTop(t *testing.T) {
 	t.Parallel()
 	path := cpuFixturePath(t)
 	d, err := parser.DefaultPipeline().RunFromPath(path)
@@ -51,13 +51,6 @@ func TestTopSymbolDisplay_matchesPprofTop(t *testing.T) {
 		}
 	}
 
-	top := topSymbols(d, 5)
-	if len(top) == 0 {
-		t.Fatal("expected top symbols")
-	}
-	if top[0].Symbol != "crypto/internal/fips140/sha256.blockSHANI" || top[0].FlatDisplay != "0.19s" {
-		t.Fatalf("rank 1=%+v", top[0])
-	}
 	display, sec, outUnit := profileTotalDisplay(d)
 	if display != "3.15s" || sec != 3.15 || outUnit != "s" {
 		t.Fatalf("total display=%q seconds=%v outUnit=%q want 3.15s/s", display, sec, outUnit)
