@@ -100,7 +100,7 @@ Benchmark discovery: [`engine/collect/discovery.go`](engine/collect/discovery.go
 
 1. [`collect.RunAuto`](engine/collect/entry.go) loads optional `prof.json` via [`config.Load`](internal/config/load.go).
 2. Creates `.prof/<tag>/` via [`collect/layout.go`](engine/collect/layout.go) and [`workspace.CleanOrCreateTag`](internal/workspace/tag.go).
-3. Per benchmark, three TTY-gated stderr steps via [`termui.Session`](internal/termui/progress.go) in [`pipeline.go`](engine/collect/pipeline.go), preceded by a **Preparing** stage in [`entry.go`](engine/collect/entry.go): **Running benchmark** (`go test` + artifact move), **Collecting profiles** ([`processProfiles`](engine/collect/profiles.go)), **Collecting function profiles** (parser + per-function `pprof -list`). Interactive TTY keeps a persistent stage log (`✓` done lines + stage-scoped warnings); non-TTY keeps `slog` stage logs.
+3. Per benchmark, three TTY-gated stderr steps via [`termui.Session`](internal/termui/progress.go) in [`pipeline.go`](engine/collect/pipeline.go), preceded by a **Preparing** stage in [`entry.go`](engine/collect/entry.go): **Running benchmark** (`go test` + artifact move), **Collecting profiles** ([`processProfiles`](engine/collect/profiles.go)), **Collecting function profiles** (parser + per-function `pprof -list`, with bounded parallel fan-out across profile kinds and functions — see [docs/design/source-lines-parallelism.md](docs/design/source-lines-parallelism.md)). Interactive TTY keeps a persistent stage log (`✓` done lines + stage-scoped warnings); non-TTY keeps `slog` stage logs.
 
 ### Manual ingest (`prof manual`)
 
