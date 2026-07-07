@@ -14,17 +14,17 @@ func sourceLinesWorkers(jobCount int) int {
 	if jobCount <= 0 {
 		return 0
 	}
-	max := runtime.GOMAXPROCS(0)
-	if max < 1 {
-		max = 1
+	workers := runtime.GOMAXPROCS(0)
+	if workers < 1 {
+		workers = 1
 	}
-	if jobCount < max {
-		max = jobCount
+	if jobCount < workers {
+		workers = jobCount
 	}
-	if max > defaultSourceLinesWorkers {
-		max = defaultSourceLinesWorkers
+	if workers > defaultSourceLinesWorkers {
+		workers = defaultSourceLinesWorkers
 	}
-	return max
+	return workers
 }
 
 // parallelFor runs fn(i) for i in [0,n) with at most workers goroutines.
@@ -35,7 +35,7 @@ func parallelFor(n, workers int, fn func(i int) error) []error {
 	}
 	errs := make([]error, n)
 	if n == 1 || workers <= 1 {
-		for i := 0; i < n; i++ {
+		for i := range n {
 			errs[i] = fn(i)
 		}
 		return errs
@@ -44,14 +44,14 @@ func parallelFor(n, workers int, fn func(i int) error) []error {
 		workers = n
 	}
 	jobs := make(chan int, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		jobs <- i
 	}
 	close(jobs)
 
 	var wg sync.WaitGroup
 	wg.Add(workers)
-	for w := 0; w < workers; w++ {
+	for range workers {
 		go func() {
 			defer wg.Done()
 			for i := range jobs {

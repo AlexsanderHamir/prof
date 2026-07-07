@@ -19,7 +19,7 @@ func TestParallelFor_allIndicesRun(t *testing.T) {
 		t.Fatalf("len(errs)=%d want %d", len(errs), n)
 	}
 	var mask int64
-	for i := 0; i < n; i++ {
+	for i := range n {
 		mask |= 1 << i
 	}
 	if seen.Load() != mask {
