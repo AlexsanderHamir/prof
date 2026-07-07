@@ -22,7 +22,7 @@ const (
 
 var (
 	defaultRecommendedFlow = []string{"measurements", "hotspots", "call_trees", "source_lines", "profiles"}
-	defaultReadingGuide = map[string]string{
+	defaultReadingGuide    = map[string]string{
 		"measurements": "Go benchmark output (ns/op, B/op, allocs/op). Start here to confirm the run succeeded.",
 		"hotspots":     "pprof -top text at path; flat/cum metrics live there, not in map.json. See profile_cost_columns.",
 		"call_trees":   "pprof -tree: caller/callee context for top nodes.",
@@ -74,19 +74,19 @@ func Build(in BuildInput) (BenchmarkMap, error) {
 	}
 
 	m := BenchmarkMap{
-		SchemaVersion:   SchemaVersion,
-		Tag:             in.Tag,
-		Benchmark:       in.Benchmark,
-		Package:         in.Package,
+		SchemaVersion:      SchemaVersion,
+		Tag:                in.Tag,
+		Benchmark:          in.Benchmark,
+		Package:            in.Package,
 		RecommendedFlow:    append([]string(nil), defaultRecommendedFlow...),
 		ReadingGuide:       copyReadingGuide(),
 		ProfileCostColumns: copyProfileCostColumns(),
 		ProfileCostTriage:  defaultProfileCostTriage,
-		Profiles:        make(map[string]ProfileRef, len(in.Profiles)),
-		Hotspots:        make(map[string]HotspotSection, len(in.Profiles)),
-		CallTrees:       make(map[string]CallTreeSection, len(in.Profiles)),
-		SourceLines:     make(map[string]SourceLinesSection, len(in.Profiles)),
-		CallGraphs:      make(map[string]CallGraphRef, len(in.Profiles)),
+		Profiles:           make(map[string]ProfileRef, len(in.Profiles)),
+		Hotspots:           make(map[string]HotspotSection, len(in.Profiles)),
+		CallTrees:          make(map[string]CallTreeSection, len(in.Profiles)),
+		SourceLines:        make(map[string]SourceLinesSection, len(in.Profiles)),
+		CallGraphs:         make(map[string]CallGraphRef, len(in.Profiles)),
 		Status: Status{
 			Profiles:    make(map[string]string, len(in.Profiles)),
 			Hotspots:    make(map[string]string, len(in.Profiles)),
@@ -189,10 +189,10 @@ func (m *BenchmarkMap) addProfileArtifacts(in BuildInput, profile string, snap P
 		return err
 	}
 	m.Hotspots[profile] = HotspotSection{
-		Path:               hotRel,
-		Purpose:            PurposeFlatCumulativeRanking,
-		Description:        "go tool pprof -top output: flat time in function body, cum time including callees.",
-		Producer:           "go tool pprof -top",
+		Path:                hotRel,
+		Purpose:             PurposeFlatCumulativeRanking,
+		Description:         "go tool pprof -top output: flat time in function body, cum time including callees.",
+		Producer:            "go tool pprof -top",
 		HotspotsMetricsNote: hotspotsMetricsNote,
 	}
 	m.Status.Hotspots[profile] = statusOK

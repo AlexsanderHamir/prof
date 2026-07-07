@@ -11,6 +11,12 @@ import (
 	"time"
 )
 
+const (
+	unitAuto    = "auto"
+	unitMinimum = "minimum"
+	unitSeconds = "s"
+)
+
 // Scale converts value from fromUnit to toUnit. Returns scaled value and target unit
 // (empty when uninteresting). Matches pprof measurement.Scale.
 func Scale(value int64, fromUnit, toUnit string) (float64, string) {
@@ -24,7 +30,7 @@ func Scale(value int64, fromUnit, toUnit string) (float64, string) {
 		}
 	}
 	switch toUnit {
-	case "count", "sample", "unit", "minimum", "auto":
+	case "count", "sample", "unit", unitMinimum, unitAuto:
 		return float64(value), ""
 	default:
 		return float64(value), toUnit
@@ -43,8 +49,8 @@ func ScaledLabel(value int64, fromUnit, toUnit string) string {
 
 // Seconds converts a sample value to seconds when fromUnit is a time unit; ok is false otherwise.
 func Seconds(value int64, fromUnit string) (sec float64, ok bool) {
-	v, u := Scale(value, fromUnit, "s")
-	if u != "s" {
+	v, u := Scale(value, fromUnit, unitSeconds)
+	if u != unitSeconds {
 		return 0, false
 	}
 	return v, true
@@ -101,9 +107,9 @@ func (ut UnitType) convertUnit(value int64, fromUnitStr, toUnitStr string) (floa
 		return 0, "", false
 	}
 	v := float64(value) * fromUnit.Factor
-	if toUnitStr == "minimum" || toUnitStr == "auto" {
-		if v, u, ok := ut.autoScale(v); ok {
-			return v, u, true
+	if toUnitStr == unitMinimum || toUnitStr == unitAuto {
+		if scaled, u, ok := ut.autoScale(v); ok {
+			return scaled, u, true
 		}
 		return v / ut.DefaultUnit.Factor, ut.DefaultUnit.CanonicalName, true
 	}
@@ -152,7 +158,7 @@ func abs64(v int64) int64 {
 // Mirrors github.com/google/pprof/internal/report.Report.selectOutputUnit.
 func SelectOutputUnit(sampleUnit string, total int64, flat, cum map[string]int64) string {
 	if sampleUnit == "" {
-		return "auto"
+		return unitAuto
 	}
 	var minValue int64
 	seen := make(map[string]struct{}, len(flat))
@@ -179,11 +185,11 @@ func SelectOutputUnit(sampleUnit string, total int64, flat, cum map[string]int64
 	if minValue == 0 {
 		minValue = maxValue
 	}
-	_, minUnit := Scale(minValue, sampleUnit, "minimum")
-	_, maxUnit := Scale(maxValue, sampleUnit, "minimum")
+	_, minUnit := Scale(minValue, sampleUnit, unitMinimum)
+	_, maxUnit := Scale(maxValue, sampleUnit, unitMinimum)
 	unit := minUnit
 	if minUnit != maxUnit && minValue*100 < maxValue {
-		_, unit = Scale(100*minValue, sampleUnit, "minimum")
+		_, unit = Scale(100*minValue, sampleUnit, unitMinimum)
 	}
 	if unit != "" {
 		return unit

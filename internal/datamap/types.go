@@ -15,22 +15,22 @@ const (
 
 // BenchmarkMap is the root document written to data_mapping/<Benchmark>/map.json.
 type BenchmarkMap struct {
-	SchemaVersion   int                           `json:"schema_version"`
-	Tag             string                        `json:"tag"`
-	Benchmark       string                        `json:"benchmark"`
-	Package         string                        `json:"package,omitempty"`
+	SchemaVersion      int                           `json:"schema_version"`
+	Tag                string                        `json:"tag"`
+	Benchmark          string                        `json:"benchmark"`
+	Package            string                        `json:"package,omitempty"`
 	RecommendedFlow    []string                      `json:"recommended_flow"`
 	ReadingGuide       map[string]string             `json:"reading_guide"`
 	ProfileCostColumns map[string]string             `json:"profile_cost_columns"`
 	ProfileCostTriage  string                        `json:"profile_cost_triage"`
 	Measurements       *MeasurementsSection          `json:"measurements,omitempty"`
-	Profiles        map[string]ProfileRef         `json:"profiles"`
-	Hotspots        map[string]HotspotSection     `json:"hotspots"`
-	CallTrees       map[string]CallTreeSection    `json:"call_trees"`
-	SourceLines     map[string]SourceLinesSection `json:"source_lines"`
-	CallGraphs      map[string]CallGraphRef       `json:"call_graphs,omitempty"`
-	Provenance      Provenance                    `json:"provenance"`
-	Status          Status                        `json:"status"`
+	Profiles           map[string]ProfileRef         `json:"profiles"`
+	Hotspots           map[string]HotspotSection     `json:"hotspots"`
+	CallTrees          map[string]CallTreeSection    `json:"call_trees"`
+	SourceLines        map[string]SourceLinesSection `json:"source_lines"`
+	CallGraphs         map[string]CallGraphRef       `json:"call_graphs,omitempty"`
+	Provenance         Provenance                    `json:"provenance"`
+	Status             Status                        `json:"status"`
 }
 
 // MeasurementsSection points at go test bench output.
@@ -53,14 +53,14 @@ type MeasurementSummary struct {
 
 // ProfileRef describes a raw pprof binary.
 type ProfileRef struct {
-	Path          string  `json:"path"`
-	Purpose       string  `json:"purpose"`
-	Description   string  `json:"description"`
-	TotalSamples  int64   `json:"total_samples,omitempty"`
-	SampleUnit    string  `json:"sample_unit,omitempty"`
-	OutputUnit    string  `json:"output_unit,omitempty"`
-	TotalDisplay  string  `json:"total_display,omitempty"`
-	TotalSeconds  float64 `json:"total_seconds,omitempty"`
+	Path         string  `json:"path"`
+	Purpose      string  `json:"purpose"`
+	Description  string  `json:"description"`
+	TotalSamples int64   `json:"total_samples,omitempty"`
+	SampleUnit   string  `json:"sample_unit,omitempty"`
+	OutputUnit   string  `json:"output_unit,omitempty"`
+	TotalDisplay string  `json:"total_display,omitempty"`
+	TotalSeconds float64 `json:"total_seconds,omitempty"`
 }
 
 // HotspotSection describes a pprof -top text artifact.

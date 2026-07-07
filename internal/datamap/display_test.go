@@ -37,7 +37,7 @@ func TestPprofDisplay_matchesPprofTop(t *testing.T) {
 
 	want := map[string]string{
 		"crypto/internal/fips140/sha256.blockSHANI": "0.19s",
-		"runtime.memmove":                           "0.16s",
+		"runtime.memmove": "0.16s",
 	}
 	for sym, label := range want {
 		flat, ok := d.Flat[sym]
