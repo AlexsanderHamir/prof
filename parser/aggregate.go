@@ -2,6 +2,7 @@ package parser
 
 import (
 	"sort"
+	"strings"
 
 	pprofprofile "github.com/google/pprof/profile"
 )
@@ -11,6 +12,10 @@ func AggregateProfileData(p *pprofprofile.Profile, valueIndex int) *ProfileData 
 	flat, cum := flatAndCumulativeFromSamples(p, valueIndex)
 	total := totalSampleValue(p, valueIndex)
 	flatPct, cumPct, sumPct, sorted := percentagesAndSort(flat, cum, total)
+	sampleUnit := ""
+	if valueIndex >= 0 && valueIndex < len(p.SampleType) && p.SampleType[valueIndex] != nil {
+		sampleUnit = strings.ToLower(p.SampleType[valueIndex].Unit)
+	}
 	return &ProfileData{
 		Flat:            flat,
 		Cum:             cum,
@@ -19,6 +24,7 @@ func AggregateProfileData(p *pprofprofile.Profile, valueIndex int) *ProfileData 
 		CumPercentages:  cumPct,
 		SumPercentages:  sumPct,
 		SortedEntries:   sorted,
+		SampleUnit:      sampleUnit,
 	}
 }
 

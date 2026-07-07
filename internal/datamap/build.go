@@ -155,6 +155,15 @@ func (m *BenchmarkMap) addProfileArtifacts(in BuildInput, profile string, snap P
 		Purpose:      PurposeRawPprofBinary,
 		Description:  "Raw pprof profile binary; source of truth for go tool pprof.",
 		TotalSamples: snapTotal(snap.ProfileData),
+		SampleUnit:   sampleUnit(snap.ProfileData),
+	}
+	if snap.ProfileData != nil {
+		display, sec, outUnit := profileTotalDisplay(snap.ProfileData)
+		ref := m.Profiles[profile]
+		ref.TotalDisplay = display
+		ref.TotalSeconds = sec
+		ref.OutputUnit = outUnit
+		m.Profiles[profile] = ref
 	}
 	m.Status.Profiles[profile] = statusOK
 
@@ -167,6 +176,8 @@ func (m *BenchmarkMap) addProfileArtifacts(in BuildInput, profile string, snap P
 		Purpose:     PurposeFlatCumulativeRanking,
 		Description: "go tool pprof -top output: flat time in function body, cum time including callees.",
 		Producer:    "go tool pprof -top",
+		SampleUnit:  sampleUnit(snap.ProfileData),
+		OutputUnit:  profileOutputUnit(snap.ProfileData),
 		TopSymbols:  topSymbols(snap.ProfileData, topSymbolLimit),
 	}
 	m.Status.Hotspots[profile] = statusOK
@@ -233,6 +244,13 @@ func snapTotal(d *parser.ProfileData) int64 {
 	return d.Total
 }
 
+func sampleUnit(d *parser.ProfileData) string {
+	if d == nil {
+		return ""
+	}
+	return d.SampleUnit
+}
+
 func topSymbols(d *parser.ProfileData, limit int) []TopSymbol {
 	if d == nil || len(d.SortedEntries) == 0 {
 		return nil
@@ -241,16 +259,24 @@ func topSymbols(d *parser.ProfileData, limit int) []TopSymbol {
 	if len(d.SortedEntries) < n {
 		n = len(d.SortedEntries)
 	}
+	unit := d.SampleUnit
+	outUnit := profileOutputUnit(d)
 	out := make([]TopSymbol, 0, n)
 	for i := range n {
 		entry := d.SortedEntries[i]
+		cum := d.Cum[entry.Name]
+		flatDisp, cumDisp, flatSec, cumSec := sampleDisplays(entry.Flat, cum, unit, outUnit)
 		out = append(out, TopSymbol{
-			Rank:    i + 1,
-			Symbol:  entry.Name,
-			Flat:    entry.Flat,
-			Cum:     d.Cum[entry.Name],
-			FlatPct: d.FlatPercentages[entry.Name],
-			CumPct:  d.CumPercentages[entry.Name],
+			Rank:        i + 1,
+			Symbol:      entry.Name,
+			Flat:        entry.Flat,
+			Cum:         cum,
+			FlatDisplay: flatDisp,
+			CumDisplay:  cumDisp,
+			FlatSeconds: flatSec,
+			CumSeconds:  cumSec,
+			FlatPct:     d.FlatPercentages[entry.Name],
+			CumPct:      d.CumPercentages[entry.Name],
 		})
 	}
 	return out
@@ -291,8 +317,16 @@ func functionRefs(in BuildInput, profile string, snap ProfileSnapshot) map[strin
 			Status:     status,
 		}
 		if snap.ProfileData != nil {
-			ref.Flat = snap.ProfileData.Flat[e.FullSymbol]
-			ref.Cum = snap.ProfileData.Cum[e.FullSymbol]
+			outUnit := profileOutputUnit(snap.ProfileData)
+			flat := snap.ProfileData.Flat[e.FullSymbol]
+			cum := snap.ProfileData.Cum[e.FullSymbol]
+			flatDisp, cumDisp, flatSec, cumSec := sampleDisplays(flat, cum, snap.ProfileData.SampleUnit, outUnit)
+			ref.Flat = flat
+			ref.Cum = cum
+			ref.FlatDisplay = flatDisp
+			ref.CumDisplay = cumDisp
+			ref.FlatSeconds = flatSec
+			ref.CumSeconds = cumSec
 			ref.FlatPct = snap.ProfileData.FlatPercentages[e.FullSymbol]
 			ref.CumPct = snap.ProfileData.CumPercentages[e.FullSymbol]
 		}

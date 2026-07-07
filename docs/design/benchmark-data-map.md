@@ -103,6 +103,22 @@ Schema types and builder live in [`internal/datamap`](../../internal/datamap/). 
 }
 ```
 
+## Sample units and display fields
+
+`flat` / `cum` / `total_samples` are **raw profile sample values** in the pprof sample unit (nanoseconds for CPU, bytes for heap profiles). They use the **last** `SampleType` index — the same index `go tool pprof -top` uses via `report.NewDefault`.
+
+Display strings match `go tool pprof -top` exactly:
+
+| Field | Meaning |
+| --- | --- |
+| `sample_unit` | Raw unit from the profile (e.g. `nanoseconds`, `bytes`) |
+| `output_unit` | Single display unit chosen for the whole report (pprof `selectOutputUnit`, e.g. `s`, `MB`) |
+| `flat_display` / `cum_display` | Formatted flat/cum using pprof `ScaledLabel` with `output_unit` |
+| `flat_seconds` / `cum_seconds` | Numeric seconds when `sample_unit` is time (independent of display suffix) |
+| `total_display` / `total_seconds` | Profile total in the same display rules as `-top` header |
+
+Implementation: [`internal/pprofscale`](../../internal/pprofscale/) (copied from `github.com/google/pprof/internal/measurement` because that package is internal).
+
 ## Invariants
 
 - Same `FunctionListEntry` set as source_lines on disk (from `prof.json` filters).

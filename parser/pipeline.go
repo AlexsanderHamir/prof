@@ -154,10 +154,10 @@ func (StandardProfileValidator) Validate(p *pprofprofile.Profile) error {
 	return ValidateProfile(p)
 }
 
-// FirstSampleIndexSelector uses sample value index 0.
+// FirstSampleIndexSelector uses the last sample value index (pprof -top default).
 type FirstSampleIndexSelector struct{}
 
-// PrimaryIndex returns the primary sample value index (0).
+// PrimaryIndex returns the primary sample value index (last sample type).
 func (FirstSampleIndexSelector) PrimaryIndex(p *pprofprofile.Profile) (int, error) {
 	return PrimarySampleValueIndex(p)
 }
