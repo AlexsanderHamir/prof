@@ -77,7 +77,7 @@ func TestEmitBenchmarkMap_writesMapJSON(t *testing.T) {
 	if len(m.SourceLines["cpu"].Functions) == 0 {
 		t.Fatal("expected source_lines functions")
 	}
-	if len(m.Hotspots["cpu"].TopSymbols) == 0 {
-		t.Fatal("expected top_symbols")
+	if m.Hotspots["cpu"].HotspotsMetricsNote == "" {
+		t.Fatal("expected hotspots_metrics_note")
 	}
 }

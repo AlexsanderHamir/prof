@@ -60,8 +60,14 @@ func TestBuild_minimalCPUProfile(t *testing.T) {
 	if fn.FullSymbol != "main.work" || fn.Status != statusOK {
 		t.Fatalf("function ref=%+v", fn)
 	}
-	if len(m.Hotspots["cpu"].TopSymbols) != 1 {
-		t.Fatalf("top symbols=%d", len(m.Hotspots["cpu"].TopSymbols))
+	if m.Hotspots["cpu"].HotspotsMetricsNote == "" {
+		t.Fatal("expected hotspots_metrics_note on hotspot section")
+	}
+	if m.ProfileCostColumns["flat"] == "" || m.ProfileCostColumns["cum_pct"] == "" {
+		t.Fatal("expected profile_cost_columns glossary")
+	}
+	if m.ProfileCostTriage == "" {
+		t.Fatal("expected profile_cost_triage")
 	}
 }
 

@@ -30,10 +30,22 @@ Schema types and builder live in [`internal/datamap`](../../internal/datamap/). 
 ## Recommended reading flow
 
 1. **measurements** — confirm benchmark ran; headline ns/op and allocs
-2. **hotspots** — find top symbols (`top_symbols` in map)
-3. **call_trees** — understand call path (`hot_path_summary`)
-4. **source_lines** — line-level detail for chosen symbols
+2. **hotspots** — open linked `hotspots/*.txt` for flat/cum rankings (`profile_cost_columns` explains columns)
+3. **call_trees** — open linked `call_trees/*.txt` for caller/callee context
+4. **source_lines** — line-level detail for chosen symbols (path index only in map.json)
 5. **profiles** — raw binary only if deeper pprof queries needed
+
+## Mapping vs metrics
+
+`map.json` is an **artifact index**, not a copy of profile sample data.
+
+| Section | map.json holds | Metrics live in |
+| --- | --- | --- |
+| `hotspots` | Path to `-top` text + column glossary | `hotspots/<benchmark>/<profile>.txt` |
+| `source_lines.functions` | Path, `full_symbol`, `status` | Prior hotspots read; line detail in linked `.txt` |
+| `profiles` | Path + profile total (orientation) | Raw `.out` binary |
+
+Do not expect `flat`/`cum` on `source_lines` entries — agents reach source_lines after choosing a symbol from hotspots.
 
 ## Example (truncated)
 
@@ -59,14 +71,7 @@ Schema types and builder live in [`internal/datamap`](../../internal/datamap/). 
       "path": "hotspots/BenchmarkDataGeneration/cpu.txt",
       "purpose": "flat_and_cumulative_ranking",
       "producer": "go tool pprof -top",
-      "top_symbols": [
-        {
-          "rank": 1,
-          "symbol": "github.com/example/benchmarks/utils.(*DataGenerator).GenerateStrings",
-          "flat_pct": 1.28,
-          "cum_pct": 70.53
-        }
-      ]
+      "hotspots_metrics_note": "flat/cum rankings and sample values are in the hotspots text at path..."
     }
   },
   "call_trees": {
@@ -103,6 +108,28 @@ Schema types and builder live in [`internal/datamap`](../../internal/datamap/). 
 }
 ```
 
+## Profile cost columns (flat / cum)
+
+`go tool pprof -top` prints five metric columns. Read them in `hotspots/*.txt`; `profile_cost_columns` in map.json explains each column:
+
+| Column | Meaning |
+| --- | --- |
+| `flat` | Cost in this function's own code only (excludes callees). CPU: time in the function body; memory: bytes allocated there. |
+| `flat%` | `flat` as % of total profile samples. |
+| `sum%` | Running sum of `flat%` reading the `-top` table top to bottom. |
+| `cum` | Cost in this function plus all functions it called. CPU: seconds; memory: bytes including callees. |
+| `cum%` | `cum` as % of total profile samples. |
+
+Each emitted `map.json` includes `profile_cost_columns` and `profile_cost_triage` so agents can interpret the hotspots text file:
+
+> High flat: optimize this function's body. High cum but low flat: work is mostly in callees — check call_trees or child symbols.
+
+## Sample units and display fields
+
+`flat` / `cum` / `total_samples` on the **profiles** section are raw profile totals in the pprof sample unit (nanoseconds for CPU, bytes for heap profiles). Per-function metrics are **not** duplicated in map.json — read `hotspots/*.txt` instead.
+
+Display strings on **profiles** (`total_display`, `total_seconds`) match the `go tool pprof -top` header. Implementation: [`internal/pprofscale`](../../internal/pprofscale/).
+
 ## Invariants
 
 - Same `FunctionListEntry` set as source_lines on disk (from `prof.json` filters).
@@ -114,7 +141,7 @@ Schema types and builder live in [`internal/datamap`](../../internal/datamap/). 
 
 **Positive:** Agents load one JSON file to triage before opening large text artifacts.
 
-**Neutral:** map.json grows with function count; acceptable for v1.
+**Neutral:** map.json size scales with function count (path index only); much smaller than duplicating per-function metrics.
 
 ## Out of scope (v2)
 

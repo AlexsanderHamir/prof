@@ -9,6 +9,8 @@ type ProfileData struct {
 	CumPercentages  map[string]float64
 	SumPercentages  map[string]float64
 	SortedEntries   []FuncEntry
+	// SampleUnit is the pprof unit for Flat/Cum/Total (e.g. nanoseconds, bytes).
+	SampleUnit string
 }
 
 // FuncEntry is one symbol row sorted by flat cost (descending).

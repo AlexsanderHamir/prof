@@ -43,12 +43,12 @@ func ValidateProfile(p *pprofprofile.Profile) error {
 }
 
 // PrimarySampleValueIndex returns the index into Sample.Value used for flat/cum aggregation.
-// Currently always 0 (first sample type); extend here to pick wall vs alloc, etc.
+// Uses the last sample type, matching go tool pprof report.NewDefault (pprof -top).
 func PrimarySampleValueIndex(p *pprofprofile.Profile) (int, error) {
 	if len(p.SampleType) == 0 {
 		return 0, errors.New("profile has no sample types")
 	}
-	return 0, nil
+	return len(p.SampleType) - 1, nil
 }
 
 // ValidateSamplesHaveValueAt ensures every sample has a value at the given index.

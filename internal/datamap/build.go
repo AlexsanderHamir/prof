@@ -14,8 +14,6 @@ import (
 )
 
 const (
-	topSymbolLimit   = 10
-	hotPathLimit     = 5
 	statusOK         = "ok"
 	statusSkipped    = "skipped"
 	collectionAuto   = "auto"
@@ -26,11 +24,20 @@ var (
 	defaultRecommendedFlow = []string{"measurements", "hotspots", "call_trees", "source_lines", "profiles"}
 	defaultReadingGuide    = map[string]string{
 		"measurements": "Go benchmark output (ns/op, B/op, allocs/op). Start here to confirm the run succeeded.",
-		"hotspots":     "pprof -top: functions ranked by flat and cumulative cost.",
+		"hotspots":     "pprof -top text at path; flat/cum metrics live there, not in map.json. See profile_cost_columns.",
 		"call_trees":   "pprof -tree: caller/callee context for top nodes.",
-		"source_lines": "pprof -list extracts per function; use on symbols chosen from hotspots.",
+		"source_lines": "pprof -list extract paths per function; open the linked .txt for line-level detail.",
 		"profiles":     "Raw .out binaries; re-query with go tool pprof when text is insufficient.",
 	}
+	defaultProfileCostColumns = map[string]string{
+		"flat":     "Cost in this function's own code only (excludes callees). CPU: seconds in the function body; memory: bytes allocated there.",
+		"flat_pct": "flat as % of total profile samples. Same as flat% in hotspots/*.txt; map.json field flat_pct.",
+		"sum_pct":  "Running sum of flat% reading the -top table top to bottom. Column in hotspots/*.txt only (not stored in map.json).",
+		"cum":      "Cost in this function plus all functions it called (transitive). CPU: seconds; memory: bytes including callees.",
+		"cum_pct":  "cum as % of total profile samples. Same as cum% in hotspots/*.txt; map.json field cum_pct.",
+	}
+	defaultProfileCostTriage = "High flat: optimize this function's body. High cum but low flat: work is mostly in callees — check call_trees or child symbols."
+	hotspotsMetricsNote      = "flat/cum rankings and sample values are in the hotspots text at path (go tool pprof -top). map.json links artifacts only; use profile_cost_columns when reading that file."
 )
 
 // ProfileSnapshot captures in-memory state for one profile kind at map emit time.
@@ -67,17 +74,19 @@ func Build(in BuildInput) (BenchmarkMap, error) {
 	}
 
 	m := BenchmarkMap{
-		SchemaVersion:   SchemaVersion,
-		Tag:             in.Tag,
-		Benchmark:       in.Benchmark,
-		Package:         in.Package,
-		RecommendedFlow: append([]string(nil), defaultRecommendedFlow...),
-		ReadingGuide:    copyReadingGuide(),
-		Profiles:        make(map[string]ProfileRef, len(in.Profiles)),
-		Hotspots:        make(map[string]HotspotSection, len(in.Profiles)),
-		CallTrees:       make(map[string]CallTreeSection, len(in.Profiles)),
-		SourceLines:     make(map[string]SourceLinesSection, len(in.Profiles)),
-		CallGraphs:      make(map[string]CallGraphRef, len(in.Profiles)),
+		SchemaVersion:      SchemaVersion,
+		Tag:                in.Tag,
+		Benchmark:          in.Benchmark,
+		Package:            in.Package,
+		RecommendedFlow:    append([]string(nil), defaultRecommendedFlow...),
+		ReadingGuide:       copyReadingGuide(),
+		ProfileCostColumns: copyProfileCostColumns(),
+		ProfileCostTriage:  defaultProfileCostTriage,
+		Profiles:           make(map[string]ProfileRef, len(in.Profiles)),
+		Hotspots:           make(map[string]HotspotSection, len(in.Profiles)),
+		CallTrees:          make(map[string]CallTreeSection, len(in.Profiles)),
+		SourceLines:        make(map[string]SourceLinesSection, len(in.Profiles)),
+		CallGraphs:         make(map[string]CallGraphRef, len(in.Profiles)),
 		Status: Status{
 			Profiles:    make(map[string]string, len(in.Profiles)),
 			Hotspots:    make(map[string]string, len(in.Profiles)),
@@ -127,6 +136,14 @@ func copyReadingGuide() map[string]string {
 	return out
 }
 
+func copyProfileCostColumns() map[string]string {
+	out := make(map[string]string, len(defaultProfileCostColumns))
+	for k, v := range defaultProfileCostColumns {
+		out[k] = v
+	}
+	return out
+}
+
 func (m *BenchmarkMap) addMeasurements(in BuildInput) error {
 	abs := in.Layout.Measurement(in.Benchmark)
 	rel, err := in.Layout.RelFromLayout(abs)
@@ -155,6 +172,15 @@ func (m *BenchmarkMap) addProfileArtifacts(in BuildInput, profile string, snap P
 		Purpose:      PurposeRawPprofBinary,
 		Description:  "Raw pprof profile binary; source of truth for go tool pprof.",
 		TotalSamples: snapTotal(snap.ProfileData),
+		SampleUnit:   sampleUnit(snap.ProfileData),
+	}
+	if snap.ProfileData != nil {
+		display, sec, outUnit := profileTotalDisplay(snap.ProfileData)
+		ref := m.Profiles[profile]
+		ref.TotalDisplay = display
+		ref.TotalSeconds = sec
+		ref.OutputUnit = outUnit
+		m.Profiles[profile] = ref
 	}
 	m.Status.Profiles[profile] = statusOK
 
@@ -163,11 +189,11 @@ func (m *BenchmarkMap) addProfileArtifacts(in BuildInput, profile string, snap P
 		return err
 	}
 	m.Hotspots[profile] = HotspotSection{
-		Path:        hotRel,
-		Purpose:     PurposeFlatCumulativeRanking,
-		Description: "go tool pprof -top output: flat time in function body, cum time including callees.",
-		Producer:    "go tool pprof -top",
-		TopSymbols:  topSymbols(snap.ProfileData, topSymbolLimit),
+		Path:                hotRel,
+		Purpose:             PurposeFlatCumulativeRanking,
+		Description:         "go tool pprof -top output: flat time in function body, cum time including callees.",
+		Producer:            "go tool pprof -top",
+		HotspotsMetricsNote: hotspotsMetricsNote,
 	}
 	m.Status.Hotspots[profile] = statusOK
 
@@ -180,7 +206,6 @@ func (m *BenchmarkMap) addProfileArtifacts(in BuildInput, profile string, snap P
 		Purpose:     PurposeCallerCalleeContext,
 		Description: "go tool pprof -tree output: caller/callee context for ranked nodes.",
 		Producer:    "go tool pprof -tree",
-		HotPath:     hotPathSummary(snap.ProfileData, hotPathLimit),
 	}
 	m.Status.CallTrees[profile] = statusOK
 
@@ -233,42 +258,11 @@ func snapTotal(d *parser.ProfileData) int64 {
 	return d.Total
 }
 
-func topSymbols(d *parser.ProfileData, limit int) []TopSymbol {
-	if d == nil || len(d.SortedEntries) == 0 {
-		return nil
-	}
-	n := limit
-	if len(d.SortedEntries) < n {
-		n = len(d.SortedEntries)
-	}
-	out := make([]TopSymbol, 0, n)
-	for i := range n {
-		entry := d.SortedEntries[i]
-		out = append(out, TopSymbol{
-			Rank:    i + 1,
-			Symbol:  entry.Name,
-			Flat:    entry.Flat,
-			Cum:     d.Cum[entry.Name],
-			FlatPct: d.FlatPercentages[entry.Name],
-			CumPct:  d.CumPercentages[entry.Name],
-		})
-	}
-	return out
-}
-
-func hotPathSummary(d *parser.ProfileData, limit int) []string {
+func sampleUnit(d *parser.ProfileData) string {
 	if d == nil {
-		return nil
+		return ""
 	}
-	n := limit
-	if len(d.SortedEntries) < n {
-		n = len(d.SortedEntries)
-	}
-	out := make([]string, 0, n)
-	for i := range n {
-		out = append(out, d.SortedEntries[i].Name)
-	}
-	return out
+	return d.SampleUnit
 }
 
 func functionRefs(in BuildInput, profile string, snap ProfileSnapshot) map[string]FunctionRef {
@@ -289,12 +283,6 @@ func functionRefs(in BuildInput, profile string, snap ProfileSnapshot) map[strin
 			Path:       rel,
 			FullSymbol: e.FullSymbol,
 			Status:     status,
-		}
-		if snap.ProfileData != nil {
-			ref.Flat = snap.ProfileData.Flat[e.FullSymbol]
-			ref.Cum = snap.ProfileData.Cum[e.FullSymbol]
-			ref.FlatPct = snap.ProfileData.FlatPercentages[e.FullSymbol]
-			ref.CumPct = snap.ProfileData.CumPercentages[e.FullSymbol]
 		}
 		functions[e.OutputStem] = ref
 	}

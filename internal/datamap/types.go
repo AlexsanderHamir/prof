@@ -15,20 +15,22 @@ const (
 
 // BenchmarkMap is the root document written to data_mapping/<Benchmark>/map.json.
 type BenchmarkMap struct {
-	SchemaVersion   int                           `json:"schema_version"`
-	Tag             string                        `json:"tag"`
-	Benchmark       string                        `json:"benchmark"`
-	Package         string                        `json:"package,omitempty"`
-	RecommendedFlow []string                      `json:"recommended_flow"`
-	ReadingGuide    map[string]string             `json:"reading_guide"`
-	Measurements    *MeasurementsSection          `json:"measurements,omitempty"`
-	Profiles        map[string]ProfileRef         `json:"profiles"`
-	Hotspots        map[string]HotspotSection     `json:"hotspots"`
-	CallTrees       map[string]CallTreeSection    `json:"call_trees"`
-	SourceLines     map[string]SourceLinesSection `json:"source_lines"`
-	CallGraphs      map[string]CallGraphRef       `json:"call_graphs,omitempty"`
-	Provenance      Provenance                    `json:"provenance"`
-	Status          Status                        `json:"status"`
+	SchemaVersion      int                           `json:"schema_version"`
+	Tag                string                        `json:"tag"`
+	Benchmark          string                        `json:"benchmark"`
+	Package            string                        `json:"package,omitempty"`
+	RecommendedFlow    []string                      `json:"recommended_flow"`
+	ReadingGuide       map[string]string             `json:"reading_guide"`
+	ProfileCostColumns map[string]string             `json:"profile_cost_columns"`
+	ProfileCostTriage  string                        `json:"profile_cost_triage"`
+	Measurements       *MeasurementsSection          `json:"measurements,omitempty"`
+	Profiles           map[string]ProfileRef         `json:"profiles"`
+	Hotspots           map[string]HotspotSection     `json:"hotspots"`
+	CallTrees          map[string]CallTreeSection    `json:"call_trees"`
+	SourceLines        map[string]SourceLinesSection `json:"source_lines"`
+	CallGraphs         map[string]CallGraphRef       `json:"call_graphs,omitempty"`
+	Provenance         Provenance                    `json:"provenance"`
+	Status             Status                        `json:"status"`
 }
 
 // MeasurementsSection points at go test bench output.
@@ -51,38 +53,31 @@ type MeasurementSummary struct {
 
 // ProfileRef describes a raw pprof binary.
 type ProfileRef struct {
-	Path         string `json:"path"`
-	Purpose      string `json:"purpose"`
-	Description  string `json:"description"`
-	TotalSamples int64  `json:"total_samples,omitempty"`
+	Path         string  `json:"path"`
+	Purpose      string  `json:"purpose"`
+	Description  string  `json:"description"`
+	TotalSamples int64   `json:"total_samples,omitempty"`
+	SampleUnit   string  `json:"sample_unit,omitempty"`
+	OutputUnit   string  `json:"output_unit,omitempty"`
+	TotalDisplay string  `json:"total_display,omitempty"`
+	TotalSeconds float64 `json:"total_seconds,omitempty"`
 }
 
 // HotspotSection describes a pprof -top text artifact.
 type HotspotSection struct {
-	Path        string      `json:"path"`
-	Purpose     string      `json:"purpose"`
-	Description string      `json:"description"`
-	Producer    string      `json:"producer"`
-	TopSymbols  []TopSymbol `json:"top_symbols,omitempty"`
-}
-
-// TopSymbol is one ranked row from hotspot data.
-type TopSymbol struct {
-	Rank    int     `json:"rank"`
-	Symbol  string  `json:"symbol"`
-	Flat    int64   `json:"flat"`
-	Cum     int64   `json:"cum"`
-	FlatPct float64 `json:"flat_pct"`
-	CumPct  float64 `json:"cum_pct"`
+	Path                string `json:"path"`
+	Purpose             string `json:"purpose"`
+	Description         string `json:"description"`
+	Producer            string `json:"producer"`
+	HotspotsMetricsNote string `json:"hotspots_metrics_note,omitempty"`
 }
 
 // CallTreeSection describes a pprof -tree text artifact.
 type CallTreeSection struct {
-	Path        string   `json:"path"`
-	Purpose     string   `json:"purpose"`
-	Description string   `json:"description"`
-	Producer    string   `json:"producer"`
-	HotPath     []string `json:"hot_path_summary,omitempty"`
+	Path        string `json:"path"`
+	Purpose     string `json:"purpose"`
+	Description string `json:"description"`
+	Producer    string `json:"producer"`
 }
 
 // SourceLinesSection indexes per-function -list extracts for one profile kind.
@@ -95,15 +90,11 @@ type SourceLinesSection struct {
 	Functions   map[string]FunctionRef `json:"functions"`
 }
 
-// FunctionRef is one source_lines extract.
+// FunctionRef is one source_lines extract (path mapping only; metrics are in hotspots text).
 type FunctionRef struct {
-	Path       string  `json:"path"`
-	FullSymbol string  `json:"full_symbol"`
-	Flat       int64   `json:"flat,omitempty"`
-	Cum        int64   `json:"cum,omitempty"`
-	FlatPct    float64 `json:"flat_pct,omitempty"`
-	CumPct     float64 `json:"cum_pct,omitempty"`
-	Status     string  `json:"status"`
+	Path       string `json:"path"`
+	FullSymbol string `json:"full_symbol"`
+	Status     string `json:"status"`
 }
 
 // CallGraphRef describes an optional PNG call graph.
