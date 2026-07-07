@@ -3,6 +3,7 @@ package tooling
 import (
 	"context"
 	"errors"
+	"sync"
 )
 
 // FakeRun records one invocation of [FakeRunner.Run].
@@ -13,6 +14,7 @@ type FakeRun struct {
 
 // FakeRunner implements [Runner] for tests. It records each run and returns configured results in order.
 type FakeRunner struct {
+	mu   sync.Mutex
 	Runs []FakeRun
 	Out  [][]byte
 	Err  []error
@@ -25,6 +27,8 @@ func (f *FakeRunner) Run(ctx context.Context, argv []string, opts RunOpts) ([]by
 	if f == nil {
 		return nil, errors.New("tooling: nil FakeRunner")
 	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.Runs = append(f.Runs, FakeRun{Argv: append([]string(nil), argv...), Opts: opts})
 	i := f.n
 	f.n++

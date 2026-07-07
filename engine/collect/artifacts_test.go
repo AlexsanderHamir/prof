@@ -101,3 +101,40 @@ func TestGetFunctionsOutput_fakeRunner(t *testing.T) {
 		t.Fatalf("expected output file: %v", statErr)
 	}
 }
+
+func TestGetFunctionsOutput_parallelFakeRunner(t *testing.T) {
+	t.Parallel()
+	cpuPath := testpaths.MustAsset(t, "fixtures", filterFixtureCPU)
+	entries, err := parser.GetFunctionListEntriesV2(cpuPath, config.FunctionFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	const want = 5
+	if len(entries) < want {
+		t.Fatalf("fixture should yield at least %d function entries, got %d", want, len(entries))
+	}
+	entries = entries[:want]
+
+	outs := make([][]byte, len(entries))
+	for i, e := range entries {
+		outs[i] = []byte("list output for " + e.OutputStem)
+	}
+	runner := &tooling.FakeRunner{Out: outs}
+	dir := t.TempDir()
+	if outErr := getFunctionsOutput(runner, entries, cpuPath, dir, nil); outErr != nil {
+		t.Fatal(outErr)
+	}
+	if len(runner.Runs) != len(entries) {
+		t.Fatalf("expected %d pprof runs, got %d", len(entries), len(runner.Runs))
+	}
+	for _, e := range entries {
+		outFile := filepath.Join(dir, e.OutputStem+"."+workspace.TextExtension)
+		data, readErr := os.ReadFile(outFile)
+		if readErr != nil {
+			t.Fatalf("read %s: %v", outFile, readErr)
+		}
+		if len(data) == 0 {
+			t.Fatalf("expected non-empty list output for %s", e.OutputStem)
+		}
+	}
+}

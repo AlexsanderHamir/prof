@@ -187,6 +187,8 @@ Resolved function filters for each benchmark come from `config.ResolveCollection
 - For each successfully processed profile, [`parser.GetFunctionListEntriesV2`](../parser/) reads the binary and applies config filters.
 - `go tool pprof -list` output is written under `source_lines/cpu/BenchmarkMatrixMultiplication/` and `source_lines/memory/BenchmarkMatrixMultiplication/`.
 
+**Concurrency:** profile kinds and per-function `-list` subprocesses run with a bounded worker pool (`min(jobCount, GOMAXPROCS, 8)`). Artifacts, filters, and argv are unchanged; see [source-lines-parallelism.md](../design/source-lines-parallelism.md).
+
 When all benchmarks finish, prof logs collection success and returns.
 
 ## Output layout (example)
