@@ -19,9 +19,11 @@ type BenchmarkMap struct {
 	Tag             string                        `json:"tag"`
 	Benchmark       string                        `json:"benchmark"`
 	Package         string                        `json:"package,omitempty"`
-	RecommendedFlow []string                      `json:"recommended_flow"`
-	ReadingGuide    map[string]string             `json:"reading_guide"`
-	Measurements    *MeasurementsSection          `json:"measurements,omitempty"`
+	RecommendedFlow    []string                      `json:"recommended_flow"`
+	ReadingGuide       map[string]string             `json:"reading_guide"`
+	ProfileCostColumns map[string]string             `json:"profile_cost_columns"`
+	ProfileCostTriage  string                        `json:"profile_cost_triage"`
+	Measurements       *MeasurementsSection          `json:"measurements,omitempty"`
 	Profiles        map[string]ProfileRef         `json:"profiles"`
 	Hotspots        map[string]HotspotSection     `json:"hotspots"`
 	CallTrees       map[string]CallTreeSection    `json:"call_trees"`

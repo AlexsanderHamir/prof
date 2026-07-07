@@ -63,6 +63,12 @@ func TestBuild_minimalCPUProfile(t *testing.T) {
 	if len(m.Hotspots["cpu"].TopSymbols) != 1 {
 		t.Fatalf("top symbols=%d", len(m.Hotspots["cpu"].TopSymbols))
 	}
+	if m.ProfileCostColumns["flat"] == "" || m.ProfileCostColumns["cum_pct"] == "" {
+		t.Fatal("expected profile_cost_columns glossary")
+	}
+	if m.ProfileCostTriage == "" {
+		t.Fatal("expected profile_cost_triage")
+	}
 }
 
 func TestWriteJSON_roundTrip(t *testing.T) {

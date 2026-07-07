@@ -103,6 +103,22 @@ Schema types and builder live in [`internal/datamap`](../../internal/datamap/). 
 }
 ```
 
+## Profile cost columns (flat / cum)
+
+`go tool pprof -top` prints five metric columns. The same concepts appear in `map.json` as `flat`, `cum`, `flat_pct`, and `cum_pct` on `top_symbols` and `source_lines.functions`:
+
+| Column | In map.json | Meaning |
+| --- | --- | --- |
+| `flat` | `flat`, `flat_display`, `flat_seconds` | Cost in this function's own code only (excludes callees). CPU: time in the function body; memory: bytes allocated there. |
+| `flat%` | `flat_pct` | `flat` as % of total profile samples. |
+| `sum%` | *(not stored)* | Running sum of `flat%` reading the `-top` table top to bottom. |
+| `cum` | `cum`, `cum_display`, `cum_seconds` | Cost in this function plus all functions it called. CPU: seconds; memory: bytes including callees. |
+| `cum%` | `cum_pct` | `cum` as % of total profile samples. |
+
+Each emitted `map.json` includes `profile_cost_columns` and `profile_cost_triage`:
+
+> High flat: optimize this function's body. High cum but low flat: work is mostly in callees — check call_trees or child symbols.
+
 ## Sample units and display fields
 
 `flat` / `cum` / `total_samples` are **raw profile sample values** in the pprof sample unit (nanoseconds for CPU, bytes for heap profiles). They use the **last** `SampleType` index — the same index `go tool pprof -top` uses via `report.NewDefault`.

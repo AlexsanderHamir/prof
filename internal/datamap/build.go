@@ -26,11 +26,19 @@ var (
 	defaultRecommendedFlow = []string{"measurements", "hotspots", "call_trees", "source_lines", "profiles"}
 	defaultReadingGuide    = map[string]string{
 		"measurements": "Go benchmark output (ns/op, B/op, allocs/op). Start here to confirm the run succeeded.",
-		"hotspots":     "pprof -top: functions ranked by flat and cumulative cost.",
+		"hotspots":     "pprof -top table; see profile_cost_columns for flat/cum column meanings.",
 		"call_trees":   "pprof -tree: caller/callee context for top nodes.",
 		"source_lines": "pprof -list extracts per function; use on symbols chosen from hotspots.",
 		"profiles":     "Raw .out binaries; re-query with go tool pprof when text is insufficient.",
 	}
+	defaultProfileCostColumns = map[string]string{
+		"flat":     "Cost in this function's own code only (excludes callees). CPU: seconds in the function body; memory: bytes allocated there.",
+		"flat_pct": "flat as % of total profile samples. Same as flat% in hotspots/*.txt; map.json field flat_pct.",
+		"sum_pct":  "Running sum of flat% reading the -top table top to bottom. Column in hotspots/*.txt only (not stored in map.json).",
+		"cum":      "Cost in this function plus all functions it called (transitive). CPU: seconds; memory: bytes including callees.",
+		"cum_pct":  "cum as % of total profile samples. Same as cum% in hotspots/*.txt; map.json field cum_pct.",
+	}
+	defaultProfileCostTriage = "High flat: optimize this function's body. High cum but low flat: work is mostly in callees — check call_trees or child symbols."
 )
 
 // ProfileSnapshot captures in-memory state for one profile kind at map emit time.
@@ -71,8 +79,10 @@ func Build(in BuildInput) (BenchmarkMap, error) {
 		Tag:             in.Tag,
 		Benchmark:       in.Benchmark,
 		Package:         in.Package,
-		RecommendedFlow: append([]string(nil), defaultRecommendedFlow...),
-		ReadingGuide:    copyReadingGuide(),
+		RecommendedFlow:    append([]string(nil), defaultRecommendedFlow...),
+		ReadingGuide:       copyReadingGuide(),
+		ProfileCostColumns: copyProfileCostColumns(),
+		ProfileCostTriage:  defaultProfileCostTriage,
 		Profiles:        make(map[string]ProfileRef, len(in.Profiles)),
 		Hotspots:        make(map[string]HotspotSection, len(in.Profiles)),
 		CallTrees:       make(map[string]CallTreeSection, len(in.Profiles)),
@@ -122,6 +132,14 @@ func Build(in BuildInput) (BenchmarkMap, error) {
 func copyReadingGuide() map[string]string {
 	out := make(map[string]string, len(defaultReadingGuide))
 	for k, v := range defaultReadingGuide {
+		out[k] = v
+	}
+	return out
+}
+
+func copyProfileCostColumns() map[string]string {
+	out := make(map[string]string, len(defaultProfileCostColumns))
+	for k, v := range defaultProfileCostColumns {
 		out[k] = v
 	}
 	return out
