@@ -92,7 +92,9 @@ func collectProfileFunctions(runner tooling.Runner, args *config.CollectionArgs,
 		return err
 	}
 
-	for _, profile := range args.Profiles {
+	profiles := args.Profiles
+	errs := parallelFor(len(profiles), sourceLinesWorkers(len(profiles)), func(i int) error {
+		profile := profiles[i]
 		fnDir := layout.SourceLinesDir(profile, args.BenchmarkName)
 		if mkdirErr := os.MkdirAll(fnDir, workspace.PermDir); mkdirErr != nil {
 			return fmt.Errorf("failed to create output directory: %w", mkdirErr)
@@ -107,7 +109,13 @@ func collectProfileFunctions(runner tooling.Runner, args *config.CollectionArgs,
 		if fnErr := getFunctionsOutput(runner, listEntries, binPath, fnDir, session); fnErr != nil {
 			return fmt.Errorf("getAllFunctionsPprofContents failed: %w", fnErr)
 		}
-	}
+		return nil
+	})
 
+	for i, err := range errs {
+		if err != nil {
+			return fmt.Errorf("profile %s: %w", profiles[i], err)
+		}
+	}
 	return nil
 }
