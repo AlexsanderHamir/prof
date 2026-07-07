@@ -85,32 +85,42 @@ func writeFunctionListPprof(runner tooling.Runner, shortStem, fullSymbol, binary
 	return lastErr
 }
 
-func getFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string, session *termui.Session) error {
+// ListResult summarizes per-function pprof -list collection for one profile.
+type ListResult struct {
+	Collected   int
+	Skipped     int
+	FailedStems map[string]struct{}
+}
+
+func getFunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string, session *termui.Session) ListResult {
 	const maxPerFunctionWarnings = 3
 
+	result := ListResult{FailedStems: make(map[string]struct{})}
 	errs := parallelFor(len(entries), sourceLinesWorkers(len(entries)), func(i int) error {
 		e := entries[i]
 		out := filepath.Join(basePath, e.OutputStem+"."+workspace.TextExtension)
 		return writeFunctionListPprof(runner, e.OutputStem, e.FullSymbol, binaryPath, out)
 	})
 
-	var skipped int
 	for i, err := range errs {
 		if err == nil {
+			result.Collected++
 			continue
 		}
-		skipped++
-		if session != nil && session.Interactive() && skipped <= maxPerFunctionWarnings {
+		result.Skipped++
+		result.FailedStems[entries[i].OutputStem] = struct{}{}
+		if session != nil && session.Interactive() && result.Skipped <= maxPerFunctionWarnings {
 			session.Warn(fmt.Sprintf("skipping per-function pprof list for %s: %v", entries[i].OutputStem, err))
 		}
 	}
-	if skipped > maxPerFunctionWarnings && session != nil && session.Interactive() {
-		session.Warn(fmt.Sprintf("… and %d more functions skipped", skipped-maxPerFunctionWarnings))
+	if result.Skipped > maxPerFunctionWarnings && session != nil && session.Interactive() {
+		session.Warn(fmt.Sprintf("… and %d more functions skipped", result.Skipped-maxPerFunctionWarnings))
 	}
-	return nil
+	return result
 }
 
 // FunctionsOutput runs pprof -list for each entry (exported for integration tests).
 func FunctionsOutput(runner tooling.Runner, entries []parser.FunctionListEntry, binaryPath, basePath string) error {
-	return getFunctionsOutput(runner, entries, binaryPath, basePath, nil)
+	_ = getFunctionsOutput(runner, entries, binaryPath, basePath, nil)
+	return nil
 }

@@ -93,8 +93,9 @@ func TestGetFunctionsOutput_fakeRunner(t *testing.T) {
 		Out: [][]byte{[]byte("list output for " + pick.OutputStem)},
 	}
 	dir := t.TempDir()
-	if outErr := getFunctionsOutput(runner, []parser.FunctionListEntry{pick}, cpuPath, dir, nil); outErr != nil {
-		t.Fatal(outErr)
+	result := getFunctionsOutput(runner, []parser.FunctionListEntry{pick}, cpuPath, dir, nil)
+	if result.Collected != 1 || result.Skipped != 0 {
+		t.Fatalf("result=%+v", result)
 	}
 	outFile := filepath.Join(dir, pick.OutputStem+"."+workspace.TextExtension)
 	if _, statErr := os.Stat(outFile); statErr != nil {
@@ -121,8 +122,9 @@ func TestGetFunctionsOutput_parallelFakeRunner(t *testing.T) {
 	}
 	runner := &tooling.FakeRunner{Out: outs}
 	dir := t.TempDir()
-	if outErr := getFunctionsOutput(runner, entries, cpuPath, dir, nil); outErr != nil {
-		t.Fatal(outErr)
+	result := getFunctionsOutput(runner, entries, cpuPath, dir, nil)
+	if result.Collected != len(entries) {
+		t.Fatalf("collected=%d want=%d", result.Collected, len(entries))
 	}
 	if len(runner.Runs) != len(entries) {
 		t.Fatalf("expected %d pprof runs, got %d", len(entries), len(runner.Runs))
